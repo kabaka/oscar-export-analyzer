@@ -6,7 +6,7 @@ This is a rudimentary React-based web application for evaluating OSCAR sleep dat
 
 1. Open `index.html` in your web browser (using `file://` or host via a local HTTP server).
 2. Use the file inputs to select your OSCAR **Summary** and **Details** CSV files from the `data/` directory.
-3. The app will parse and display (parsing progress bars appear while loading each file):
+3. The app will parse and display (determinate progress bars show parsing progress for each file):
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
    - AHI trends (average, min, max, nights with AHI > 5)
    - Pressure settings trends (median EPAP changes and EPAP vs AHI)

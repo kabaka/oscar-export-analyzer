@@ -142,16 +142,26 @@ function useCsvFiles() {
   const [summaryData, setSummaryData] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [summaryProgress, setSummaryProgress] = useState(0);
+  const [summaryProgressMax, setSummaryProgressMax] = useState(0);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsProgress, setDetailsProgress] = useState(0);
+  const [detailsProgressMax, setDetailsProgressMax] = useState(0);
 
-  const handleFile = (setter, setLoading) => e => {
+  const handleFile = (setter, setLoading, setProgress, setProgressMax) => e => {
     const file = e.target.files[0];
     if (!file) return;
     setLoading(true);
+    setProgress(0);
+    setProgressMax(file.size);
     Papa.parse(file, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
+      chunkSize: 1024 * 1024,
+      chunk: results => {
+        setProgress(results.meta.cursor);
+      },
       complete: res => {
         setter(res.data);
         setLoading(false);
@@ -163,9 +173,23 @@ function useCsvFiles() {
     summaryData,
     detailsData,
     loadingSummary,
+    summaryProgress,
+    summaryProgressMax,
     loadingDetails,
-    onSummaryFile: handleFile(setSummaryData, setLoadingSummary),
-    onDetailsFile: handleFile(setDetailsData, setLoadingDetails),
+    detailsProgress,
+    detailsProgressMax,
+    onSummaryFile: handleFile(
+      setSummaryData,
+      setLoadingSummary,
+      setSummaryProgress,
+      setSummaryProgressMax
+    ),
+    onDetailsFile: handleFile(
+      setDetailsData,
+      setLoadingDetails,
+      setDetailsProgress,
+      setDetailsProgressMax
+    ),
   };
 }
 
@@ -264,7 +288,11 @@ function App() {
     summaryData,
     detailsData,
     loadingSummary,
+    summaryProgress,
+    summaryProgressMax,
     loadingDetails,
+    detailsProgress,
+    detailsProgressMax,
     onSummaryFile,
     onDetailsFile,
   } = useCsvFiles();
@@ -292,9 +320,15 @@ function App() {
         <label>
           Summary CSV: <input type="file" accept=".csv" onChange={onSummaryFile} />
         </label>
-        {loadingSummary && <progress />}
-        <label>Details CSV: <input type="file" accept=".csv" onChange={onDetailsFile} /></label>
-        {loadingDetails && <progress />}
+        {loadingSummary && (
+          <progress value={summaryProgress} max={summaryProgressMax} />
+        )}
+        <label>
+          Details CSV: <input type="file" accept=".csv" onChange={onDetailsFile} />
+        </label>
+        {loadingDetails && (
+          <progress value={detailsProgress} max={detailsProgressMax} />
+        )}
       </div>
       {summaryData && <SummaryAnalysis data={summaryData} />}
       {detailsData && (
