@@ -257,7 +257,9 @@ function App() {
       const apneaEvents = detailsData
         .filter(r => r['Event'] === 'ClearAirway' || r['Event'] === 'Obstructive')
         .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
-      setApneaClusters(clusterApneaEvents(apneaEvents));
+      // only clusters with more than one apnea event
+      const rawClusters = clusterApneaEvents(apneaEvents);
+      setApneaClusters(rawClusters.filter(cl => cl.count > 1));
       // detect potential false negatives via flow-limit events
       setFalseNegatives(detectFalseNegatives(detailsData));
     }
