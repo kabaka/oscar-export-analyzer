@@ -59,18 +59,34 @@ function computeEPAPTrends(data) {
 
 // Constants for apnea clustering and false negative detection
 const APOEA_CLUSTER_GAP_SEC = 10;
-const FLG_THRESHOLD = 0.9; // flow-limit threshold (fraction of max)
+const FLG_THRESHOLD = 0.9; // flow-limit threshold (fraction of max) for false-negative detection
 const FLG_CLUSTER_GAP_SEC = 60; // max gap to group FLG events (seconds)
 const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false negative (seconds)
+const FLG_EDGE_THRESHOLD = 0.1; // min flow-limit level to extend apnea cluster boundaries (tune as needed)
 
 /**
  * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
  * Each event must have {date: Date, durationSec: number}.
  */
-function clusterApneaEvents(events, gapSec = APOEA_CLUSTER_GAP_SEC) {
+/**
+ * Cluster Obstructive/Central (and related) apnea annotation events, then extend
+ * each cluster's boundaries based on nearby flow-limit (FLG) events for true start/end.
+ * @param {Array} events - annotation events with {date: Date, durationSec: number}
+ * @param {Array} flgEvents - FLG events with {date: Date, level: number}
+ * @param {number} gapSec - max gap between annotation events to group (seconds)
+ * @param {number} flgThreshold - min FLG level to extend cluster boundaries
+ * @returns Array of {start: Date, end: Date, durationSec: number, count: number}
+ */
+function clusterApneaEvents(
+  events,
+  flgEvents,
+  gapSec = APOEA_CLUSTER_GAP_SEC,
+  flgThreshold = FLG_EDGE_THRESHOLD
+) {
   if (!events.length) return [];
+  // first cluster on annotation events alone
   const sorted = events.slice().sort((a, b) => a.date - b.date);
-  const clusters = [];
+  const rawGroups = [];
   let current = [sorted[0]];
   for (let i = 1; i < sorted.length; i++) {
     const evt = sorted[i];
@@ -79,17 +95,33 @@ function clusterApneaEvents(events, gapSec = APOEA_CLUSTER_GAP_SEC) {
     if ((evt.date - prevEnd) / 1000 <= gapSec) {
       current.push(evt);
     } else {
-      clusters.push(current);
+      rawGroups.push(current);
       current = [evt];
     }
   }
-  if (current.length) clusters.push(current);
-  return clusters.map(cl => {
-    const start = cl[0].date;
-    const endEvt = cl[cl.length - 1];
-    const end = new Date(endEvt.date.getTime() + endEvt.durationSec * 1000);
+  if (current.length) rawGroups.push(current);
+  // map to clusters with start/end, then extend boundaries by FLG events
+  return rawGroups.map(group => {
+    let start = group[0].date;
+    const lastEvt = group[group.length - 1];
+    let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
+    const count = group.length;
+    // extend backward by FLG events near the start
+    const before = flgEvents.filter(
+      e => e.level >= flgThreshold && e.date <= start && (start - e.date) / 1000 <= gapSec
+    );
+    if (before.length) {
+      start = new Date(Math.min(...before.map(e => e.date)));
+    }
+    // extend forward by FLG events near the end
+    const after = flgEvents.filter(
+      e => e.level >= flgThreshold && e.date >= end && (e.date - end) / 1000 <= gapSec
+    );
+    if (after.length) {
+      end = new Date(Math.max(...after.map(e => e.date)));
+    }
     const durationSec = (end - start) / 1000;
-    return { start, end, durationSec, count: cl.length };
+    return { start, end, durationSec, count };
   });
 }
 
@@ -303,10 +335,15 @@ function App() {
     if (detailsData) {
       // cluster OA/CA apnea events
       const apneaEvents = detailsData
-        .filter(r => r['Event'] === 'ClearAirway' || r['Event'] === 'Obstructive')
+        .filter(
+          r => ['ClearAirway', 'Obstructive', 'Hypopnea', 'Apnea', 'RERA'].includes(r['Event'])
+        )
         .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
-      // only clusters with more than one apnea event
-      const rawClusters = clusterApneaEvents(apneaEvents);
+      const flgEvents = detailsData
+        .filter(r => r['Event'] === 'FLG')
+        .map(r => ({ date: new Date(r['DateTime']), level: parseFloat(r['Data/Duration']) }));
+      // cluster annotations and extend boundaries by nearby FLG events, then filter singletons
+      const rawClusters = clusterApneaEvents(apneaEvents, flgEvents);
       setApneaClusters(rawClusters.filter(cl => cl.count > 1));
       // detect potential false negatives via flow-limit events
       setFalseNegatives(detectFalseNegatives(detailsData));
