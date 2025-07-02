@@ -57,16 +57,59 @@ function computeEPAPTrends(data) {
   return { avgMedianEPAPFirst30, avgMedianEPAPLast30, countLow, avgAHILow, countHigh, avgAHIHigh };
 }
 
-function clusterEvents(events, thresholdSec = 60) {
+// Constants for apnea clustering and false negative detection
+const APOEA_CLUSTER_GAP_SEC = 10;
+const FLG_THRESHOLD = 0.9; // flow-limit threshold (fraction of max)
+const FLG_CLUSTER_GAP_SEC = 60; // max gap to group FLG events (seconds)
+const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false negative (seconds)
+
+/**
+ * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
+ * Each event must have {date: Date, durationSec: number}.
+ */
+function clusterApneaEvents(events, gapSec = APOEA_CLUSTER_GAP_SEC) {
+  if (!events.length) return [];
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const clusters = [];
+  let current = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const evt = sorted[i];
+    const prev = current[current.length - 1];
+    const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
+    if ((evt.date - prevEnd) / 1000 <= gapSec) {
+      current.push(evt);
+    } else {
+      clusters.push(current);
+      current = [evt];
+    }
+  }
+  if (current.length) clusters.push(current);
+  return clusters.map(cl => {
+    const start = cl[0].date;
+    const endEvt = cl[cl.length - 1];
+    const end = new Date(endEvt.date.getTime() + endEvt.durationSec * 1000);
+    const durationSec = (end - start) / 1000;
+    return { start, end, durationSec, count: cl.length };
+  });
+}
+
+/**
+ * Detect potential false negatives by clustering high flow-limit events (FLG) without apnea events.
+ * Details data must include DateTime, Event ('FLG', 'ClearAirway', 'Obstructive'), and Data/Duration for FLG level.
+ */
+function detectFalseNegatives(details, flThreshold = FLG_THRESHOLD) {
+  const flEvents = details
+    .filter(r => r['Event'] === 'FLG' && r['Data/Duration'] >= flThreshold)
+    .map(r => ({ date: new Date(r['DateTime']), level: r['Data/Duration'] }));
+  // cluster flow-limit events by time gap
+  const clusters = [];
   let current = [];
-  sorted.forEach(evt => {
-    if (current.length === 0) {
+  flEvents.sort((a, b) => a.date - b.date).forEach(evt => {
+    if (!current.length) {
       current.push(evt);
     } else {
       const prev = current[current.length - 1];
-      if ((evt.date - prev.date) / 1000 <= thresholdSec) {
+      if ((evt.date - prev.date) / 1000 <= FLG_CLUSTER_GAP_SEC) {
         current.push(evt);
       } else {
         clusters.push(current);
@@ -75,25 +118,23 @@ function clusterEvents(events, thresholdSec = 60) {
     }
   });
   if (current.length) clusters.push(current);
-  return clusters;
-}
-
-function findFalseNegatives(clusters) {
-  return clusters.filter(cl => {
-    const hasFLG = cl.some(e => e.event === 'FLG');
-    const hasAnno = cl.some(e => !['Pressure', 'EPAP', 'FLG'].includes(e.event));
-    return hasFLG && !hasAnno;
-  });
-}
-
-function findConcerningEvents(clusters, topN = 10) {
-  const evts = clusters.map(cl => {
-    const start = cl[0].date;
-    const end = cl[cl.length - 1].date;
-    const durationSec = (end - start) / 1000;
-    return { events: cl, durationSec };
-  });
-  return evts.sort((a, b) => b.durationSec - a.durationSec).slice(0, topN);
+  // filter clusters by duration and absence of apnea events
+  return clusters
+    .map(cl => {
+      const start = cl[0].date;
+      const end = cl[cl.length - 1].date;
+      const durationSec = (end - start) / 1000;
+      const confidence = Math.max(...cl.map(e => e.level));
+      return { start, end, durationSec, confidence };
+    })
+    .filter(cl => cl.durationSec >= FLG_DURATION_THRESHOLD_SEC)
+    .filter(cl => {
+      // no obstructive/central events within cluster window
+      return !details.some(r => {
+        const t = new Date(r['DateTime']);
+        return (r['Event'] === 'ClearAirway' || r['Event'] === 'Obstructive') && t >= cl.start && t <= cl.end;
+      });
+    });
 }
 
 // Hook for loading CSV files via file input
@@ -158,18 +199,23 @@ function SummaryAnalysis({ data }) {
   );
 }
 
-function ClusterAnalysis({ clusters }) {
+function ApneaClusterAnalysis({ clusters }) {
   return (
     <div>
-      <h2>Clustered Events</h2>
-      <p>Total clusters: {clusters.length}</p>
+      <h2>Clustered Apnea Events</h2>
       <table>
-        <thead><tr><th>#</th><th>Events</th><th>Span (s)</th></tr></thead>
+        <thead>
+          <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Count</th></tr>
+        </thead>
         <tbody>
-          {clusters.map((cl, i) => {
-            const span = (cl[cl.length - 1].date - cl[0].date) / 1000;
-            return <tr key={i}><td>{i+1}</td><td>{cl.map(e=>e.event).join(', ')}</td><td>{span.toFixed(0)}</td></tr>;
-          })}
+          {clusters.map((cl, i) => (
+            <tr key={i}>
+              <td>{i+1}</td>
+              <td>{cl.start.toLocaleString()}</td>
+              <td>{cl.durationSec.toFixed(0)}</td>
+              <td>{cl.count}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -179,33 +225,18 @@ function ClusterAnalysis({ clusters }) {
 function FalseNegativesAnalysis({ list }) {
   return (
     <div>
-      <h2>False Negatives</h2>
-      <p>Total false negatives: {list.length}</p>
+      <h2>Potential False Negatives</h2>
       <table>
-        <thead><tr><th>#</th><th>Events</th><th>Span (s)</th></tr></thead>
+        <thead>
+          <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Confidence</th></tr>
+        </thead>
         <tbody>
-          {list.map((cl, i) => {
-            const span = (cl[cl.length - 1].date - cl[0].date) / 1000;
-            return <tr key={i}><td>{i+1}</td><td>{cl.map(e=>e.event).join(', ')}</td><td>{span.toFixed(0)}</td></tr>;
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ConcerningEventsAnalysis({ list }) {
-  return (
-    <div>
-      <h2>Most Concerning Apnea Events</h2>
-      <table>
-        <thead><tr><th>#</th><th>Duration (s)</th><th>Events</th></tr></thead>
-        <tbody>
-          {list.map((item, i) => (
+          {list.map((cl, i) => (
             <tr key={i}>
               <td>{i+1}</td>
-              <td>{item.durationSec.toFixed(0)}</td>
-              <td>{item.events.map(e=>e.event).join(', ')}</td>
+              <td>{cl.start.toLocaleString()}</td>
+              <td>{cl.durationSec.toFixed(0)}</td>
+              <td>{(cl.confidence * 100).toFixed(0)}%</td>
             </tr>
           ))}
         </tbody>
@@ -214,20 +245,21 @@ function ConcerningEventsAnalysis({ list }) {
   );
 }
 
+
 function App() {
   const { summaryData, detailsData, onSummaryFile, onDetailsFile } = useCsvFiles();
-  const [clusters, setClusters] = useState([]);
+  const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
-  const [concerning, setConcerning] = useState([]);
 
   useEffect(() => {
     if (detailsData) {
-      const events = detailsData.map(r => ({ date: new Date(r['DateTime']), event: r['Event'], duration: r['Data/Duration'] }));
-      const cls = clusterEvents(events, 60);
-      setClusters(cls);
-      const fn = findFalseNegatives(cls);
-      setFalseNegatives(fn);
-      setConcerning(findConcerningEvents(cls, 10));
+      // cluster OA/CA apnea events
+      const apneaEvents = detailsData
+        .filter(r => r['Event'] === 'ClearAirway' || r['Event'] === 'Obstructive')
+        .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
+      setApneaClusters(clusterApneaEvents(apneaEvents));
+      // detect potential false negatives via flow-limit events
+      setFalseNegatives(detectFalseNegatives(detailsData));
     }
   }, [detailsData]);
 
@@ -241,9 +273,8 @@ function App() {
       {summaryData && <SummaryAnalysis data={summaryData} />}
       {detailsData && (
         <>
-          <ClusterAnalysis clusters={clusters} />
+          <ApneaClusterAnalysis clusters={apneaClusters} />
           <FalseNegativesAnalysis list={falseNegatives} />
-          <ConcerningEventsAnalysis list={concerning} />
         </>
       )}
     </div>

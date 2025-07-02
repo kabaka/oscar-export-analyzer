@@ -10,9 +10,8 @@ This is a rudimentary React-based web application for evaluating OSCAR sleep dat
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
    - AHI trends (average, min, max, nights with AHI > 5)
    - Pressure settings trends (median EPAP changes and EPAP vs AHI)
-   - Clustered apnea events (events grouped within a 60 s window)
-   - False negatives (flow limitations without annotated events)
-   - Most concerning apnea events (top clusters by duration)
+   - Clustered apnea events (clusters of obstructive/central events separated only by a few seconds; shows start time, duration, and count)
+   - Potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
 
 ## Development
 
