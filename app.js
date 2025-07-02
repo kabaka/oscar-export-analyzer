@@ -141,19 +141,32 @@ function detectFalseNegatives(details, flThreshold = FLG_THRESHOLD) {
 function useCsvFiles() {
   const [summaryData, setSummaryData] = useState(null);
   const [detailsData, setDetailsData] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const handleFile = setter => e => {
+  const handleFile = (setter, setLoading) => e => {
     const file = e.target.files[0];
     if (!file) return;
+    setLoading(true);
     Papa.parse(file, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
-      complete: res => setter(res.data),
+      complete: res => {
+        setter(res.data);
+        setLoading(false);
+      },
     });
   };
 
-  return { summaryData, detailsData, onSummaryFile: handleFile(setSummaryData), onDetailsFile: handleFile(setDetailsData) };
+  return {
+    summaryData,
+    detailsData,
+    loadingSummary,
+    loadingDetails,
+    onSummaryFile: handleFile(setSummaryData, setLoadingSummary),
+    onDetailsFile: handleFile(setDetailsData, setLoadingDetails),
+  };
 }
 
 function SummaryAnalysis({ data }) {
@@ -247,7 +260,14 @@ function FalseNegativesAnalysis({ list }) {
 
 
 function App() {
-  const { summaryData, detailsData, onSummaryFile, onDetailsFile } = useCsvFiles();
+  const {
+    summaryData,
+    detailsData,
+    loadingSummary,
+    loadingDetails,
+    onSummaryFile,
+    onDetailsFile,
+  } = useCsvFiles();
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
 
@@ -269,8 +289,12 @@ function App() {
     <div className="container">
       <h1>OSCAR Sleep Data Analysis</h1>
       <div className="controls">
-        <label>Summary CSV: <input type="file" accept=".csv" onChange={onSummaryFile} /></label>
+        <label>
+          Summary CSV: <input type="file" accept=".csv" onChange={onSummaryFile} />
+        </label>
+        {loadingSummary && <progress />}
         <label>Details CSV: <input type="file" accept=".csv" onChange={onDetailsFile} /></label>
+        {loadingDetails && <progress />}
       </div>
       {summaryData && <SummaryAnalysis data={summaryData} />}
       {detailsData && (
