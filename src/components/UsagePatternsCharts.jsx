@@ -27,47 +27,59 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
 
   return (
     <div className="usage-charts">
+      {/* Time-series usage with rolling average, full-width responsive */}
       <Plot
+        useResizeHandler
+        style={{ width: '100%', height: '300px' }}
         data={[
-          { x: dates, y: usageHours, type: 'scatter', mode: 'lines+markers', name: 'Usage (hrs)' },
+          { x: dates, y: usageHours, type: 'scatter', mode: 'lines', name: 'Usage (hrs)' },
           { x: dates, y: rollingAvg, type: 'scatter', mode: 'lines', name: '7-night Avg', line: { dash: 'dash' } },
         ]}
         layout={{
+          autosize: true,
           title: 'Nightly Usage Hours Over Time',
           xaxis: { title: 'Date' },
           yaxis: { title: 'Hours of Use' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
-          width,
-          height,
         }}
       />
-      <Plot
-        data={[{ x: usageHours, type: 'histogram', nbinsx: 12, name: 'Usage Distribution' }]}
-        layout={{
-          title: 'Distribution of Nightly Usage',
-          xaxis: { title: 'Hours' },
-          yaxis: { title: 'Count' },
-          margin: { t: 40, l: 60, r: 20, b: 50 },
-          width,
-          height,
-        }}
-      />
-      <Plot
-        data={[{
-          y: usageHours,
-          type: 'box',
-          name: 'Usage Boxplot',
-          boxpoints: 'outliers',
-          marker: { color: '#888' },
-        }]}
-        layout={{
-          title: 'Boxplot of Nightly Usage',
-          yaxis: { title: 'Hours of Use', zeroline: false },
-          margin: { t: 40, l: 60, r: 20, b: 50 },
-          width,
-          height: height * 0.6,
-        }}
-      />
+
+      {/* Histogram and boxplot side-by-side on large screens, stacked on narrow */}
+      <div className="usage-charts-grid">
+        <div className="chart-item">
+          <Plot
+            useResizeHandler
+            style={{ width: '100%', height: '300px' }}
+            data={[{ x: usageHours, type: 'histogram', nbinsx: 12, name: 'Usage Distribution' }]}
+            layout={{
+              autosize: true,
+              title: 'Distribution of Nightly Usage',
+              xaxis: { title: 'Hours' },
+              yaxis: { title: 'Count' },
+              margin: { t: 40, l: 60, r: 20, b: 50 },
+            }}
+          />
+        </div>
+        <div className="chart-item">
+          <Plot
+            useResizeHandler
+            style={{ width: '100%', height: '250px' }}
+            data={[{
+              y: usageHours,
+              type: 'box',
+              name: 'Usage Boxplot',
+              boxpoints: 'outliers',
+              marker: { color: '#888' },
+            }]}
+            layout={{
+              autosize: true,
+              title: 'Boxplot of Nightly Usage',
+              yaxis: { title: 'Hours of Use', zeroline: false },
+              margin: { t: 40, l: 60, r: 20, b: 50 },
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
