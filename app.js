@@ -63,7 +63,9 @@ const FLG_THRESHOLD = 0.9; // flow-limit threshold (fraction of max) for false-n
 const FLG_CLUSTER_GAP_SEC = 60; // max gap to group FLG events (seconds)
 const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false negative (seconds)
 // Flow-limit threshold (fraction of max) for bridging and edge-detection of low-flow periods
+// Edge threshold (flow-limit) for cluster extension and bridging
 const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
+const FLG_BRIDGE_GAP_SEC = FLG_CLUSTER_GAP_SEC;
 
 /**
  * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
@@ -78,11 +80,16 @@ const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
  * @param {number} flgThreshold - min FLG level to extend cluster boundaries
  * @returns Array of {start: Date, end: Date, durationSec: number, count: number}
  */
+/**
+ * Cluster apnea annotation events, optionally bridging through nearby high-FLG events,
+ * then extend cluster boundaries based on FLG events.
+ */
 function clusterApneaEvents(
   events,
   flgEvents,
   gapSec = APOEA_CLUSTER_GAP_SEC,
-  flgThreshold = FLG_EDGE_THRESHOLD
+  flgThreshold = FLG_EDGE_THRESHOLD,
+  bridgeSec = FLG_BRIDGE_GAP_SEC
 ) {
   if (!events.length) return [];
   // Pre-filter and sort only high-level FLG events for bridging/extension
@@ -99,7 +106,7 @@ function clusterApneaEvents(
     const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
     const gap = (evt.date - prevEnd) / 1000;
     // allow annotation events to be bridged by nearby high FLG (flow-limit) readings
-    const flgBridge = flgHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
+    const flgBridge = gap <= bridgeSec && flgHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
     if (gap <= gapSec || flgBridge) {
       current.push(evt);
     } else {
@@ -343,10 +350,9 @@ function App() {
   useEffect(() => {
     if (detailsData) {
       // cluster OA/CA apnea events
+      // Only central (ClearAirway) and obstructive apnea events for clustering
       const apneaEvents = detailsData
-        .filter(
-          r => ['ClearAirway', 'Obstructive', 'Hypopnea', 'Apnea', 'RERA'].includes(r['Event'])
-        )
+        .filter(r => ['ClearAirway', 'Obstructive'].includes(r['Event']))
         .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
       const flgEvents = detailsData
         .filter(r => r['Event'] === 'FLG')
