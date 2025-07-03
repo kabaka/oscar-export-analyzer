@@ -64,7 +64,8 @@ const FLG_CLUSTER_GAP_SEC = 60; // max gap to group FLG events (seconds)
 const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false negative (seconds)
 // Flow-limit threshold (fraction of max) for bridging and edge-detection of low-flow periods
 // Edge threshold (flow-limit) for cluster boundary extension (tune for early/late edges)
-const FLG_EDGE_THRESHOLD = 0.1;
+// Flow-limit threshold for cluster boundary extension (use high FLG to detect true low-flow edges)
+const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
 const FLG_BRIDGE_GAP_SEC = FLG_CLUSTER_GAP_SEC;
 
 /**
