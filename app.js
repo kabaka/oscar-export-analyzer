@@ -243,15 +243,17 @@ function useCsvFiles() {
       chunkSize: 1024 * 1024,
       chunk: results => {
         setProgress(results.meta.cursor);
-        if (filterEvents) {
-          // retain only apnea and FLG events for faster downstream processing
-          const keep = results.data.filter(r =>
-            ['ClearAirway', 'Obstructive', 'Mixed', 'FLG'].includes(r['Event'])
-          );
-          rows.push(...keep);
-        } else {
-          rows.push(...results.data);
-        }
+      if (filterEvents) {
+        // retain only apnea annotations and sufficiently high-FLG events
+        const keep = results.data.filter(r => {
+          const e = r['Event'];
+          if (e === 'FLG') return r['Data/Duration'] >= FLG_THRESHOLD;
+          return ['ClearAirway', 'Obstructive', 'Mixed'].includes(e);
+        });
+        rows.push(...keep);
+      } else {
+        rows.push(...results.data);
+      }
       },
       complete: () => {
         setter(rows);
@@ -390,27 +392,36 @@ function App() {
   } = useCsvFiles();
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
+  const [processingDetails, setProcessingDetails] = useState(false);
 
   useEffect(() => {
-    if (detailsData) {
-      // cluster OA/CA apnea events
-      // Only central (ClearAirway), obstructive and mixed apnea annotations for clustering
+  if (detailsData) {
+    // begin processing phase
+    setProcessingDetails(true);
+    // defer clustering/detection to next tick so UI can update (e.g., hide parse progress)
+    const timer = setTimeout(() => {
+      // cluster OA/CA apnea annotation events
       const apneaEvents = detailsData
         .filter(r => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
         .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
       const flgEvents = detailsData
         .filter(r => r['Event'] === 'FLG')
         .map(r => ({ date: new Date(r['DateTime']), level: parseFloat(r['Data/Duration']) }));
-      // cluster annotations and extend boundaries by nearby FLG events, then filter singletons
       const rawClusters = clusterApneaEvents(apneaEvents, flgEvents);
-      // retain only clusters with ≥3 events and sufficient total apnea duration
       const validClusters = rawClusters.filter(
         cl => cl.count >= 3 && cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= APOEA_CLUSTER_MIN_TOTAL_SEC
       );
       setApneaClusters(validClusters);
       // detect potential false negatives via flow-limit events
       setFalseNegatives(detectFalseNegatives(detailsData));
-    }
+      // end processing phase after clustering/detection
+      setProcessingDetails(false);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      setProcessingDetails(false);
+    };
+  }
   }, [detailsData]);
 
   return (
@@ -426,8 +437,11 @@ function App() {
         <label>
           Details CSV: <input type="file" accept=".csv" onChange={onDetailsFile} />
         </label>
-        {loadingDetails && (
-          <progress value={detailsProgress} max={detailsProgressMax} />
+        {(loadingDetails || processingDetails) && (
+          <progress
+            value={loadingDetails ? detailsProgress : undefined}
+            max={loadingDetails ? detailsProgressMax : undefined}
+          />
         )}
       </div>
       {summaryData && <SummaryAnalysis data={summaryData} />}
