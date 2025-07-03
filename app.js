@@ -92,7 +92,12 @@ function clusterApneaEvents(
     const evt = sorted[i];
     const prev = current[current.length - 1];
     const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
-    if ((evt.date - prevEnd) / 1000 <= gapSec) {
+    const gap = (evt.date - prevEnd) / 1000;
+    // allow annotation events to be bridged by nearby high FLG (flow-limit) readings
+    const flgBridge = flgEvents.some(
+      f => f.level >= flgThreshold && f.date >= prevEnd && f.date <= evt.date
+    );
+    if (gap <= gapSec || flgBridge) {
       current.push(evt);
     } else {
       rawGroups.push(current);
