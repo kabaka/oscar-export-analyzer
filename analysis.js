@@ -89,9 +89,16 @@ async function run(detailFilePath, targetDateStr, gapSec = 120, flgThreshold = 0
   const clusters = summaryEvents.length > 0
     ? clusterApneaEvents(summaryEvents, flgEvents, gapSec, flgThreshold, bridgeSec)
     : [];
-  const valid = clusters.filter(c => c.count >= 3);
+  const minTotalEventDurSec = 60;
+  const valid = clusters.filter(c => {
+    const totalEventDur = c.events.reduce((sum, e) => sum + e.durationSec, 0);
+    return c.count >= 3 && totalEventDur >= minTotalEventDurSec;
+  });
   if (!valid.length) {
-    console.log('No apnea clusters (≥3 events) found for', targetDateStr);
+    console.log(
+      `No apnea clusters (≥3 events and ≥${minTotalEventDurSec}s total) found for`,
+      targetDateStr
+    );
     return;
   }
   console.log(`Detected apnea clusters for ${targetDateStr}:`);
