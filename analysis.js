@@ -42,20 +42,37 @@ async function run(detailFilePath, targetDateStr, gapSec = 120, flgThreshold = 0
   }
   console.error(`Parsed ${summaryEvents.length} apnea summary events, ${flgEvents.length} FLG events`);
 
-  // Cluster apnea summary events with optional FLG bridging and boundary extension
-  function clusterApneaEvents(events, flgEvents, gapSec, flgThreshold, bridgeSec) {
-    const flgHigh = flgEvents.filter(f => f.level >= flgThreshold)
+  // Cluster apnea summary events with FLG bridging and stricter boundary extension
+  const EDGE_THRESHOLD = 0.5;        // FLG fraction threshold for true low-flow edge detection
+  const EDGE_MIN_DURATION_SEC = 10;   // min duration for FLG edge clusters (sec)
+  function clusterApneaEvents(events, flgEvents, gapSec, flgBridgeThreshold, bridgeSec) {
+    // cluster FLG events for bridging annotation gaps (low threshold)
+    const flgBridgeHigh = flgEvents.filter(f => f.level >= flgBridgeThreshold)
       .sort((a, b) => a.date - b.date);
-    const flgClusters = [];
-    if (flgHigh.length) {
-      let vc = [flgHigh[0]];
-      for (let i = 1; i < flgHigh.length; i++) {
-        const prev = flgHigh[i - 1], curr = flgHigh[i];
+    const flgBridgeClusters = [];
+    if (flgBridgeHigh.length) {
+      let vc = [flgBridgeHigh[0]];
+      for (let i = 1; i < flgBridgeHigh.length; i++) {
+        const prev = flgBridgeHigh[i - 1], curr = flgBridgeHigh[i];
         if ((curr.date - prev.date) / 1000 <= bridgeSec) vc.push(curr);
-        else { flgClusters.push(vc); vc = [curr]; }
+        else { flgBridgeClusters.push(vc); vc = [curr]; }
       }
-      flgClusters.push(vc);
+      flgBridgeClusters.push(vc);
     }
+    // cluster FLG events for boundary extension (higher threshold, min duration)
+    const flgEdgeHigh = flgEvents.filter(f => f.level >= EDGE_THRESHOLD)
+      .sort((a, b) => a.date - b.date);
+    const flgEdgeClusters = [];
+    if (flgEdgeHigh.length) {
+      let vc = [flgEdgeHigh[0]];
+      for (let i = 1; i < flgEdgeHigh.length; i++) {
+        const prev = flgEdgeHigh[i - 1], curr = flgEdgeHigh[i];
+        if ((curr.date - prev.date) / 1000 <= bridgeSec) vc.push(curr);
+        else { flgEdgeClusters.push(vc); vc = [curr]; }
+      }
+      flgEdgeClusters.push(vc);
+    }
+    // group annotation events by proximity and FLG bridges
     const sorted = events.slice().sort((a, b) => a.date - b.date);
     const rawGroups = [];
     let current = [sorted[0]];
@@ -64,7 +81,7 @@ async function run(detailFilePath, targetDateStr, gapSec = 120, flgThreshold = 0
       const prev = current[current.length - 1];
       const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
       const gap = (evt.date - prevEnd) / 1000;
-      const flgBridge = gap <= bridgeSec && flgHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
+      const flgBridge = gap <= bridgeSec && flgBridgeHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
       if (gap <= gapSec || flgBridge) {
         current.push(evt);
       } else {
@@ -73,14 +90,22 @@ async function run(detailFilePath, targetDateStr, gapSec = 120, flgThreshold = 0
       }
     }
     if (current.length) rawGroups.push(current);
+    // map to clusters and extend boundaries using filtered FLG edge clusters
     return rawGroups.map(group => {
       let start = group[0].date;
       const lastEvt = group[group.length - 1];
       let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
       const count = group.length;
-      const before = flgClusters.find(cl => cl[cl.length - 1].date <= start && (start - cl[cl.length - 1].date) / 1000 <= gapSec);
+      const validEdges = flgEdgeClusters.filter(cl =>
+        (cl[cl.length - 1].date - cl[0].date) / 1000 >= EDGE_MIN_DURATION_SEC
+      );
+      const before = validEdges.find(cl =>
+        cl[cl.length - 1].date <= start && (start - cl[cl.length - 1].date) / 1000 <= gapSec
+      );
       if (before) start = before[0].date;
-      const after = flgClusters.find(cl => cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec);
+      const after = validEdges.find(cl =>
+        cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec
+      );
       if (after) end = after[after.length - 1].date;
       return { start, end, durationSec: (end - start) / 1000, count, events: group };
     });
@@ -90,9 +115,12 @@ async function run(detailFilePath, targetDateStr, gapSec = 120, flgThreshold = 0
     ? clusterApneaEvents(summaryEvents, flgEvents, gapSec, flgThreshold, bridgeSec)
     : [];
   const minTotalEventDurSec = 60;
+  const maxClusterDurationSec = 230; // sanity cap on cluster window (sec)
   const valid = clusters.filter(c => {
     const totalEventDur = c.events.reduce((sum, e) => sum + e.durationSec, 0);
-    return c.count >= 3 && totalEventDur >= minTotalEventDurSec;
+    return c.count >= 3 &&
+           totalEventDur >= minTotalEventDurSec &&
+           c.durationSec <= maxClusterDurationSec;
   });
   if (!valid.length) {
     console.log(
