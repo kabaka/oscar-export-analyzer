@@ -72,6 +72,8 @@ const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
 const FLG_BRIDGE_GAP_SEC = FLG_CLUSTER_GAP_SEC;
 // minimum total apnea-event duration (seconds) for a valid cluster
 const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;
+// minimum confidence (fraction) to record false negatives (e.g., 95% flow-limit)
+const FALSE_NEG_CONFIDENCE_MIN = 0.95;
 
 /**
  * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
@@ -196,7 +198,9 @@ function detectFalseNegatives(details, flThreshold = FLG_THRESHOLD) {
         const t = new Date(r['DateTime']);
         return (r['Event'] === 'ClearAirway' || r['Event'] === 'Obstructive') && t >= cl.start && t <= cl.end;
       });
-    });
+    })
+    // drop low-confidence FLG clusters (require ≥95% flow-limit for false-negative reporting)
+    .filter(cl => cl.confidence >= FALSE_NEG_CONFIDENCE_MIN);
 }
 
 // Hook for loading CSV files via file input
