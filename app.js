@@ -70,6 +70,8 @@ const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false neg
 // use same FLG threshold for edge-based cluster boundary extension and FLG bridge gap
 const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
 const FLG_BRIDGE_GAP_SEC = FLG_CLUSTER_GAP_SEC;
+// minimum total apnea-event duration (seconds) for a valid cluster
+const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;
 
 /**
  * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
@@ -149,7 +151,7 @@ function clusterApneaEvents(
     if (afterBlock) {
       end = afterBlock[afterBlock.length - 1].date;
     }
-    return { start, end, durationSec: (end - start) / 1000, count };
+    return { start, end, durationSec: (end - start) / 1000, count, events: group };
   });
 }
 
@@ -373,8 +375,11 @@ function App() {
         .map(r => ({ date: new Date(r['DateTime']), level: parseFloat(r['Data/Duration']) }));
       // cluster annotations and extend boundaries by nearby FLG events, then filter singletons
       const rawClusters = clusterApneaEvents(apneaEvents, flgEvents);
-      // retain only clusters with three or more apnea events
-      setApneaClusters(rawClusters.filter(cl => cl.count >= 3));
+      // retain only clusters with ≥3 events and sufficient total apnea duration
+      const validClusters = rawClusters.filter(
+        cl => cl.count >= 3 && cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= APOEA_CLUSTER_MIN_TOTAL_SEC
+      );
+      setApneaClusters(validClusters);
       // detect potential false negatives via flow-limit events
       setFalseNegatives(detectFalseNegatives(detailsData));
     }
