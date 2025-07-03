@@ -62,7 +62,8 @@ const APOEA_CLUSTER_GAP_SEC = 10;
 const FLG_THRESHOLD = 0.9; // flow-limit threshold (fraction of max) for false-negative detection
 const FLG_CLUSTER_GAP_SEC = 60; // max gap to group FLG events (seconds)
 const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false negative (seconds)
-const FLG_EDGE_THRESHOLD = 0.1; // min flow-limit level to extend apnea cluster boundaries (tune as needed)
+// Flow-limit threshold (fraction of max) for bridging and edge-detection of low-flow periods
+const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
 
 /**
  * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
@@ -84,7 +85,11 @@ function clusterApneaEvents(
   flgThreshold = FLG_EDGE_THRESHOLD
 ) {
   if (!events.length) return [];
-  // first cluster on annotation events alone
+  // Pre-filter and sort only high-level FLG events for bridging/extension
+  const flgHigh = flgEvents
+    .filter(f => f.level >= flgThreshold)
+    .sort((a, b) => a.date - b.date);
+  // Group annotation events by proximity and FLG bridges
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const rawGroups = [];
   let current = [sorted[0]];
@@ -94,9 +99,7 @@ function clusterApneaEvents(
     const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
     const gap = (evt.date - prevEnd) / 1000;
     // allow annotation events to be bridged by nearby high FLG (flow-limit) readings
-    const flgBridge = flgEvents.some(
-      f => f.level >= flgThreshold && f.date >= prevEnd && f.date <= evt.date
-    );
+    const flgBridge = flgHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
     if (gap <= gapSec || flgBridge) {
       current.push(evt);
     } else {
@@ -105,28 +108,27 @@ function clusterApneaEvents(
     }
   }
   if (current.length) rawGroups.push(current);
-  // map to clusters with start/end, then extend boundaries by FLG events
+  // Map to clusters and extend boundaries using filtered FLG events
   return rawGroups.map(group => {
     let start = group[0].date;
     const lastEvt = group[group.length - 1];
     let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
     const count = group.length;
     // extend backward by FLG events near the start
-    const before = flgEvents.filter(
-      e => e.level >= flgThreshold && e.date <= start && (start - e.date) / 1000 <= gapSec
+    const before = flgHigh.filter(
+      e => e.date <= start && (start - e.date) / 1000 <= gapSec
     );
     if (before.length) {
       start = new Date(Math.min(...before.map(e => e.date)));
     }
     // extend forward by FLG events near the end
-    const after = flgEvents.filter(
-      e => e.level >= flgThreshold && e.date >= end && (e.date - end) / 1000 <= gapSec
+    const after = flgHigh.filter(
+      e => e.date >= end && (e.date - end) / 1000 <= gapSec
     );
     if (after.length) {
       end = new Date(Math.max(...after.map(e => e.date)));
     }
-    const durationSec = (end - start) / 1000;
-    return { start, end, durationSec, count };
+    return { start, end, durationSec: (end - start) / 1000, count };
   });
 }
 
