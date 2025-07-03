@@ -186,6 +186,7 @@ function useCsvFiles() {
     setLoading(true);
     setProgress(0);
     setProgressMax(file.size);
+    const rows = [];
     Papa.parse(file, {
       header: true,
       dynamicTyping: true,
@@ -193,9 +194,10 @@ function useCsvFiles() {
       chunkSize: 1024 * 1024,
       chunk: results => {
         setProgress(results.meta.cursor);
+        rows.push(...results.data);
       },
-      complete: res => {
-        setter(res.data);
+      complete: () => {
+        setter(rows);
         setLoading(false);
       },
     });
