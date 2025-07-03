@@ -214,7 +214,21 @@ function useCsvFiles() {
   const [detailsProgress, setDetailsProgress] = useState(0);
   const [detailsProgressMax, setDetailsProgressMax] = useState(0);
 
-  const handleFile = (setter, setLoading, setProgress, setProgressMax) => e => {
+  /**
+   * Generic CSV loader with optional event filtering.
+   * @param {Function} setter - state setter for parsed rows
+   * @param {Function} setLoading - state setter for loading flag
+   * @param {Function} setProgress - state setter for progress cursor
+   * @param {Function} setProgressMax - state setter for progress max
+   * @param {boolean} filterEvents - if true, only retain ClearAirway, Obstructive, Mixed, FLG rows
+   */
+  const handleFile = (
+    setter,
+    setLoading,
+    setProgress,
+    setProgressMax,
+    filterEvents = false
+  ) => e => {
     const file = e.target.files[0];
     if (!file) return;
     setLoading(true);
@@ -222,13 +236,22 @@ function useCsvFiles() {
     setProgressMax(file.size);
     const rows = [];
     Papa.parse(file, {
+      worker: true,
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
       chunkSize: 1024 * 1024,
       chunk: results => {
         setProgress(results.meta.cursor);
-        rows.push(...results.data);
+        if (filterEvents) {
+          // retain only apnea and FLG events for faster downstream processing
+          const keep = results.data.filter(r =>
+            ['ClearAirway', 'Obstructive', 'Mixed', 'FLG'].includes(r['Event'])
+          );
+          rows.push(...keep);
+        } else {
+          rows.push(...results.data);
+        }
       },
       complete: () => {
         setter(rows);
@@ -256,7 +279,8 @@ function useCsvFiles() {
       setDetailsData,
       setLoadingDetails,
       setDetailsProgress,
-      setDetailsProgressMax
+      setDetailsProgressMax,
+      true /* filter to only apnea & FLG events */
     ),
   };
 }
