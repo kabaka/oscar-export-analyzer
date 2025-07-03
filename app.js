@@ -58,22 +58,21 @@ function computeEPAPTrends(data) {
 }
 
 // Constants for apnea clustering and false negative detection
-// max gap (seconds) between apnea annotation events to cluster (including FLG bridges)
-const APOEA_CLUSTER_GAP_SEC = 120;
-// flow-limit threshold (fraction of max) for FLG edge detection and false-negative detection
-const FLG_THRESHOLD = 0.1;
-const FLG_CLUSTER_GAP_SEC = 60; // max gap (seconds) to group FLG events into clusters
-const FLG_DURATION_THRESHOLD_SEC = 10; // min FLG cluster duration for false negative (seconds)
-// Flow-limit threshold (fraction of max) for bridging and edge-detection of low-flow periods
-// Edge threshold (flow-limit) for cluster boundary extension (tune for early/late edges)
-// Flow-limit threshold for cluster boundary extension (use high FLG to detect true low-flow edges)
-// use same FLG threshold for edge-based cluster boundary extension and FLG bridge gap
-const FLG_EDGE_THRESHOLD = FLG_THRESHOLD;
-const FLG_BRIDGE_GAP_SEC = FLG_CLUSTER_GAP_SEC;
+// gaps and thresholds for apnea clustering
+const APOEA_CLUSTER_GAP_SEC = 120;        // max gap (sec) between annotation events to cluster
+const FLG_BRIDGE_THRESHOLD = 0.1;          // FLG level to bridge annotation events (low threshold)
+const FLG_CLUSTER_GAP_SEC = 60;            // max gap (sec) to group FLG readings into clusters
+// thresholds for boundary extension via FLG edge clusters
+const FLG_EDGE_THRESHOLD = 0.5;            // FLG level to detect true low-flow edges (high threshold)
+const FLG_EDGE_MIN_DURATION_SEC = 10;      // min duration (sec) for FLG edge cluster to extend boundaries
 // minimum total apnea-event duration (seconds) for a valid cluster
 const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;
 // minimum confidence (fraction) to record false negatives (e.g., 95% flow-limit)
 const FALSE_NEG_CONFIDENCE_MIN = 0.95;
+// maximum FLG-only cluster duration for false-negatives (cap long FLG clusters)
+const MAX_FALSE_NEG_FLG_DURATION_SEC = 600;
+// maximum apnea cluster window to sanity-check (seconds)
+const MAX_CLUSTER_DURATION_SEC = 230;
 
 /**
  * Cluster Obstructive (OA) and Central (CA/ClearAirway) events close in time.
@@ -92,28 +91,51 @@ const FALSE_NEG_CONFIDENCE_MIN = 0.95;
  * Cluster apnea annotation events, optionally bridging through nearby high-FLG events,
  * then extend cluster boundaries based on FLG events.
  */
+/**
+ * Cluster apnea annotation events, bridging through moderate FLG readings,
+ * then extend boundaries based on sustained, high-level FLG edge clusters.
+ * @param {Array} events - annotation events with {date: Date, durationSec: number}
+ * @param {Array} flgEvents - FLG events with {date: Date, level: number}
+ * @param {number} gapSec - max gap between events to cluster (seconds)
+ * @param {number} bridgeThreshold - FLG level threshold for bridging clusters
+ * @param {number} bridgeSec - max gap for FLG-based bridging (seconds)
+ * @returns Array of {start: Date, end: Date, durationSec: number, count, events}
+ */
 function clusterApneaEvents(
   events,
   flgEvents,
   gapSec = APOEA_CLUSTER_GAP_SEC,
-  flgThreshold = FLG_EDGE_THRESHOLD,
-  bridgeSec = FLG_BRIDGE_GAP_SEC
+  bridgeThreshold = FLG_BRIDGE_THRESHOLD,
+  bridgeSec = FLG_CLUSTER_GAP_SEC
 ) {
   if (!events.length) return [];
-  // Pre-filter and sort only high-level FLG events for bridging/extension
-  const flgHigh = flgEvents
-    .filter(f => f.level >= flgThreshold)
+  // FLG clusters for bridging annotation gaps (lower threshold)
+  const flgBridgeHigh = flgEvents
+    .filter(f => f.level >= bridgeThreshold)
     .sort((a, b) => a.date - b.date);
-  // cluster contiguous high-FLG events into blocks
-  const flgClusters = [];
-  if (flgHigh.length) {
-    let vc = [flgHigh[0]];
-    for (let j = 1; j < flgHigh.length; j++) {
-      const prev = flgHigh[j - 1], curr = flgHigh[j];
+  const flgBridgeClusters = [];
+  if (flgBridgeHigh.length) {
+    let vc = [flgBridgeHigh[0]];
+    for (let i = 1; i < flgBridgeHigh.length; i++) {
+      const prev = flgBridgeHigh[i - 1], curr = flgBridgeHigh[i];
       if ((curr.date - prev.date) / 1000 <= bridgeSec) vc.push(curr);
-      else { flgClusters.push(vc); vc = [curr]; }
+      else { flgBridgeClusters.push(vc); vc = [curr]; }
     }
-    flgClusters.push(vc);
+    flgBridgeClusters.push(vc);
+  }
+  // FLG clusters for boundary extension (higher threshold, min duration)
+  const flgEdgeHigh = flgEvents
+    .filter(f => f.level >= FLG_EDGE_THRESHOLD)
+    .sort((a, b) => a.date - b.date);
+  const flgEdgeClusters = [];
+  if (flgEdgeHigh.length) {
+    let vc = [flgEdgeHigh[0]];
+    for (let i = 1; i < flgEdgeHigh.length; i++) {
+      const prev = flgEdgeHigh[i - 1], curr = flgEdgeHigh[i];
+      if ((curr.date - prev.date) / 1000 <= bridgeSec) vc.push(curr);
+      else { flgEdgeClusters.push(vc); vc = [curr]; }
+    }
+    flgEdgeClusters.push(vc);
   }
   // Group annotation events by proximity and FLG bridges
   const sorted = events.slice().sort((a, b) => a.date - b.date);
@@ -124,8 +146,7 @@ function clusterApneaEvents(
     const prev = current[current.length - 1];
     const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
     const gap = (evt.date - prevEnd) / 1000;
-    // allow annotation events to be bridged by nearby high FLG (flow-limit) readings
-    const flgBridge = gap <= bridgeSec && flgHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
+    const flgBridge = gap <= bridgeSec && flgBridgeHigh.some(f => f.date >= prevEnd && f.date <= evt.date);
     if (gap <= gapSec || flgBridge) {
       current.push(evt);
     } else {
@@ -134,25 +155,23 @@ function clusterApneaEvents(
     }
   }
   if (current.length) rawGroups.push(current);
-  // Map to clusters and extend boundaries using filtered FLG events
+  // Map to clusters and extend boundaries using sustained FLG edge clusters
   return rawGroups.map(group => {
     let start = group[0].date;
     const lastEvt = group[group.length - 1];
     let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
     const count = group.length;
-    // extend boundaries by FLG clusters intersecting near start/end
-    const beforeBlock = flgClusters.find(
-      cl => cl[cl.length - 1].date <= start && (start - cl[cl.length - 1].date) / 1000 <= gapSec
+    const validEdges = flgEdgeClusters.filter(cl =>
+      (cl[cl.length - 1].date - cl[0].date) / 1000 >= FLG_EDGE_MIN_DURATION_SEC
     );
-    if (beforeBlock) {
-      start = beforeBlock[0].date;
-    }
-    const afterBlock = flgClusters.find(
-      cl => cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec
+    const before = validEdges.find(cl =>
+      cl[cl.length - 1].date <= start && (start - cl[cl.length - 1].date) / 1000 <= gapSec
     );
-    if (afterBlock) {
-      end = afterBlock[afterBlock.length - 1].date;
-    }
+    if (before) start = before[0].date;
+    const after = validEdges.find(cl =>
+      cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec
+    );
+    if (after) end = after[after.length - 1].date;
     return { start, end, durationSec: (end - start) / 1000, count, events: group };
   });
 }
@@ -161,7 +180,7 @@ function clusterApneaEvents(
  * Detect potential false negatives by clustering high flow-limit events (FLG) without apnea events.
  * Details data must include DateTime, Event ('FLG', 'ClearAirway', 'Obstructive'), and Data/Duration for FLG level.
  */
-function detectFalseNegatives(details, flThreshold = FLG_THRESHOLD) {
+function detectFalseNegatives(details, flThreshold = FLG_BRIDGE_THRESHOLD) {
   const flEvents = details
     .filter(r => r['Event'] === 'FLG' && r['Data/Duration'] >= flThreshold)
     .map(r => ({ date: new Date(r['DateTime']), level: r['Data/Duration'] }));
@@ -191,12 +210,13 @@ function detectFalseNegatives(details, flThreshold = FLG_THRESHOLD) {
       const confidence = Math.max(...cl.map(e => e.level));
       return { start, end, durationSec, confidence };
     })
-    .filter(cl => cl.durationSec >= FLG_DURATION_THRESHOLD_SEC)
+    .filter(cl => cl.durationSec >= FLG_DURATION_THRESHOLD_SEC && cl.durationSec <= MAX_FALSE_NEG_FLG_DURATION_SEC)
     .filter(cl => {
-      // no obstructive/central events within cluster window
+      // no known apnea events within expanded window
       return !details.some(r => {
-        const t = new Date(r['DateTime']);
-        return (r['Event'] === 'ClearAirway' || r['Event'] === 'Obstructive') && t >= cl.start && t <= cl.end;
+        const t = new Date(r['DateTime']).getTime();
+        return ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']) &&
+               t >= (cl.start.getTime() - 5000) && t <= (cl.end.getTime() + 5000);
       });
     })
     // drop low-confidence FLG clusters (require ≥95% flow-limit for false-negative reporting)
@@ -247,7 +267,7 @@ function useCsvFiles() {
         // retain only apnea annotations and sufficiently high-FLG events
         const keep = results.data.filter(r => {
           const e = r['Event'];
-          if (e === 'FLG') return r['Data/Duration'] >= FLG_THRESHOLD;
+          if (e === 'FLG') return r['Data/Duration'] >= FLG_BRIDGE_THRESHOLD;
           return ['ClearAirway', 'Obstructive', 'Mixed'].includes(e);
         });
         rows.push(...keep);
@@ -409,7 +429,9 @@ function App() {
         .map(r => ({ date: new Date(r['DateTime']), level: parseFloat(r['Data/Duration']) }));
       const rawClusters = clusterApneaEvents(apneaEvents, flgEvents);
       const validClusters = rawClusters.filter(
-        cl => cl.count >= 3 && cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= APOEA_CLUSTER_MIN_TOTAL_SEC
+        cl => cl.count >= 3 &&
+              cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= APOEA_CLUSTER_MIN_TOTAL_SEC &&
+              cl.durationSec <= MAX_CLUSTER_DURATION_SEC
       );
       setApneaClusters(validClusters);
       // detect potential false negatives via flow-limit events
