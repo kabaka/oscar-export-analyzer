@@ -6,18 +6,54 @@ function parseDuration(s) {
   return (h || 0) * 3600 + (m || 0) * 60 + (sec || 0);
 }
 
+// Compute approximate quantile (q in [0,1]) of numeric array
+function quantile(arr, q) {
+  const sorted = arr.slice().sort((a, b) => a - b);
+  const pos = (sorted.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sorted[base + 1] !== undefined) {
+    return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+  }
+  return sorted[base];
+}
+
 function summarizeUsage(data) {
   const totalNights = data.length;
-  let sumSeconds = 0;
-  let nightsLong = 0;
-  data.forEach(r => {
-    const secs = parseDuration(r['Total Time']);
-    sumSeconds += secs;
-    if (secs >= 4 * 3600) nightsLong++;
-  });
+  const usageHours = data
+    .map(r => parseDuration(r['Total Time']) / 3600)
+    .filter(h => !isNaN(h));
+  const sumHours = usageHours.reduce((sum, h) => sum + h, 0);
+  const avgHours = sumHours / totalNights;
+  const nightsLong = usageHours.filter(h => h >= 4).length;
   const nightsShort = totalNights - nightsLong;
-  const avgHours = sumSeconds / totalNights / 3600;
-  return { totalNights, avgHours, nightsLong, nightsShort };
+  const minHours = Math.min(...usageHours);
+  const maxHours = Math.max(...usageHours);
+  const medianHours = quantile(usageHours, 0.5);
+  const p25Hours = quantile(usageHours, 0.25);
+  const p75Hours = quantile(usageHours, 0.75);
+  const iqrHours = p75Hours - p25Hours;
+  const outlierLowCount = usageHours.filter(
+    h => h < p25Hours - 1.5 * iqrHours
+  ).length;
+  const outlierHighCount = usageHours.filter(
+    h => h > p75Hours + 1.5 * iqrHours
+  ).length;
+  return {
+    totalNights,
+    avgHours,
+    nightsLong,
+    nightsShort,
+    minHours,
+    maxHours,
+    medianHours,
+    p25Hours,
+    p75Hours,
+    iqrHours,
+    outlierLowCount,
+    outlierHighCount,
+    usageHours
+  };
 }
 
 function computeAHITrends(data) {
@@ -25,23 +61,84 @@ function computeAHITrends(data) {
   const avgAHI = ahis.reduce((a, b) => a + b, 0) / ahis.length;
   const minAHI = Math.min(...ahis);
   const maxAHI = Math.max(...ahis);
+  const medianAHI = quantile(ahis, 0.5);
+  const p25AHI = quantile(ahis, 0.25);
+  const p75AHI = quantile(ahis, 0.75);
+  const iqrAHI = p75AHI - p25AHI;
   const nightsAHIover5 = ahis.filter(v => v > 5).length;
-  const sorted = data.slice().sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
-  const first = sorted.slice(0, 30).map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
-  const last = sorted.slice(-30).map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
+  const sortedByDate = data
+    .slice()
+    .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
+  const first = sortedByDate
+    .slice(0, 30)
+    .map(r => parseFloat(r['AHI']))
+    .filter(v => !isNaN(v));
+  const last = sortedByDate
+    .slice(-30)
+    .map(r => parseFloat(r['AHI']))
+    .filter(v => !isNaN(v));
   const first30AvgAHI = first.reduce((a, b) => a + b, 0) / first.length;
   const last30AvgAHI = last.reduce((a, b) => a + b, 0) / last.length;
-  return { avgAHI, minAHI, maxAHI, nightsAHIover5, first30AvgAHI, last30AvgAHI };
+  return {
+    avgAHI,
+    minAHI,
+    maxAHI,
+    medianAHI,
+    p25AHI,
+    p75AHI,
+    iqrAHI,
+    nightsAHIover5,
+    first30AvgAHI,
+    last30AvgAHI,
+    ahis
+  };
 }
 
 function computeEPAPTrends(data) {
-  const sorted = data.slice().sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
-  const first30 = sorted.slice(0, 30);
-  const last30 = sorted.slice(-30);
-  const epapFirst = first30.map(r => parseFloat(r['Median EPAP'])).filter(v => !isNaN(v));
-  const epapLast = last30.map(r => parseFloat(r['Median EPAP'])).filter(v => !isNaN(v));
-  const avgMedianEPAPFirst30 = epapFirst.reduce((a, b) => a + b, 0) / epapFirst.length;
-  const avgMedianEPAPLast30 = epapLast.reduce((a, b) => a + b, 0) / epapLast.length;
+  const epaps = data.map(r => parseFloat(r['Median EPAP'])).filter(v => !isNaN(v));
+  const minEPAP = Math.min(...epaps);
+  const maxEPAP = Math.max(...epaps);
+  const medianEPAP = quantile(epaps, 0.5);
+  const p25EPAP = quantile(epaps, 0.25);
+  const p75EPAP = quantile(epaps, 0.75);
+  const iqrEPAP = p75EPAP - p25EPAP;
+  const sortedByDate = data
+    .slice()
+    .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
+  const first30 = sortedByDate
+    .slice(0, 30)
+    .map(r => parseFloat(r['Median EPAP']))
+    .filter(v => !isNaN(v));
+  const last30 = sortedByDate
+    .slice(-30)
+    .map(r => parseFloat(r['Median EPAP']))
+    .filter(v => !isNaN(v));
+  const avgMedianEPAPFirst30 =
+    first30.reduce((a, b) => a + b, 0) / first30.length;
+  const avgMedianEPAPLast30 =
+    last30.reduce((a, b) => a + b, 0) / last30.length;
+  const epapAhiPairs = data
+    .map(r => [parseFloat(r['Median EPAP']), parseFloat(r['AHI'])])
+    .filter(([p, a]) => !isNaN(p) && !isNaN(a));
+  const meanEpap =
+    epapAhiPairs.reduce((sum, [p]) => sum + p, 0) / epapAhiPairs.length;
+  const meanAhi =
+    epapAhiPairs.reduce((sum, [, a]) => sum + a, 0) / epapAhiPairs.length;
+  const cov =
+    epapAhiPairs.reduce(
+      (sum, [p, a]) => sum + (p - meanEpap) * (a - meanAhi),
+      0
+    ) /
+    (epapAhiPairs.length - 1);
+  const stdEp = Math.sqrt(
+    epapAhiPairs.reduce((sum, [p]) => sum + (p - meanEpap) ** 2, 0) /
+      (epapAhiPairs.length - 1)
+  );
+  const stdAh = Math.sqrt(
+    epapAhiPairs.reduce((sum, [, a]) => sum + (a - meanAhi) ** 2, 0) /
+      (epapAhiPairs.length - 1)
+  );
+  const corrEPAPAHI = cov / (stdEp * stdAh);
   const lowGroup = data
     .filter(r => parseFloat(r['Median EPAP']) < 7)
     .map(r => parseFloat(r['AHI']))
@@ -54,7 +151,23 @@ function computeEPAPTrends(data) {
   const countHigh = highGroup.length;
   const avgAHILow = lowGroup.reduce((a, b) => a + b, 0) / (countLow || 1);
   const avgAHIHigh = highGroup.reduce((a, b) => a + b, 0) / (countHigh || 1);
-  return { avgMedianEPAPFirst30, avgMedianEPAPLast30, countLow, avgAHILow, countHigh, avgAHIHigh };
+  return {
+    minEPAP,
+    maxEPAP,
+    medianEPAP,
+    p25EPAP,
+    p75EPAP,
+    iqrEPAP,
+    avgMedianEPAPFirst30,
+    avgMedianEPAPLast30,
+    countLow,
+    avgAHILow,
+    countHigh,
+    avgAHIHigh,
+    corrEPAPAHI,
+    epaps,
+    epapAhiPairs
+  };
 }
 
 // Constants for apnea clustering and false negative detection
@@ -318,27 +431,65 @@ function SummaryAnalysis({ data }) {
         <tbody>
           <tr><td>Total nights analyzed</td><td>{usage.totalNights}</td></tr>
           <tr><td>Average usage per night</td><td>{usage.avgHours.toFixed(2)} hours</td></tr>
-          <tr><td>Nights ≥ 4 h usage</td><td>{usage.nightsLong} ({(usage.nightsLong/usage.totalNights*100).toFixed(1)}%)</td></tr>
-          <tr><td>Nights &lt; 4 h usage</td><td>{usage.nightsShort} ({(usage.nightsShort/usage.totalNights*100).toFixed(1)}%)</td></tr>
+          <tr><td>Nights ≥ 4 h usage</td><td>{usage.nightsLong} ({(usage.nightsLong / usage.totalNights * 100).toFixed(1)}%)</td></tr>
+          <tr><td>Nights &lt; 4 h usage</td><td>{usage.nightsShort} ({(usage.nightsShort / usage.totalNights * 100).toFixed(1)}%)</td></tr>
         </tbody>
       </table>
+      <table>
+        <tbody>
+          <tr><td>Median usage per night</td><td>{usage.medianHours.toFixed(2)} hours</td></tr>
+          <tr><td>Usage IQR (25th–75th percentile)</td><td>{usage.p25Hours.toFixed(2)}–{usage.p75Hours.toFixed(2)} hours</td></tr>
+          <tr><td>Min / Max usage</td><td>{usage.minHours.toFixed(2)} / {usage.maxHours.toFixed(2)} hours</td></tr>
+          <tr><td>Outlier nights (≤ Q1−1.5×IQR)</td><td>{usage.outlierLowCount} nights</td></tr>
+          <tr><td>Outlier nights (≥ Q3+1.5×IQR)</td><td>{usage.outlierHighCount} nights</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Usage distributions highlight variability and potential adherence issues.</li>
+      </ul>
+      {/* TODO: Integrate histogram and time-series visualizations for usage patterns */}
+
       <h2>2. AHI Trends</h2>
       <table>
         <tbody>
           <tr><td>Average AHI</td><td>{ahi.avgAHI.toFixed(2)} events/hour</td></tr>
+          <tr><td>Median AHI</td><td>{ahi.medianAHI.toFixed(2)} events/hour</td></tr>
+          <tr><td>AHI IQR (25th–75th percentile)</td><td>{ahi.p25AHI.toFixed(2)}–{ahi.p75AHI.toFixed(2)}</td></tr>
           <tr><td>Min AHI</td><td>{ahi.minAHI.toFixed(2)}</td></tr>
           <tr><td>Max AHI</td><td>{ahi.maxAHI.toFixed(2)}</td></tr>
-          <tr><td>Nights with AHI &gt; 5.0</td><td>{ahi.nightsAHIover5} ({(ahi.nightsAHIover5/usage.totalNights*100).toFixed(1)}%)</td></tr>
+          <tr><td>Nights with AHI > 5.0</td><td>{ahi.nightsAHIover5} ({(ahi.nightsAHIover5 / usage.totalNights * 100).toFixed(1)}%)</td></tr>
         </tbody>
       </table>
       <p>First 30 nights avg AHI = {ahi.first30AvgAHI.toFixed(2)}, last 30 nights avg AHI = {ahi.last30AvgAHI.toFixed(2)}</p>
+      <ul>
+        <li>Outlier nights (AHI ≥ Q3+1.5×IQR): {ahi.ahis.filter(v => v >= (ahi.p75AHI + 1.5 * ahi.iqrAHI)).length}</li>
+      </ul>
+      {/* TODO: Integrate histogram and trend-plot visualizations for AHI */}
+
       <h2>3. Pressure Settings and Performance</h2>
+      <h3>3.1 EPAP Distribution & Percentiles</h3>
+      <table>
+        <tbody>
+          <tr><td>Median EPAP</td><td>{epap.medianEPAP.toFixed(2)} cmH₂O</td></tr>
+          <tr><td>EPAP IQR (25th–75th percentile)</td><td>{epap.p25EPAP.toFixed(2)}–{epap.p75EPAP.toFixed(2)} cmH₂O</td></tr>
+          <tr><td>Min / Max EPAP</td><td>{epap.minEPAP.toFixed(2)} / {epap.maxEPAP.toFixed(2)} cmH₂O</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Distribution summary of nightly median EPAP settings.</li>
+      </ul>
+      {/* TODO: Integrate EPAP distribution boxplot */}
+
+      <h3>3.2 EPAP Trend (First vs Last 30 nights)</h3>
       <table>
         <tbody>
           <tr><td>Avg median EPAP (first 30 nights)</td><td>{epap.avgMedianEPAPFirst30.toFixed(2)} cmH₂O</td></tr>
           <tr><td>Avg median EPAP (last 30 nights)</td><td>{epap.avgMedianEPAPLast30.toFixed(2)} cmH₂O</td></tr>
         </tbody>
       </table>
+      {/* TODO: Integrate EPAP time-series trend */}
+
+      <h3>3.3 EPAP vs AHI & Correlation</h3>
       <table>
         <thead><tr><th>EPAP group</th><th>Nights</th><th>Avg AHI</th></tr></thead>
         <tbody>
@@ -346,6 +497,8 @@ function SummaryAnalysis({ data }) {
           <tr><td>EPAP ≥ 7 cmH₂O</td><td>{epap.countHigh}</td><td>{epap.avgAHIHigh.toFixed(2)}</td></tr>
         </tbody>
       </table>
+      <p>Correlation between nightly median EPAP and AHI: r = {epap.corrEPAPAHI.toFixed(2)}</p>
+      {/* TODO: Integrate scatter plot of EPAP vs AHI */}
     </div>
   );
 }
