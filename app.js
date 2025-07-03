@@ -96,6 +96,17 @@ function clusterApneaEvents(
   const flgHigh = flgEvents
     .filter(f => f.level >= flgThreshold)
     .sort((a, b) => a.date - b.date);
+  // cluster contiguous high-FLG events into blocks
+  const flgClusters = [];
+  if (flgHigh.length) {
+    let vc = [flgHigh[0]];
+    for (let j = 1; j < flgHigh.length; j++) {
+      const prev = flgHigh[j - 1], curr = flgHigh[j];
+      if ((curr.date - prev.date) / 1000 <= bridgeSec) vc.push(curr);
+      else { flgClusters.push(vc); vc = [curr]; }
+    }
+    flgClusters.push(vc);
+  }
   // Group annotation events by proximity and FLG bridges
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const rawGroups = [];
