@@ -53,6 +53,15 @@ progress {
   margin-bottom: 2rem;
 }
 
+.usage-charts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.usage-charts-grid .chart-item {
+  flex: 1 1 300px;
+}
+
 .kpi-card .title {
   font-size: 0.9rem;
   color: #555;
