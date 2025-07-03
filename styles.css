@@ -48,6 +48,11 @@ progress {
   text-align: center;
 }
 
+/* Usage Patterns charts styling */
+.usage-charts > div {
+  margin-bottom: 2rem;
+}
+
 .kpi-card .title {
   font-size: 0.9rem;
   color: #555;

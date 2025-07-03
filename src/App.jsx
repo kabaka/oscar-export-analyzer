@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPTrends } from './utils/stats';
 import Overview from './components/Overview';
+import UsagePatternsCharts from './components/UsagePatternsCharts';
 
 // Constants for apnea clustering and false negative detection
 // gaps and thresholds for apnea clustering
@@ -282,7 +283,7 @@ function SummaryAnalysis({ data }) {
       <ul>
         <li>Usage distributions highlight variability and potential adherence issues.</li>
       </ul>
-      {/* TODO: Integrate histogram and time-series visualizations for usage patterns */}
+      <UsagePatternsCharts data={data} />
 
       <h2>2. AHI Trends</h2>
       <table>

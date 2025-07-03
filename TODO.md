@@ -73,16 +73,6 @@ src/
 
 ## 4. Feature Roadmap & Visualizations
 
-### 4.1 Overview Dashboard
-- KPI cards: Avg usage, Median AHI, Median EPAP, # Clusters, # False Negatives.
-- Sparkline previews of daily usage, AHI trend, EPAP trend.
-
-### 4.2 Usage Patterns
-- Line chart: nightly usage hours over time.
-- Histogram: distribution of nightly usage.
-- Boxplot: usage IQR and outlier nights.
-- Rolling 7-night average overlay.
-
 ### 4.3 AHI Trends
 - Time-series of nightly AHI.
 - Histogram and boxplot of AHI distribution.
