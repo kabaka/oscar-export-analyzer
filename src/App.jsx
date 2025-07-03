@@ -1,4 +1,5 @@
-const { useState, useEffect } = React;
+import React, { useState, useEffect } from 'react';
+import Papa from 'papaparse';
 
 // Utility functions for data parsing and analysis
 function parseDuration(s) {
@@ -180,6 +181,8 @@ const FLG_EDGE_THRESHOLD = 0.5;            // FLG level to detect true low-flow 
 const FLG_EDGE_MIN_DURATION_SEC = 10;      // min duration (sec) for FLG edge cluster to extend boundaries
 // minimum total apnea-event duration (seconds) for a valid cluster
 const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;
+// minimum total FLG-only cluster duration (seconds) for false-negative detection
+const FLG_DURATION_THRESHOLD_SEC = APOEA_CLUSTER_MIN_TOTAL_SEC;
 // minimum confidence (fraction) to record false negatives (e.g., 95% flow-limit)
 const FALSE_NEG_CONFIDENCE_MIN = 0.95;
 // maximum FLG-only cluster duration for false-negatives (cap long FLG clusters)
@@ -630,4 +633,4 @@ function App() {
   );
 }
 
-ReactDOM.render(<App />, document.getElementById('root'));
+export default App;

@@ -4,9 +4,18 @@ This is a rudimentary React-based web application for evaluating OSCAR sleep dat
 
 ## Usage
 
-1. Open `index.html` in your web browser (using `file://` or host via a local HTTP server).
-2. Use the file inputs to select your OSCAR **Summary** and **Details** CSV files from the `data/` directory.
-3. The app will parse and display (determinate progress bars show parsing progress for each file):
+1. Install dependencies and start the development server:
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+2. Open your browser to the URL shown in the terminal (usually `http://localhost:5173`).
+
+3. Use the file inputs to select your OSCAR **Summary** and **Details** CSV files from the `data/` directory.
+
+4. The app will parse and display (determinate progress bars show parsing progress for each file):
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
    - AHI trends (average, min, max, nights with AHI > 5)
    - Pressure settings trends (median EPAP changes and EPAP vs AHI)
@@ -15,7 +24,36 @@ This is a rudimentary React-based web application for evaluating OSCAR sleep dat
 
 ## Development
 
-- The app uses React (via CDN), Babel (for JSX), and PapaParse for CSV parsing.
-- To extend or modify the code, edit `app.js` and `styles.css` as needed.
+The app is built with Vite, React, and PapaParse.
+
+### Local development
+
+After installing dependencies with `npm install`, run the development server:
+
+```bash
+npm run dev
+```
+
+The app will reload automatically on code changes.
+
+### Building for production
+
+To build the app for production deployment:
+
+```bash
+npm run build
+```
+
+Built files will be output to the `dist/` directory.
+
+### Running analysis script
+
+An optional CLI tool is provided for detailed event analysis:
+
+```bash
+node analysis.js <detailsCsv> [YYYY-MM-DD] [groupGapSec]
+```
+
+See `analysis.js` for usage details.
 
 Future iterations may include additional visualizations, improved styling, and automated build tooling.
