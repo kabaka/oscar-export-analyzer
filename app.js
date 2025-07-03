@@ -121,19 +121,18 @@ function clusterApneaEvents(
     const lastEvt = group[group.length - 1];
     let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
     const count = group.length;
-    // extend backward by FLG events near the start
-    const before = flgHigh.filter(
-      e => e.date <= start && (start - e.date) / 1000 <= gapSec
+    // extend boundaries by FLG clusters intersecting near start/end
+    const beforeBlock = flgClusters.find(
+      cl => cl[cl.length - 1].date <= start && (start - cl[cl.length - 1].date) / 1000 <= gapSec
     );
-    if (before.length) {
-      start = new Date(Math.min(...before.map(e => e.date)));
+    if (beforeBlock) {
+      start = beforeBlock[0].date;
     }
-    // extend forward by FLG events near the end
-    const after = flgHigh.filter(
-      e => e.date >= end && (e.date - end) / 1000 <= gapSec
+    const afterBlock = flgClusters.find(
+      cl => cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec
     );
-    if (after.length) {
-      end = new Date(Math.max(...after.map(e => e.date)));
+    if (afterBlock) {
+      end = afterBlock[afterBlock.length - 1].date;
     }
     return { start, end, durationSec: (end - start) / 1000, count };
   });
