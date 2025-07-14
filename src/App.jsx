@@ -5,6 +5,7 @@ import Overview from './components/Overview';
 import UsagePatternsCharts from './components/UsagePatternsCharts';
 import AhiTrendsCharts from './components/AhiTrendsCharts';
 import EpapTrendsCharts from './components/EpapTrendsCharts';
+import ApneaEventStats from './components/ApneaEventStats';
 
 // Constants for apnea clustering and false negative detection
 // gaps and thresholds for apnea clustering
@@ -466,6 +467,7 @@ function App() {
       {summaryData && <SummaryAnalysis data={summaryData} />}
       {detailsData && (
         <>
+          <ApneaEventStats data={detailsData} />
           <ApneaClusterAnalysis clusters={apneaClusters} />
           <FalseNegativesAnalysis list={falseNegatives} />
         </>
