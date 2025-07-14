@@ -4,6 +4,7 @@ import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPT
 import Overview from './components/Overview';
 import UsagePatternsCharts from './components/UsagePatternsCharts';
 import AhiTrendsCharts from './components/AhiTrendsCharts';
+import EpapTrendsCharts from './components/EpapTrendsCharts';
 
 // Constants for apnea clustering and false negative detection
 // gaps and thresholds for apnea clustering
@@ -315,7 +316,7 @@ function SummaryAnalysis({ data }) {
       <ul>
         <li>Distribution summary of nightly median EPAP settings.</li>
       </ul>
-      {/* TODO: Integrate EPAP distribution boxplot */}
+      {/* EPAP distribution, trend, and correlation charts */}
 
       <h3>3.2 EPAP Trend (First vs Last 30 nights)</h3>
       <table>
@@ -324,7 +325,6 @@ function SummaryAnalysis({ data }) {
           <tr><td>Avg median EPAP (last 30 nights)</td><td>{epap.avgMedianEPAPLast30.toFixed(2)} cmH₂O</td></tr>
         </tbody>
       </table>
-      {/* TODO: Integrate EPAP time-series trend */}
 
       <h3>3.3 EPAP vs AHI & Correlation</h3>
       <table>
@@ -335,7 +335,7 @@ function SummaryAnalysis({ data }) {
         </tbody>
       </table>
       <p>Correlation between nightly median EPAP and AHI: r = {epap.corrEPAPAHI.toFixed(2)}</p>
-      {/* TODO: Integrate scatter plot of EPAP vs AHI */}
+      <EpapTrendsCharts data={data} />
     </div>
   );
 }
