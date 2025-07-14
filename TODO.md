@@ -73,10 +73,6 @@ src/
 
 ## 4. Feature Roadmap & Visualizations
 
-### 4.3 AHI Trends
-- Time-series of nightly AHI.
-- Histogram and boxplot of AHI distribution.
-- Highlight nights with AHI > 5.
 
 ### 4.4 EPAP Analysis
 - Boxplot of nightly median EPAP.
