@@ -19,7 +19,6 @@ dashboard tailored for data scientists.
 4. **Deep Dive Tabs**:
    - Usage Patterns
    - AHI Trends
-   - EPAP Analysis
    - Event Clusters
    - Potential False Negatives
    - Raw Data Explorer
@@ -74,21 +73,16 @@ src/
 ## 4. Feature Roadmap & Visualizations
 
 
-### 4.4 EPAP Analysis
-- Boxplot of nightly median EPAP.
-- Time-series of EPAP with first/last 30-night markers.
-- Scatter plot EPAP vs AHI with regression line and correlation coefficient.
-
-### 4.5 Event Clustering
+### 4.4 Event Clustering
 - Timeline view (Gantt) of clustered apnea events.
 - Table of clusters: start, duration, count.
 - Drill-down to event-level timeline around each cluster.
 
-### 4.6 False-Negatives Detection
+### 4.5 False-Negatives Detection
 - Timeline overlay of high flow-limit clusters lacking apnea annotations.
 - Table of FLG clusters with start, duration, confidence score.
 
-### 4.7 Raw Data Explorer
+### 4.6 Raw Data Explorer
 - Virtualized table with filtering, sorting, column hiding for Summary and Details rows.
 - Search and export selected ranges to CSV.
 
