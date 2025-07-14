@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPTrends } from './utils/stats';
 import Overview from './components/Overview';
 import UsagePatternsCharts from './components/UsagePatternsCharts';
+import AhiTrendsCharts from './components/AhiTrendsCharts';
 
 // Constants for apnea clustering and false negative detection
 // gaps and thresholds for apnea clustering
@@ -300,7 +301,7 @@ function SummaryAnalysis({ data }) {
       <ul>
         <li>Outlier nights (AHI ≥ Q3+1.5×IQR): {ahi.ahis.filter(v => v >= (ahi.p75AHI + 1.5 * ahi.iqrAHI)).length}</li>
       </ul>
-      {/* TODO: Integrate histogram and trend-plot visualizations for AHI */}
+      <AhiTrendsCharts data={data} />
 
       <h2>3. Pressure Settings and Performance</h2>
       <h3>3.1 EPAP Distribution & Percentiles</h3>
