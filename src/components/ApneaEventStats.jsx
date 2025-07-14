@@ -14,7 +14,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
 
   return (
     <div>
-      <h2>Apnea Event Characteristics</h2>
+      <h2 id="apnea-characteristics">Apnea Event Characteristics</h2>
       <table>
         <tbody>
           <tr><td>Total apnea events</td><td>{stats.totalEvents}</td></tr>

@@ -265,7 +265,7 @@ function SummaryAnalysis({ data }) {
   const epap = computeEPAPTrends(data);
   return (
     <div>
-      <h2>1. Usage Patterns</h2>
+      <h2 id="usage-patterns">1. Usage Patterns</h2>
       <table>
         <tbody>
           <tr><td>Total nights analyzed</td><td>{usage.totalNights}</td></tr>
@@ -288,7 +288,7 @@ function SummaryAnalysis({ data }) {
       </ul>
       <UsagePatternsCharts data={data} />
 
-      <h2>2. AHI Trends</h2>
+      <h2 id="ahi-trends">2. AHI Trends</h2>
       <table>
         <tbody>
           <tr><td>Average AHI</td><td>{ahi.avgAHI.toFixed(2)} events/hour</td></tr>
@@ -305,8 +305,8 @@ function SummaryAnalysis({ data }) {
       </ul>
       <AhiTrendsCharts data={data} />
 
-      <h2>3. Pressure Settings and Performance</h2>
-      <h3>3.1 EPAP Distribution & Percentiles</h3>
+      <h2 id="pressure-settings">3. Pressure Settings and Performance</h2>
+      <h3 id="epap-distribution">3.1 EPAP Distribution & Percentiles</h3>
       <table>
         <tbody>
           <tr><td>Median EPAP</td><td>{epap.medianEPAP.toFixed(2)} cmH₂O</td></tr>
@@ -319,7 +319,7 @@ function SummaryAnalysis({ data }) {
       </ul>
       {/* EPAP distribution, trend, and correlation charts */}
 
-      <h3>3.2 EPAP Trend (First vs Last 30 nights)</h3>
+      <h3 id="epap-trend">3.2 EPAP Trend (First vs Last 30 nights)</h3>
       <table>
         <tbody>
           <tr><td>Avg median EPAP (first 30 nights)</td><td>{epap.avgMedianEPAPFirst30.toFixed(2)} cmH₂O</td></tr>
@@ -327,7 +327,7 @@ function SummaryAnalysis({ data }) {
         </tbody>
       </table>
 
-      <h3>3.3 EPAP vs AHI & Correlation</h3>
+      <h3 id="epap-correlation">3.3 EPAP vs AHI & Correlation</h3>
       <table>
         <thead><tr><th>EPAP group</th><th>Nights</th><th>Avg AHI</th></tr></thead>
         <tbody>
@@ -344,7 +344,7 @@ function SummaryAnalysis({ data }) {
 function ApneaClusterAnalysis({ clusters }) {
   return (
     <div>
-      <h2>Clustered Apnea Events</h2>
+      <h2 id="clustered-apnea">Clustered Apnea Events</h2>
       <table>
         <thead>
           <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Count</th></tr>
@@ -367,7 +367,7 @@ function ApneaClusterAnalysis({ clusters }) {
 function FalseNegativesAnalysis({ list }) {
   return (
     <div>
-      <h2>Potential False Negatives</h2>
+      <h2 id="false-negatives">Potential False Negatives</h2>
       <table>
         <thead>
           <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Confidence</th></tr>
@@ -440,7 +440,16 @@ function App() {
   return (
     <div className="container">
       <h1>OSCAR Sleep Data Analysis</h1>
-      <div className="controls">
+      <nav className="toc">
+        <a href="#overview">Overview</a>
+        <a href="#usage-patterns">Usage Patterns</a>
+        <a href="#ahi-trends">AHI Trends</a>
+        <a href="#pressure-settings">Pressure Settings</a>
+        <a href="#apnea-characteristics">Apnea Events</a>
+        <a href="#clustered-apnea">Clusters</a>
+        <a href="#false-negatives">False Negatives</a>
+      </nav>
+      <div className="section controls">
         <label>
           Summary CSV: <input type="file" accept=".csv" onChange={onSummaryFile} />
         </label>
@@ -458,18 +467,30 @@ function App() {
         )}
       </div>
       {summaryData && detailsData && (
-        <Overview
-          summaryData={summaryData}
-          clusters={apneaClusters}
-          falseNegatives={falseNegatives}
-        />
+        <div className="section">
+          <Overview
+            summaryData={summaryData}
+            clusters={apneaClusters}
+            falseNegatives={falseNegatives}
+          />
+        </div>
       )}
-      {summaryData && <SummaryAnalysis data={summaryData} />}
+      {summaryData && (
+        <div className="section">
+          <SummaryAnalysis data={summaryData} />
+        </div>
+      )}
       {detailsData && (
         <>
-          <ApneaEventStats data={detailsData} />
-          <ApneaClusterAnalysis clusters={apneaClusters} />
-          <FalseNegativesAnalysis list={falseNegatives} />
+          <div className="section">
+            <ApneaEventStats data={detailsData} />
+          </div>
+          <div className="section">
+            <ApneaClusterAnalysis clusters={apneaClusters} />
+          </div>
+          <div className="section">
+            <FalseNegativesAnalysis list={falseNegatives} />
+          </div>
         </>
       )}
     </div>
