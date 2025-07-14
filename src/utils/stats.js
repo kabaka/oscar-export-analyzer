@@ -20,6 +20,79 @@ export function quantile(arr, q) {
   return sorted[base];
 }
 
+/**
+ * Compute statistics for individual apnea events and their nightly frequency.
+ * @param {Array<Object>} details - Filtered details rows containing apnea event records with DateTime and Data/Duration.
+ * @returns {Object} Apnea event duration metrics and per-night event count metrics.
+ */
+export function computeApneaEventStats(details) {
+  // Extract apnea event durations (seconds)
+  const durations = details
+    .filter(r => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
+    .map(r => parseFloat(r['Data/Duration']))
+    .filter(v => !isNaN(v));
+  const totalEvents = durations.length;
+  if (totalEvents === 0) {
+    return { durations, totalEvents };
+  }
+  const p25Dur = quantile(durations, 0.25);
+  const medianDur = quantile(durations, 0.5);
+  const p75Dur = quantile(durations, 0.75);
+  const iqrDur = p75Dur - p25Dur;
+  const p95Dur = quantile(durations, 0.95);
+  const maxDur = Math.max(...durations);
+  const countOver30 = durations.filter(v => v > 30).length;
+  const countOver60 = durations.filter(v => v > 60).length;
+  const countOutlierEvents = durations.filter(v => v >= (p75Dur + 1.5 * iqrDur)).length;
+
+  // Compute events per night
+  const nightCounts = {};
+  details.forEach(r => {
+    if (!['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event'])) return;
+    const d = new Date(r['DateTime']);
+    if (isNaN(d)) return;
+    const key = d.toISOString().slice(0, 10);
+    nightCounts[key] = (nightCounts[key] || 0) + 1;
+  });
+  const nightDates = Object.keys(nightCounts).sort();
+  const eventsPerNight = nightDates.map(d => nightCounts[d]);
+  let p25Night = 0, medianNight = 0, p75Night = 0, iqrNight = 0;
+  if (eventsPerNight.length) {
+    p25Night = quantile(eventsPerNight, 0.25);
+    medianNight = quantile(eventsPerNight, 0.5);
+    p75Night = quantile(eventsPerNight, 0.75);
+    iqrNight = p75Night - p25Night;
+  }
+  const minNight = eventsPerNight.length ? Math.min(...eventsPerNight) : 0;
+  const maxNight = eventsPerNight.length ? Math.max(...eventsPerNight) : 0;
+  const outlierNightHigh = eventsPerNight.filter(v => v >= (p75Night + 1.5 * iqrNight)).length;
+  const outlierNightLow = eventsPerNight.filter(v => v <= (p25Night - 1.5 * iqrNight)).length;
+
+  return {
+    durations,
+    totalEvents,
+    p25Dur,
+    medianDur,
+    p75Dur,
+    p95Dur,
+    iqrDur,
+    maxDur,
+    countOver30,
+    countOver60,
+    countOutlierEvents,
+    nightDates,
+    eventsPerNight,
+    p25Night,
+    medianNight,
+    p75Night,
+    iqrNight,
+    minNight,
+    maxNight,
+    outlierNightHigh,
+    outlierNightLow,
+  };
+}
+
 // Summarize nightly usage statistics from summary data rows
 export function summarizeUsage(data) {
   const totalNights = data.length;

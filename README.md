@@ -20,7 +20,8 @@ This is a rudimentary React-based web application for evaluating OSCAR sleep dat
    - AHI trends (time-series, histogram, boxplot, average, min, max, nights with AHI > 5)
    - Pressure settings trends (median EPAP changes and EPAP vs AHI)
    - Clustered apnea events (clusters of Obstructive and ClearAirway events only, separated by only a few seconds or bridged by nearby high flow-limit (FLG) readings within a 60 s window; cluster boundaries are extended using those FLG events; shows start time, duration, and count; only clusters with more than one event are listed)
-   - Potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
+  - Potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
+  - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights)
 
 ## Development
 
