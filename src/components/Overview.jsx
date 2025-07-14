@@ -42,7 +42,7 @@ export default function Overview({ summaryData, clusters, falseNegatives }) {
 
   return (
     <div className="overview-dashboard">
-      <h2>Overview Dashboard</h2>
+      <h2 id="overview">Overview Dashboard</h2>
       <MetricGrid>
         <KPICard title="Avg Usage (hrs)" value={usage.avgHours.toFixed(2)}>
           <Sparkline data={usage.usageHours} />
