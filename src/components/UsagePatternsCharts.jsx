@@ -32,8 +32,8 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
         data={[
-          { x: dates, y: usageHours, type: 'scatter', mode: 'lines', name: 'Usage (hrs)' },
-          { x: dates, y: rollingAvg, type: 'scatter', mode: 'lines', name: '7-night Avg', line: { dash: 'dash' } },
+          { x: dates, y: usageHours, type: 'scatter', mode: 'lines', name: 'Usage (hrs)', line: { width: 1 } },
+          { x: dates, y: rollingAvg, type: 'scatter', mode: 'lines', name: '7-night Avg', line: { dash: 'dash', width: 2 } },
         ]}
         layout={{
           autosize: true,
@@ -63,7 +63,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
         <div className="chart-item">
           <Plot
             useResizeHandler
-            style={{ width: '100%', height: '250px' }}
+            style={{ width: '100%', height: '300px' }}
             data={[{
               y: usageHours,
               type: 'box',
