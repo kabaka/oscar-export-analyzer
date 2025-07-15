@@ -406,27 +406,36 @@ function FalseNegativesAnalysis({ list }) {
     <div>
       <h2 id="false-negatives">Potential False Negatives</h2>
       <div>
-        <h3>Timeline of potential false negative clusters</h3>
+        <h3>False Negative Clusters by Confidence Over Time</h3>
         <Plot
+          useResizeHandler
+          style={{ width: '100%', height: '400px' }}
           data={[{
-            type: 'bar',
-            orientation: 'h',
-            y: list.map((_, i) => `Cl ${i + 1}`),
-            x: list.map(cl => cl.durationSec * 1000),
-            base: list.map(cl => cl.start.toISOString()),
-            marker: { color: '#9467bd' },
-            hovertemplate: list.map(cl =>
-              `${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%<extra></extra>`
-            )
+            type: 'scatter',
+            mode: 'markers',
+            x: list.map(cl => cl.start),
+            y: list.map(cl => cl.confidence * 100),
+            marker: {
+              size: list.map(cl => Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5))),
+              color: list.map(cl => cl.confidence * 100),
+              colorscale: 'Viridis',
+              showscale: true,
+              colorbar: { title: 'Confidence (%)' }
+            },
+            text: list.map(cl =>
+              `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`
+            ),
+            hovertemplate: '%{text}<extra></extra>'
           }]}
           layout={{
-            title: 'False Negative Cluster Timeline',
+            autosize: true,
+            title: 'False Negative Clusters by Confidence Over Time',
             xaxis: { type: 'date', title: 'Cluster Start Time' },
-            yaxis: { title: 'Cluster #' },
+            yaxis: { title: 'Confidence (%)', range: [FALSE_NEG_CONFIDENCE_MIN * 100, 100] },
             margin: { l: 80, r: 20, t: 40, b: 40 },
-            height: Math.max(200, list.length * 30 + 100)
+            height: 400
           }}
-          config={{ displayModeBar: false }}
+          config={{ responsive: true, displaylogo: false }}
         />
       </div>
       <div className="cluster-table-container">
