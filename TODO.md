@@ -72,17 +72,16 @@ src/
 
 ## 4. Feature Roadmap & Visualizations
 
-
-### 4.4 Event Clustering
+### 4.2 Event Clustering
 - Timeline view (Gantt) of clustered apnea events.
 - Table of clusters: start, duration, count.
 - Drill-down to event-level timeline around each cluster.
 
-### 4.5 False-Negatives Detection
+### 4.3 False-Negatives Detection
 - Timeline overlay of high flow-limit clusters lacking apnea annotations.
 - Table of FLG clusters with start, duration, confidence score.
 
-### 4.6 Raw Data Explorer
+### 4.4 Raw Data Explorer
 - Virtualized table with filtering, sorting, column hiding for Summary and Details rows.
 - Search and export selected ranges to CSV.
 
