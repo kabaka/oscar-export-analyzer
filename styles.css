@@ -124,8 +124,15 @@ progress {
   height: 30px;
 }
 
-.sparkline path {
+ .sparkline path {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5;
+ }
+
+/* Scrollable container for cluster table */
+.cluster-table-container {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 1rem;
 }
