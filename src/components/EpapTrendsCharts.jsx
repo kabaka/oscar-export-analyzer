@@ -71,7 +71,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
         data={[
-          { x: dates, y: epaps, type: 'scatter', mode: 'lines+markers', name: 'Nightly EPAP' },
+          { x: dates, y: epaps, type: 'scatter', mode: 'lines', name: 'Nightly EPAP', line: { width: 1 } },
           { x: first30Dates, y: first30Epaps, type: 'scatter', mode: 'markers', name: 'First 30 Nights', marker: { color: 'green', size: 6 } },
           { x: last30Dates, y: last30Epaps, type: 'scatter', mode: 'markers', name: 'Last 30 Nights', marker: { color: 'orange', size: 6 } },
         ]}
@@ -103,8 +103,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
-              { x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'scatter', mode: 'markers', name: 'Data' },
-              { x: [boxMin, boxMax], y: [slope * boxMin + intercept, slope * boxMax + intercept], type: 'scatter', mode: 'lines', name: 'Fit', line: { dash: 'dash' } },
+              { x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'scatter', mode: 'markers', name: 'Data', marker: { size: 6, opacity: 0.7 } },
+              { x: [boxMin, boxMax], y: [slope * boxMin + intercept, slope * boxMax + intercept], type: 'scatter', mode: 'lines', name: 'Fit', line: { dash: 'dash', width: 2 } },
             ]}
             layout={{
               autosize: true,
