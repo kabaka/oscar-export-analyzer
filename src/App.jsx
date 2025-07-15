@@ -6,6 +6,7 @@ import UsagePatternsCharts from './components/UsagePatternsCharts';
 import AhiTrendsCharts from './components/AhiTrendsCharts';
 import EpapTrendsCharts from './components/EpapTrendsCharts';
 import ApneaEventStats from './components/ApneaEventStats';
+import Plot from 'react-plotly.js';
 
 // Constants for apnea clustering and false negative detection
 // gaps and thresholds for apnea clustering
@@ -342,24 +343,60 @@ function SummaryAnalysis({ data }) {
 }
 
 function ApneaClusterAnalysis({ clusters }) {
+  const [selected, setSelected] = useState(null);
+
   return (
-    <div>
+    <div className="section">
       <h2 id="clustered-apnea">Clustered Apnea Events</h2>
-      <table>
-        <thead>
-          <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Count</th></tr>
-        </thead>
-        <tbody>
-          {clusters.map((cl, i) => (
-            <tr key={i}>
-              <td>{i+1}</td>
-              <td>{cl.start.toLocaleString()}</td>
-              <td>{cl.durationSec.toFixed(0)}</td>
-              <td>{cl.count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {selected !== null && clusters[selected] && (
+        <div>
+          <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
+          <Plot
+            data={[{
+              type: 'bar',
+              orientation: 'h',
+              y: clusters[selected].events.map((_, i) => `Evt ${i + 1}`),
+              x: clusters[selected].events.map(e => e.durationSec * 1000),
+              base: clusters[selected].events.map(e => e.date.toISOString()),
+              marker: { color: '#ff7f0e' },
+              hovertemplate: clusters[selected].events.map(e =>
+                `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`
+              )
+            }]}
+            layout={{
+              title: `Cluster #${selected + 1} Event Timeline`,
+              xaxis: { type: 'date', title: 'Event Start Time' },
+              yaxis: { title: 'Event #' },
+              margin: { l: 80, r: 20, t: 40, b: 40 },
+              height: Math.max(200, clusters[selected].events.length * 30 + 100)
+            }}
+            config={{ displayModeBar: false }}
+          />
+        </div>
+      )}
+
+      <div className="cluster-table-container">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Count</th></tr>
+          </thead>
+          <tbody>
+            {clusters.map((cl, i) => (
+              <tr
+                key={i}
+                onClick={() => setSelected(i)}
+                style={{ cursor: 'pointer', backgroundColor: selected === i ? '#f0f8ff' : undefined }}
+              >
+                <td>{i + 1}</td>
+                <td>{cl.start.toLocaleString()}</td>
+                <td>{cl.durationSec.toFixed(0)}</td>
+                <td>{cl.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -368,21 +405,47 @@ function FalseNegativesAnalysis({ list }) {
   return (
     <div>
       <h2 id="false-negatives">Potential False Negatives</h2>
-      <table>
-        <thead>
-          <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Confidence</th></tr>
-        </thead>
-        <tbody>
-          {list.map((cl, i) => (
-            <tr key={i}>
-              <td>{i+1}</td>
-              <td>{cl.start.toLocaleString()}</td>
-              <td>{cl.durationSec.toFixed(0)}</td>
-              <td>{(cl.confidence * 100).toFixed(0)}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div>
+        <h3>Timeline of potential false negative clusters</h3>
+        <Plot
+          data={[{
+            type: 'bar',
+            orientation: 'h',
+            y: list.map((_, i) => `Cl ${i + 1}`),
+            x: list.map(cl => cl.durationSec * 1000),
+            base: list.map(cl => cl.start.toISOString()),
+            marker: { color: '#9467bd' },
+            hovertemplate: list.map(cl =>
+              `${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%<extra></extra>`
+            )
+          }]}
+          layout={{
+            title: 'False Negative Cluster Timeline',
+            xaxis: { type: 'date', title: 'Cluster Start Time' },
+            yaxis: { title: 'Cluster #' },
+            margin: { l: 80, r: 20, t: 40, b: 40 },
+            height: Math.max(200, list.length * 30 + 100)
+          }}
+          config={{ displayModeBar: false }}
+        />
+      </div>
+      <div className="cluster-table-container">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Confidence</th></tr>
+          </thead>
+          <tbody>
+            {list.map((cl, i) => (
+              <tr key={i}>
+                <td>{i + 1}</td>
+                <td>{cl.start.toLocaleString()}</td>
+                <td>{cl.durationSec.toFixed(0)}</td>
+                <td>{(cl.confidence * 100).toFixed(0)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
