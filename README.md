@@ -55,6 +55,29 @@ An optional CLI tool is provided for detailed event analysis:
 node analysis.js <detailsCsv> [YYYY-MM-DD] [groupGapSec]
 ```
 
+### Testing
+
+This project uses [Vitest](https://vitest.dev/) for unit and integration testing. Tests are colocated with source files using the `.test.*` suffix.
+
+**Run tests once:**
+```bash
+npm run test
+```
+
+**Run tests in watch mode:**
+```bash
+npm run test:watch
+```
+
+**Generate a coverage report:**
+```bash
+npm run test:coverage
+```
+
+Tests are automatically run before each commit via a Git hook configured with [Husky](https://typicode.github.io/husky/). After installing dependencies, run `npm run prepare` to set up Git hooks.
+
+Continuous integration is configured to run tests on GitHub Actions for each push and pull request (see `.github/workflows/ci.yml`).
+
 See `analysis.js` for usage details.
 
 Future iterations may include additional visualizations, improved styling, and automated build tooling.
