@@ -35,8 +35,8 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
         data={[
-          { x: dates, y: ahis, type: 'scatter', mode: 'lines+markers', name: 'Nightly AHI' },
-          { x: dates, y: rollingAvg, type: 'scatter', mode: 'lines', name: '7-night Avg', line: { dash: 'dash' } },
+          { x: dates, y: ahis, type: 'scatter', mode: 'lines', name: 'Nightly AHI', line: { width: 1 } },
+          { x: dates, y: rollingAvg, type: 'scatter', mode: 'lines', name: '7-night Avg', line: { dash: 'dash', width: 2 } },
           { x: above5Dates, y: ahisAbove5, type: 'scatter', mode: 'markers', name: 'AHI > 5', marker: { color: 'red', size: 8 } },
         ]}
         layout={{
@@ -66,7 +66,7 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
         <div className="chart-item">
           <Plot
             useResizeHandler
-            style={{ width: '100%', height: '250px' }}
+            style={{ width: '100%', height: '300px' }}
             data={[{
               y: ahis,
               type: 'box',

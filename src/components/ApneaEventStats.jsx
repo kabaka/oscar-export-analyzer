@@ -45,7 +45,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
         <div className="chart-item">
           <Plot
             useResizeHandler
-            style={{ width: '100%', height: '250px' }}
+            style={{ width: '100%', height: '300px' }}
             data={[{
               y: stats.durations,
               type: 'box',
@@ -78,7 +78,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
           <Plot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
-            data={[{ x: stats.nightDates, y: stats.eventsPerNight, type: 'scatter', mode: 'lines+markers', name: 'Events/night' }]}
+            data={[{ x: stats.nightDates, y: stats.eventsPerNight, type: 'scatter', mode: 'lines', name: 'Events/night', line: { width: 1 } }]}
             layout={{
               autosize: true,
               title: 'Apnea Events per Night',
@@ -91,7 +91,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
         <div className="chart-item">
           <Plot
             useResizeHandler
-            style={{ width: '100%', height: '250px' }}
+            style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.eventsPerNight, type: 'histogram', nbinsx: 12, name: 'Events/night Dist' }]}
             layout={{
               autosize: true,
