@@ -111,3 +111,33 @@ src/
 - Symptom-score correlation (ESS) input module.
 - Predictive alerts using simple ML anomaly detection.
 - Remote sync / cloud persistence of parsed sessions.
+
+## 10. Testing & Quality Assurance
+
+Set a test coverage goal of ~85% across core modules and components. Break down into PR-sized milestones:
+
+### 10.1 Unit Tests
+- **Utils: Parsing** (`parsing.js`) – validate CSV parsing logic, edge cases, error handling.
+- **Utils: Statistics** (`stats.js`) – test quantiles, IQR, trend calculations.
+- **Utils: Clustering** (`clustering.js`) – verify `clusterApneaEvents` and `detectFalseNegatives` behaviors.
+
+### 10.2 Component Tests
+- **KPI Cards & Overview** – render with sample data, snapshot tests for layout.
+- **Charts** – test `UsageChart`, `AhiChart`, `EpapChart`, `ScatterEpapAhi` rendering and interactions.
+- **Tables** – test `RawDataTable`, `ClusterTable`, `FalseNegTable` sorting, filtering, pagination.
+
+### 10.3 Worker Integration Tests
+- **Parser Worker** – simulate messages to/from `parser.worker.js`, ensure progress and results are handled.
+- **Analytics Worker** – validate `analytics.worker.js` computations and messaging.
+
+### 10.4 State & Hook Tests
+- **DataContext** – test context provider, actions, and state transitions.
+- **Custom Hooks** (`useWorker.js`) – mock worker interface and verify hook behavior.
+
+### 10.5 End-to-End Tests
+- **Upload & Parsing Flow** – E2E test file upload, progress bars, dashboard availability.
+- **Dashboard Navigation** – test tab navigation, data loading, report export functionality.
+
+### 10.6 Quality Checks
+- **Accessibility** – integrate `axe-core` checks for key UI views.
+- **Performance (optional)** – basic render-performance benchmarks for large datasets.
