@@ -87,4 +87,3 @@ describe('computeEPAPTrends', () => {
     expect(epap.avgAHIHigh).toBe(3);
   });
 });
-});
