@@ -21,7 +21,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
     "husky": "^8.0.0",
-    "vitest": "^0.33.1",
+    "vitest": "^3.2.4",
     "vite": "^4.0.0"
   }
 }

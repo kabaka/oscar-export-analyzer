@@ -4,7 +4,17 @@
 
 // Parse a duration string "HH:MM:SS" into total seconds
 export function parseDuration(s) {
-  const [h, m, sec] = s.split(':').map(parseFloat);
+  const parts = s.split(':').map(parseFloat);
+  let h = 0;
+  let m = 0;
+  let sec = 0;
+  if (parts.length === 3) {
+    [h, m, sec] = parts;
+  } else if (parts.length === 2) {
+    [m, sec] = parts;
+  } else if (parts.length === 1) {
+    [sec] = parts;
+  }
   return (h || 0) * 3600 + (m || 0) * 60 + (sec || 0);
 }
 

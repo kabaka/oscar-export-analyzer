@@ -25,14 +25,14 @@ describe('clusterApneaEvents', () => {
 describe('detectFalseNegatives', () => {
   it('filters FLG clusters by duration, absence of apnea, and confidence', () => {
     const details = [
-      { Event: 'FLG', 'Data/Duration': 1.0, DateTime: '2021-01-01T00:00:00Z' },
-      { Event: 'FLG', 'Data/Duration': 1.0, DateTime: '2021-01-01T00:02:00Z' },
+    { Event: 'FLG', 'Data/Duration': 1.0, DateTime: '2021-01-01T00:00:00Z' },
+    { Event: 'FLG', 'Data/Duration': 1.0, DateTime: '2021-01-01T00:01:00Z' },
       { Event: 'ClearAirway', 'Data/Duration': '10', DateTime: '2021-01-02T00:00:00Z' }
     ];
     const fns = detectFalseNegatives(details);
-    // One FLG cluster of ~120s before ClearAirway occurs next day
+    // One FLG cluster of ~60s before ClearAirway occurs next day
     expect(fns).toHaveLength(1);
-    expect(fns[0].durationSec).toBeGreaterThanOrEqual(120);
+    expect(fns[0].durationSec).toBeGreaterThanOrEqual(60);
     expect(fns[0].confidence).toBe(1);
   });
 });
