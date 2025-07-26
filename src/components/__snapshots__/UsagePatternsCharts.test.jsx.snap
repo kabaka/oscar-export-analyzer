@@ -1,0 +1,43 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`UsagePatternsCharts > renders plotly charts and matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="usage-charts"
+  >
+    <div
+      config="[object Object]"
+      data="[object Object],[object Object]"
+      data-testid="plotly-chart"
+      layout="[object Object]"
+      style="width: 100%; height: 300px;"
+    />
+    <div
+      class="usage-charts-grid"
+    >
+      <div
+        class="chart-item"
+      >
+        <div
+          config="[object Object]"
+          data="[object Object]"
+          data-testid="plotly-chart"
+          layout="[object Object]"
+          style="width: 100%; height: 300px;"
+        />
+      </div>
+      <div
+        class="chart-item"
+      >
+        <div
+          config="[object Object]"
+          data="[object Object]"
+          data-testid="plotly-chart"
+          layout="[object Object]"
+          style="width: 100%; height: 300px;"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

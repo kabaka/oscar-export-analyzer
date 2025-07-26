@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`KPICard > renders title, value, and children 1`] = `
+<DocumentFragment>
+  <div
+    class="kpi-card"
+  >
+    <div
+      class="title"
+    >
+      Test KPI
+    </div>
+    <div
+      class="value"
+    >
+      42
+    </div>
+    <span
+      data-testid="child"
+    >
+      Child Content
+    </span>
+  </div>
+</DocumentFragment>
+`;

@@ -116,10 +116,6 @@ src/
 
 Set a test coverage goal of ~85% across core modules and components. Break down into PR-sized milestones:
 
-### 10.1 Component Tests
-- **KPI Cards & Overview** – render with sample data, snapshot tests for layout.
-- **Charts** – test `UsageChart`, `AhiChart`, `EpapChart`, `ScatterEpapAhi` rendering and interactions.
-- **Tables** – test `RawDataTable`, `ClusterTable`, `FalseNegTable` sorting, filtering, pagination.
 
 ### 10.2 Worker Integration Tests
 - **Parser Worker** – simulate messages to/from `parser.worker.js`, ensure progress and results are handled.
