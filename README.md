@@ -1,6 +1,7 @@
 # OSCAR Sleep Data Analysis Web App
 
 This is a rudimentary React-based web application for evaluating OSCAR sleep data exports.
+It supports automatic light/dark themes based on system preferences to enhance accessibility and user experience.
 
 ## Usage
 

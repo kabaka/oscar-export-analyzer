@@ -1,7 +1,37 @@
+/* Color variables for light and dark themes */
+:root {
+  --color-bg: #f5f5f5;
+  --color-text: #000000;
+  --color-text-muted: #555555;
+  --color-section-bg: #ffffff;
+  --color-border: #cccccc;
+  --color-border-light: #dddddd;
+  --color-toc-bg: #ffffff;
+  --color-kpi-bg: #fafafa;
+  --color-link: #007bff;
+  --color-link-hover: #0056b3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #121212;
+    --color-text: #e1e1e1;
+    --color-text-muted: #a0a0a0;
+    --color-section-bg: #1e1e1e;
+    --color-border: #555555;
+    --color-border-light: #444444;
+    --color-toc-bg: #1e1e1e;
+    --color-kpi-bg: #2a2a2a;
+    --color-link: #58a6ff;
+    --color-link-hover: #1f6feb;
+  }
+}
+
 body {
   font-family: sans-serif;
   margin: 0;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   padding: 0 20px;
 }
 
@@ -21,9 +51,9 @@ table {
   width: 100%;
   margin-bottom: 20px;
 }
-table, th, td {
-  border: 1px solid #ccc;
-}
+	table, th, td {
+	  border: 1px solid var(--color-border);
+	}
 th, td {
   padding: 8px;
   text-align: left;
@@ -44,8 +74,8 @@ th, td {
 
 /* Section card styling */
 .section {
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--color-section-bg);
+  border: 1px solid var(--color-border-light);
   border-radius: 0.5rem;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -54,8 +84,8 @@ th, td {
 
 /* Table of contents */
 .toc {
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--color-toc-bg);
+  border: 1px solid var(--color-border-light);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   margin-bottom: 1.5rem;
@@ -64,11 +94,12 @@ th, td {
   gap: 0.75rem;
 }
 .toc a {
-  color: #007bff;
+  color: var(--color-link);
   text-decoration: none;
   font-size: 0.95rem;
 }
 .toc a:hover {
+  color: var(--color-link-hover);
   text-decoration: underline;
 }
 
@@ -87,10 +118,10 @@ progress {
 }
 
 .kpi-card {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 12px;
-  background: #fafafa;
+  background: var(--color-kpi-bg);
   text-align: center;
 }
 
@@ -111,7 +142,7 @@ progress {
 
 .kpi-card .title {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--color-text-muted);
 }
 
 .kpi-card .value {

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { COLORS } from '../utils/colors';
+import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
 
 /**
  * EPAP Analysis Charts: boxplot of nightly median EPAP,
@@ -66,6 +67,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
   const boxMin = Math.min(...epaps);
   const boxMax = Math.max(...epaps);
 
+  const isDark = usePrefersDarkMode();
+
   return (
     <div className="usage-charts">
       <Plot
@@ -98,6 +101,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           },
         ]}
         layout={{
+          template: isDark ? 'plotly_dark' : 'plotly',
           autosize: true,
           title: 'Nightly Median EPAP Over Time',
           legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
@@ -128,6 +132,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             },
           ]}
           layout={{
+            template: isDark ? 'plotly_dark' : 'plotly',
             autosize: true,
             title: 'Boxplot of Nightly Median EPAP',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
@@ -151,6 +156,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               { x: [boxMin, boxMax], y: [slope * boxMin + intercept, slope * boxMax + intercept], type: 'scatter', mode: 'lines', name: 'Fit', line: { dash: 'dash', width: 2, color: COLORS.secondary } },
             ]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: `EPAP vs AHI Scatter (r = ${corr.toFixed(2)})`,
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },

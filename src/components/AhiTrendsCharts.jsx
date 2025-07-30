@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { quantile } from '../utils/stats';
 import { COLORS } from '../utils/colors';
+import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
 
 export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
   const { dates, ahis, rollingAvg } = useMemo(() => {
@@ -33,6 +34,8 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
   const range = Math.max(...ahis) - Math.min(...ahis);
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
 
+  const isDark = usePrefersDarkMode();
+
   return (
     <div className="usage-charts">
       <Plot
@@ -57,6 +60,7 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
           },
         ]}
         layout={{
+          template: isDark ? 'plotly_dark' : 'plotly',
           autosize: true,
           title: 'Nightly AHI Over Time',
           legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
@@ -87,6 +91,7 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
               { x: ahis, type: 'histogram', nbinsx: nbins, name: 'AHI Distribution', marker: { color: COLORS.primary } },
             ]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Distribution of Nightly AHI',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
@@ -122,6 +127,7 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
               marker: { color: '#888' },
             }]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Boxplot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)', zeroline: false },
