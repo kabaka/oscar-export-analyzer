@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePrefersDarkMode } from './hooks/usePrefersDarkMode';
 import Papa from 'papaparse';
 import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPTrends } from './utils/stats';
 import { clusterApneaEvents, detectFalseNegatives, FALSE_NEG_CONFIDENCE_MIN, FLG_BRIDGE_THRESHOLD } from './utils/clustering';
@@ -178,6 +179,7 @@ function SummaryAnalysis({ data }) {
 
 function ApneaClusterAnalysis({ clusters }) {
   const [selected, setSelected] = useState(null);
+  const isDark = usePrefersDarkMode();
 
   return (
     <div className="section">
@@ -186,7 +188,7 @@ function ApneaClusterAnalysis({ clusters }) {
       {selected !== null && clusters[selected] && (
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
-          <Plot
+            <Plot
             data={[{
               type: 'bar',
               orientation: 'h',
@@ -199,6 +201,7 @@ function ApneaClusterAnalysis({ clusters }) {
               )
             }]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               title: `Cluster #${selected + 1} Event Timeline`,
               xaxis: { type: 'date', title: 'Event Start Time' },
               yaxis: { title: 'Event #' },
@@ -236,6 +239,7 @@ function ApneaClusterAnalysis({ clusters }) {
 }
 
 function FalseNegativesAnalysis({ list }) {
+  const prefersDark = usePrefersDarkMode();
   return (
     <div>
       <h2 id="false-negatives">Potential False Negatives</h2>
@@ -262,6 +266,7 @@ function FalseNegativesAnalysis({ list }) {
             hovertemplate: '%{text}<extra></extra>'
           }]}
           layout={{
+            template: prefersDark ? 'plotly_dark' : 'plotly',
             autosize: true,
             title: 'False Negative Clusters by Confidence Over Time',
             xaxis: { type: 'date', title: 'Cluster Start Time' },
@@ -295,6 +300,7 @@ function FalseNegativesAnalysis({ list }) {
 
 
 function App() {
+  const prefersDark = usePrefersDarkMode();
   const {
     summaryData,
     detailsData,

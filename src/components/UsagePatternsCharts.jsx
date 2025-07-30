@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { parseDuration, quantile } from '../utils/stats';
 import { COLORS } from '../utils/colors';
+import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
 
 export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
   // Prepare sorted date and usage arrays
@@ -30,6 +31,8 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
   const range = Math.max(...usageHours) - Math.min(...usageHours);
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
 
+  const isDark = usePrefersDarkMode();
+
   return (
     <div className="usage-charts">
       {/* Time-series usage with rolling average, full-width responsive */}
@@ -55,6 +58,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           },
         ]}
         layout={{
+          template: isDark ? 'plotly_dark' : 'plotly',
           autosize: true,
           title: 'Nightly Usage Hours Over Time',
           legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
@@ -85,7 +89,8 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
               marker: { color: COLORS.primary },
             },
           ]}
-          layout={{
+        layout={{
+            template: isDark ? 'plotly_dark' : 'plotly',
             autosize: true,
             title: 'Distribution of Nightly Usage',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
@@ -123,6 +128,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
               },
             ]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Boxplot of Nightly Usage',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
