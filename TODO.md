@@ -117,18 +117,14 @@ src/
 Set a test coverage goal of ~85% across core modules and components. Break down into PR-sized milestones:
 
 
-### 10.2 Worker Integration Tests
-- **Parser Worker** – simulate messages to/from `parser.worker.js`, ensure progress and results are handled.
-- **Analytics Worker** – validate `analytics.worker.js` computations and messaging.
-
-### 10.3 State & Hook Tests
+### 10.2 State & Hook Tests
 - **DataContext** – test context provider, actions, and state transitions.
 - **Custom Hooks** (`useWorker.js`) – mock worker interface and verify hook behavior.
 
-### 10.4 End-to-End Tests
+### 10.3 End-to-End Tests
 - **Upload & Parsing Flow** – E2E test file upload, progress bars, dashboard availability.
 - **Dashboard Navigation** – test tab navigation, data loading, report export functionality.
 
-### 10.5 Quality Checks
+### 10.4 Quality Checks
 - **Accessibility** – integrate `axe-core` checks for key UI views.
 - **Performance (optional)** – basic render-performance benchmarks for large datasets.
