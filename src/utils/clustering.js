@@ -13,7 +13,7 @@ const EDGE_MIN_DURATION_SEC = 10;          // min duration (sec) for FLG edge cl
 const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;    // min total apnea-event duration (sec) for valid cluster
 const FLG_DURATION_THRESHOLD_SEC = APOEA_CLUSTER_MIN_TOTAL_SEC; // min FLG-only cluster duration for false-negatives
 const MAX_FALSE_NEG_FLG_DURATION_SEC = 600; // cap on FLG-only cluster duration (sec)
-const FALSE_NEG_CONFIDENCE_MIN = 0.95;     // min confidence (fraction) for false-negative reporting
+export const FALSE_NEG_CONFIDENCE_MIN = 0.95;     // min confidence (fraction) for false-negative reporting
 
 /**
  * Cluster apnea annotation events, bridging through moderate FLG readings,
