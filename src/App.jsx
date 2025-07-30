@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { usePrefersDarkMode } from './hooks/usePrefersDarkMode';
 import Papa from 'papaparse';
 import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPTrends } from './utils/stats';
-import { clusterApneaEvents, detectFalseNegatives, FALSE_NEG_CONFIDENCE_MIN, FLG_BRIDGE_THRESHOLD } from './utils/clustering';
+import {
+  clusterApneaEvents,
+  detectFalseNegatives,
+  FALSE_NEG_CONFIDENCE_MIN,
+  FLG_BRIDGE_THRESHOLD,
+  APOEA_CLUSTER_MIN_TOTAL_SEC,
+  MAX_CLUSTER_DURATION_SEC,
+} from './utils/clustering';
 import Overview from './components/Overview';
 import UsagePatternsCharts from './components/UsagePatternsCharts';
 import AhiTrendsCharts from './components/AhiTrendsCharts';

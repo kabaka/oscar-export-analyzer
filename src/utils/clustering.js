@@ -10,7 +10,7 @@ const EDGE_THRESHOLD = 0.5;                // FLG level to detect true low-flow 
 const EDGE_MIN_DURATION_SEC = 10;          // min duration (sec) for FLG edge cluster to extend boundaries
 
 // Parameters for false-negative detection
-const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;    // min total apnea-event duration (sec) for valid cluster
+export const APOEA_CLUSTER_MIN_TOTAL_SEC = 60;    // min total apnea-event duration (sec) for valid cluster
 const FLG_DURATION_THRESHOLD_SEC = APOEA_CLUSTER_MIN_TOTAL_SEC; // min FLG-only cluster duration for false-negatives
 const MAX_FALSE_NEG_FLG_DURATION_SEC = 600; // cap on FLG-only cluster duration (sec)
 export const FALSE_NEG_CONFIDENCE_MIN = 0.95;     // min confidence (fraction) for false-negative reporting
@@ -149,3 +149,5 @@ export function detectFalseNegatives(details, flThreshold = DEFAULT_FLG_BRIDGE_T
 
 // Expose default bridge threshold for use in filtering and parsing logic
 export const FLG_BRIDGE_THRESHOLD = DEFAULT_FLG_BRIDGE_THRESHOLD;
+// Cap on apnea cluster window duration
+export const MAX_CLUSTER_DURATION_SEC = 230; // sanity cap on cluster window (sec)
