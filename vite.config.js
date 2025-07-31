@@ -8,5 +8,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
     include: ['src/**/*.test.{js,jsx,ts,tsx}']
+  },
+  // Treat any Vite/Rollup warnings as errors to enforce clean builds
+  build: {
+    rollupOptions: {
+      onwarn(warning, defaultWarn) {
+        throw new Error(warning.message || warning);
+      }
+    }
   }
 });

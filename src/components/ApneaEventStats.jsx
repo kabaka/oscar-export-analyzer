@@ -22,8 +22,8 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
           <tr><td>Duration IQR (25th–75th percentile)</td><td>{stats.p25Dur.toFixed(1)}–{stats.p75Dur.toFixed(1)} s</td></tr>
           <tr><td>95th percentile duration</td><td>{stats.p95Dur.toFixed(1)} s</td></tr>
           <tr><td>Max duration</td><td>{stats.maxDur.toFixed(0)} s</td></tr>
-          <tr><td>Events > 30 s</td><td>{stats.countOver30} ({(stats.countOver30 / stats.totalEvents * 100).toFixed(1)}%)</td></tr>
-          <tr><td>Events > 60 s</td><td>{stats.countOver60} ({(stats.countOver60 / stats.totalEvents * 100).toFixed(1)}%)</td></tr>
+          <tr><td>Events &gt; 30 s</td><td>{stats.countOver30} ({(stats.countOver30 / stats.totalEvents * 100).toFixed(1)}%)</td></tr>
+          <tr><td>Events &gt; 60 s</td><td>{stats.countOver60} ({(stats.countOver60 / stats.totalEvents * 100).toFixed(1)}%)</td></tr>
           <tr><td>Outlier events (≥ Q3+1.5×IQR)</td><td>{stats.countOutlierEvents}</td></tr>
         </tbody>
       </table>

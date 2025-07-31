@@ -139,7 +139,7 @@ function SummaryAnalysis({ data }) {
           <tr><td>AHI IQR (25th–75th percentile)</td><td>{ahi.p25AHI.toFixed(2)}–{ahi.p75AHI.toFixed(2)}</td></tr>
           <tr><td>Min AHI</td><td>{ahi.minAHI.toFixed(2)}</td></tr>
           <tr><td>Max AHI</td><td>{ahi.maxAHI.toFixed(2)}</td></tr>
-          <tr><td>Nights with AHI > 5.0</td><td>{ahi.nightsAHIover5} ({(ahi.nightsAHIover5 / usage.totalNights * 100).toFixed(1)}%)</td></tr>
+          <tr><td>Nights with AHI &gt; 5.0</td><td>{ahi.nightsAHIover5} ({(ahi.nightsAHIover5 / usage.totalNights * 100).toFixed(1)}%)</td></tr>
         </tbody>
       </table>
       <p>First 30 nights avg AHI = {ahi.first30AvgAHI.toFixed(2)}, last 30 nights avg AHI = {ahi.last30AvgAHI.toFixed(2)}</p>
