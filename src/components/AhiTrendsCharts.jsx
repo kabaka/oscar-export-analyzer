@@ -233,28 +233,25 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ y: ahis, type: 'violin', name: 'AHI Violin', points: 'outliers', box: { visible: true } }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Violin Plot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-qq' : 'light-qq'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: theo, y: sorted, type: 'scatter', mode: 'markers', name: 'QQ Points', marker: { size: 5, opacity: 0.7 } }, { x: [Math.min(...theo), Math.max(...theo)], y: [Math.min(...theo), Math.max(...theo)], type: 'scatter', mode: 'lines', name: 'y=x', line: { dash: 'dash' } }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'QQ Plot vs Normal',
               xaxis: { title: 'Theoretical Quantiles' },
               yaxis: { title: 'Observed AHI Quantiles' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
       </div>
