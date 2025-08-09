@@ -21,6 +21,7 @@ import EpapTrendsCharts from './components/EpapTrendsCharts';
 import ApneaEventStats from './components/ApneaEventStats';
 import Plot from 'react-plotly.js';
 import RawDataExplorer from './components/RawDataExplorer';
+import ThemeToggle from './components/ThemeToggle';
 
 
 // Hook for loading CSV files via file input
@@ -507,7 +508,15 @@ function App() {
 
   return (
     <div className="container">
-      <h1>OSCAR Sleep Data Analysis</h1>
+      <header className="app-header">
+        <div className="inner">
+          <div className="title">
+            <h1>OSCAR Sleep Data Analysis</h1>
+            <span className="badge">beta</span>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
       <nav className="toc">
         <a href="#overview">Overview</a>
         <a href="#usage-patterns">Usage Patterns</a>
