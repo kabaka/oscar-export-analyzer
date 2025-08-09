@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import { parseDuration, quantile, computeUsageRolling, computeAdherenceStreaks, detectUsageBreakpoints } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
+import { applyChartTheme } from '../utils/chartTheme';
 
 export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
   // Prepare sorted date and usage arrays
@@ -108,16 +109,14 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
             line: { dash: 'dot', width: 2, color: COLORS.accent },
           },
         ]}
-        layout={{
-          template: isDark ? 'plotly_dark' : 'plotly',
-          autosize: true,
+        layout={applyChartTheme(isDark, {
           title: 'Nightly Usage Hours Over Time',
           legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
           xaxis: { title: 'Date' },
           yaxis: { title: 'Hours of Use' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
           shapes: breakDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#aa3377', width: 1, dash: 'dot' } })) || [],
-        }}
+        })}
         config={{
           responsive: true,
           displaylogo: false,
@@ -142,9 +141,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
               marker: { color: COLORS.primary },
             },
           ]}
-        layout={{
-            template: isDark ? 'plotly_dark' : 'plotly',
-            autosize: true,
+        layout={applyChartTheme(isDark, {
             title: 'Distribution of Nightly Usage',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
             xaxis: { title: 'Hours' },
@@ -158,7 +155,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
               { x: mean, yref: 'paper', y: 1.1, text: `Mean: ${mean.toFixed(2)}`, showarrow: false, font: { color: COLORS.accent } },
             ],
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          }}
+          })}
           config={{
             responsive: true,
             displaylogo: false,
@@ -181,14 +178,12 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
                 marker: { color: COLORS.box },
               },
             ]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Boxplot of Nightly Usage',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               yaxis: { title: 'Hours of Use', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
             config={{
               responsive: true,
               displaylogo: false,
@@ -214,14 +209,12 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
               hovertemplate: '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
             },
           ]}
-          layout={{
-            template: isDark ? 'plotly_dark' : 'plotly',
-            autosize: true,
+          layout={applyChartTheme(isDark, {
             title: 'Calendar Heatmap of Usage (hours)',
             xaxis: { title: 'Week', type: 'date', tickformat: '%Y-%m-%d' },
             yaxis: { title: '', autorange: 'reversed' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          }}
+          })}
           config={{ responsive: true, displaylogo: false }}
         />
       </div>

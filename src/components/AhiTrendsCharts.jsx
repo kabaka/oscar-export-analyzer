@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import { quantile, detectUsageBreakpoints, computeUsageRolling } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
+import { applyChartTheme } from '../utils/chartTheme';
 
 export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
   const { dates, ahis, rolling7, rolling30, breakDates, oai, cai, mai } = useMemo(() => {
@@ -151,9 +152,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             { x: dates, y: mai, type: 'scatter', mode: 'lines', name: 'MAI', stackgroup: 'ahi', line: { width: 0 }, fillcolor: 'rgba(44,160,44,0.4)' },
           ] : []),
         ]}
-        layout={{
-          template: isDark ? 'plotly_dark' : 'plotly',
-          autosize: true,
+        layout={applyChartTheme(isDark, {
           title: 'Nightly AHI Over Time',
           legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
           shapes: [
@@ -166,7 +165,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
           xaxis: { title: 'Date' },
           yaxis: { title: 'AHI (events/hour)' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
-        }}
+        })}
         config={{
           responsive: true,
           displaylogo: false,
@@ -184,9 +183,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             data={[
               { x: ahis, type: 'histogram', nbinsx: nbins, name: 'AHI Distribution', marker: { color: COLORS.primary } },
             ]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Distribution of Nightly AHI',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               shapes: [
@@ -200,7 +197,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
               xaxis: { title: 'AHI (events/hour)' },
               yaxis: { title: 'Count' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
             config={{
               responsive: true,
               displaylogo: false,
@@ -221,13 +218,11 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
               boxpoints: 'outliers',
               marker: { color: '#888' },
             }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Boxplot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
       </div>
