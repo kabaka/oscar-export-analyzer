@@ -18,6 +18,7 @@ It supports automatic light/dark themes based on system preferences to enhance a
 
 4. The app will parse and display (determinate progress bars show parsing progress for each file):
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
+   - Expanded usage analytics: 7/30-night moving averages, adherence breakpoints, compliance KPIs (≥4h/≥6h), and a weekly calendar heatmap
    - AHI trends (time-series, histogram, boxplot, average, min, max, threshold line at AHI > 5)
    - Pressure settings trends (median EPAP changes and EPAP vs AHI)
    - Clustered apnea events: click a row in the scrollable cluster table below to view an event-level Gantt timeline for the selected cluster; table shows each cluster’s start, duration, and count

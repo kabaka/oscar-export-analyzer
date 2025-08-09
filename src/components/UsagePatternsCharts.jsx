@@ -1,24 +1,52 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { parseDuration, quantile } from '../utils/stats';
+import { parseDuration, quantile, computeUsageRolling, computeAdherenceStreaks, detectUsageBreakpoints } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
 
 export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
   // Prepare sorted date and usage arrays
-  const { dates, usageHours, rollingAvg } = useMemo(() => {
+  const { dates, usageHours, rolling7, rolling30, compliance4_30, breakDates, dowHeatmap } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), hours: parseDuration(r['Total Time']) / 3600 }))
       .sort((a, b) => a.date - b.date);
     const hours = pts.map(p => p.hours);
     const datesArr = pts.map(p => p.date);
-    const window = 7;
-    const rolling = pts.map((p, i) => {
-      const slice = hours.slice(Math.max(0, i - window + 1), i + 1);
-      const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
-      return avg;
-    });
-    return { dates: datesArr, usageHours: hours, rollingAvg: rolling };
+    const rolling = computeUsageRolling(datesArr, hours, [7, 30]);
+    const rolling7 = rolling.avg7;
+    const rolling30 = rolling.avg30;
+    const compliance4_30 = rolling['compliance4_30'];
+    const breakDates = detectUsageBreakpoints(rolling7, rolling30, datesArr);
+
+    // Day-of-week weekly heatmap (GitHub-style)
+    const toISODate = d => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const getWeekStart = d => {
+      const nd = new Date(d);
+      const day = (nd.getDay() + 6) % 7; // Mon=0..Sun=6
+      nd.setDate(nd.getDate() - day);
+      return toISODate(nd);
+    };
+    const dateToStr = d => d.toISOString().slice(0, 10);
+    const byDate = new Map();
+    datesArr.forEach((d, i) => byDate.set(dateToStr(toISODate(d)), hours[i]));
+    const start = getWeekStart(datesArr[0] || new Date());
+    const end = getWeekStart(datesArr[datesArr.length - 1] || new Date());
+    const weekStarts = [];
+    for (let w = new Date(start); w <= end; w.setDate(w.getDate() + 7)) {
+      weekStarts.push(new Date(w));
+    }
+    const yLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const z = yLabels.map((_, dowIdx) =>
+      weekStarts.map(ws => {
+        const d = new Date(ws);
+        d.setDate(d.getDate() + dowIdx);
+        const key = dateToStr(toISODate(d));
+        return byDate.has(key) ? byDate.get(key) : null;
+      })
+    );
+    const dowHeatmap = { x: weekStarts, y: yLabels, z };
+
+    return { dates: datesArr, usageHours: hours, rolling7, rolling30, compliance4_30, breakDates, dowHeatmap };
   }, [data]);
 
   // Summary stats and adaptive bins for histogram
@@ -32,9 +60,17 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
 
   const isDark = usePrefersDarkMode();
+  const { longest_4, longest_6 } = computeAdherenceStreaks(usageHours, [4, 6]);
 
   return (
     <div className="usage-charts">
+      {/* Compliance KPIs */}
+      <div className="kpi-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: '12px', marginBottom: '8px' }}>
+        <div><strong>% nights ≥ 4h:</strong> {((usageHours.filter(h => h >= 4).length / usageHours.length) * 100).toFixed(0)}%</div>
+        <div><strong>% nights ≥ 6h:</strong> {((usageHours.filter(h => h >= 6).length / usageHours.length) * 100).toFixed(0)}%</div>
+        <div><strong>Current 30-night ≥4h:</strong> {compliance4_30?.length ? compliance4_30[compliance4_30.length - 1].toFixed(0) : '—'}%</div>
+        <div><strong>Longest streak ≥4h/≥6h:</strong> {longest_4 || 0} / {longest_6 || 0} nights</div>
+      </div>
       {/* Time-series usage with rolling average, full-width responsive */}
       <Plot
         useResizeHandler
@@ -50,11 +86,19 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           },
           {
             x: dates,
-            y: rollingAvg,
+            y: rolling7,
             type: 'scatter',
             mode: 'lines',
             name: '7-night Avg',
             line: { dash: 'dash', width: 2, color: COLORS.secondary },
+          },
+          {
+            x: dates,
+            y: rolling30,
+            type: 'scatter',
+            mode: 'lines',
+            name: '30-night Avg',
+            line: { dash: 'dot', width: 2, color: COLORS.accent },
           },
         ]}
         layout={{
@@ -65,6 +109,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           xaxis: { title: 'Date' },
           yaxis: { title: 'Hours of Use' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
+          shapes: breakDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#aa3377', width: 1, dash: 'dot' } })) || [],
         }}
         config={{
           responsive: true,
@@ -143,6 +188,32 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
             }}
           />
         </div>
+      </div>
+      {/* Weekly calendar heatmap (Mon–Sun by columns of weeks) */}
+      <div className="chart-item" style={{ marginTop: '16px' }}>
+        <Plot
+          useResizeHandler
+          style={{ width: '100%', height: '220px' }}
+          data={[
+            {
+              z: dowHeatmap.z,
+              x: dowHeatmap.x,
+              y: dowHeatmap.y,
+              type: 'heatmap',
+              colorscale: 'Blues',
+              hovertemplate: '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
+            },
+          ]}
+          layout={{
+            template: isDark ? 'plotly_dark' : 'plotly',
+            autosize: true,
+            title: 'Calendar Heatmap of Usage (hours)',
+            xaxis: { title: 'Week', type: 'date', tickformat: '%Y-%m-%d' },
+            yaxis: { title: '', autorange: 'reversed' },
+            margin: { t: 40, l: 60, r: 20, b: 50 },
+          }}
+          config={{ responsive: true, displaylogo: false }}
+        />
       </div>
     </div>
   );
