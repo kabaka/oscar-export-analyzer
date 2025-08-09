@@ -241,12 +241,18 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             key={isDark ? 'dark-corr' : 'light-corr'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
-            data={[{ z: corrMatrix.z, x: corrMatrix.labels, y: corrMatrix.labels, type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1, reversescale: true }]}
+            data={[{ z: corrMatrix.z, x: corrMatrix.labels, y: corrMatrix.labels, type: 'heatmap', colorscale: isDark ? [
+              [0.0, '#9e2f2f'],
+              [0.25, '#d04a4a'],
+              [0.5, '#1a2330'],
+              [0.75, '#4a7bd0'],
+              [1.0, '#2f5aa6'],
+            ] : 'RdBu', zmin: -1, zmax: 1, reversescale: !isDark }]}
             layout={applyChartTheme(isDark, {
               title: 'Correlation Matrix (Pearson r)',
               autosize: true,
               margin: { t: 40, l: 80, r: 20, b: 80 },
-              annotations: corrMatrix.z.flatMap((row, i) => row.map((v, j) => ({ x: corrMatrix.labels[j], y: corrMatrix.labels[i], text: isFinite(v) ? v.toFixed(2) : '—', showarrow: false, font: { color: '#fff' } }))),
+              annotations: corrMatrix.z.flatMap((row, i) => row.map((v, j) => ({ x: corrMatrix.labels[j], y: corrMatrix.labels[i], text: isFinite(v) ? v.toFixed(2) : '—', showarrow: false, font: { color: isDark ? '#fff' : '#000' } }))),
             })}
             config={{ responsive: true, displaylogo: false }}
           />

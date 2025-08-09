@@ -11,7 +11,9 @@ export function applyChartTheme(isDark, layout = {}) {
     plot_bgcolor: '#121821',
     font: { color: '#e6eaef' },
     axisColor: '#aab2bd',
-    gridColor: '#2b3440',
+    // darker grid so it doesn't look light grey
+    gridColor: '#1e2734',
+    zeroLineColor: '#2c3747',
   };
   const t = isDark ? dark : light;
   const mergeFont = { ...(layout.font || {}), ...(t.font || {}) };
@@ -24,13 +26,13 @@ export function applyChartTheme(isDark, layout = {}) {
       ...(layout.xaxis || {}),
       color: (layout.xaxis && layout.xaxis.color) || t.axisColor,
       gridcolor: (layout.xaxis && layout.xaxis.gridcolor) || t.gridColor,
-      zerolinecolor: (layout.xaxis && layout.xaxis.zerolinecolor) || t.gridColor,
+      zerolinecolor: (layout.xaxis && layout.xaxis.zerolinecolor) || t.zeroLineColor || t.gridColor,
     },
     yaxis: {
       ...(layout.yaxis || {}),
       color: (layout.yaxis && layout.yaxis.color) || t.axisColor,
       gridcolor: (layout.yaxis && layout.yaxis.gridcolor) || t.gridColor,
-      zerolinecolor: (layout.yaxis && layout.yaxis.zerolinecolor) || t.gridColor,
+      zerolinecolor: (layout.yaxis && layout.yaxis.zerolinecolor) || t.zeroLineColor || t.gridColor,
     },
     legend: {
       ...(layout.legend || {}),
@@ -39,4 +41,3 @@ export function applyChartTheme(isDark, layout = {}) {
   };
   return lx;
 }
-
