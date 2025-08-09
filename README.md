@@ -1,7 +1,8 @@
 # OSCAR Sleep Data Analysis Web App
 
-This is a rudimentary React-based web application for evaluating OSCAR sleep data exports.
-It supports automatic light/dark themes based on system preferences to enhance accessibility and user experience.
+This is a React-based web application for evaluating OSCAR sleep data exports.
+
+Design refresh: the UI now uses a clean, card-based layout and polished typography with consistent spacing. It supports both light and dark modes with a theme toggle (Light / Dark / System) that persists your preference.
 
 ## Usage
 
@@ -15,6 +16,7 @@ It supports automatic light/dark themes based on system preferences to enhance a
 2. Open your browser to the URL shown in the terminal (usually `http://localhost:5173`).
 
 3. Use the file inputs to select your OSCAR **Summary** and **Details** CSV files from the `data/` directory.
+4. Use the theme toggle in the header to switch between Light, Dark, or System (follows OS).
 
 4. The app will parse and display (determinate progress bars show parsing progress for each file):
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
@@ -33,6 +35,12 @@ The Raw Data Explorer (see "Raw Data" in-page link) provides an efficient, virtu
 - Date range filter: constrain rows by date; optionally apply to charts to cross-filter visualizations.
 - Pivot-like summary: group by any column to see counts and averages of numeric fields.
 - Export: download selected or all visible rows as CSV.
+
+## Theming
+
+- Toggle theme via the control in the header. Choices: `Light`, `Dark`, or `System`.
+- `System` mode follows your OS preference and is the default. Switching to `Light` or `Dark` sets the `data-theme` attribute on `<html>` and persists to `localStorage`.
+- All colors are derived from CSS variables in `styles.css` to keep charts and UI consistent between themes.
 
 ## Development
 
