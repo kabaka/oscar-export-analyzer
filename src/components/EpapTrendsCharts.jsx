@@ -120,6 +120,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
   return (
     <div className="usage-charts">
       <Plot
+        key={isDark ? 'dark' : 'light'}
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
         data={[
@@ -168,6 +169,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       <div className="usage-charts-grid">
         <div className="chart-item">
         <Plot
+          key={isDark ? 'dark-box' : 'light-box'}
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
           data={[
@@ -197,6 +199,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
         </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-scatter' : 'light-scatter'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -222,6 +225,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-2d' : 'light-2d'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'histogram2d', colorscale: 'Viridis' }]}
@@ -241,6 +245,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       {corrMatrix.labels.length >= 2 && (
         <div className="chart-item" style={{ marginTop: '16px' }}>
           <Plot
+            key={isDark ? 'dark-corr' : 'light-corr'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ z: corrMatrix.z, x: corrMatrix.labels, y: corrMatrix.labels, type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1, reversescale: true }]}
@@ -261,6 +266,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
         <div className="usage-charts-grid" style={{ marginTop: '16px' }}>
           <div className="chart-item">
             <Plot
+              key={isDark ? 'dark-leak' : 'light-leak'}
               useResizeHandler
               style={{ width: '100%', height: '300px' }}
               data={[{ x: dates, y: corrMatrix.leakMed, type: 'scatter', mode: 'lines', name: 'Leak Median' }]}
@@ -277,6 +283,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           </div>
           <div className="chart-item">
             <Plot
+              key={isDark ? 'dark-leak-hist' : 'light-leak-hist'}
               useResizeHandler
               style={{ width: '100%', height: '300px' }}
               data={[{ x: corrMatrix.leakMed, type: 'histogram', nbinsx: 20 }]}
@@ -294,6 +301,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           {corrMatrix.leakPct && corrMatrix.leakPct.length ? (
             <div className="chart-item">
               <Plot
+                key={isDark ? 'dark-leak-pct' : 'light-leak-pct'}
                 useResizeHandler
                 style={{ width: '100%', height: '300px' }}
                 data={[{ x: dates, y: corrMatrix.leakPct, type: 'scatter', mode: 'lines', name: 'Leak % above thr' }]}

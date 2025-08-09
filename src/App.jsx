@@ -294,6 +294,7 @@ function ApneaClusterAnalysis({
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
             <Plot
+            key={isDark ? 'dark-cluster' : 'light-cluster'}
             data={[{
               type: 'bar',
               orientation: 'h',
@@ -358,6 +359,7 @@ function FalseNegativesAnalysis({ list }) {
       <div>
         <h3>False Negative Clusters by Confidence Over Time</h3>
         <Plot
+          key={prefersDark ? 'dark-fn' : 'light-fn'}
           useResizeHandler
           style={{ width: '100%', height: '400px' }}
           data={[{

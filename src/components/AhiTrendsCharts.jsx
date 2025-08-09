@@ -117,6 +117,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
   return (
     <div className="usage-charts">
       <Plot
+        key={isDark ? 'dark' : 'light'}
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
         data={[
@@ -177,6 +178,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
       <div className="usage-charts-grid">
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-hist' : 'light-hist'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -209,6 +211,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
         </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{
@@ -231,6 +234,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
       <div className="usage-charts-grid">
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-violin' : 'light-violin'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ y: ahis, type: 'violin', name: 'AHI Violin', points: 'outliers', box: { visible: true } }]}

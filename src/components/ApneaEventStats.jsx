@@ -32,6 +32,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
       <div className="usage-charts-grid">
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-hist' : 'light-hist'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.durations, type: 'histogram', nbinsx: 20, name: 'Duration Dist' }]}
@@ -47,6 +48,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
         </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{
@@ -80,6 +82,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
       <div className="usage-charts-grid">
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-line' : 'light-line'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.nightDates, y: stats.eventsPerNight, type: 'scatter', mode: 'lines', name: 'Events/night', line: { width: 1 } }]}
@@ -95,6 +98,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
         </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-night-hist' : 'light-night-hist'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.eventsPerNight, type: 'histogram', nbinsx: 12, name: 'Events/night Dist' }]}

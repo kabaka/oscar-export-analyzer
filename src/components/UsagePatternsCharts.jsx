@@ -79,6 +79,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
       </div>
       {/* Time-series usage with rolling average, full-width responsive */}
       <Plot
+        key={isDark ? 'dark' : 'light'}
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
         data={[
@@ -129,6 +130,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
       <div className="usage-charts-grid">
         <div className="chart-item">
         <Plot
+          key={isDark ? 'dark-hist' : 'light-hist'}
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
           data={[
@@ -167,6 +169,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
         </div>
         <div className="chart-item">
           <Plot
+            key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -198,6 +201,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
       {/* Weekly calendar heatmap (Mon–Sun by columns of weeks) */}
       <div className="chart-item" style={{ marginTop: '16px' }}>
         <Plot
+          key={isDark ? 'dark-heat' : 'light-heat'}
           useResizeHandler
           style={{ width: '100%', height: '220px' }}
           data={[
