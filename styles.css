@@ -15,6 +15,8 @@
   --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.06);
   --shadow-2: 0 4px 14px rgba(16, 24, 40, 0.08);
   --radius: 10px;
+  /* Offset equal to sticky header height; used for anchor scrolling */
+  --header-offset: 58px;
 }
 
 /* Prefer dark when system is dark and no explicit override */
@@ -80,7 +82,7 @@ body {
   padding: 0 20px;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--header-offset); }
 .container { max-width: 1200px; margin: auto; padding: 16px 0 28px; }
 h1 { margin: 0; font-size: 1.25rem; font-weight: 650; letter-spacing: 0.2px; }
 
@@ -121,9 +123,12 @@ button[disabled] { opacity: 0.6; cursor: not-allowed; }
 .section { background: var(--color-elevated); border: 1px solid var(--color-border-light); border-radius: var(--radius); padding: 1.25rem 1.25rem 1rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-2); }
 
 /* Table of contents */
-.toc { position: sticky; top: 58px; background: var(--color-toc-bg); border: 1px solid var(--color-border-light); border-radius: var(--radius); padding: 8px 10px; margin: 12px 0 18px; display: flex; flex-wrap: wrap; gap: 8px; box-shadow: var(--shadow-1); }
+.toc { position: sticky; top: var(--header-offset); background: var(--color-toc-bg); border: 1px solid var(--color-border-light); border-radius: var(--radius); padding: 8px 10px; margin: 12px 0 18px; display: flex; flex-wrap: wrap; gap: 8px; box-shadow: var(--shadow-1); }
 .toc a { color: var(--color-link); text-decoration: none; font-size: 0.94rem; padding: 6px 10px; border-radius: 8px; }
 .toc a:hover { color: var(--color-link-hover); background: color-mix(in oklab, var(--color-kpi-bg) 60%, transparent); }
+
+/* Ensure in-page anchors are not hidden beneath sticky header */
+h2[id], h3[id], h4[id] { scroll-margin-top: calc(var(--header-offset) + 8px); }
 
 /* Overview Dashboard metric grid and cards */
 .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px; }
