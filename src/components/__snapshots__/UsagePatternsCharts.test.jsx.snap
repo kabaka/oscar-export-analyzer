@@ -6,8 +6,37 @@ exports[`UsagePatternsCharts > renders plotly charts and matches snapshot 1`] = 
     class="usage-charts"
   >
     <div
+      class="kpi-row"
+      style="display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 12px; margin-bottom: 8px;"
+    >
+      <div>
+        <strong>
+          % nights ≥ 4h:
+        </strong>
+         0%
+      </div>
+      <div>
+        <strong>
+          % nights ≥ 6h:
+        </strong>
+         0%
+      </div>
+      <div>
+        <strong>
+          Current 30-night ≥4h:
+        </strong>
+         0%
+      </div>
+      <div>
+        <strong>
+          Longest streak ≥4h/≥6h:
+        </strong>
+         0 / 0 nights
+      </div>
+    </div>
+    <div
       config="[object Object]"
-      data="[object Object],[object Object]"
+      data="[object Object],[object Object],[object Object]"
       data-testid="plotly-chart"
       layout="[object Object]"
       style="width: 100%; height: 300px;"
@@ -37,6 +66,18 @@ exports[`UsagePatternsCharts > renders plotly charts and matches snapshot 1`] = 
           style="width: 100%; height: 300px;"
         />
       </div>
+    </div>
+    <div
+      class="chart-item"
+      style="margin-top: 16px;"
+    >
+      <div
+        config="[object Object]"
+        data="[object Object]"
+        data-testid="plotly-chart"
+        layout="[object Object]"
+        style="width: 100%; height: 220px;"
+      />
     </div>
   </div>
 </DocumentFragment>

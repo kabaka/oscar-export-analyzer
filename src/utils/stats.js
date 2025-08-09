@@ -112,6 +112,7 @@ export function summarizeUsage(data) {
   const sumHours = usageHours.reduce((sum, h) => sum + h, 0);
   const avgHours = sumHours / totalNights;
   const nightsLong = usageHours.filter(h => h >= 4).length;
+  const nightsLong6 = usageHours.filter(h => h >= 6).length;
   const nightsShort = totalNights - nightsLong;
   const minHours = Math.min(...usageHours);
   const maxHours = Math.max(...usageHours);
@@ -129,6 +130,7 @@ export function summarizeUsage(data) {
     totalNights,
     avgHours,
     nightsLong,
+    nightsLong6,
     nightsShort,
     minHours,
     maxHours,
@@ -140,6 +142,60 @@ export function summarizeUsage(data) {
     outlierHighCount,
     usageHours,
   };
+}
+
+// Compute rolling averages and compliance metrics for usage hours
+export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
+  const result = {};
+  windows.forEach(w => {
+    const rolling = usageHours.map((_, i) => {
+      const start = Math.max(0, i - w + 1);
+      const slice = usageHours.slice(start, i + 1);
+      return slice.reduce((a, b) => a + b, 0) / slice.length;
+    });
+    const rollingCompliance4 = usageHours.map((_, i) => {
+      const start = Math.max(0, i - w + 1);
+      const slice = usageHours.slice(start, i + 1);
+      const pct = (slice.filter(h => h >= 4).length / slice.length) * 100;
+      return pct;
+    });
+    result[`avg${w}`] = rolling;
+    result[`compliance4_${w}`] = rollingCompliance4;
+  });
+  return result;
+}
+
+// Compute adherence streaks for thresholds (e.g., >=4h and >=6h)
+export function computeAdherenceStreaks(usageHours, thresholds = [4, 6]) {
+  const map = {};
+  thresholds.forEach(th => {
+    let longest = 0;
+    let current = 0;
+    for (let i = 0; i < usageHours.length; i++) {
+      if (usageHours[i] >= th) {
+        current += 1;
+        longest = Math.max(longest, current);
+      } else {
+        current = 0;
+      }
+    }
+    map[`longest_${th}`] = longest;
+  });
+  return map;
+}
+
+// Lightweight breakpoint detection: sign changes where 7d vs 30d diff crosses, beyond threshold
+export function detectUsageBreakpoints(rolling7, rolling30, dates, minDelta = 0.75) {
+  const points = [];
+  for (let i = 1; i < rolling7.length; i++) {
+    const prev = rolling7[i - 1] - rolling30[i - 1];
+    const curr = rolling7[i] - rolling30[i];
+    const crossed = (prev <= 0 && curr > 0) || (prev >= 0 && curr < 0);
+    if (crossed && Math.abs(curr) >= minDelta) {
+      points.push(dates[i]);
+    }
+  }
+  return points;
 }
 
 // Compute AHI trend metrics from summary data rows
