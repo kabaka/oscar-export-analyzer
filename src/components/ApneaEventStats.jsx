@@ -33,7 +33,6 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
       </table>
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <VizHelp text="Distribution of individual apnea event durations. Helps spot unusually long events." />
           <Plot
             key={isDark ? 'dark-hist' : 'light-hist'}
             useResizeHandler
@@ -46,9 +45,9 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="Distribution of individual apnea event durations. Helps spot unusually long events." />
         </div>
         <div className="chart-item chart-with-help">
-          <VizHelp text="Boxplot of apnea event durations; box shows IQR, whiskers typical range, points outliers." />
           <Plot
             key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
@@ -66,6 +65,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="Boxplot of apnea event durations; box shows IQR, whiskers typical range, points outliers." />
         </div>
       </div>
 
@@ -81,7 +81,6 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
       </table>
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <VizHelp text="Events per night over time; look for spikes that may indicate rough nights." />
           <Plot
             key={isDark ? 'dark-line' : 'light-line'}
             useResizeHandler
@@ -94,9 +93,9 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="Events per night over time; look for spikes that may indicate rough nights." />
         </div>
         <div className="chart-item chart-with-help">
-          <VizHelp text="Distribution of nightly event counts; the shape shows how often high/low event nights occur." />
           <Plot
             key={isDark ? 'dark-night-hist' : 'light-night-hist'}
             useResizeHandler
@@ -109,6 +108,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="Distribution of nightly event counts; the shape shows how often high/low event nights occur." />
         </div>
       </div>
     </div>
