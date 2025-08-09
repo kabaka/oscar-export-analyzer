@@ -1,41 +1,36 @@
 # TODO: Next Steps for OSCAR Sleep Data Analysis Web App
 
-This document outlines the vision, architecture, feature roadmap, and implementation plan
-for evolving the existing OSCAR Sleep Data Analysis prototype into a rich, SPA-driven analytics
-dashboard tailored for data scientists.
+This document proposes a significant, non-breaking revamp that keeps all current value while expanding analytics depth, interactivity, and data-science ergonomics. Nothing is removed; features are reorganized, enriched, and made more discoverable.
 
 ---
 
 ## 1. Vision & Goals
-- Deliver a comprehensive, curated analytics dashboard that surfaces key sleep metrics at a glance.
-- Provide raw- and filtered-data exploration for custom, ad-hoc analysis.
-- Precompute actionable insights while retaining access to underlying data for deep dives.
-- Offer progress feedback during long uploads or heavy computations to maintain user engagement.
+- Rich insights: elevate from charts to explainable, actionable summaries and narratives.
+- Statistical rigor: quantiles, confidence intervals, change-points, and correlation tests.
+- Data-science UX: responsive, filterable, exportable views with reproducible state.
+- Performance: smooth on large CSVs via workers, streaming, and virtualization.
+- Accessibility: keyboard-first, high-contrast, and screen-reader friendly.
 
 ## 2. High-Level User Flows
-1. **Upload Data**: User selects OSCAR Summary + Details CSVs.
-2. **Parsing & Preprocessing**: Stream-parse in background (Web Worker) with progress indicators.
-3. **Dashboard Overview**: KPI cards and high-level charts (usage, AHI, EPAP).
-4. **Deep Dive Tabs**:
-   - Usage Patterns
-   - AHI Trends
-   - Event Clusters
-   - Potential False Negatives
-   - Raw Data Explorer
-5. **Report Export**: One-click export to PDF/CSV of curated summary and raw slices.
+1. Upload CSVs (Summary + Details) with schema validation and helpful errors.
+2. Parse/compute in Web Workers with determinate progress and cancellation.
+3. Dashboard Overview with KPI cards, sparklines, and narrative insights.
+4. Deep-dive tabs: Usage, AHI, Pressure/Leak, Event Clusters, False Negatives, Raw Explorer.
+5. Export: PDF report, CSV slices, and JSON “session” for reproducibility.
 
 ## 3. Architecture & Data Pipeline
 
-### 3.1 Web Worker–Based Processing
-- Offload CSV parsing and analytics computations (statistical summaries, clustering)
-  to dedicated Web Worker(s).
-- Communicate progress and partial results via `postMessage` events.
+### 3.1 Web Workers and Streaming
+- Move heavy calculations to dedicated workers (parser + analytics) using Comlink.
+- Stream parse with PapaParse; push partial aggregates to UI for immediate feedback.
+- Support cancellation/retry; show stepwise progress (parse → compute → render).
 
-### 3.2 State Management
-- Global app state (parsed data, metrics, clusters) managed via React Context or Zustand.
-- Cache parsed CSV blobs and derived results in IndexedDB (optional) for faster reloads.
+### 3.2 State and Persistence
+- Lift global state to Context or Zustand; keep App.jsx lean and declarative.
+- Persist parsed blobs and computed metrics in IndexedDB (opt-in, with “Clear data”).
+- URL hash/state export for sharable, reproducible views without uploading data.
 
-### 3.3 Module Structure
+### 3.3 Module Organization (target)
 ```
 src/
 ├── components/
@@ -47,7 +42,8 @@ src/
 │   │   ├── UsageChart.jsx
 │   │   ├── AhiChart.jsx
 │   │   ├── EpapChart.jsx
-│   │   └── ScatterEpapAhi.jsx
+│   │   ├── LeakChart.jsx
+│   │   └── ScatterMatrix.jsx
 │   ├── tables/
 │   │   ├── RawDataTable.jsx
 │   │   ├── ClusterTable.jsx
@@ -58,73 +54,121 @@ src/
 ├── context/
 │   └── DataContext.jsx
 ├── hooks/
-│   └── useWorker.js
+│   ├── useWorker.js
+│   └── useUrlState.js
 ├── utils/
-│   ├── stats.js       # quantiles, IQR, trend calculations
-│   ├── clustering.js  # clusterApneaEvents, detectFalseNegatives
-│   └── parsing.js     # Papaparse wrapper
+│   ├── stats.js       # quantiles, CIs, change-points
+│   ├── clustering.js  # clusterApneaEvents, detectFalseNegatives (configurable)
+│   ├── parsing.js     # schema validate + normalize
+│   └── export.js      # PDF/CSV/JSON exports
 ├── workers/
 │   ├── parser.worker.js
 │   └── analytics.worker.js
-├── App.jsx
-└── main.jsx
+└── routes/ (optional with React Router)
 ```
 
 ## 4. Feature Roadmap & Visualizations
 
+### 4.1 Usage Patterns (expand, keep existing)
+- 7/30-night moving averages with adherence streaks and breakpoints (change-point detection via simple CUSUM/PELT).
+- Day-of-week and weekly heatmap of usage hours; calendar heatmap (GitHub-style).
+- Compliance KPIs: percent nights ≥ 4h and ≥ 6h; rolling compliance window.
+- Distribution: histogram + box/violin; annotate median/mean and IQR whiskers (already partly present).
 
-### 4.3 Raw Data Explorer
-- Virtualized table with filtering, sorting, column hiding for Summary and Details rows.
-- Search and export selected ranges to CSV.
+### 4.2 AHI Trends (expand, keep existing)
+- Decompose AHI into OAI/CAI/MAI if columns exist; stacked band chart over time.
+- Change-points, outlier nights, and “bad-night” tags with explanations (e.g., long clusters, high CA% ).
+- Percent nights by severity bands (≤5, 5–15, 15–30, >30).
+- QQ-plot for normality check; violin plot for distribution shape.
+
+### 4.3 Pressure & Leak (rename from Pressure Settings; keep EPAP views)
+- Add leak metrics (if present in Summary): nightly median leak and time above leak threshold.
+- Correlation matrix: EPAP, AHI, usage, leak (Pearson/Spearman with p-values).
+- EPAP titration helper: stratify AHI by EPAP bins; Mann–Whitney U test difference (with effect size).
+- 2D density/hexbin: EPAP vs AHI; highlight confidence envelope.
+
+### 4.4 Event Clusters (keep and enrich)
+- Parameter panel: gap sec, FLG thresholds, min counts; live recompute in worker.
+- Severity score per cluster: total duration, density, and FLG edge strength; sortable table.
+- Interactive Gantt: brush to zoom, cross-highlight with details table; export cluster intervals to CSV.
+- Overlay leak/pressure traces (if available) around cluster window for context.
+
+### 4.5 Potential False Negatives (keep and enrich)
+- Threshold tuning UI with presets; display ROC-style guidance based on retrospective labels (if user marks reviewed).
+- Review workflow: mark as reviewed/hidden; persist in IndexedDB; export reviewed set.
+- Explainability: show top drivers (duration, peak FLG) and nearby annotated events.
+
+### 4.6 Raw Data Explorer (add, do not replace)
+- Virtualized, column-configurable table for Summary and Details with filters, sort, and search.
+- Pivot-like aggregations (group by date, event type) and quick stats footer.
+- Cross-filtering: selecting ranges updates charts; reset/undo controls.
+- Export selected rows/slices to CSV.
+
+### 4.7 Reporting & Export
+- One-click PDF: Overview KPIs, key charts, and narrative insights with timestamps and parameters.
+- CSV exports: summary metrics, cluster intervals, false-negative candidates.
+- JSON session: data fingerprints + visualization state for reproducibility/sharing (without data upload).
+
+### 4.8 Reproducibility & Notebooks (optional, scientist-friendly)
+- Export tidy CSV/Parquet; provide Python/R snippets to replicate core charts.
+- Document data dictionary and column mapping.
 
 ## 5. Asynchronous Feedback & UX
-- Show determinate progress bars for parsing and analytics steps.
-- Use notifications/snackbars for completion or error messages.
-- Disable downstream tabs/components until prerequisite data or processing ready.
+- Determinate progress per step; clear error toasts with actionable fixes (missing columns, bad dates).
+- Disable dependent tabs until ready; skeleton loaders; retry buttons.
+- Keyboard shortcuts for navigation; persistent parameter panel; responsive grid layout.
 
 ## 6. Performance & Scalability
-- Leverage Web Workers to avoid main-thread blocking.
-- Debounce UI updates for large datasets.
-- Virtualize large tables (e.g., react-window).
+- Workers for parse/analytics; debounce UI updates; chunked aggregation.
+- Virtualize big tables; lazy-render heavy charts; memoize derived series.
+- Cache parsed/computed artifacts; estimate memory usage and allow user to clear data.
 
 ## 7. Libraries & Tooling
-- **Charts**: Recharts or Chart.js (lightweight) / Plotly.js for interactive zoom.
-- **Tables**: react-table or AG Grid for flexible filtering.
-- **Workers**: Comlink for ergonomic worker communication.
-- **State**: Zustand or Context + useReducer for simpler state.
-- **Routing**: React Router for tabbed navigation.
+- Charts: keep Plotly for interactivity; consider lightweight alt (Recharts) for small charts.
+- Tables: TanStack Table (react-table) + react-window for virtualization; AG Grid if needed.
+- Workers: Comlink; structured clones for typed payloads.
+- State: Zustand or Context + reducer; React Router for tabs.
 
-## 8. Milestones & Timeline
+## 8. Documentation Improvements (README)
+- Features overview with screenshots/GIFs; architecture diagram (workers, state, views).
+- Data requirements: expected CSV columns, sample files, and known OSCAR quirks.
+- Privacy: client-side only, no uploads; how to clear local data.
+- Troubleshooting: parsing errors, timezone/date formats, large files guidance.
+- Interpretation guide: how to read each chart and what to look for.
+- CLI section for `analysis.js` with examples; link to advanced usage.
+
+## 9. Non-Breaking Principle
+- Keep all existing charts and flows; reorganize into tabs and add layers/controls.
+- New features behind sensible defaults; parameters surfaced but pre-populated with current values.
+
+## 10. Milestones & Timeline
 | Week | Deliverable |
 | ---- | ----------- |
-| 1    | Web Worker scaffolding + global state context |
-| 2    | Dashboard overview & KPI cards |
-| 3    | Usage & AHI chart components |
-| 4    | EPAP visualizations & scatterplot |
-| 5    | Event clustering timeline + table |
-| 6    | False negatives view & raw-data explorer |
-| 7    | Report export (PDF/CSV) + polish UX |
+| 1    | Worker scaffolding + global state + error toasts |
+| 2    | Overview KPIs + narrative + screenshots/docs updates |
+| 3    | Usage revamp (heatmaps, change-points) |
+| 4    | AHI revamp (stratification, distributions) |
+| 5    | EPAP/Leak correlations + tests |
+| 6    | Clusters panel w/ parameters + Gantt upgrades |
+| 7    | False negatives review workflow |
+| 8    | Raw Data Explorer + exports |
+| 9    | PDF/CSV/JSON exports + polish + a11y |
 
-## 9. Future Directions
-- Baseline comparison vs pre-therapy exports.
-- Positional and sleep-stage integration.
-- Symptom-score correlation (ESS) input module.
-- Predictive alerts using simple ML anomaly detection.
-- Remote sync / cloud persistence of parsed sessions.
+## 11. Testing & Quality Assurance
+- Unit: stats edge-cases (quantiles, CIs), clustering boundaries, false-negative filters.
+- Hooks/State: worker messaging, loading/cancel paths, persistence.
+- Integration: upload → parse → compute → render flow; parameter changes recompute.
+- Visual sanity: smoke-test charts render with sample datasets; tolerate empty/missing columns.
+- Accessibility: `@axe-core/react` checks on main views; keyboard focus order and labels.
+- Performance: synthetic large CSVs to assert render time budgets; memory ceiling warnings.
 
-## 10. Testing & Quality Assurance
+## 12. Future Directions
+- Baseline comparison (pre/post therapy); regimen comparisons across periods.
+- Positional/stage integration if available; symptom correlation (ESS input).
+- Lightweight anomaly detection (seasonal STL + z-score) and nudges.
+- Optional cloud sync/export integration without storing raw data.
 
-Set a test coverage goal of ~85% across core modules and components. Break down into PR-sized milestones:
-
-
-### 10.2 State & Hook Tests
-- **DataContext** – test context provider, actions, and state transitions.
-- **Custom Hooks** (`useWorker.js`) – mock worker interface and verify hook behavior.
-
-### 10.3 End-to-End Tests
-- **Upload & Parsing Flow** – E2E test file upload, progress bars, dashboard availability.
-- **Dashboard Navigation** – test tab navigation, data loading, report export functionality.
-
-### 10.4 Quality Checks
-- **Accessibility** – integrate `axe-core` checks for key UI views.
-- **Performance (optional)** – basic render-performance benchmarks for large datasets.
+## 13. Open Questions / Assumptions
+- Which OSCAR columns are consistently present across devices/versions?
+- Typical CSV sizes in the wild; target performance budgets?
+- Desired export formats for team sharing (PDF length, CSV columns)?
