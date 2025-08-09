@@ -86,14 +86,19 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
     if (usage.length === epaps.length) vars.push({ key: 'Usage (h)', values: usage });
     // leak median if present: find a numeric column with both 'Leak' and 'Median' in key
     const keys = data.length ? Object.keys(data[0]) : [];
-    const leakKey = keys.find(k => /leak/i.test(k) && /median/i.test(k));
-    if (leakKey) {
-      const leak = data.map(r => parseFloat(r[leakKey])).filter(v => !isNaN(v));
-      if (leak.length === epaps.length) vars.push({ key: 'Leak (median)', values: leak });
+    const leakMedKey = keys.find(k => /leak/i.test(k) && /median/i.test(k));
+    const leakPctKey = keys.find(k => /leak/i.test(k) && (/%/.test(k) || /time.*above/i.test(k)));
+    let leakMed = null;
+    if (leakMedKey) {
+      const leak = data.map(r => parseFloat(r[leakMedKey])).filter(v => !isNaN(v));
+      if (leak.length === epaps.length) {
+        vars.push({ key: 'Leak (median)', values: leak });
+        leakMed = leak;
+      }
     }
     const labels = vars.map(v => v.key);
     const z = labels.map((_, i) => labels.map((_, j) => pearson(vars[i].values, vars[j].values)));
-    return { labels, z };
+    return { labels, z, leakMedKey, leakMed, leakPctKey };
   }, [data, epaps, ahis]);
 
   // Mann–Whitney titration helper for EPAP <7 vs ≥7 bins
@@ -242,6 +247,44 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           />
         </div>
       )}
+
+      {/* Leak charts if available */}
+      {(corrMatrix.leakMed && corrMatrix.leakMed.length) ? (
+        <div className="usage-charts-grid" style={{ marginTop: '16px' }}>
+          <div className="chart-item">
+            <Plot
+              useResizeHandler
+              style={{ width: '100%', height: '300px' }}
+              data={[{ x: dates, y: corrMatrix.leakMed, type: 'scatter', mode: 'lines', name: 'Leak Median' }]}
+              layout={{
+                template: isDark ? 'plotly_dark' : 'plotly',
+                autosize: true,
+                title: 'Leak Median Over Time',
+                xaxis: { title: 'Date' },
+                yaxis: { title: 'Leak (median)' },
+                margin: { t: 40, l: 60, r: 20, b: 50 },
+              }}
+              config={{ responsive: true, displaylogo: false }}
+            />
+          </div>
+          <div className="chart-item">
+            <Plot
+              useResizeHandler
+              style={{ width: '100%', height: '300px' }}
+              data={[{ x: corrMatrix.leakMed, type: 'histogram', nbinsx: 20 }]}
+              layout={{
+                template: isDark ? 'plotly_dark' : 'plotly',
+                autosize: true,
+                title: 'Leak Median Distribution',
+                xaxis: { title: 'Leak (median)' },
+                yaxis: { title: 'Count' },
+                margin: { t: 40, l: 60, r: 20, b: 50 },
+              }}
+              config={{ responsive: true, displaylogo: false }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className="section" style={{ marginTop: '8px' }}>
         <h4>EPAP Titration (AHI by EPAP bins)</h4>

@@ -7,7 +7,7 @@ exports[`AhiTrendsCharts > renders plotly charts and matches snapshot 1`] = `
   >
     <div
       config="[object Object]"
-      data="[object Object],[object Object]"
+      data="[object Object],[object Object],[object Object]"
       data-testid="plotly-chart"
       layout="[object Object]"
       style="width: 100%; height: 300px;"
@@ -36,6 +36,99 @@ exports[`AhiTrendsCharts > renders plotly charts and matches snapshot 1`] = `
           style="width: 100%; height: 300px;"
         />
       </div>
+    </div>
+    <div
+      class="usage-charts-grid"
+    >
+      <div
+        class="chart-item"
+      >
+        <div
+          data="[object Object]"
+          data-testid="plotly-chart"
+          layout="[object Object]"
+          style="width: 100%; height: 300px;"
+        />
+      </div>
+      <div
+        class="chart-item"
+      >
+        <div
+          data="[object Object],[object Object]"
+          data-testid="plotly-chart"
+          layout="[object Object]"
+          style="width: 100%; height: 300px;"
+        />
+      </div>
+    </div>
+    <div
+      class="section"
+      style="margin-top: 8px;"
+    >
+      <h4>
+        Severity Bands
+      </h4>
+      <table>
+        <thead>
+          <tr>
+            <th>
+              Band
+            </th>
+            <th>
+              Nights
+            </th>
+            <th>
+              Percent
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              ≤ 5
+            </td>
+            <td>
+              2
+            </td>
+            <td>
+              67%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              5–15
+            </td>
+            <td>
+              1
+            </td>
+            <td>
+              33%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              15–30
+            </td>
+            <td>
+              0
+            </td>
+            <td>
+              0%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              &gt; 30
+            </td>
+            <td>
+              0
+            </td>
+            <td>
+              0%
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </DocumentFragment>
