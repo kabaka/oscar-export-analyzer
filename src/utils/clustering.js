@@ -151,3 +151,49 @@ export function detectFalseNegatives(details, flThreshold = DEFAULT_FLG_BRIDGE_T
 export const FLG_BRIDGE_THRESHOLD = DEFAULT_FLG_BRIDGE_THRESHOLD;
 // Cap on apnea cluster window duration
 export const MAX_CLUSTER_DURATION_SEC = 230; // sanity cap on cluster window (sec)
+
+// Additional exported defaults for UI parameter panels
+export const APNEA_GAP_DEFAULT = DEFAULT_APNEA_GAP_SEC;
+export const FLG_CLUSTER_GAP_DEFAULT = DEFAULT_FLG_CLUSTER_GAP_SEC;
+export const FLG_EDGE_THRESHOLD_DEFAULT = EDGE_THRESHOLD;
+
+/**
+ * Compute a severity score for a cluster combining total duration, density, and
+ * boundary extension via FLG edge strength. Higher is more severe.
+ * This is a heuristic and meant for sorting/prioritization in the UI.
+ * @param {{ start: Date, end: Date, durationSec: number, count: number, events: Array<{date: Date, durationSec: number}> }} cluster
+ * @returns {number}
+ */
+export function computeClusterSeverity(cluster) {
+  if (!cluster || !cluster.events?.length) return 0;
+  const totalEvtDuration = cluster.events.reduce((s, e) => s + (e.durationSec || 0), 0);
+  const firstStart = cluster.events[0].date;
+  const lastEvt = cluster.events[cluster.events.length - 1];
+  const lastEnd = new Date(lastEvt.date.getTime() + (lastEvt.durationSec || 0) * 1000);
+  const rawSpanSec = Math.max(1, (lastEnd - firstStart) / 1000);
+  const windowMin = Math.max(1 / 60, cluster.durationSec / 60);
+  const density = cluster.count / windowMin; // events per minute over the final window
+  const edgeExtensionSec = Math.max(0, cluster.durationSec - rawSpanSec);
+  // Weighted combination; weights chosen for stable, interpretable ordering
+  const score = (totalEvtDuration / 60) * 1.5 + density * 0.5 + (edgeExtensionSec / 30) * 1.0;
+  return Number.isFinite(score) ? score : 0;
+}
+
+/**
+ * Convert clusters to a simple CSV for export.
+ * Columns: index,start,end,durationSec,count,severity
+ * @param {Array} clusters
+ * @returns {string}
+ */
+export function clustersToCsv(clusters) {
+  const header = ['index', 'start', 'end', 'durationSec', 'count', 'severity'];
+  const rows = (clusters || []).map((cl, idx) => [
+    idx + 1,
+    cl.start instanceof Date ? cl.start.toISOString() : '',
+    cl.end instanceof Date ? cl.end.toISOString() : '',
+    Math.round(cl.durationSec ?? 0),
+    cl.count ?? 0,
+    cl.severity != null ? Number(cl.severity).toFixed(3) : ''
+  ]);
+  return [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+}
