@@ -20,7 +20,7 @@ It supports automatic light/dark themes based on system preferences to enhance a
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
    - Expanded usage analytics: 7/30-night moving averages, adherence breakpoints, compliance KPIs (≥4h/≥6h), and a weekly calendar heatmap
    - AHI trends (time-series, histogram, boxplot, average, min, max, threshold line at AHI > 5)
-   - Pressure settings trends (median EPAP changes and EPAP vs AHI)
+   - Pressure & leak: EPAP trends and distribution, EPAP vs AHI scatter and 2D density, correlation matrix (EPAP, AHI, usage, optional leak), and EPAP titration helper with Mann–Whitney test
    - Clustered apnea events: click a row in the scrollable cluster table below to view an event-level Gantt timeline for the selected cluster; table shows each cluster’s start, duration, and count
   - Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
   - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights)

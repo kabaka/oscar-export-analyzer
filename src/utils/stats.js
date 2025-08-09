@@ -312,5 +312,92 @@ export function computeEPAPTrends(data) {
     corrEPAPAHI,
     epaps,
     epapAhiPairs,
+    ahisLow: lowGroup,
+    ahisHigh: highGroup,
   };
+}
+
+// Pearson correlation helper
+export function pearson(x, y) {
+  const n = Math.min(x.length, y.length);
+  if (n < 2) return NaN;
+  let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  for (let i = 0; i < n; i++) {
+    const xi = x[i];
+    const yi = y[i];
+    if (!isFinite(xi) || !isFinite(yi)) continue;
+    sx += xi; sy += yi;
+    sxx += xi * xi; syy += yi * yi; sxy += xi * yi;
+  }
+  const cov = (sxy - (sx * sy) / n) / (n - 1);
+  const vx = (sxx - (sx * sx) / n) / (n - 1);
+  const vy = (syy - (sy * sy) / n) / (n - 1);
+  const denom = Math.sqrt(vx) * Math.sqrt(vy);
+  return denom ? cov / denom : NaN;
+}
+
+// Rank arrays for Spearman
+export function rank(arr) {
+  const indexed = arr.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
+  const ranks = new Array(arr.length);
+  let i = 0;
+  while (i < indexed.length) {
+    let j = i;
+    while (j + 1 < indexed.length && indexed[j + 1].v === indexed[i].v) j++;
+    const avgRank = (i + j + 2) / 2; // 1-based ranks averaged for ties
+    for (let k = i; k <= j; k++) ranks[indexed[k].i] = avgRank;
+    i = j + 1;
+  }
+  return ranks;
+}
+
+export function spearman(x, y) {
+  const rx = rank(x);
+  const ry = rank(y);
+  return pearson(rx, ry);
+}
+
+// Standard normal CDF approximation
+export function normalCdf(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp(-z * z / 2);
+  let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  if (z > 0) prob = 1 - prob;
+  return prob;
+}
+
+// Mann-Whitney U test with normal approximation (two-sided)
+export function mannWhitneyUTest(a, b) {
+  const n1 = a.length, n2 = b.length;
+  if (n1 === 0 || n2 === 0) return { U: NaN, z: NaN, p: NaN, effect: NaN };
+  // ranks on combined
+  const combined = a.map(v => ({ v, g: 1 })).concat(b.map(v => ({ v, g: 2 })));
+  combined.sort((x, y) => x.v - y.v);
+  let rankSum1 = 0;
+  let i = 0;
+  const tieGroups = [];
+  while (i < combined.length) {
+    let j = i;
+    while (j + 1 < combined.length && combined[j + 1].v === combined[i].v) j++;
+    const avgRank = (i + j + 2) / 2;
+    let count = 0;
+    for (let k = i; k <= j; k++) {
+      if (combined[k].g === 1) rankSum1 += avgRank;
+      count++;
+    }
+    tieGroups.push(count);
+    i = j + 1;
+  }
+  const U1 = rankSum1 - (n1 * (n1 + 1)) / 2;
+  const U2 = n1 * n2 - U1;
+  const U = Math.min(U1, U2);
+  // tie correction
+  const tieCorrection = 1 - tieGroups.reduce((acc, t) => acc + (t * (t * t - 1)), 0) / ((n1 + n2) * ((n1 + n2) * (n1 + n2) - 1));
+  const mu = (n1 * n2) / 2;
+  const sigma = Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12) * Math.sqrt(Math.max(0, tieCorrection));
+  const z = sigma ? (U - mu) / sigma : 0;
+  // two-sided p via normal approx
+  const p = 2 * (1 - normalCdf(Math.abs(z)));
+  const effect = 1 - (2 * U) / (n1 * n2); // rank-biserial
+  return { U, z, p, effect };
 }
