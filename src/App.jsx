@@ -9,6 +9,10 @@ import {
   FLG_BRIDGE_THRESHOLD,
   APOEA_CLUSTER_MIN_TOTAL_SEC,
   MAX_CLUSTER_DURATION_SEC,
+  APNEA_GAP_DEFAULT,
+  FLG_CLUSTER_GAP_DEFAULT,
+  computeClusterSeverity,
+  clustersToCsv,
 } from './utils/clustering';
 import Overview from './components/Overview';
 import UsagePatternsCharts from './components/UsagePatternsCharts';
@@ -184,26 +188,118 @@ function SummaryAnalysis({ data, clusters = [] }) {
   );
 }
 
-function ApneaClusterAnalysis({ clusters }) {
+function ApneaClusterAnalysis({
+  clusters,
+  params,
+  onParamChange,
+}) {
   const [selected, setSelected] = useState(null);
+  const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });
   const isDark = usePrefersDarkMode();
+  const sorted = [...clusters].sort((a, b) => {
+    const dir = sortBy.dir === 'asc' ? 1 : -1;
+    const va = a[sortBy.key] ?? 0;
+    const vb = b[sortBy.key] ?? 0;
+    if (va < vb) return -1 * dir;
+    if (va > vb) return 1 * dir;
+    return 0;
+  });
+
+  const handleExport = () => {
+    const csv = clustersToCsv(clusters);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'apnea_clusters.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="section">
       <h2 id="clustered-apnea">Clustered Apnea Events</h2>
 
-      {selected !== null && clusters[selected] && (
+      <div className="controls" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'end' }}>
+        <div>
+          <label>Gap sec
+            <input
+              type="number"
+              min={0}
+              value={params.gapSec}
+              onChange={e => onParamChange({ gapSec: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>FLG bridge ≥
+            <input
+              type="number"
+              step="0.05"
+              min={0}
+              max={2}
+              value={params.bridgeThreshold}
+              onChange={e => onParamChange({ bridgeThreshold: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>FLG gap sec
+            <input
+              type="number"
+              min={0}
+              value={params.bridgeSec}
+              onChange={e => onParamChange({ bridgeSec: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>Min event count
+            <input
+              type="number"
+              min={1}
+              value={params.minCount}
+              onChange={e => onParamChange({ minCount: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>Min total apnea sec
+            <input
+              type="number"
+              min={0}
+              value={params.minTotalSec}
+              onChange={e => onParamChange({ minTotalSec: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>Max cluster sec
+            <input
+              type="number"
+              min={0}
+              value={params.maxClusterSec}
+              onChange={e => onParamChange({ maxClusterSec: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <button onClick={handleExport}>Export CSV</button>
+        </div>
+      </div>
+
+      {selected !== null && sorted[selected] && (
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
             <Plot
             data={[{
               type: 'bar',
               orientation: 'h',
-              y: clusters[selected].events.map((_, i) => `Evt ${i + 1}`),
-              x: clusters[selected].events.map(e => e.durationSec * 1000),
-              base: clusters[selected].events.map(e => e.date.toISOString()),
+              y: sorted[selected].events.map((_, i) => `Evt ${i + 1}`),
+              x: sorted[selected].events.map(e => e.durationSec * 1000),
+              base: sorted[selected].events.map(e => e.date.toISOString()),
               marker: { color: '#ff7f0e' },
-              hovertemplate: clusters[selected].events.map(e =>
+              hovertemplate: sorted[selected].events.map(e =>
                 `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`
               )
             }]}
@@ -213,7 +309,7 @@ function ApneaClusterAnalysis({ clusters }) {
               xaxis: { type: 'date', title: 'Event Start Time' },
               yaxis: { title: 'Event #' },
               margin: { l: 80, r: 20, t: 40, b: 40 },
-              height: Math.max(200, clusters[selected].events.length * 30 + 100)
+              height: Math.max(200, sorted[selected].events.length * 30 + 100)
             }}
             config={{ displayModeBar: false }}
           />
@@ -223,10 +319,16 @@ function ApneaClusterAnalysis({ clusters }) {
       <div className="cluster-table-container">
         <table>
           <thead>
-            <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Count</th></tr>
+            <tr>
+              <th>#</th>
+              <th>Start</th>
+              <th style={{cursor:'pointer'}} onClick={() => setSortBy(s => ({ key:'durationSec', dir: s.key==='durationSec' && s.dir==='desc' ? 'asc' : 'desc' }))}>Duration (s)</th>
+              <th style={{cursor:'pointer'}} onClick={() => setSortBy(s => ({ key:'count', dir: s.key==='count' && s.dir==='desc' ? 'asc' : 'desc' }))}>Count</th>
+              <th style={{cursor:'pointer'}} onClick={() => setSortBy(s => ({ key:'severity', dir: s.key==='severity' && s.dir==='desc' ? 'asc' : 'desc' }))}>Severity</th>
+            </tr>
           </thead>
           <tbody>
-            {clusters.map((cl, i) => (
+            {sorted.map((cl, i) => (
               <tr
                 key={i}
                 onClick={() => setSelected(i)}
@@ -236,6 +338,7 @@ function ApneaClusterAnalysis({ clusters }) {
                 <td>{cl.start.toLocaleString()}</td>
                 <td>{cl.durationSec.toFixed(0)}</td>
                 <td>{cl.count}</td>
+                <td>{cl.severity?.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -323,6 +426,18 @@ function App() {
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
   const [processingDetails, setProcessingDetails] = useState(false);
+  const [clusterParams, setClusterParams] = useState({
+    gapSec: APNEA_GAP_DEFAULT,
+    bridgeThreshold: FLG_BRIDGE_THRESHOLD,
+    bridgeSec: FLG_CLUSTER_GAP_DEFAULT,
+    minCount: 3,
+    minTotalSec: APOEA_CLUSTER_MIN_TOTAL_SEC,
+    maxClusterSec: MAX_CLUSTER_DURATION_SEC,
+  });
+
+  const onClusterParamChange = (patch) => {
+    setClusterParams(prev => ({ ...prev, ...patch }));
+  };
 
   useEffect(() => {
   if (detailsData) {
@@ -337,12 +452,18 @@ function App() {
       const flgEvents = detailsData
         .filter(r => r['Event'] === 'FLG')
         .map(r => ({ date: new Date(r['DateTime']), level: parseFloat(r['Data/Duration']) }));
-      const rawClusters = clusterApneaEvents(apneaEvents, flgEvents);
-      const validClusters = rawClusters.filter(
-        cl => cl.count >= 3 &&
-              cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= APOEA_CLUSTER_MIN_TOTAL_SEC &&
-              cl.durationSec <= MAX_CLUSTER_DURATION_SEC
+      const rawClusters = clusterApneaEvents(
+        apneaEvents,
+        flgEvents,
+        clusterParams.gapSec,
+        clusterParams.bridgeThreshold,
+        clusterParams.bridgeSec
       );
+      const validClusters = rawClusters
+        .filter(cl => cl.count >= clusterParams.minCount)
+        .filter(cl => cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= clusterParams.minTotalSec)
+        .filter(cl => cl.durationSec <= clusterParams.maxClusterSec)
+        .map(cl => ({ ...cl, severity: computeClusterSeverity(cl) }));
       setApneaClusters(validClusters);
       // detect potential false negatives via flow-limit events
       setFalseNegatives(detectFalseNegatives(detailsData));
@@ -354,7 +475,7 @@ function App() {
       setProcessingDetails(false);
     };
   }
-  }, [detailsData]);
+  }, [detailsData, clusterParams]);
 
   return (
     <div className="container">
@@ -405,7 +526,11 @@ function App() {
             <ApneaEventStats data={detailsData} />
           </div>
           <div className="section">
-            <ApneaClusterAnalysis clusters={apneaClusters} />
+            <ApneaClusterAnalysis
+              clusters={apneaClusters}
+              params={clusterParams}
+              onParamChange={onClusterParamChange}
+            />
           </div>
           <div className="section">
             <FalseNegativesAnalysis list={falseNegatives} />
