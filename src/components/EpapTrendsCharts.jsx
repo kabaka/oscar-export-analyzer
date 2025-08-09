@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
+import { applyChartTheme } from '../utils/chartTheme';
 import { mannWhitneyUTest, pearson } from '../utils/stats';
 
 /**
@@ -149,15 +150,13 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             marker: { color: COLORS.secondary, size: 6 },
           },
         ]}
-        layout={{
-          template: isDark ? 'plotly_dark' : 'plotly',
-          autosize: true,
+        layout={applyChartTheme(isDark, {
           title: 'Nightly Median EPAP Over Time',
           legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
           xaxis: { title: 'Date' },
           yaxis: { title: 'EPAP (cmH₂O)' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
-        }}
+        })}
         config={{
           responsive: true,
           displaylogo: false,
@@ -181,14 +180,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               marker: { color: COLORS.box },
             },
           ]}
-          layout={{
-            template: isDark ? 'plotly_dark' : 'plotly',
-            autosize: true,
+          layout={applyChartTheme(isDark, {
             title: 'Boxplot of Nightly Median EPAP',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
             yaxis: { title: 'EPAP (cmH₂O)', zeroline: false },
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          }}
+          })}
           config={{
             responsive: true,
             displaylogo: false,
@@ -206,15 +203,13 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               { x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'scatter', mode: 'markers', name: 'Data', marker: { size: 6, opacity: 0.7, color: COLORS.primary } },
               { x: [boxMin, boxMax], y: [slope * boxMin + intercept, slope * boxMax + intercept], type: 'scatter', mode: 'lines', name: 'Fit', line: { dash: 'dash', width: 2, color: COLORS.secondary } },
             ]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: `EPAP vs AHI Scatter (r = ${corr.toFixed(2)})`,
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               xaxis: { title: 'Median EPAP (cmH₂O)' },
               yaxis: { title: 'AHI (events/hour)' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
             config={{
               responsive: true,
               displaylogo: false,
@@ -229,14 +224,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'histogram2d', colorscale: 'Viridis' }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'EPAP vs AHI Density (2D Histogram)',
               xaxis: { title: 'Median EPAP (cmH₂O)' },
               yaxis: { title: 'AHI (events/hour)' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
             config={{ responsive: true, displaylogo: false }}
           />
         </div>
@@ -249,13 +242,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ z: corrMatrix.z, x: corrMatrix.labels, y: corrMatrix.labels, type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1, reversescale: true }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
+            layout={applyChartTheme(isDark, {
               title: 'Correlation Matrix (Pearson r)',
               autosize: true,
               margin: { t: 40, l: 80, r: 20, b: 80 },
               annotations: corrMatrix.z.flatMap((row, i) => row.map((v, j) => ({ x: corrMatrix.labels[j], y: corrMatrix.labels[i], text: isFinite(v) ? v.toFixed(2) : '—', showarrow: false, font: { color: '#fff' } }))),
-            }}
+            })}
             config={{ responsive: true, displaylogo: false }}
           />
         </div>
@@ -270,14 +262,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               useResizeHandler
               style={{ width: '100%', height: '300px' }}
               data={[{ x: dates, y: corrMatrix.leakMed, type: 'scatter', mode: 'lines', name: 'Leak Median' }]}
-              layout={{
-                template: isDark ? 'plotly_dark' : 'plotly',
-                autosize: true,
+              layout={applyChartTheme(isDark, {
                 title: 'Leak Median Over Time',
                 xaxis: { title: 'Date' },
                 yaxis: { title: 'Leak (median)' },
                 margin: { t: 40, l: 60, r: 20, b: 50 },
-              }}
+              })}
               config={{ responsive: true, displaylogo: false }}
             />
           </div>
@@ -287,14 +277,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               useResizeHandler
               style={{ width: '100%', height: '300px' }}
               data={[{ x: corrMatrix.leakMed, type: 'histogram', nbinsx: 20 }]}
-              layout={{
-                template: isDark ? 'plotly_dark' : 'plotly',
-                autosize: true,
+              layout={applyChartTheme(isDark, {
                 title: 'Leak Median Distribution',
                 xaxis: { title: 'Leak (median)' },
                 yaxis: { title: 'Count' },
                 margin: { t: 40, l: 60, r: 20, b: 50 },
-              }}
+              })}
               config={{ responsive: true, displaylogo: false }}
             />
           </div>
@@ -305,14 +293,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
                 useResizeHandler
                 style={{ width: '100%', height: '300px' }}
                 data={[{ x: dates, y: corrMatrix.leakPct, type: 'scatter', mode: 'lines', name: 'Leak % above thr' }]}
-                layout={{
-                  template: isDark ? 'plotly_dark' : 'plotly',
-                  autosize: true,
+                layout={applyChartTheme(isDark, {
                   title: 'Time Above Leak Threshold (%)',
                   xaxis: { title: 'Date' },
                   yaxis: { title: 'Percent of night (%)' },
                   margin: { t: 40, l: 60, r: 20, b: 50 },
-                }}
+                })}
                 config={{ responsive: true, displaylogo: false }}
               />
             </div>

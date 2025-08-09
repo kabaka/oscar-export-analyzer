@@ -20,6 +20,7 @@ import AhiTrendsCharts from './components/AhiTrendsCharts';
 import EpapTrendsCharts from './components/EpapTrendsCharts';
 import ApneaEventStats from './components/ApneaEventStats';
 import Plot from 'react-plotly.js';
+import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
 import ThemeToggle from './components/ThemeToggle';
 
@@ -306,14 +307,13 @@ function ApneaClusterAnalysis({
                 `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`
               )
             }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
+            layout={applyChartTheme(isDark, {
               title: `Cluster #${selected + 1} Event Timeline`,
               xaxis: { type: 'date', title: 'Event Start Time' },
               yaxis: { title: 'Event #' },
               margin: { l: 80, r: 20, t: 40, b: 40 },
               height: Math.max(200, sorted[selected].events.length * 30 + 100)
-            }}
+            })}
             config={{ displayModeBar: false }}
           />
         </div>
@@ -379,15 +379,13 @@ function FalseNegativesAnalysis({ list }) {
             ),
             hovertemplate: '%{text}<extra></extra>'
           }]}
-          layout={{
-            template: prefersDark ? 'plotly_dark' : 'plotly',
-            autosize: true,
+          layout={applyChartTheme(prefersDark, {
             title: 'False Negative Clusters by Confidence Over Time',
             xaxis: { type: 'date', title: 'Cluster Start Time' },
             yaxis: { title: 'Confidence (%)', range: [FALSE_NEG_CONFIDENCE_MIN * 100, 100] },
             margin: { l: 80, r: 20, t: 40, b: 40 },
             height: 400
-          }}
+          })}
           config={{ responsive: true, displaylogo: false }}
         />
       </div>

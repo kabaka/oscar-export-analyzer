@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { computeApneaEventStats } from '../utils/stats';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
+import { applyChartTheme } from '../utils/chartTheme';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -36,14 +37,12 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.durations, type: 'histogram', nbinsx: 20, name: 'Duration Dist' }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Distribution of Apnea Durations',
               xaxis: { title: 'Duration (s)' },
               yaxis: { title: 'Count' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
         <div className="chart-item">
@@ -58,13 +57,11 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
               boxpoints: 'outliers',
               marker: { color: '#888' },
             }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Apnea Duration Boxplot',
               yaxis: { title: 'Duration (s)', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
       </div>
@@ -86,14 +83,12 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.nightDates, y: stats.eventsPerNight, type: 'scatter', mode: 'lines', name: 'Events/night', line: { width: 1 } }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Apnea Events per Night',
               xaxis: { title: 'Date' },
               yaxis: { title: 'Count' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
         <div className="chart-item">
@@ -102,14 +97,12 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.eventsPerNight, type: 'histogram', nbinsx: 12, name: 'Events/night Dist' }]}
-            layout={{
-              template: isDark ? 'plotly_dark' : 'plotly',
-              autosize: true,
+            layout={applyChartTheme(isDark, {
               title: 'Distribution of Events per Night',
               xaxis: { title: 'Count' },
               yaxis: { title: 'Nights' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            }}
+            })}
           />
         </div>
       </div>
