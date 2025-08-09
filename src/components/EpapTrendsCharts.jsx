@@ -122,7 +122,6 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
   return (
     <div className="usage-charts">
       <div className="chart-with-help">
-        <VizHelp text="Nightly median EPAP over time. Dots highlight the first and last 30 nights for quick comparison." />
         <Plot
         key={isDark ? 'dark' : 'light'}
         useResizeHandler
@@ -167,6 +166,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           toImageButtonOptions: { format: 'svg', filename: 'epap_over_time' },
         }}
         />
+        <VizHelp text="Nightly median EPAP over time. Dots highlight the first and last 30 nights for quick comparison." />
       </div>
 
       <div className="usage-charts-grid">
@@ -200,7 +200,6 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
         />
         </div>
         <div className="chart-item chart-with-help">
-          <VizHelp text="Scatter of nightly EPAP vs AHI. Each point is a night; dashed line is the linear fit; r shows Pearson correlation." />
           <Plot
             key={isDark ? 'dark-scatter' : 'light-scatter'}
             useResizeHandler
@@ -223,9 +222,9 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               toImageButtonOptions: { format: 'svg', filename: 'epap_vs_ahi_scatter' },
             }}
           />
+          <VizHelp text="Scatter of nightly EPAP vs AHI. Each point is a night; dashed line is the linear fit; r shows Pearson correlation." />
       </div>
         <div className="chart-item chart-with-help">
-          <VizHelp text="2D histogram density of EPAP vs AHI, highlighting common combinations." />
           <Plot
             key={isDark ? 'dark-2d' : 'light-2d'}
             useResizeHandler
@@ -239,12 +238,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             })}
             config={{ responsive: true, displaylogo: false }}
           />
+          <VizHelp text="2D histogram density of EPAP vs AHI, highlighting common combinations." />
         </div>
       </div>
 
       {corrMatrix.labels.length >= 2 && (
         <div className="chart-item chart-with-help" style={{ marginTop: '16px' }}>
-          <VizHelp text="Correlation matrix (Pearson r) among available variables; cell labels show the correlation value." />
           <Plot
             key={isDark ? 'dark-corr' : 'light-corr'}
             useResizeHandler
@@ -264,6 +263,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             })}
             config={{ responsive: true, displaylogo: false }}
           />
+          <VizHelp text="Correlation matrix (Pearson r) among available variables; cell labels show the correlation value." />
         </div>
       )}
 
@@ -271,7 +271,6 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       {(corrMatrix.leakMed && corrMatrix.leakMed.length) ? (
         <div className="usage-charts-grid" style={{ marginTop: '16px' }}>
           <div className="chart-item chart-with-help">
-            <VizHelp text="Leak median over time if available; trends can indicate mask fit or seal issues." />
             <Plot
               key={isDark ? 'dark-leak' : 'light-leak'}
               useResizeHandler
@@ -285,9 +284,9 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               })}
               config={{ responsive: true, displaylogo: false }}
             />
+            <VizHelp text="Leak median over time if available; trends can indicate mask fit or seal issues." />
           </div>
           <div className="chart-item chart-with-help">
-            <VizHelp text="Distribution of nightly leak median values; helps identify consistent high-leak nights." />
             <Plot
               key={isDark ? 'dark-leak-hist' : 'light-leak-hist'}
               useResizeHandler
@@ -301,10 +300,10 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               })}
               config={{ responsive: true, displaylogo: false }}
             />
+            <VizHelp text="Distribution of nightly leak median values; helps identify consistent high-leak nights." />
           </div>
           {corrMatrix.leakPct && corrMatrix.leakPct.length ? (
             <div className="chart-item chart-with-help">
-              <VizHelp text="Percent of each night above leak threshold; persistent high percentages may impair therapy." />
               <Plot
                 key={isDark ? 'dark-leak-pct' : 'light-leak-pct'}
                 useResizeHandler
@@ -318,6 +317,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
                 })}
                 config={{ responsive: true, displaylogo: false }}
               />
+              <VizHelp text="Percent of each night above leak threshold; persistent high percentages may impair therapy." />
             </div>
           ) : null}
         </div>

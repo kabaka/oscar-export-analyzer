@@ -119,7 +119,6 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
   return (
     <div className="usage-charts">
       <div className="chart-with-help">
-        <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5 indicates the conventional threshold; dotted verticals show potential breakpoints." />
         <Plot
         key={isDark ? 'dark' : 'light'}
         useResizeHandler
@@ -176,11 +175,11 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
           toImageButtonOptions: { format: 'svg', filename: 'ahi_over_time' },
         }}
         />
+        <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5 indicates the conventional threshold; dotted verticals show potential breakpoints." />
       </div>
 
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <VizHelp text="Distribution of nightly AHI values. Dashed line marks the median; dotted line marks the mean." />
           <Plot
             key={isDark ? 'dark-hist' : 'light-hist'}
             useResizeHandler
@@ -210,9 +209,9 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
               toImageButtonOptions: { format: 'svg', filename: 'ahi_distribution' },
             }}
           />
+          <VizHelp text="Distribution of nightly AHI values. Dashed line marks the median; dotted line marks the mean." />
         </div>
         <div className="chart-item chart-with-help">
-          <VizHelp text="Boxplot of nightly AHI; box shows the interquartile range (IQR) and points indicate outliers." />
           <Plot
             key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
@@ -230,11 +229,11 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="Boxplot of nightly AHI; box shows the interquartile range (IQR) and points indicate outliers." />
         </div>
       </div>
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <VizHelp text="Violin plot of nightly AHI; width shows density of values. Inner box shows quartiles and median." />
           <Plot
             key={isDark ? 'dark-violin' : 'light-violin'}
             useResizeHandler
@@ -246,9 +245,9 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="Violin plot of nightly AHI; width shows density of values. Inner box shows quartiles and median." />
         </div>
         <div className="chart-item chart-with-help">
-          <VizHelp text="QQ plot comparing observed AHI quantiles to a theoretical normal distribution. Deviations from the dashed y=x line indicate non-normality." />
           <Plot
             key={isDark ? 'dark-qq' : 'light-qq'}
             useResizeHandler
@@ -261,6 +260,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
               margin: { t: 40, l: 60, r: 20, b: 50 },
             })}
           />
+          <VizHelp text="QQ plot comparing observed AHI quantiles to a theoretical normal distribution. Deviations from the dashed y=x line indicate non-normality." />
         </div>
       </div>
 

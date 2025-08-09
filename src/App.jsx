@@ -296,7 +296,6 @@ function ApneaClusterAnalysis({
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
             <div className="chart-with-help">
-              <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
               <Plot
             key={isDark ? 'dark-cluster' : 'light-cluster'}
             data={[{
@@ -319,6 +318,7 @@ function ApneaClusterAnalysis({
             })}
             config={{ displayModeBar: false }}
               />
+              <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
             </div>
         </div>
       )}
@@ -363,7 +363,6 @@ function FalseNegativesAnalysis({ list }) {
       <div>
         <h3>False Negative Clusters by Confidence Over Time</h3>
         <div className="chart-with-help">
-          <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />
           <Plot
           key={prefersDark ? 'dark-fn' : 'light-fn'}
           useResizeHandler
@@ -394,6 +393,7 @@ function FalseNegativesAnalysis({ list }) {
           })}
           config={{ responsive: true, displaylogo: false }}
           />
+          <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />
         </div>
       </div>
       <div className="cluster-table-container">
