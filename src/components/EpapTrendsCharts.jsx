@@ -171,7 +171,6 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
 
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-        <VizHelp text="Boxplot of nightly median EPAP; box shows IQR and points indicate outliers." />
         <Plot
           key={isDark ? 'dark-box' : 'light-box'}
           useResizeHandler
@@ -198,6 +197,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             toImageButtonOptions: { format: 'svg', filename: 'epap_boxplot' },
           }}
         />
+        <VizHelp text="Boxplot of nightly median EPAP; box shows IQR and points indicate outliers." />
         </div>
         <div className="chart-item chart-with-help">
           <Plot
@@ -258,6 +258,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             layout={applyChartTheme(isDark, {
               title: 'Correlation Matrix (Pearson r)',
               autosize: true,
+              xaxis: { title: 'Variable' },
+              yaxis: { title: 'Variable' },
               margin: { t: 40, l: 80, r: 20, b: 80 },
               annotations: corrMatrix.z.flatMap((row, i) => row.map((v, j) => ({ x: corrMatrix.labels[j], y: corrMatrix.labels[i], text: isFinite(v) ? v.toFixed(2) : '—', showarrow: false, font: { color: isDark ? '#fff' : '#000' } }))),
             })}
