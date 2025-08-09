@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { COLORS } from '../utils/colors';
-import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
+import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { mannWhitneyUTest, pearson } from '../utils/stats';
 
 /**
@@ -71,7 +71,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
   const boxMin = Math.min(...epaps);
   const boxMax = Math.max(...epaps);
 
-  const isDark = usePrefersDarkMode();
+  const isDark = useEffectiveDarkMode();
 
   // Correlation matrix among available variables: EPAP, AHI, Usage (hours), Leak (if present)
   const corrMatrix = useMemo(() => {

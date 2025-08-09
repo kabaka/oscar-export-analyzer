@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { quantile, detectUsageBreakpoints, computeUsageRolling } from '../utils/stats';
 import { COLORS } from '../utils/colors';
-import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
+import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 
 export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
   const { dates, ahis, rolling7, rolling30, breakDates, oai, cai, mai } = useMemo(() => {
@@ -52,7 +52,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
   const range = Math.max(...ahis) - Math.min(...ahis);
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
 
-  const isDark = usePrefersDarkMode();
+  const isDark = useEffectiveDarkMode();
 
   // Severity bands counts
   const bands = {

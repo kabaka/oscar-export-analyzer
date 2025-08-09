@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { usePrefersDarkMode } from './hooks/usePrefersDarkMode';
+import { useEffectiveDarkMode } from './hooks/useEffectiveDarkMode';
 import Papa from 'papaparse';
 import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPTrends } from './utils/stats';
 import {
@@ -197,7 +197,7 @@ function ApneaClusterAnalysis({
 }) {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });
-  const isDark = usePrefersDarkMode();
+  const isDark = useEffectiveDarkMode();
   const sorted = [...clusters].sort((a, b) => {
     const dir = sortBy.dir === 'asc' ? 1 : -1;
     const va = a[sortBy.key] ?? 0;
@@ -351,7 +351,7 @@ function ApneaClusterAnalysis({
 }
 
 function FalseNegativesAnalysis({ list }) {
-  const prefersDark = usePrefersDarkMode();
+  const prefersDark = useEffectiveDarkMode();
   return (
     <div>
       <h2 id="false-negatives">Potential False Negatives</h2>
@@ -412,7 +412,7 @@ function FalseNegativesAnalysis({ list }) {
 
 
 function App() {
-  const prefersDark = usePrefersDarkMode();
+  const prefersDark = useEffectiveDarkMode();
   const {
     summaryData,
     detailsData,
