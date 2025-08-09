@@ -29,21 +29,27 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
     const dateToStr = d => d.toISOString().slice(0, 10);
     const byDate = new Map();
     datesArr.forEach((d, i) => byDate.set(dateToStr(toISODate(d)), hours[i]));
-    const start = getWeekStart(datesArr[0] || new Date());
-    const end = getWeekStart(datesArr[datesArr.length - 1] || new Date());
+    const start = datesArr.length ? getWeekStart(datesArr[0]) : null;
+    const end = datesArr.length ? getWeekStart(datesArr[datesArr.length - 1]) : null;
     const weekStarts = [];
-    for (let w = new Date(start); w <= end; w.setDate(w.getDate() + 7)) {
-      weekStarts.push(new Date(w));
+    if (start && end && start <= end) {
+      const maxWeeks = 600; // ~11.5 years safety cap
+      let iter = 0;
+      for (let w = new Date(start); w <= end && iter < maxWeeks; w.setDate(w.getDate() + 7), iter++) {
+        weekStarts.push(new Date(w));
+      }
     }
     const yLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const z = yLabels.map((_, dowIdx) =>
-      weekStarts.map(ws => {
-        const d = new Date(ws);
-        d.setDate(d.getDate() + dowIdx);
-        const key = dateToStr(toISODate(d));
-        return byDate.has(key) ? byDate.get(key) : null;
-      })
-    );
+    const z = weekStarts.length
+      ? yLabels.map((_, dowIdx) =>
+          weekStarts.map(ws => {
+            const d = new Date(ws);
+            d.setDate(d.getDate() + dowIdx);
+            const key = dateToStr(toISODate(d));
+            return byDate.has(key) ? byDate.get(key) : null;
+          })
+        )
+      : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
 
     return { dates: datesArr, usageHours: hours, rolling7, rolling30, compliance4_30, breakDates, dowHeatmap };

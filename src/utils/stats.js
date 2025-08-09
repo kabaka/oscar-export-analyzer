@@ -146,21 +146,27 @@ export function summarizeUsage(data) {
 
 // Compute rolling averages and compliance metrics for usage hours
 export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
+  const n = usageHours.length;
+  const prefixSum = new Array(n + 1).fill(0);
+  const prefixCount4 = new Array(n + 1).fill(0);
+  for (let i = 0; i < n; i++) {
+    prefixSum[i + 1] = prefixSum[i] + (usageHours[i] || 0);
+    prefixCount4[i + 1] = prefixCount4[i] + (usageHours[i] >= 4 ? 1 : 0);
+  }
   const result = {};
   windows.forEach(w => {
-    const rolling = usageHours.map((_, i) => {
+    const avg = new Array(n);
+    const comp4 = new Array(n);
+    for (let i = 0; i < n; i++) {
       const start = Math.max(0, i - w + 1);
-      const slice = usageHours.slice(start, i + 1);
-      return slice.reduce((a, b) => a + b, 0) / slice.length;
-    });
-    const rollingCompliance4 = usageHours.map((_, i) => {
-      const start = Math.max(0, i - w + 1);
-      const slice = usageHours.slice(start, i + 1);
-      const pct = (slice.filter(h => h >= 4).length / slice.length) * 100;
-      return pct;
-    });
-    result[`avg${w}`] = rolling;
-    result[`compliance4_${w}`] = rollingCompliance4;
+      const len = i - start + 1;
+      const sum = prefixSum[i + 1] - prefixSum[start];
+      const cnt4 = prefixCount4[i + 1] - prefixCount4[start];
+      avg[i] = len > 0 ? sum / len : 0;
+      comp4[i] = len > 0 ? (cnt4 / len) * 100 : 0;
+    }
+    result[`avg${w}`] = avg;
+    result[`compliance4_${w}`] = comp4;
   });
   return result;
 }
