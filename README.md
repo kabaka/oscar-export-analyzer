@@ -24,8 +24,13 @@ Design refresh: the UI now uses a clean, card-based layout and polished typograp
    - AHI trends (time-series, histogram, boxplot, average, min, max, threshold line at AHI > 5)
    - Pressure & leak: EPAP trends and distribution, EPAP vs AHI scatter and 2D density, correlation matrix (EPAP, AHI, usage, optional leak), and EPAP titration helper with Mann–Whitney test
    - Clustered apnea events: parameter panel allows tuning gap seconds, FLG bridge threshold, FLG gap, minimum event count, and min/max total duration; clusters recompute live. Table is sortable (duration, count, severity) and supports CSV export. Click a row to view an event-level Gantt timeline for the selected cluster.
-  - Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
+ - Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
   - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights)
+
+### Navigation
+
+- In-page links in the sticky Table of Contents smoothly scroll with an automatic offset so headers aren’t hidden beneath the sticky app header.
+- The "Overview" section becomes available as soon as a Summary CSV is loaded (no Details file required).
 
 ### Raw Data Explorer
 

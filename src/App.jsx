@@ -551,7 +551,7 @@ function App() {
           />
         )}
       </div>
-      {filteredSummary && detailsData && (
+      {filteredSummary && (
         <div className="section">
           <Overview
             summaryData={filteredSummary}
