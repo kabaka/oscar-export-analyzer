@@ -25,6 +25,15 @@ It supports automatic light/dark themes based on system preferences to enhance a
   - Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
   - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights)
 
+### Raw Data Explorer
+
+The Raw Data Explorer (see "Raw Data" in-page link) provides an efficient, virtualized table view over both Summary and Details CSVs.
+- Column toggles: choose which columns to display.
+- Search and sort: quick text filter across visible columns and sortable headers.
+- Date range filter: constrain rows by date; optionally apply to charts to cross-filter visualizations.
+- Pivot-like summary: group by any column to see counts and averages of numeric fields.
+- Export: download selected or all visible rows as CSV.
+
 ## Development
 
 The app is built with Vite, React, and PapaParse.

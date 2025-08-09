@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { usePrefersDarkMode } from './hooks/usePrefersDarkMode';
 import Papa from 'papaparse';
 import { parseDuration, quantile, summarizeUsage, computeAHITrends, computeEPAPTrends } from './utils/stats';
@@ -20,6 +20,7 @@ import AhiTrendsCharts from './components/AhiTrendsCharts';
 import EpapTrendsCharts from './components/EpapTrendsCharts';
 import ApneaEventStats from './components/ApneaEventStats';
 import Plot from 'react-plotly.js';
+import RawDataExplorer from './components/RawDataExplorer';
 
 
 // Hook for loading CSV files via file input
@@ -426,6 +427,7 @@ function App() {
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
   const [processingDetails, setProcessingDetails] = useState(false);
+  const [dateFilter, setDateFilter] = useState({ start: null, end: null });
   const [clusterParams, setClusterParams] = useState({
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
@@ -477,6 +479,32 @@ function App() {
   }
   }, [detailsData, clusterParams]);
 
+  const filteredSummary = useMemo(() => {
+    if (!summaryData) return null;
+    const { start, end } = dateFilter || {};
+    const dateCol = summaryData.length ? Object.keys(summaryData[0]).find(c => /date/i.test(c)) : null;
+    if (!dateCol || (!start && !end)) return summaryData;
+    return summaryData.filter(r => {
+      const d = new Date(r[dateCol]);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }, [summaryData, dateFilter]);
+
+  const filteredDetails = useMemo(() => {
+    if (!detailsData) return null;
+    const { start, end } = dateFilter || {};
+    const dateCol = detailsData.length ? Object.keys(detailsData[0]).find(c => /date/i.test(c)) : null;
+    if (!dateCol || (!start && !end)) return detailsData;
+    return detailsData.filter(r => {
+      const d = new Date(r[dateCol]);
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+  }, [detailsData, dateFilter]);
+
   return (
     <div className="container">
       <h1>OSCAR Sleep Data Analysis</h1>
@@ -488,6 +516,7 @@ function App() {
         <a href="#apnea-characteristics">Apnea Events</a>
         <a href="#clustered-apnea">Clusters</a>
         <a href="#false-negatives">False Negatives</a>
+        <a href="#raw-data-explorer">Raw Data</a>
       </nav>
       <div className="section controls">
         <label>
@@ -506,24 +535,24 @@ function App() {
           />
         )}
       </div>
-      {summaryData && detailsData && (
+      {filteredSummary && detailsData && (
         <div className="section">
           <Overview
-            summaryData={summaryData}
+            summaryData={filteredSummary}
             clusters={apneaClusters}
             falseNegatives={falseNegatives}
           />
         </div>
       )}
-      {summaryData && (
+      {filteredSummary && (
         <div className="section">
-          <SummaryAnalysis data={summaryData} clusters={apneaClusters} />
+          <SummaryAnalysis data={filteredSummary} clusters={apneaClusters} />
         </div>
       )}
-      {detailsData && (
+      {filteredDetails && (
         <>
           <div className="section">
-            <ApneaEventStats data={detailsData} />
+            <ApneaEventStats data={filteredDetails} />
           </div>
           <div className="section">
             <ApneaClusterAnalysis
@@ -534,6 +563,13 @@ function App() {
           </div>
           <div className="section">
             <FalseNegativesAnalysis list={falseNegatives} />
+          </div>
+          <div className="section">
+            <RawDataExplorer
+              summaryRows={summaryData || []}
+              detailRows={detailsData || []}
+              onApplyDateFilter={({ start, end }) => setDateFilter({ start, end })}
+            />
           </div>
         </>
       )}
