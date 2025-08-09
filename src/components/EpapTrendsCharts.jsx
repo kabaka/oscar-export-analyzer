@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { COLORS } from '../utils/colors';
 import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
+import { mannWhitneyUTest, pearson } from '../utils/stats';
 
 /**
  * EPAP Analysis Charts: boxplot of nightly median EPAP,
@@ -20,6 +21,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
     corr,
     slope,
     intercept,
+    ahis,
   } = useMemo(() => {
     const pts = data
       .map(r => ({
@@ -31,6 +33,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       .sort((a, b) => a.date - b.date);
     const datesArr = pts.map(p => p.date);
     const epapsArr = pts.map(p => p.epap);
+    const ahisArr = pts.map(p => p.ahi);
     const first30 = pts.slice(0, 30);
     const last30 = pts.slice(-30);
     const epapAhiPairsArr = pts;
@@ -60,6 +63,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       corr: corrVal,
       slope: slopeVal,
       intercept: interceptVal,
+      ahis: ahisArr,
     };
   }, [data]);
 
@@ -68,6 +72,37 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
   const boxMax = Math.max(...epaps);
 
   const isDark = usePrefersDarkMode();
+
+  // Correlation matrix among available variables: EPAP, AHI, Usage (hours), Leak (if present)
+  const corrMatrix = useMemo(() => {
+    const vars = [];
+    vars.push({ key: 'EPAP', values: epaps });
+    vars.push({ key: 'AHI', values: ahis });
+    // usage hours
+    const usage = data
+      .map(r => r['Total Time'])
+      .map(v => (typeof v === 'string' && v.includes(':') ? (v.split(':').reduce((a, b, i) => a + parseFloat(b) * [3600, 60, 1][i], 0)) / 3600 : parseFloat(v)))
+      .filter(v => !isNaN(v));
+    if (usage.length === epaps.length) vars.push({ key: 'Usage (h)', values: usage });
+    // leak median if present: find a numeric column with both 'Leak' and 'Median' in key
+    const keys = data.length ? Object.keys(data[0]) : [];
+    const leakKey = keys.find(k => /leak/i.test(k) && /median/i.test(k));
+    if (leakKey) {
+      const leak = data.map(r => parseFloat(r[leakKey])).filter(v => !isNaN(v));
+      if (leak.length === epaps.length) vars.push({ key: 'Leak (median)', values: leak });
+    }
+    const labels = vars.map(v => v.key);
+    const z = labels.map((_, i) => labels.map((_, j) => pearson(vars[i].values, vars[j].values)));
+    return { labels, z };
+  }, [data, epaps, ahis]);
+
+  // Mann–Whitney titration helper for EPAP <7 vs ≥7 bins
+  const titration = useMemo(() => {
+    const low = data.filter(r => parseFloat(r['Median EPAP']) < 7).map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
+    const high = data.filter(r => parseFloat(r['Median EPAP']) >= 7).map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
+    const res = mannWhitneyUTest(low, high);
+    return { low, high, ...res };
+  }, [data]);
 
   return (
     <div className="usage-charts">
@@ -171,7 +206,53 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               toImageButtonOptions: { format: 'svg', filename: 'epap_vs_ahi_scatter' },
             }}
           />
+      </div>
+        <div className="chart-item">
+          <Plot
+            useResizeHandler
+            style={{ width: '100%', height: '300px' }}
+            data={[{ x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'histogram2d', colorscale: 'Viridis' }]}
+            layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
+              autosize: true,
+              title: 'EPAP vs AHI Density (2D Histogram)',
+              xaxis: { title: 'Median EPAP (cmH₂O)' },
+              yaxis: { title: 'AHI (events/hour)' },
+              margin: { t: 40, l: 60, r: 20, b: 50 },
+            }}
+            config={{ responsive: true, displaylogo: false }}
+          />
         </div>
+      </div>
+
+      {corrMatrix.labels.length >= 2 && (
+        <div className="chart-item" style={{ marginTop: '16px' }}>
+          <Plot
+            useResizeHandler
+            style={{ width: '100%', height: '300px' }}
+            data={[{ z: corrMatrix.z, x: corrMatrix.labels, y: corrMatrix.labels, type: 'heatmap', colorscale: 'RdBu', zmin: -1, zmax: 1, reversescale: true }]}
+            layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
+              title: 'Correlation Matrix (Pearson r)',
+              autosize: true,
+              margin: { t: 40, l: 80, r: 20, b: 80 },
+              annotations: corrMatrix.z.flatMap((row, i) => row.map((v, j) => ({ x: corrMatrix.labels[j], y: corrMatrix.labels[i], text: isFinite(v) ? v.toFixed(2) : '—', showarrow: false, font: { color: '#fff' } }))),
+            }}
+            config={{ responsive: true, displaylogo: false }}
+          />
+        </div>
+      )}
+
+      <div className="section" style={{ marginTop: '8px' }}>
+        <h4>EPAP Titration (AHI by EPAP bins)</h4>
+        <table>
+          <thead><tr><th>Group</th><th>n</th><th>Mean AHI</th></tr></thead>
+          <tbody>
+            <tr><td>EPAP &lt; 7</td><td>{titration.low.length}</td><td>{(titration.low.reduce((a,b)=>a+b,0)/(titration.low.length||1)).toFixed(2)}</td></tr>
+            <tr><td>EPAP ≥ 7</td><td>{titration.high.length}</td><td>{(titration.high.reduce((a,b)=>a+b,0)/(titration.high.length||1)).toFixed(2)}</td></tr>
+          </tbody>
+        </table>
+        <p>MW U = {isFinite(titration.U) ? titration.U.toFixed(1) : '—'}, p ≈ {isFinite(titration.p) ? titration.p.toExponential(2) : '—'}, effect (rank-biserial) ≈ {isFinite(titration.effect) ? titration.effect.toFixed(2) : '—'}</p>
       </div>
     </div>
   );
