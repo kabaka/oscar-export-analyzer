@@ -76,16 +76,18 @@ src/
 - Distribution: histogram + box/violin; annotate median/mean and IQR whiskers (already partly present).
 
 ### 4.2 AHI Trends (expand, keep existing)
-- Decompose AHI into OAI/CAI/MAI if columns exist; stacked band chart over time.
-- Change-points, outlier nights, and “bad-night” tags with explanations (e.g., long clusters, high CA% ).
-- Percent nights by severity bands (≤5, 5–15, 15–30, >30).
-- QQ-plot for normality check; violin plot for distribution shape.
+- Decompose AHI into OAI/CAI/MAI if columns exist; stacked band chart over time. [Implemented]
+- Change-points using 7d vs 30d crossovers; markers on time-series. [Implemented]
+- Bad-night tagging and explanations (e.g., long clusters, high CA%) [Pending: requires integration across views]
+- Percent nights by severity bands (≤5, 5–15, 15–30, >30) table. [Implemented]
+- QQ-plot vs normal and violin distribution. [Implemented]
 
 ### 4.3 Pressure & Leak (rename from Pressure Settings; keep EPAP views)
-- Add leak metrics (if present in Summary): nightly median leak and time above leak threshold.
-- Correlation matrix: EPAP, AHI, usage, leak (Pearson/Spearman with p-values).
-- EPAP titration helper: stratify AHI by EPAP bins; Mann–Whitney U test difference (with effect size).
-- 2D density/hexbin: EPAP vs AHI; highlight confidence envelope.
+- Add leak metrics (if present in Summary): nightly median leak and histogram. [Implemented]
+- Time-above-leak threshold (if a suitable column exists) [Pending: need robust column mapping]
+- Correlation matrix: EPAP, AHI, usage, leak (Pearson) [Implemented]
+- EPAP titration helper: stratify AHI by EPAP bins; Mann–Whitney U test (effect size). [Implemented]
+- 2D density/hexbin: EPAP vs AHI. [Implemented]
 
 ### 4.4 Event Clusters (keep and enrich)
 - Parameter panel: gap sec, FLG thresholds, min counts; live recompute in worker.
