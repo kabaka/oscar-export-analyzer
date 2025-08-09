@@ -102,7 +102,7 @@ function useCsvFiles() {
   };
 }
 
-function SummaryAnalysis({ data }) {
+function SummaryAnalysis({ data, clusters = [] }) {
   const usage = summarizeUsage(data);
   const ahi = computeAHITrends(data);
   const epap = computeEPAPTrends(data);
@@ -146,7 +146,7 @@ function SummaryAnalysis({ data }) {
       <ul>
         <li>Outlier nights (AHI ≥ Q3+1.5×IQR): {ahi.ahis.filter(v => v >= (ahi.p75AHI + 1.5 * ahi.iqrAHI)).length}</li>
       </ul>
-      <AhiTrendsCharts data={data} />
+      <AhiTrendsCharts data={data} clusters={clusters} />
 
       <h2 id="pressure-settings">3. Pressure Settings and Performance</h2>
       <h3 id="epap-distribution">3.1 EPAP Distribution & Percentiles</h3>
@@ -396,7 +396,7 @@ function App() {
       )}
       {summaryData && (
         <div className="section">
-          <SummaryAnalysis data={summaryData} />
+          <SummaryAnalysis data={summaryData} clusters={apneaClusters} />
         </div>
       )}
       {detailsData && (

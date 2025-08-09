@@ -84,7 +84,7 @@ src/
 
 ### 4.3 Pressure & Leak (rename from Pressure Settings; keep EPAP views)
 - Add leak metrics (if present in Summary): nightly median leak and histogram. [Implemented]
-- Time-above-leak threshold (if a suitable column exists) [Pending: need robust column mapping]
+- Time-above-leak threshold (if a suitable column exists) [Implemented] – auto-detect columns matching leak percentage/time-above
 - Correlation matrix: EPAP, AHI, usage, leak (Pearson) [Implemented]
 - EPAP titration helper: stratify AHI by EPAP bins; Mann–Whitney U test (effect size). [Implemented]
 - 2D density/hexbin: EPAP vs AHI. [Implemented]

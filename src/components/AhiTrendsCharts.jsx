@@ -4,7 +4,7 @@ import { quantile, detectUsageBreakpoints, computeUsageRolling } from '../utils/
 import { COLORS } from '../utils/colors';
 import { usePrefersDarkMode } from '../hooks/usePrefersDarkMode';
 
-export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
+export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
   const { dates, ahis, rolling7, rolling30, breakDates, oai, cai, mai } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), ahi: parseFloat(r['AHI']) }))
@@ -87,6 +87,32 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
     return y < 0 ? -x : x;
   };
   const theo = probs.map(p => mu + sigma * normalQuantile(p));
+
+  // Bad-night tagging with explanations
+  const p25b = quantile(ahis, 0.25);
+  const p75b = quantile(ahis, 0.75);
+  const iqrb = p75b - p25b;
+  const outlierHighCut = p75b + 1.5 * iqrb;
+  const dateStr = (d) => d.toISOString().slice(0, 10);
+  const clusterByNight = new Map();
+  clusters.forEach(cl => {
+    const k = dateStr(cl.start);
+    const prev = clusterByNight.get(k) || { maxDur: 0, maxCount: 0 };
+    clusterByNight.set(k, { maxDur: Math.max(prev.maxDur, cl.durationSec), maxCount: Math.max(prev.maxCount, cl.count) });
+  });
+  const badNights = [];
+  dates.forEach((d, i) => {
+    const reasons = [];
+    if (ahis[i] >= 15 || ahis[i] >= outlierHighCut) reasons.push('High AHI');
+    if (oai && cai && mai) {
+      const total = (oai[i] || 0) + (cai[i] || 0) + (mai[i] || 0);
+      const fracCA = total ? (cai[i] / total) : 0;
+      if (ahis[i] > 5 && fracCA >= 0.6) reasons.push('High CA%');
+    }
+    const cl = clusterByNight.get(dateStr(d));
+    if (cl && (cl.maxDur >= 120 || cl.maxCount >= 5)) reasons.push('Long/dense cluster');
+    if (reasons.length) badNights.push({ date: d, ahi: ahis[i], reasons });
+  });
 
   return (
     <div className="usage-charts">
@@ -247,6 +273,21 @@ export default function AhiTrendsCharts({ data, width = 700, height = 300 }) {
           </tbody>
         </table>
       </div>
+
+      {badNights.length ? (
+        <div className="section" style={{ marginTop: '8px' }}>
+          <h4>Bad Nights (top 10)</h4>
+          <table>
+            <thead><tr><th>Date</th><th>AHI</th><th>Reasons</th></tr></thead>
+            <tbody>
+              {badNights.slice(0, 10).map((b, i) => (
+                <tr key={i}><td>{b.date.toISOString().slice(0,10)}</td><td>{b.ahi.toFixed(2)}</td><td>{b.reasons.join(', ')}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
     </div>
   );
 }

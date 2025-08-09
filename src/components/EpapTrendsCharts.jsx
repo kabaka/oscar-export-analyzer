@@ -89,6 +89,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
     const leakMedKey = keys.find(k => /leak/i.test(k) && /median/i.test(k));
     const leakPctKey = keys.find(k => /leak/i.test(k) && (/%/.test(k) || /time.*above/i.test(k)));
     let leakMed = null;
+    let leakPct = null;
     if (leakMedKey) {
       const leak = data.map(r => parseFloat(r[leakMedKey])).filter(v => !isNaN(v));
       if (leak.length === epaps.length) {
@@ -96,9 +97,16 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
         leakMed = leak;
       }
     }
+    if (leakPctKey) {
+      const arr = data.map(r => parseFloat(r[leakPctKey])).filter(v => !isNaN(v));
+      if (arr.length === epaps.length) {
+        vars.push({ key: 'Leak (%>thr)', values: arr });
+        leakPct = arr;
+      }
+    }
     const labels = vars.map(v => v.key);
     const z = labels.map((_, i) => labels.map((_, j) => pearson(vars[i].values, vars[j].values)));
-    return { labels, z, leakMedKey, leakMed, leakPctKey };
+    return { labels, z, leakMedKey, leakMed, leakPctKey, leakPct };
   }, [data, epaps, ahis]);
 
   // Mann–Whitney titration helper for EPAP <7 vs ≥7 bins
@@ -283,6 +291,24 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               config={{ responsive: true, displaylogo: false }}
             />
           </div>
+          {corrMatrix.leakPct && corrMatrix.leakPct.length ? (
+            <div className="chart-item">
+              <Plot
+                useResizeHandler
+                style={{ width: '100%', height: '300px' }}
+                data={[{ x: dates, y: corrMatrix.leakPct, type: 'scatter', mode: 'lines', name: 'Leak % above thr' }]}
+                layout={{
+                  template: isDark ? 'plotly_dark' : 'plotly',
+                  autosize: true,
+                  title: 'Time Above Leak Threshold (%)',
+                  xaxis: { title: 'Date' },
+                  yaxis: { title: 'Percent of night (%)' },
+                  margin: { t: 40, l: 60, r: 20, b: 50 },
+                }}
+                config={{ responsive: true, displaylogo: false }}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
 
