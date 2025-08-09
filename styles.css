@@ -146,3 +146,9 @@ button[disabled] { opacity: 0.6; cursor: not-allowed; }
 /* Utility */
 .muted { color: var(--color-text-muted); }
 
+/* Visualization help tooltip */
+.chart-with-help { position: relative; }
+.viz-help { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-kpi-bg); color: var(--color-link); font-weight: 700; font-size: 12px; cursor: help; box-shadow: var(--shadow-1); }
+.viz-help:focus { outline: 2px solid color-mix(in oklab, var(--color-link) 35%, transparent); }
+.viz-tooltip { position: absolute; top: 24px; right: 0; z-index: 10; max-width: 340px; padding: 8px 10px; border-radius: 8px; background: var(--color-text); color: var(--color-bg); box-shadow: var(--shadow-2); font-size: 12px; line-height: 1.35; opacity: 0; pointer-events: none; transition: opacity 120ms ease-in-out; }
+.viz-help:hover .viz-tooltip, .viz-help:focus .viz-tooltip { opacity: 0.95; }

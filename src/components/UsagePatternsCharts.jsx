@@ -4,6 +4,7 @@ import { parseDuration, quantile, computeUsageRolling, computeAdherenceStreaks, 
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
+import VizHelp from './VizHelp';
 
 export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
   // Prepare sorted date and usage arrays
@@ -79,7 +80,9 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
         <div><strong>Longest streak ≥4h/≥6h:</strong> {longest_4 || 0} / {longest_6 || 0} nights</div>
       </div>
       {/* Time-series usage with rolling average, full-width responsive */}
-      <Plot
+      <div className="chart-with-help">
+        <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Dotted vertical lines mark potential breakpoints; look for sustained trends above 4–6 hours." />
+        <Plot
         key={isDark ? 'dark' : 'light'}
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
@@ -123,11 +126,13 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           modeBarButtonsToAdd: ['toImage'],
           toImageButtonOptions: { format: 'svg', filename: 'usage_hours_over_time' },
         }}
-      />
+        />
+      </div>
 
       {/* Histogram and boxplot side-by-side on large screens, stacked on narrow */}
       <div className="usage-charts-grid">
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+        <VizHelp text="Distribution of nightly usage hours. Dashed line marks the median; dotted line marks the mean." />
         <Plot
           key={isDark ? 'dark-hist' : 'light-hist'}
           useResizeHandler
@@ -164,7 +169,8 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           }}
         />
         </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Boxplot summarizing nightly usage; box shows the interquartile range (IQR), whiskers extend to typical range, points indicate outliers." />
           <Plot
             key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
@@ -194,7 +200,8 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
         </div>
       </div>
       {/* Weekly calendar heatmap (Mon–Sun by columns of weeks) */}
-      <div className="chart-item" style={{ marginTop: '16px' }}>
+      <div className="chart-item chart-with-help" style={{ marginTop: '16px' }}>
+        <VizHelp text="Calendar heatmap of nightly usage by day of week; darker tiles indicate more hours of use." />
         <Plot
           key={isDark ? 'dark-heat' : 'light-heat'}
           useResizeHandler
@@ -221,7 +228,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           layout={applyChartTheme(isDark, {
             title: 'Calendar Heatmap of Usage (hours)',
             xaxis: { title: 'Week', type: 'date', tickformat: '%Y-%m-%d' },
-            yaxis: { title: '', autorange: 'reversed' },
+            yaxis: { title: 'Day of Week', autorange: 'reversed' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
           })}
           config={{ responsive: true, displaylogo: false }}

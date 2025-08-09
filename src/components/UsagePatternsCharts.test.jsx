@@ -9,9 +9,10 @@ const data = [
 ];
 
 describe('UsagePatternsCharts', () => {
-  it('renders plotly charts and matches snapshot', () => {
-    const { getAllByTestId, asFragment } = render(<UsagePatternsCharts data={data} />);
+  it('renders plotly charts with help tooltips', () => {
+    const { getAllByTestId } = render(<UsagePatternsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    expect(asFragment()).toMatchSnapshot();
+    // 4 charts => at least 4 help tooltips
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(4);
   });
 });

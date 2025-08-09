@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import { computeApneaEventStats } from '../utils/stats';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
+import VizHelp from './VizHelp';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -31,7 +32,8 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
         </tbody>
       </table>
       <div className="usage-charts-grid">
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Distribution of individual apnea event durations. Helps spot unusually long events." />
           <Plot
             key={isDark ? 'dark-hist' : 'light-hist'}
             useResizeHandler
@@ -45,7 +47,8 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             })}
           />
         </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Boxplot of apnea event durations; box shows IQR, whiskers typical range, points outliers." />
           <Plot
             key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
@@ -77,7 +80,8 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
         </tbody>
       </table>
       <div className="usage-charts-grid">
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Events per night over time; look for spikes that may indicate rough nights." />
           <Plot
             key={isDark ? 'dark-line' : 'light-line'}
             useResizeHandler
@@ -91,7 +95,8 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             })}
           />
         </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Distribution of nightly event counts; the shape shows how often high/low event nights occur." />
           <Plot
             key={isDark ? 'dark-night-hist' : 'light-night-hist'}
             useResizeHandler
