@@ -17,19 +17,29 @@ export function applyChartTheme(isDark, layout = {}) {
   };
   const t = isDark ? dark : light;
   const mergeFont = { ...(layout.font || {}), ...(t.font || {}) };
+
+  // Normalize title and axis titles to object form to ensure consistent rendering
+  const toTitleObj = (v) => (typeof v === 'string' ? { text: v } : (v || {}));
+  const normAxis = (ax = {}) => ({
+    ...ax,
+    title: { standoff: (ax.title && ax.title.standoff) ?? 8, ...toTitleObj(ax.title) },
+    automargin: ax.automargin ?? true,
+  });
+
   const lx = {
     ...layout,
     paper_bgcolor: layout.paper_bgcolor ?? t.paper_bgcolor,
     plot_bgcolor: layout.plot_bgcolor ?? t.plot_bgcolor,
     font: mergeFont,
+    title: toTitleObj(layout.title),
     xaxis: {
-      ...(layout.xaxis || {}),
+      ...normAxis(layout.xaxis || {}),
       color: (layout.xaxis && layout.xaxis.color) || t.axisColor,
       gridcolor: (layout.xaxis && layout.xaxis.gridcolor) || t.gridColor,
       zerolinecolor: (layout.xaxis && layout.xaxis.zerolinecolor) || t.zeroLineColor || t.gridColor,
     },
     yaxis: {
-      ...(layout.yaxis || {}),
+      ...normAxis(layout.yaxis || {}),
       color: (layout.yaxis && layout.yaxis.color) || t.axisColor,
       gridcolor: (layout.yaxis && layout.yaxis.gridcolor) || t.gridColor,
       zerolinecolor: (layout.yaxis && layout.yaxis.zerolinecolor) || t.zeroLineColor || t.gridColor,
