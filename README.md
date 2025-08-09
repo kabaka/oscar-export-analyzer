@@ -28,6 +28,8 @@ It supports automatic light/dark themes based on system preferences to enhance a
 
 The app is built with Vite, React, and PapaParse.
 
+For contribution and workflow details, see [AGENTS.md](AGENTS.md).
+
 ### Local development
 
 After installing dependencies with `npm install`, run the development server:
