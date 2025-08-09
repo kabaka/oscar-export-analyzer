@@ -205,7 +205,16 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
               x: dowHeatmap.x,
               y: dowHeatmap.y,
               type: 'heatmap',
-              colorscale: 'Blues',
+              colorscale: isDark
+                ? [
+                    [0, '#121821'],
+                    [0.2, '#1b2b3b'],
+                    [0.4, '#23445a'],
+                    [0.6, '#2b5c7a'],
+                    [0.8, '#3c7db0'],
+                    [1, '#58a6ff'],
+                  ]
+                : 'Blues',
               hovertemplate: '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
             },
           ]}
