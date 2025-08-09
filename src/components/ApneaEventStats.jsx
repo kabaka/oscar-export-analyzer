@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import { computeApneaEventStats } from '../utils/stats';
+import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -8,6 +9,7 @@ import { computeApneaEventStats } from '../utils/stats';
  */
 export default function ApneaEventStats({ data, width = 700, height = 300 }) {
   const stats = useMemo(() => computeApneaEventStats(data), [data]);
+  const isDark = useEffectiveDarkMode();
   if (!stats.totalEvents) {
     return null;
   }
@@ -34,6 +36,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.durations, type: 'histogram', nbinsx: 20, name: 'Duration Dist' }]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Distribution of Apnea Durations',
               xaxis: { title: 'Duration (s)' },
@@ -54,6 +57,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
               marker: { color: '#888' },
             }]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Apnea Duration Boxplot',
               yaxis: { title: 'Duration (s)', zeroline: false },
@@ -80,6 +84,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.nightDates, y: stats.eventsPerNight, type: 'scatter', mode: 'lines', name: 'Events/night', line: { width: 1 } }]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Apnea Events per Night',
               xaxis: { title: 'Date' },
@@ -94,6 +99,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
             style={{ width: '100%', height: '300px' }}
             data={[{ x: stats.eventsPerNight, type: 'histogram', nbinsx: 12, name: 'Events/night Dist' }]}
             layout={{
+              template: isDark ? 'plotly_dark' : 'plotly',
               autosize: true,
               title: 'Distribution of Events per Night',
               xaxis: { title: 'Count' },
