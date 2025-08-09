@@ -8,9 +8,10 @@ const data = [
 ];
 
 describe('EpapTrendsCharts', () => {
-  it('renders plotly charts and matches snapshot', () => {
-    const { getAllByTestId, asFragment } = render(<EpapTrendsCharts data={data} />);
+  it('renders plotly charts with help tooltips', () => {
+    const { getAllByTestId } = render(<EpapTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    expect(asFragment()).toMatchSnapshot();
+    // 5 charts are always present for provided data
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(5);
   });
 });

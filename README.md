@@ -104,3 +104,9 @@ Continuous integration is configured to run tests on GitHub Actions for each pus
 See `analysis.js` for usage details.
 
 Future iterations may include additional visualizations, improved styling, and automated build tooling.
+
+## Visualization Standards
+
+- Titles and labels: All charts include clear titles and axis labels; legends are enabled where multiple traces or encodings need explanation.
+- In-chart help: Each visualization includes a small “i” help icon at the top-right of the chart area. Hover or focus to see a concise description of what is shown and how to interpret it.
+- Theming: Charts share the dark/light theme via `src/utils/chartTheme.js` and follow the app’s theme toggle.

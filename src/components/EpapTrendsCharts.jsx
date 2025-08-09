@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
+import VizHelp from './VizHelp';
 import { mannWhitneyUTest, pearson } from '../utils/stats';
 
 /**
@@ -120,7 +121,9 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
 
   return (
     <div className="usage-charts">
-      <Plot
+      <div className="chart-with-help">
+        <VizHelp text="Nightly median EPAP over time. Dots highlight the first and last 30 nights for quick comparison." />
+        <Plot
         key={isDark ? 'dark' : 'light'}
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
@@ -163,10 +166,12 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           modeBarButtonsToAdd: ['toImage'],
           toImageButtonOptions: { format: 'svg', filename: 'epap_over_time' },
         }}
-      />
+        />
+      </div>
 
       <div className="usage-charts-grid">
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+        <VizHelp text="Boxplot of nightly median EPAP; box shows IQR and points indicate outliers." />
         <Plot
           key={isDark ? 'dark-box' : 'light-box'}
           useResizeHandler
@@ -194,7 +199,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
           }}
         />
         </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Scatter of nightly EPAP vs AHI. Each point is a night; dashed line is the linear fit; r shows Pearson correlation." />
           <Plot
             key={isDark ? 'dark-scatter' : 'light-scatter'}
             useResizeHandler
@@ -218,7 +224,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             }}
           />
       </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="2D histogram density of EPAP vs AHI, highlighting common combinations." />
           <Plot
             key={isDark ? 'dark-2d' : 'light-2d'}
             useResizeHandler
@@ -236,7 +243,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       </div>
 
       {corrMatrix.labels.length >= 2 && (
-        <div className="chart-item" style={{ marginTop: '16px' }}>
+        <div className="chart-item chart-with-help" style={{ marginTop: '16px' }}>
+          <VizHelp text="Correlation matrix (Pearson r) among available variables; cell labels show the correlation value." />
           <Plot
             key={isDark ? 'dark-corr' : 'light-corr'}
             useResizeHandler
@@ -262,7 +270,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
       {/* Leak charts if available */}
       {(corrMatrix.leakMed && corrMatrix.leakMed.length) ? (
         <div className="usage-charts-grid" style={{ marginTop: '16px' }}>
-          <div className="chart-item">
+          <div className="chart-item chart-with-help">
+            <VizHelp text="Leak median over time if available; trends can indicate mask fit or seal issues." />
             <Plot
               key={isDark ? 'dark-leak' : 'light-leak'}
               useResizeHandler
@@ -277,7 +286,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               config={{ responsive: true, displaylogo: false }}
             />
           </div>
-          <div className="chart-item">
+          <div className="chart-item chart-with-help">
+            <VizHelp text="Distribution of nightly leak median values; helps identify consistent high-leak nights." />
             <Plot
               key={isDark ? 'dark-leak-hist' : 'light-leak-hist'}
               useResizeHandler
@@ -293,7 +303,8 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             />
           </div>
           {corrMatrix.leakPct && corrMatrix.leakPct.length ? (
-            <div className="chart-item">
+            <div className="chart-item chart-with-help">
+              <VizHelp text="Percent of each night above leak threshold; persistent high percentages may impair therapy." />
               <Plot
                 key={isDark ? 'dark-leak-pct' : 'light-leak-pct'}
                 useResizeHandler

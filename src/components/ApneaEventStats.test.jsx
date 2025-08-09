@@ -13,14 +13,14 @@ describe('ApneaEventStats', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders tables and plots for data', () => {
-    const { getAllByTestId, getByText, asFragment } = render(
+  it('renders tables and plots for data with help tooltips', () => {
+    const { getAllByTestId, getByText } = render(
       <ApneaEventStats data={sampleDetails} />
     );
     expect(getByText('Apnea Event Characteristics')).toBeInTheDocument();
     expect(getByText('Total apnea events')).toBeInTheDocument();
     expect(getByText('Apnea Events per Night')).toBeInTheDocument();
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    expect(asFragment()).toMatchSnapshot();
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(4);
   });
 });

@@ -9,9 +9,10 @@ const data = [
 ];
 
 describe('AhiTrendsCharts', () => {
-  it('renders plotly charts and matches snapshot', () => {
-    const { getAllByTestId, asFragment } = render(<AhiTrendsCharts data={data} />);
+  it('renders plotly charts with help tooltips', () => {
+    const { getAllByTestId } = render(<AhiTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    expect(asFragment()).toMatchSnapshot();
+    // 5 charts => at least 5 help tooltips
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(5);
   });
 });

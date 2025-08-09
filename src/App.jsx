@@ -23,6 +23,7 @@ import Plot from 'react-plotly.js';
 import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
 import ThemeToggle from './components/ThemeToggle';
+import VizHelp from './components/VizHelp';
 
 
 // Hook for loading CSV files via file input
@@ -294,7 +295,9 @@ function ApneaClusterAnalysis({
       {selected !== null && sorted[selected] && (
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
-            <Plot
+            <div className="chart-with-help">
+              <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
+              <Plot
             key={isDark ? 'dark-cluster' : 'light-cluster'}
             data={[{
               type: 'bar',
@@ -315,7 +318,8 @@ function ApneaClusterAnalysis({
               height: Math.max(200, sorted[selected].events.length * 30 + 100)
             })}
             config={{ displayModeBar: false }}
-          />
+              />
+            </div>
         </div>
       )}
 
@@ -358,7 +362,9 @@ function FalseNegativesAnalysis({ list }) {
       <h2 id="false-negatives">Potential False Negatives</h2>
       <div>
         <h3>False Negative Clusters by Confidence Over Time</h3>
-        <Plot
+        <div className="chart-with-help">
+          <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />
+          <Plot
           key={prefersDark ? 'dark-fn' : 'light-fn'}
           useResizeHandler
           style={{ width: '100%', height: '400px' }}
@@ -387,7 +393,8 @@ function FalseNegativesAnalysis({ list }) {
             height: 400
           })}
           config={{ responsive: true, displaylogo: false }}
-        />
+          />
+        </div>
       </div>
       <div className="cluster-table-container">
         <table>

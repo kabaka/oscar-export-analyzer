@@ -4,6 +4,7 @@ import { quantile, detectUsageBreakpoints, computeUsageRolling } from '../utils/
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
+import VizHelp from './VizHelp';
 
 export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
   const { dates, ahis, rolling7, rolling30, breakDates, oai, cai, mai } = useMemo(() => {
@@ -117,7 +118,9 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
 
   return (
     <div className="usage-charts">
-      <Plot
+      <div className="chart-with-help">
+        <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5 indicates the conventional threshold; dotted verticals show potential breakpoints." />
+        <Plot
         key={isDark ? 'dark' : 'light'}
         useResizeHandler
         style={{ width: '100%', height: '300px' }}
@@ -172,10 +175,12 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
           modeBarButtonsToAdd: ['toImage'],
           toImageButtonOptions: { format: 'svg', filename: 'ahi_over_time' },
         }}
-      />
+        />
+      </div>
 
       <div className="usage-charts-grid">
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Distribution of nightly AHI values. Dashed line marks the median; dotted line marks the mean." />
           <Plot
             key={isDark ? 'dark-hist' : 'light-hist'}
             useResizeHandler
@@ -206,7 +211,8 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             }}
           />
         </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Boxplot of nightly AHI; box shows the interquartile range (IQR) and points indicate outliers." />
           <Plot
             key={isDark ? 'dark-box' : 'light-box'}
             useResizeHandler
@@ -227,7 +233,8 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
         </div>
       </div>
       <div className="usage-charts-grid">
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="Violin plot of nightly AHI; width shows density of values. Inner box shows quartiles and median." />
           <Plot
             key={isDark ? 'dark-violin' : 'light-violin'}
             useResizeHandler
@@ -240,7 +247,8 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             })}
           />
         </div>
-        <div className="chart-item">
+        <div className="chart-item chart-with-help">
+          <VizHelp text="QQ plot comparing observed AHI quantiles to a theoretical normal distribution. Deviations from the dashed y=x line indicate non-normality." />
           <Plot
             key={isDark ? 'dark-qq' : 'light-qq'}
             useResizeHandler
