@@ -60,6 +60,10 @@ Cross-filtering & Range Comparisons
 - Cross-filtering: Brushing/zooming in Usage and AHI time-series updates the global date range, filtering all views.
 - Range comparisons: Define A and B date ranges to compare mean usage and AHI, with Mann–Whitney U p-values and rank-biserial effects.
 
+Persistence & Sessions (opt-in)
+- Opt-in local persistence: Enable “Remember data locally” to save parsed Summary/Details, parameters, and ranges in IndexedDB; saving is debounced to avoid churn during frequent uploads and dev hot reloads.
+- Explicit controls: Save now, Load saved, Clear saved. Export/import full JSON sessions for sharing or backup.
+
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
 ### Local development
