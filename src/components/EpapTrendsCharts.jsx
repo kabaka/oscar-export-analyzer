@@ -334,7 +334,13 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             <tr><td>EPAP ≥ 7</td><td>{titration.high.length}</td><td>{(titration.high.reduce((a,b)=>a+b,0)/(titration.high.length||1)).toFixed(2)}</td></tr>
           </tbody>
         </table>
-        <p>MW U = {isFinite(titration.U) ? titration.U.toFixed(1) : '—'}, p ≈ {isFinite(titration.p) ? titration.p.toExponential(2) : '—'}, effect (rank-biserial) ≈ {isFinite(titration.effect) ? titration.effect.toFixed(2) : '—'}</p>
+        <p>
+          MW U = {isFinite(titration.U) ? titration.U.toFixed(1) : '—'},
+          p{titration.method === 'exact' ? ' (exact)' : ' (normal)'} ≈ {isFinite(titration.p) ? titration.p.toExponential(2) : '—'},
+          effect (rank-biserial) ≈ {isFinite(titration.effect) ? titration.effect.toFixed(2) : '—'}
+          {isFinite(titration.effect_ci_low) && isFinite(titration.effect_ci_high)
+            ? ` [${titration.effect_ci_low.toFixed(2)}, ${titration.effect_ci_high.toFixed(2)}]` : ''}
+        </p>
       </div>
     </div>
   );

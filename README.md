@@ -121,3 +121,5 @@ Future iterations may include additional visualizations, improved styling, and a
 
 - Date-aware rolling windows: Rolling metrics (e.g., 7- and 30-night averages) are computed using calendar-day windows, not fixed counts. For each date, the window includes all nights within the last N days (inclusive), which makes results robust to gaps in the record.
 - Confidence intervals: We draw uncertainty ribbons around rolling means using a normal approximation (mean ± 1.96·SE with unbiased variance inside the window). For rolling medians, we compute an order-statistic–based, distribution-free CI via a binomial approximation. These are efficient client-side methods; in future workerized passes we may offer bootstrap CIs.
+
+- Mann–Whitney U test: For small samples, we compute an exact two-sided p-value by enumerating the rank-sum distribution (with average ranks for ties). For larger samples, we use a tie-corrected normal approximation. We report the rank-biserial effect size and an approximate 95% CI derived from a Wilson interval on the common language effect (CL), transformed via effect = 2·CL − 1.

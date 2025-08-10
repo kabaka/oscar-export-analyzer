@@ -186,7 +186,7 @@ Wave 1 — Foundations and Core Analytics
   - Tests: Irregular dates windowing; CI array lengths; rendering smoke.
   - Docs: Methods note on rolling windows and bootstrap.
 
-- [ ] Exact Mann–Whitney U with tie handling + effect size CI
+- [x] Exact Mann–Whitney U with tie handling + effect size CI
   - Deliver: Exact U for small n (fallback to normal for large n), tie correction; rank-biserial effect with CI.
   - Integrate: Update EPAP titration readout in `EpapTrendsCharts` with effect CI.
   - Tests: Known small-sample cases; ties; approximation parity for larger n.
