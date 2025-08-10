@@ -116,3 +116,8 @@ Future iterations may include additional visualizations, improved styling, and a
 - Titles and labels: All charts include clear titles and axis labels; legends are enabled where multiple traces or encodings need explanation.
 - In-chart help: Each visualization includes a small “i” help icon at the top-right of the chart area. Hover or focus to see a concise description of what is shown and how to interpret it.
 - Theming: Charts share the dark/light theme via `src/utils/chartTheme.js` and follow the app’s theme toggle.
+
+## Methods Notes
+
+- Date-aware rolling windows: Rolling metrics (e.g., 7- and 30-night averages) are computed using calendar-day windows, not fixed counts. For each date, the window includes all nights within the last N days (inclusive), which makes results robust to gaps in the record.
+- Confidence intervals: We draw uncertainty ribbons around rolling means using a normal approximation (mean ± 1.96·SE with unbiased variance inside the window). For rolling medians, we compute an order-statistic–based, distribution-free CI via a binomial approximation. These are efficient client-side methods; in future workerized passes we may offer bootstrap CIs.

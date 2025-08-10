@@ -8,7 +8,7 @@ import VizHelp from './VizHelp';
 
 export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
   // Prepare sorted date and usage arrays
-  const { dates, usageHours, rolling7, rolling30, compliance4_30, breakDates, dowHeatmap } = useMemo(() => {
+  const { dates, usageHours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, dowHeatmap } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), hours: parseDuration(r['Total Time']) / 3600 }))
       .sort((a, b) => a.date - b.date);
@@ -17,6 +17,10 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
     const rolling = computeUsageRolling(datesArr, hours, [7, 30]);
     const rolling7 = rolling.avg7;
     const rolling30 = rolling.avg30;
+    const r7Low = rolling['avg7_ci_low'];
+    const r7High = rolling['avg7_ci_high'];
+    const r30Low = rolling['avg30_ci_low'];
+    const r30High = rolling['avg30_ci_high'];
     const compliance4_30 = rolling['compliance4_30'];
     const breakDates = detectUsageBreakpoints(rolling7, rolling30, datesArr);
 
@@ -54,7 +58,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
       : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
 
-    return { dates: datesArr, usageHours: hours, rolling7, rolling30, compliance4_30, breakDates, dowHeatmap };
+    return { dates: datesArr, usageHours: hours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, dowHeatmap };
   }, [data]);
 
   // Summary stats and adaptive bins for histogram
@@ -94,6 +98,29 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
             name: 'Usage (hrs)',
             line: { width: 1, color: COLORS.primary },
           },
+          // 7-day CI ribbon (low then high with fill)
+          {
+            x: dates,
+            y: r7Low,
+            type: 'scatter',
+            mode: 'lines',
+            name: '7-night Avg CI low',
+            line: { width: 0 },
+            hoverinfo: 'skip',
+            showlegend: false,
+          },
+          {
+            x: dates,
+            y: r7High,
+            type: 'scatter',
+            mode: 'lines',
+            name: '7-night Avg CI',
+            fill: 'tonexty',
+            fillcolor: 'rgba(255,127,14,0.15)',
+            line: { width: 0 },
+            hoverinfo: 'skip',
+            showlegend: true,
+          },
           {
             x: dates,
             y: rolling7,
@@ -101,6 +128,29 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
             mode: 'lines',
             name: '7-night Avg',
             line: { dash: 'dash', width: 2, color: COLORS.secondary },
+          },
+          // 30-day CI ribbon
+          {
+            x: dates,
+            y: r30Low,
+            type: 'scatter',
+            mode: 'lines',
+            name: '30-night Avg CI low',
+            line: { width: 0 },
+            hoverinfo: 'skip',
+            showlegend: false,
+          },
+          {
+            x: dates,
+            y: r30High,
+            type: 'scatter',
+            mode: 'lines',
+            name: '30-night Avg CI',
+            fill: 'tonexty',
+            fillcolor: 'rgba(44,160,44,0.15)',
+            line: { width: 0 },
+            hoverinfo: 'skip',
+            showlegend: true,
           },
           {
             x: dates,

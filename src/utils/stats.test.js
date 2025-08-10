@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseDuration, quantile, computeApneaEventStats, summarizeUsage, computeAHITrends, computeEPAPTrends } from './stats';
+import { computeUsageRolling } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -85,5 +86,29 @@ describe('computeEPAPTrends', () => {
     expect(epap.countHigh).toBe(1);
     expect(epap.avgAHILow).toBe(1);
     expect(epap.avgAHIHigh).toBe(3);
+  });
+});
+
+describe('computeUsageRolling (date-aware)', () => {
+  it('uses calendar-day windows rather than fixed counts and returns CIs', () => {
+    const dates = [
+      new Date('2021-01-01'),
+      new Date('2021-01-02'),
+      new Date('2021-01-05'), // gap of 2 days
+    ];
+    const hours = [2, 4, 6];
+    const r = computeUsageRolling(dates, hours, [3]); // 3-day window
+    // At index 1 (2021-01-02), window covers 2020-12-31..2021-01-02 => indices 0..1
+    expect(r.avg3[1]).toBeCloseTo((2 + 4) / 2);
+    // At index 2 (2021-01-05), window covers 2021-01-03..2021-01-05 => only index 2
+    expect(r.avg3[2]).toBeCloseTo(6);
+    // CIs are present and same length
+    expect(r.avg3_ci_low).toHaveLength(3);
+    expect(r.avg3_ci_high).toHaveLength(3);
+    expect(Number.isFinite(r.avg3_ci_low[2])).toBe(true);
+    expect(Number.isFinite(r.avg3_ci_high[2])).toBe(true);
+    // Median arrays present
+    expect(r.median3).toHaveLength(3);
+    expect(Number.isFinite(r.median3[2])).toBe(true);
   });
 });

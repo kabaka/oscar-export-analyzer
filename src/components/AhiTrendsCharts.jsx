@@ -7,7 +7,7 @@ import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 
 export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
-  const { dates, ahis, rolling7, rolling30, breakDates, oai, cai, mai } = useMemo(() => {
+  const { dates, ahis, rolling7, rolling30, r7Low, r7High, r30Low, r30High, breakDates, oai, cai, mai } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), ahi: parseFloat(r['AHI']) }))
       .filter(p => !isNaN(p.ahi))
@@ -17,6 +17,10 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
     const rolling = computeUsageRolling(datesArr, ahisArr, [7, 30]);
     const rolling7 = rolling.avg7;
     const rolling30 = rolling.avg30;
+    const r7Low = rolling['avg7_ci_low'];
+    const r7High = rolling['avg7_ci_high'];
+    const r30Low = rolling['avg30_ci_low'];
+    const r30High = rolling['avg30_ci_high'];
     const breakDates = detectUsageBreakpoints(rolling7, rolling30, datesArr, 0.5);
 
     // Optional decomposition if columns present
@@ -41,6 +45,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
       rolling30,
       breakDates,
       oai, cai, mai,
+      r7Low, r7High, r30Low, r30High,
     };
   }, [data]);
 
@@ -132,6 +137,9 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             name: 'Nightly AHI',
             line: { width: 1, color: COLORS.primary },
           },
+          // 7-day CI ribbon
+          { x: dates, y: r7Low, type: 'scatter', mode: 'lines', name: '7-night Avg CI low', line: { width: 0 }, hoverinfo: 'skip', showlegend: false },
+          { x: dates, y: r7High, type: 'scatter', mode: 'lines', name: '7-night Avg CI', fill: 'tonexty', fillcolor: 'rgba(255,127,14,0.15)', line: { width: 0 }, hoverinfo: 'skip', showlegend: true },
           {
             x: dates,
             y: rolling7,
@@ -140,6 +148,9 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
             name: '7-night Avg',
             line: { dash: 'dash', width: 2, color: COLORS.secondary },
           },
+          // 30-day CI ribbon
+          { x: dates, y: r30Low, type: 'scatter', mode: 'lines', name: '30-night Avg CI low', line: { width: 0 }, hoverinfo: 'skip', showlegend: false },
+          { x: dates, y: r30High, type: 'scatter', mode: 'lines', name: '30-night Avg CI', fill: 'tonexty', fillcolor: 'rgba(44,160,44,0.15)', line: { width: 0 }, hoverinfo: 'skip', showlegend: true },
           {
             x: dates,
             y: rolling30,
