@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseDuration, quantile, computeApneaEventStats, summarizeUsage, computeAHITrends, computeEPAPTrends } from './stats';
 import { computeUsageRolling } from './stats';
+import { mannWhitneyUTest } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -9,6 +10,29 @@ describe('parseDuration', () => {
 
   it('handles MM:SS format', () => {
     expect(parseDuration('2:03')).toBe(123);
+  });
+});
+
+describe('mannWhitneyUTest (exact small-n and ties)', () => {
+  it('computes exact p for small samples', () => {
+    const a = [1, 2];
+    const b = [3, 4];
+    const res = mannWhitneyUTest(a, b);
+    expect(res.method).toBe('exact');
+    // Exact two-sided p = 2/6 = 0.333...
+    expect(res.p).toBeLessThan(0.34);
+    expect(res.effect).toBeGreaterThan(0.9);
+    expect(res.effect_ci_low).toBeLessThanOrEqual(res.effect_ci_high);
+  });
+
+  it('handles ties and returns finite results', () => {
+    const a = [1, 2];
+    const b = [2, 3];
+    const res = mannWhitneyUTest(a, b);
+    expect(res.method).toBe('exact');
+    expect(isFinite(res.U)).toBe(true);
+    expect(isFinite(res.p)).toBe(true);
+    expect(isFinite(res.effect)).toBe(true);
   });
 });
 

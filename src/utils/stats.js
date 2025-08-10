@@ -431,19 +431,22 @@ export function normalCdf(z) {
 // Mann-Whitney U test with normal approximation (two-sided)
 export function mannWhitneyUTest(a, b) {
   const n1 = a.length, n2 = b.length;
-  if (n1 === 0 || n2 === 0) return { U: NaN, z: NaN, p: NaN, effect: NaN };
-  // ranks on combined
-  const combined = a.map(v => ({ v, g: 1 })).concat(b.map(v => ({ v, g: 2 })));
+  if (n1 === 0 || n2 === 0) return { U: NaN, z: NaN, p: NaN, effect: NaN, method: 'NA' };
+  // ranks on combined (average ranks for ties)
+  const combined = a.map((v, i) => ({ v, g: 1, idx: i }))
+    .concat(b.map((v, i) => ({ v, g: 2, idx: i })));
   combined.sort((x, y) => x.v - y.v);
   let rankSum1 = 0;
   let i = 0;
   const tieGroups = [];
+  const ranks = new Array(combined.length);
   while (i < combined.length) {
     let j = i;
     while (j + 1 < combined.length && combined[j + 1].v === combined[i].v) j++;
     const avgRank = (i + j + 2) / 2;
     let count = 0;
     for (let k = i; k <= j; k++) {
+      ranks[k] = avgRank;
       if (combined[k].g === 1) rankSum1 += avgRank;
       count++;
     }
@@ -453,13 +456,90 @@ export function mannWhitneyUTest(a, b) {
   const U1 = rankSum1 - (n1 * (n1 + 1)) / 2;
   const U2 = n1 * n2 - U1;
   const U = Math.min(U1, U2);
-  // tie correction
-  const tieCorrection = 1 - tieGroups.reduce((acc, t) => acc + (t * (t * t - 1)), 0) / ((n1 + n2) * ((n1 + n2) * (n1 + n2) - 1));
   const mu = (n1 * n2) / 2;
-  const sigma = Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12) * Math.sqrt(Math.max(0, tieCorrection));
-  const z = sigma ? (U - mu) / sigma : 0;
-  // two-sided p via normal approx
-  const p = 2 * (1 - normalCdf(Math.abs(z)));
-  const effect = 1 - (2 * U) / (n1 * n2); // rank-biserial
-  return { U, z, p, effect };
+  // tie correction for variance
+  const tieCorr = 1 - tieGroups.reduce((acc, t) => acc + (t * (t * t - 1)), 0) / ((n1 + n2) * ((n1 + n2) * (n1 + n2) - 1));
+  const sigma = Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12) * Math.sqrt(Math.max(0, tieCorr));
+
+  // Decide method: exact for small samples, otherwise normal approx
+  const n = n1 + n2;
+  const EXACT_MAX_N = 28; // keep DP tractable
+  let method = 'normal';
+  let p = NaN;
+  let z = 0;
+  if (n <= EXACT_MAX_N) {
+    method = 'exact';
+    // Build rank-sum distribution via DP over individual items (distinguishable), using scaled integer ranks (x2)
+    const ranksScaled = ranks.map(r => Math.round(r * 2));
+    const targetK = n1;
+    // dp[k] = Map(sumScaled -> count)
+    const dp = new Array(targetK + 1).fill(0).map(() => new Map());
+    dp[0].set(0, 1);
+    for (let r of ranksScaled) {
+      for (let k = Math.min(targetK, n); k >= 1; k--) {
+        const prev = dp[k - 1];
+        const curr = dp[k];
+        prev.forEach((cnt, sum) => {
+          const ns = sum + r;
+          curr.set(ns, (curr.get(ns) || 0) + cnt);
+        });
+      }
+    }
+    const dist = dp[targetK];
+    const total = binom(n, n1);
+    // observed rank sum scaled
+    const R1 = rankSum1;
+    const meanR1 = (n1 * (n + 1)) / 2;
+    const obs = Math.round(R1 * 2);
+    const meanScaled = Math.round(meanR1 * 2);
+    const distArray = Array.from(dist.entries());
+    const extremeProb = distArray.reduce((acc, [sumScaled, count]) => {
+      return Math.abs(sumScaled - meanScaled) >= Math.abs(obs - meanScaled)
+        ? acc + count
+        : acc;
+    }, 0);
+    p = Math.min(1, extremeProb / total);
+    z = sigma ? (U - mu) / sigma : 0;
+  } else {
+    method = 'normal';
+    z = sigma ? (U - mu) / sigma : 0;
+    p = 2 * (1 - normalCdf(Math.abs(z)));
+  }
+  // rank-biserial effect and approximate CI via proportion CI of CL = U/(n1*n2)
+  const Npairs = n1 * n2;
+  const CL = U / Npairs; // using smaller U aligns with two-sided p; convert to rank-biserial by 1-2U/N
+  const effect = 1 - (2 * U) / Npairs;
+  const { low: clLow, high: clHigh } = proportionCI(CL, Npairs);
+  const effect_ci_low = 2 * clLow - 1;
+  const effect_ci_high = 2 * clHigh - 1;
+  return { U, z, p, effect, effect_ci_low, effect_ci_high, method };
+}
+
+function binom(n, k) {
+  if (k < 0 || k > n) return 0;
+  k = Math.min(k, n - k);
+  let num = 1;
+  let den = 1;
+  for (let i = 1; i <= k; i++) {
+    num *= (n - (k - i));
+    den *= i;
+    const g = gcd(num, den);
+    num /= g; den /= g;
+  }
+  return Math.round(num / den);
+}
+
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b) { const t = b; b = a % b; a = t; }
+  return a || 1;
+}
+
+// Wilson score interval for proportion
+function proportionCI(p, n, z = 1.96) {
+  if (!isFinite(p) || !isFinite(n) || n <= 0) return { low: NaN, high: NaN };
+  const denom = 1 + (z * z) / n;
+  const center = (p + (z * z) / (2 * n)) / denom;
+  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+  return { low: Math.max(0, center - half), high: Math.min(1, center + half) };
 }
