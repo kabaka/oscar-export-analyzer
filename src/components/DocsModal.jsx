@@ -26,10 +26,41 @@ function renderMarkdown(md) {
   let i = 0;
   let inCode = false;
   let codeLang = '';
-  let listType = null; // 'ul' | 'ol'
-  function closeList() {
-    if (listType) { parts.push(`</${listType}>`); listType = null; }
-  }
+  // Nested list stack and open <li> tracking
+  const listStack = []; // [{ type: 'ul'|'ol', level: number }]
+  let openLiLevel = -1;
+
+  const closeLiIfOpenAt = (level) => {
+    if (openLiLevel === level) {
+      parts.push('</li>');
+      openLiLevel = -1;
+    }
+  };
+  const closeListsTo = (targetLen = 0) => {
+    closeLiIfOpenAt(listStack.length - 1);
+    while (listStack.length > targetLen) {
+      parts.push(`</${listStack.pop().type}>`);
+      closeLiIfOpenAt(listStack.length - 1);
+    }
+  };
+  const ensureListLevel = (level, type) => {
+    while (listStack.length < level + 1) {
+      parts.push(`<${type}>`);
+      listStack.push({ type, level: listStack.length });
+    }
+    if (listStack.length && listStack[listStack.length - 1].type !== type) {
+      closeListsTo(level);
+      parts.push(`<${type}>`);
+      listStack.push({ type, level });
+    }
+  };
+  const closeAllBlockContexts = () => {
+    if (listStack.length) {
+      if (openLiLevel >= 0) { parts.push('</li>'); openLiLevel = -1; }
+      closeListsTo(0);
+    }
+  };
+
   while (i < lines.length) {
     const raw = lines[i];
     const line = raw.replace(/\t/g, '  ');
@@ -40,9 +71,9 @@ function renderMarkdown(md) {
         parts.push('</code></pre>');
         inCode = false; codeLang = '';
       } else {
-        closeList();
+        closeAllBlockContexts();
         codeLang = fence[1]?.trim() || '';
-        parts.push(`<pre class="doc-code"><code${codeLang ? ` data-lang="${escapeHtml(codeLang)}"` : ''}>`);
+        parts.push(`<pre class=\"doc-code\"><code${codeLang ? ` data-lang=\"${escapeHtml(codeLang)}\"` : ''}>`);
         inCode = true;
       }
       i++; continue;
@@ -54,43 +85,47 @@ function renderMarkdown(md) {
     // headings
     const h = line.match(/^(#{1,6})\s+(.+)$/);
     if (h) {
-      closeList();
+      closeAllBlockContexts();
       const level = h[1].length;
       const text = h[2].trim();
       const id = slugify(text);
       toc.push({ level, id, text });
-      parts.push(`<h${level} id="${id}">${escapeHtml(text)}</h${level}>`);
+      parts.push(`<h${level} id=\"${id}\">${escapeHtml(text)}</h${level}>`);
       i++; continue;
     }
-    // lists
-    const ul = line.match(/^\s*[-*]\s+(.+)$/);
-    if (ul) {
-      if (listType !== 'ul') { closeList(); parts.push('<ul>'); listType = 'ul'; }
-      parts.push(`<li>${inline(ul[1])}</li>`);
+    // nested lists by indentation (2 spaces per level)
+    const mUl = line.match(/^(\s*)[-*]\s+(.+)$/);
+    const mOl = line.match(/^(\s*)\d+\.\s+(.+)$/);
+    if (mUl || mOl) {
+      const indent = (mUl || mOl)[1] || '';
+      const text = (mUl ? mUl[2] : mOl[2]).trim();
+      const type = mUl ? 'ul' : 'ol';
+      const level = Math.floor(indent.replace(/\t/g, '  ').length / 2);
+      ensureListLevel(level, type);
+      if (openLiLevel === level) { parts.push('</li>'); openLiLevel = -1; }
+      parts.push(`<li>${inline(text)}`);
+      openLiLevel = level;
       i++; continue;
     }
-    const ol = line.match(/^\s*\d+\.\s+(.+)$/);
-    if (ol) {
-      if (listType !== 'ol') { closeList(); parts.push('<ol>'); listType = 'ol'; }
-      parts.push(`<li>${inline(ol[1])}</li>`);
+    // blank line
+    if (/^\s*$/.test(line)) {
+      if (openLiLevel >= 0) { parts.push('</li>'); openLiLevel = -1; }
+      parts.push('');
       i++; continue;
     }
-    // blank
-    if (/^\s*$/.test(line)) { closeList(); parts.push(''); i++; continue; }
     // paragraph
-    closeList();
+    closeAllBlockContexts();
     parts.push(`<p>${inline(line)}</p>`);
     i++;
   }
-  closeList();
+  if (openLiLevel >= 0) { parts.push('</li>'); openLiLevel = -1; }
+  closeListsTo(0);
   return { html: parts.join('\n'), toc };
 
   function inline(txt) {
-    // code spans
     let s = escapeHtml(txt);
     s = s.replace(/`([^`]+)`/g, (_m, g1) => `<code>${escapeHtml(g1)}</code>`);
-    // links [text](url)
-    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, t, url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(t)}</a>`);
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, t, url) => `<a href=\"${escapeHtml(url)}\" target=\"_blank\" rel=\"noopener\">${escapeHtml(t)}</a>`);
     return s;
   }
 }
@@ -136,4 +171,3 @@ export default function DocsModal({ isOpen, onClose, initialAnchor }) {
     </div>
   );
 }
-
