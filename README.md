@@ -56,6 +56,10 @@ Workers
 - Parsing: PapaParse runs in a web worker (`worker: true`).
 - Analytics: A lightweight module worker (`src/workers/analytics.worker.js`) computes apnea clusters and false negatives off the main thread. App code falls back to main-thread computation when Worker is unavailable (e.g., tests/jsdom).
 
+Cross-filtering & Range Comparisons
+- Cross-filtering: Brushing/zooming in Usage and AHI time-series updates the global date range, filtering all views.
+- Range comparisons: Define A and B date ranges to compare mean usage and AHI, with Mann–Whitney U p-values and rank-biserial effects.
+
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
 ### Local development

@@ -1,0 +1,41 @@
+import React, { useMemo } from 'react';
+import { parseDuration, mannWhitneyUTest } from '../utils/stats';
+
+export default function RangeComparisons({ summaryData = [], rangeA, rangeB }) {
+  const pick = (r) => {
+    if (!r) return [];
+    const dateCol = summaryData.length ? Object.keys(summaryData[0]).find(c => /date/i.test(c)) : null;
+    if (!dateCol) return [];
+    return summaryData.filter(row => {
+      const d = new Date(row[dateCol]);
+      return (!r.start || d >= r.start) && (!r.end || d <= r.end);
+    });
+  };
+  const A = useMemo(() => pick(rangeA), [summaryData, rangeA?.start, rangeA?.end]);
+  const B = useMemo(() => pick(rangeB), [summaryData, rangeB?.start, rangeB?.end]);
+  const toUsage = rows => rows.map(r => parseDuration(r['Total Time']) / 3600).filter(v => !isNaN(v));
+  const toAHI = rows => rows.map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
+  const uA = toUsage(A), uB = toUsage(B);
+  const aA = toAHI(A), aB = toAHI(B);
+  const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : NaN;
+  const kpi = {
+    usageA: avg(uA), usageB: avg(uB), usageDelta: avg(uB) - avg(uA), usageMW: mannWhitneyUTest(uA, uB),
+    ahiA: avg(aA), ahiB: avg(aB), ahiDelta: avg(aB) - avg(aA), ahiMW: mannWhitneyUTest(aA, aB),
+    nA: A.length, nB: B.length,
+  };
+  if (!A.length || !B.length) return null;
+  return (
+    <div>
+      <h3>Range Comparisons (A vs B)</h3>
+      <table>
+        <thead><tr><th>Metric</th><th>A (mean)</th><th>B (mean)</th><th>Delta (B−A)</th><th>MW p</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td>Usage (h/night)</td><td>{kpi.usageA.toFixed(2)}</td><td>{kpi.usageB.toFixed(2)}</td><td>{kpi.usageDelta.toFixed(2)}</td><td>{isFinite(kpi.usageMW.p)?kpi.usageMW.p.toExponential(2):'—'}</td><td>{isFinite(kpi.usageMW.effect)?kpi.usageMW.effect.toFixed(2):'—'}</td></tr>
+          <tr><td>AHI (events/h)</td><td>{kpi.ahiA.toFixed(2)}</td><td>{kpi.ahiB.toFixed(2)}</td><td>{kpi.ahiDelta.toFixed(2)}</td><td>{isFinite(kpi.ahiMW.p)?kpi.ahiMW.p.toExponential(2):'—'}</td><td>{isFinite(kpi.ahiMW.effect)?kpi.ahiMW.effect.toFixed(2):'—'}</td></tr>
+        </tbody>
+      </table>
+      <p style={{ opacity: 0.8 }}>nA={kpi.nA}, nB={kpi.nB}. Mann–Whitney U p-values and rank-biserial effects shown.</p>
+    </div>
+  );
+}
+
