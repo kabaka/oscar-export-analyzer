@@ -51,6 +51,11 @@
 .doc-content p { margin: 6px 0; line-height: 1.5; }
 .doc-content ul, .doc-content ol { margin: 6px 0 6px 20px; }
 .doc-code { background: color-mix(in oklab, var(--color-kpi-bg) 35%, transparent); color: inherit; padding: 10px; border-radius: 6px; overflow: auto; }
+/* Remove global sticky-header offset for headings inside the guide viewer */
+.doc-content h1[id],
+.doc-content h2[id],
+.doc-content h3[id],
+.doc-content h4[id] { scroll-margin-top: 0 !important; }
 
 .guide-inline {
   margin-left: 8px;
