@@ -36,6 +36,7 @@ For a full walkthrough and interpretation tips, see the Usage & Interpretation G
 - In-page links in the sticky Table of Contents smoothly scroll with an automatic offset so headers aren’t hidden beneath the sticky app header.
 - The "Overview" section becomes available as soon as a Summary CSV is loaded (no Details file required).
 - The Table of Contents highlights the active section as you scroll, using IntersectionObserver; clicking a link also activates it immediately.
+ - Use the header "Guide" button to open the full in-app Usage & Interpretation Guide. It auto-deep-links to the currently active section.
 
 ### Raw Data Explorer
 

@@ -1,0 +1,54 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: min(1000px, 96vw);
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.modal-body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+}
+.doc-toc {
+  overflow: auto;
+  border-right: 1px solid var(--color-border-light);
+  padding-right: 8px;
+}
+.doc-toc a {
+  display: block;
+  padding: 6px 4px;
+  color: var(--color-link);
+  text-decoration: none;
+}
+.doc-toc a:hover { text-decoration: underline; }
+.doc-content {
+  overflow: auto;
+  padding-right: 8px;
+}
+.doc-content h1, .doc-content h2, .doc-content h3 { margin: 12px 0 6px; }
+.doc-content p { margin: 6px 0; line-height: 1.5; }
+.doc-content ul, .doc-content ol { margin: 6px 0 6px 20px; }
+.doc-code { background: color-mix(in oklab, var(--color-kpi-bg) 35%, transparent); color: inherit; padding: 10px; border-radius: 6px; overflow: auto; }
+
