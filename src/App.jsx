@@ -379,7 +379,8 @@ function ApneaClusterAnalysis({
               <tr
                 key={i}
                 onClick={() => setSelected(i)}
-                style={{ cursor: 'pointer', backgroundColor: selected === i ? '#f0f8ff' : undefined }}
+                className={selected === i ? 'row-selected' : undefined}
+                style={{ cursor: 'pointer' }}
               >
                 <td>{i + 1}</td>
                 <td>{cl.start.toLocaleString()}</td>
