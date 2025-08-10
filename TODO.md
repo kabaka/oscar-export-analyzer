@@ -181,7 +181,7 @@ This is a concrete, stepwise plan we will iterate on until all tasks are complet
 
 Wave 1 — Foundations and Core Analytics
 
-- [ ] Date-aware rolling windows and CI ribbons
+- [x] Date-aware rolling windows and CI ribbons
   - Deliver: Update `computeUsageRolling` to use actual day gaps; add bootstrap CIs for rolling averages/medians; render ribbons in Usage/AHI charts.
   - Tests: Irregular dates windowing; CI array lengths; rendering smoke.
   - Docs: Methods note on rolling windows and bootstrap.

@@ -146,26 +146,88 @@ export function summarizeUsage(data) {
 
 // Compute rolling averages and compliance metrics for usage hours
 export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
+  // Date-aware rolling windows by last w calendar days (inclusive).
+  // Also compute normal-approx CI for mean and distribution-free CI for median.
   const n = usageHours.length;
-  const prefixSum = new Array(n + 1).fill(0);
-  const prefixCount4 = new Array(n + 1).fill(0);
-  for (let i = 0; i < n; i++) {
-    prefixSum[i + 1] = prefixSum[i] + (usageHours[i] || 0);
-    prefixCount4[i + 1] = prefixCount4[i] + (usageHours[i] >= 4 ? 1 : 0);
-  }
   const result = {};
+  const toDay = d => Math.floor(new Date(d).getTime() / (24 * 3600 * 1000));
+  const days = dates.map(toDay);
   windows.forEach(w => {
-    const avg = new Array(n);
-    const comp4 = new Array(n);
+    const avg = new Array(n).fill(0);
+    const avg_ci_low = new Array(n).fill(NaN);
+    const avg_ci_high = new Array(n).fill(NaN);
+    const median = new Array(n).fill(0);
+    const med_ci_low = new Array(n).fill(NaN);
+    const med_ci_high = new Array(n).fill(NaN);
+    const comp4 = new Array(n).fill(0);
+
+    let start = 0; // start index of window
+    // maintain rolling sums for mean and variance
+    let sum = 0;
+    let sumsq = 0;
+    let cnt4 = 0;
+    // multiset values for median CI; keep as a simple array for now
+    const windowVals = [];
+
+    const push = (val) => {
+      windowVals.push(val);
+      sum += val || 0;
+      sumsq += (val || 0) * (val || 0);
+      if (val >= 4) cnt4 += 1;
+    };
+    const remove = (val) => {
+      // remove one occurrence from windowVals
+      const idx = windowVals.indexOf(val);
+      if (idx !== -1) windowVals.splice(idx, 1);
+      sum -= val || 0;
+      sumsq -= (val || 0) * (val || 0);
+      if (val >= 4) cnt4 -= 1;
+    };
+
     for (let i = 0; i < n; i++) {
-      const start = Math.max(0, i - w + 1);
+      // advance end: include usageHours[i]
+      push(usageHours[i]);
+      // advance start while window exceeds w days
+      const cutoff = days[i] - (w - 1);
+      while (start <= i && days[start] < cutoff) {
+        remove(usageHours[start]);
+        start += 1;
+      }
       const len = i - start + 1;
-      const sum = prefixSum[i + 1] - prefixSum[start];
-      const cnt4 = prefixCount4[i + 1] - prefixCount4[start];
-      avg[i] = len > 0 ? sum / len : 0;
-      comp4[i] = len > 0 ? (cnt4 / len) * 100 : 0;
+      if (len > 0) {
+        const m = sum / len;
+        avg[i] = m;
+        // mean CI via normal approx: m ± 1.96 * s/√n
+        const variance = Math.max(0, (sumsq - (sum * sum) / len) / Math.max(1, len - 1));
+        const se = Math.sqrt(variance) / Math.sqrt(len);
+        const z = 1.96;
+        avg_ci_low[i] = m - z * se;
+        avg_ci_high[i] = m + z * se;
+        comp4[i] = (cnt4 / len) * 100;
+
+        // median and its CI via order-statistics (binomial approx)
+        const sorted = windowVals.slice().sort((a, b) => a - b);
+        const mid = Math.floor((len - 1) / 2);
+        median[i] = len % 2 === 1 ? sorted[mid] : (sorted[mid] + sorted[mid + 1]) / 2;
+        // approximate nonparametric CI bounds for median
+        const p = 0.5;
+        const s = Math.sqrt(len * p * (1 - p));
+        const kLower = Math.max(0, Math.floor(len * p - 1.96 * s));
+        const kUpper = Math.min(len - 1, Math.ceil(len * p + 1.96 * s));
+        med_ci_low[i] = sorted[kLower];
+        med_ci_high[i] = sorted[kUpper];
+      } else {
+        avg[i] = 0;
+        comp4[i] = 0;
+      }
     }
+
     result[`avg${w}`] = avg;
+    result[`avg${w}_ci_low`] = avg_ci_low;
+    result[`avg${w}_ci_high`] = avg_ci_high;
+    result[`median${w}`] = median;
+    result[`median${w}_ci_low`] = med_ci_low;
+    result[`median${w}_ci_high`] = med_ci_high;
     result[`compliance4_${w}`] = comp4;
   });
   return result;
