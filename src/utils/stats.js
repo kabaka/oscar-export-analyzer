@@ -598,3 +598,85 @@ function proportionCI(p, n, z = 1.96) {
   const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
   return { low: Math.max(0, center - half), high: Math.min(1, center + half) };
 }
+
+// LOESS smoothing (locally weighted linear regression) using tricube weights.
+// x, y: arrays; xs: evaluation points; alpha: bandwidth fraction (0-1)
+export function loessSmooth(x, y, xs, alpha = 0.3) {
+  const n = Math.min(x.length, y.length);
+  if (!n || !xs?.length) return [];
+  const pairs = [];
+  for (let i = 0; i < n; i++) {
+    const xi = x[i]; const yi = y[i];
+    if (isFinite(xi) && isFinite(yi)) pairs.push([xi, yi]);
+  }
+  pairs.sort((a, b) => a[0] - b[0]);
+  const xsOut = xs.slice();
+  const m = Math.max(2, Math.floor(alpha * pairs.length));
+  const tricube = u => {
+    const t = Math.max(0, 1 - Math.pow(Math.abs(u), 3));
+    return Math.pow(t, 3);
+  };
+  const res = new Array(xsOut.length).fill(NaN);
+  for (let i = 0; i < xsOut.length; i++) {
+    const x0 = xsOut[i];
+    // Find window of m nearest neighbors by absolute distance
+    let left = 0;
+    let right = 0;
+    // two-pointer expand around insertion point
+    let idx = binarySearch(pairs, x0);
+    left = idx - 1; right = idx;
+    const neighbors = [];
+    while (neighbors.length < m && (left >= 0 || right < pairs.length)) {
+      const dl = left >= 0 ? Math.abs(pairs[left][0] - x0) : Infinity;
+      const dr = right < pairs.length ? Math.abs(pairs[right][0] - x0) : Infinity;
+      if (dl <= dr) { neighbors.push(pairs[left]); left--; }
+      else { neighbors.push(pairs[right]); right++; }
+    }
+    const maxD = neighbors.reduce((mx, p) => Math.max(mx, Math.abs(p[0] - x0)), 0) || 1;
+    // Weighted linear regression y = a + b x
+    let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+    for (const [xi, yi] of neighbors) {
+      const w = tricube((xi - x0) / maxD);
+      sw += w; swx += w * xi; swy += w * yi; swxx += w * xi * xi; swxy += w * xi * yi;
+    }
+    const den = sw * swxx - swx * swx;
+    const b = den !== 0 ? (sw * swxy - swx * swy) / den : 0;
+    const a = sw !== 0 ? (swy - b * swx) / sw : 0;
+    res[i] = a + b * x0;
+  }
+  return res;
+}
+
+function binarySearch(pairs, x0) {
+  let lo = 0, hi = pairs.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (pairs[mid][0] < x0) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+// Running quantile across x using sliding window of k-nearest neighbors
+export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
+  const n = Math.min(x.length, y.length);
+  if (!n || !xs?.length) return [];
+  const pts = [];
+  for (let i = 0; i < n; i++) { const xi = x[i]; const yi = y[i]; if (isFinite(xi) && isFinite(yi)) pts.push([xi, yi]); }
+  pts.sort((a, b) => a[0] - b[0]);
+  const res = new Array(xs.length).fill(NaN);
+  const nn = Math.max(3, Math.min(k, pts.length));
+  for (let i = 0; i < xs.length; i++) {
+    const x0 = xs[i];
+    let left = 0, right = 0, idx = binarySearch(pts, x0);
+    left = idx - 1; right = idx;
+    const neighbors = [];
+    while (neighbors.length < nn && (left >= 0 || right < pts.length)) {
+      const dl = left >= 0 ? Math.abs(pts[left][0] - x0) : Infinity;
+      const dr = right < pts.length ? Math.abs(pts[right][0] - x0) : Infinity;
+      if (dl <= dr) { neighbors.push(pts[left][1]); left--; } else { neighbors.push(pts[right][1]); right++; }
+    }
+    neighbors.sort((a, b) => a - b);
+    res[i] = quantile(neighbors, q);
+  }
+  return res;
+}

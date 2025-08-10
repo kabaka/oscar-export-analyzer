@@ -3,6 +3,7 @@ import { parseDuration, quantile, computeApneaEventStats, summarizeUsage, comput
 import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
 import { detectChangePoints } from './stats';
+import { loessSmooth, runningQuantileXY } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -11,6 +12,41 @@ describe('parseDuration', () => {
 
   it('handles MM:SS format', () => {
     expect(parseDuration('2:03')).toBe(123);
+  });
+});
+
+describe('loessSmooth and runningQuantileXY', () => {
+  it('loess reproduces linear relationship approximately', () => {
+    const x = Array.from({ length: 20 }, (_, i) => i);
+    const y = x.map(v => 2 * v + 1);
+    const xs = [0, 5, 10, 15, 19];
+    const sm = loessSmooth(x, y, xs, 0.4);
+    expect(sm).toHaveLength(xs.length);
+    // Expect close to true line
+    sm.forEach((yv, i) => {
+      const xv = xs[i];
+      expect(Math.abs(yv - (2 * xv + 1))).toBeLessThan(1e-6);
+    });
+  });
+
+  it('runningQuantileXY returns plausible quantiles', () => {
+    const x = Array.from({ length: 30 }, (_, i) => i);
+    const y = x.map(v => v); // identity
+    const xs = [0, 10, 20, 29];
+    const q50 = runningQuantileXY(x, y, xs, 0.5, 11);
+    expect(q50).toHaveLength(xs.length);
+    // p50 should be non-decreasing and within overall range
+    for (let i = 1; i < q50.length; i++) {
+      expect(q50[i]).toBeGreaterThanOrEqual(q50[i - 1]);
+    }
+    q50.forEach(v => {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(29);
+    });
+    const q90 = runningQuantileXY(x, y, xs, 0.9, 11);
+    q90.forEach((v, i) => {
+      expect(v).toBeGreaterThanOrEqual(q50[i]);
+    });
   });
 });
 

@@ -4,7 +4,7 @@ import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
-import { mannWhitneyUTest, pearson } from '../utils/stats';
+import { mannWhitneyUTest, pearson, loessSmooth, runningQuantileXY } from '../utils/stats';
 
 /**
  * EPAP Analysis Charts: boxplot of nightly median EPAP,
@@ -72,6 +72,19 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
   // Time-series chart with first/last markers
   const boxMin = Math.min(...epaps);
   const boxMax = Math.max(...epaps);
+  const xs = useMemo(() => {
+    if (!epaps.length) return [];
+    const min = Math.min(...epaps);
+    const max = Math.max(...epaps);
+    const steps = 60;
+    const arr = [];
+    const step = (max - min) / Math.max(1, steps - 1);
+    for (let i = 0; i < steps; i++) arr.push(min + i * step);
+    return arr;
+  }, [epaps]);
+  const loess = useMemo(() => loessSmooth(epaps, ahis, xs, 0.3), [epaps, ahis, xs]);
+  const q50 = useMemo(() => runningQuantileXY(epaps, ahis, xs, 0.5, 25), [epaps, ahis, xs]);
+  const q90 = useMemo(() => runningQuantileXY(epaps, ahis, xs, 0.9, 25), [epaps, ahis, xs]);
 
   const isDark = useEffectiveDarkMode();
 
@@ -207,6 +220,11 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             data={[
               { x: epapAhiPairs.map(p => p.epap), y: epapAhiPairs.map(p => p.ahi), type: 'scatter', mode: 'markers', name: 'Data', marker: { size: 6, opacity: 0.7, color: COLORS.primary } },
               { x: [boxMin, boxMax], y: [slope * boxMin + intercept, slope * boxMax + intercept], type: 'scatter', mode: 'lines', name: 'Fit', line: { dash: 'dash', width: 2, color: COLORS.secondary } },
+              ...(xs.length ? [
+                { x: xs, y: loess, type: 'scatter', mode: 'lines', name: 'LOESS', line: { width: 2, color: '#6a3d9a' } },
+                { x: xs, y: q50, type: 'scatter', mode: 'lines', name: 'p50', line: { width: 1.5, color: '#2ca02c' } },
+                { x: xs, y: q90, type: 'scatter', mode: 'lines', name: 'p90', line: { width: 1.5, color: '#d62728' } },
+              ] : []),
             ]}
             layout={applyChartTheme(isDark, {
               title: `EPAP vs AHI Scatter (r = ${corr.toFixed(2)})`,
@@ -222,7 +240,7 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
               toImageButtonOptions: { format: 'svg', filename: 'epap_vs_ahi_scatter' },
             }}
           />
-          <VizHelp text="Scatter of nightly EPAP vs AHI. Each point is a night; dashed line is the linear fit; r shows Pearson correlation." />
+          <VizHelp text="Scatter of nightly EPAP vs AHI. Dots are nights; dashed line is linear fit; purple line is LOESS smoother; green/red lines are running p50/p90 quantiles." />
       </div>
         <div className="chart-item chart-with-help">
           <Plot

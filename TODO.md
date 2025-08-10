@@ -199,7 +199,7 @@ Wave 1 — Foundations and Core Analytics
 
 Wave 2 — Relationships and Visual Depth
 
-- [ ] EPAP–AHI LOESS smoother and quantile curves (p50/p90)
+- [x] EPAP–AHI LOESS smoother and quantile curves (p50/p90)
   - Deliver: Lightweight LOESS; overlay median/p90 curves on scatter; legend entries and toggles.
   - Tests: Monotonic data produces monotone fit; bounds match quantiles.
   - Docs: Explain smoothing and quantile overlays.
