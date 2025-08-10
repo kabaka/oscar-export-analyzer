@@ -209,7 +209,7 @@ Wave 2 — Relationships and Visual Depth
   - Tests: Simulated confounding scenario where partial r shrinks toward 0.
   - Docs: Interpretation caveats (correlation ≠ causation).
 
-- [ ] Survival curve for apnea event durations
+- [x] Survival curve for apnea event durations
   - Deliver: Kaplan–Meier style survival of event durations with CI; plot alongside histogram.
   - Tests: Synthetic durations; boundary conditions.
   - Docs: How to read survival curves.

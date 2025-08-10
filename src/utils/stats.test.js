@@ -4,6 +4,7 @@ import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
 import { detectChangePoints } from './stats';
 import { loessSmooth, runningQuantileXY, partialCorrelation, pearson } from './stats';
+import { kmSurvival } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -12,6 +13,21 @@ describe('parseDuration', () => {
 
   it('handles MM:SS format', () => {
     expect(parseDuration('2:03')).toBe(123);
+  });
+});
+
+describe('kmSurvival (Kaplan–Meier) uncensored', () => {
+  it('computes stepwise survival for simple data', () => {
+    const durs = [1, 1, 2, 3];
+    const { times, survival, lower, upper } = kmSurvival(durs);
+    expect(times).toEqual([1, 2, 3]);
+    expect(survival[0]).toBeCloseTo(0.5);
+    expect(survival[1]).toBeCloseTo(0.25);
+    expect(survival[2]).toBeCloseTo(0);
+    // monotone non-increasing
+    for (let i = 1; i < survival.length; i++) expect(survival[i]).toBeLessThanOrEqual(survival[i - 1]);
+    expect(lower.length).toBe(times.length);
+    expect(upper.length).toBe(times.length);
   });
 });
 

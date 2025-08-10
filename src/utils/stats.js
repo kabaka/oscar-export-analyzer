@@ -681,6 +681,55 @@ export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
   return res;
 }
 
+// Kaplan–Meier survival for uncensored durations (all events observed)
+// Returns stepwise survival at unique event times and approximate 95% CIs (log-log Greenwood)
+export function kmSurvival(durations, z = 1.96) {
+  const vals = (durations || []).map(Number).filter(v => Number.isFinite(v) && v >= 0).sort((a, b) => a - b);
+  const n = vals.length;
+  if (!n) return { times: [], survival: [], lower: [], upper: [] };
+  const times = [];
+  const dcount = [];
+  for (let i = 0; i < n; ) {
+    const t = vals[i];
+    let j = i;
+    while (j < n && vals[j] === t) j++;
+    times.push(t);
+    dcount.push(j - i);
+    i = j;
+  }
+  const survival = [];
+  const lower = [];
+  const upper = [];
+  let S = 1;
+  let cumGreenwood = 0;
+  let eventsSoFar = 0;
+  for (let idx = 0; idx < times.length; idx++) {
+    const di = dcount[idx];
+    const ni = n - eventsSoFar;
+    const frac = di / ni;
+    S = S * (1 - frac);
+    eventsSoFar += di;
+    survival.push(S);
+    // Greenwood incremental
+    if (ni > di && di > 0) {
+      cumGreenwood += di / (ni * (ni - di));
+    }
+    // log(-log S) CI
+    if (S > 0 && S < 1) {
+      const se = Math.sqrt(cumGreenwood);
+      const loglog = Math.log(-Math.log(S));
+      const lo = Math.exp(-Math.exp(loglog + z * se));
+      const hi = Math.exp(-Math.exp(loglog - z * se));
+      lower.push(lo);
+      upper.push(hi);
+    } else {
+      lower.push(NaN);
+      upper.push(NaN);
+    }
+  }
+  return { times, survival, lower, upper };
+}
+
 // OLS residuals of y ~ [1, controls]
 function olsResiduals(y, controls) {
   const n = y.length;

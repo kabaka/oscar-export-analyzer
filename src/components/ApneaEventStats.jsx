@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { computeApneaEventStats } from '../utils/stats';
+import { computeApneaEventStats, kmSurvival } from '../utils/stats';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
@@ -11,6 +11,7 @@ import VizHelp from './VizHelp';
  */
 export default function ApneaEventStats({ data, width = 700, height = 300 }) {
   const stats = useMemo(() => computeApneaEventStats(data), [data]);
+  const km = useMemo(() => kmSurvival(stats.durations || []), [stats.durations]);
   const isDark = useEffectiveDarkMode();
   if (!stats.totalEvents) {
     return null;
@@ -67,6 +68,29 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
           />
           <VizHelp text="Boxplot of apnea event durations; box shows IQR, whiskers typical range, points outliers." />
         </div>
+      </div>
+
+      <div className="chart-item chart-with-help">
+        <Plot
+          key={isDark ? 'dark-surv' : 'light-surv'}
+          useResizeHandler
+          style={{ width: '100%', height: '300px' }}
+          data={[
+            // CI ribbon
+            { x: km.times, y: km.lower, type: 'scatter', mode: 'lines', name: 'Survival CI low', line: { width: 0 }, hoverinfo: 'skip', showlegend: false },
+            { x: km.times, y: km.upper, type: 'scatter', mode: 'lines', name: 'Survival CI', fill: 'tonexty', fillcolor: 'rgba(31,119,180,0.15)', line: { width: 0 }, hoverinfo: 'skip', showlegend: true },
+            // Survival step
+            { x: km.times, y: km.survival, type: 'scatter', mode: 'lines', name: 'KM Survival', line: { width: 2, color: '#1f77b4', shape: 'hv' } },
+          ]}
+          layout={applyChartTheme(isDark, {
+            title: 'Apnea Event Duration Survival (KM)',
+            xaxis: { title: 'Duration (s)' },
+            yaxis: { title: 'Survival P(T > t)', rangemode: 'tozero' },
+            margin: { t: 40, l: 60, r: 20, b: 50 },
+          })}
+          config={{ responsive: true, displaylogo: false }}
+        />
+        <VizHelp text="Kaplan–Meier survival of event durations (probability an event exceeds t seconds). Shaded band is the approximate 95% CI." />
       </div>
 
       <h3>Apnea Events per Night</h3>
