@@ -26,6 +26,7 @@ import Plot from 'react-plotly.js';
 import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
 import ThemeToggle from './components/ThemeToggle';
+import DocsModal from './components/DocsModal';
 import VizHelp from './components/VizHelp';
 import { buildSession, applySession } from './utils/session';
 import { putLastSession, getLastSession, clearLastSession } from './utils/db';
@@ -502,6 +503,8 @@ function App() {
   const [dateFilter, setDateFilter] = useState({ start: null, end: null });
   const [rangeA, setRangeA] = useState({ start: null, end: null });
   const [rangeB, setRangeB] = useState({ start: null, end: null });
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideAnchor, setGuideAnchor] = useState('');
   const [clusterParams, setClusterParams] = useState({
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
@@ -525,6 +528,24 @@ function App() {
 
   const onClusterParamChange = (patch) => {
     setClusterParams(prev => ({ ...prev, ...patch }));
+  };
+
+  // Map in-app sections to guide anchors
+  const guideMap = {
+    overview: 'overview-dashboard',
+    'usage-patterns': 'usage-patterns',
+    'ahi-trends': 'ahi-trends',
+    'pressure-settings': 'pressure-correlation-epap',
+    'apnea-characteristics': 'apnea-event-characteristics-details-csv',
+    'clustered-apnea': 'clustered-apnea-events-details-csv',
+    'false-negatives': 'potential-false-negatives-details-csv',
+    'raw-data-explorer': 'raw-data-explorer',
+    'range-compare': 'range-comparisons-a-vs-b',
+  };
+  const openGuideForActive = () => {
+    const anchor = guideMap[activeId] || '';
+    setGuideAnchor(anchor);
+    setGuideOpen(true);
   };
 
   // Session persistence (opt-in and explicit load/save to avoid conflicts with frequent uploads)
@@ -753,6 +774,7 @@ function App() {
             <span className="badge">beta</span>
           </div>
           <ThemeToggle />
+          <button className="btn-ghost" style={{ marginLeft: 8 }} onClick={openGuideForActive} aria-label="Open Usage Guide">Guide</button>
         </div>
       </header>
       <nav className="toc">
@@ -872,6 +894,7 @@ function App() {
           </div>
         </>
       )}
+      <DocsModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} initialAnchor={guideAnchor} />
     </div>
   );
 }
