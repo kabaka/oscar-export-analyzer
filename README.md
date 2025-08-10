@@ -52,6 +52,10 @@ The Raw Data Explorer (see "Raw Data" in-page link) provides an efficient, virtu
 
 The app is built with Vite, React, and PapaParse.
 
+Workers
+- Parsing: PapaParse runs in a web worker (`worker: true`).
+- Analytics: A lightweight module worker (`src/workers/analytics.worker.js`) computes apnea clusters and false negatives off the main thread. App code falls back to main-thread computation when Worker is unavailable (e.g., tests/jsdom).
+
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
 ### Local development

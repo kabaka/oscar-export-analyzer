@@ -228,7 +228,7 @@ Wave 3 — Clustering & False Negatives
 
 Wave 4 — Architecture & UX
 
-- [ ] Workerize parsing and analytics (Comlink)
+- [x] Workerize parsing and analytics (analytics worker + Papa workers)
   - Deliver: Parser + analytics workers; streamed aggregates; error handling; cancellation.
   - Tests: Integration for upload → parse → compute; cancel/retry paths.
   - Docs: Architecture diagram and troubleshooting.

@@ -525,8 +525,35 @@ function App() {
     // begin processing phase
     setProcessingDetails(true);
     // defer clustering/detection to next tick so UI can update (e.g., hide parse progress)
-    const timer = setTimeout(() => {
-      // cluster OA/CA apnea annotation events
+    let cancelled = false;
+    let worker;
+    try {
+      // eslint-disable-next-line no-undef
+      worker = new Worker(new URL('./workers/analytics.worker.js', import.meta.url), { type: 'module' });
+      worker.onmessage = (evt) => {
+        if (cancelled) return;
+        const { ok, data, error } = evt.data || {};
+        if (ok) {
+          const rawClusters = data.clusters || [];
+          const validClusters = rawClusters
+            .filter(cl => cl.count >= clusterParams.minCount)
+            .filter(cl => cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= clusterParams.minTotalSec)
+            .filter(cl => cl.durationSec <= clusterParams.maxClusterSec)
+            .map(cl => ({ ...cl, severity: computeClusterSeverity(cl) }));
+          setApneaClusters(validClusters);
+          setFalseNegatives(data.falseNegatives || []);
+          setProcessingDetails(false);
+        } else {
+          console.warn('Analytics worker error:', error);
+          fallbackCompute();
+        }
+      };
+      worker.postMessage({ action: 'analyzeDetails', payload: { detailsData, params: clusterParams, fnOptions } });
+    } catch (e) {
+      console.warn('Worker unavailable, using fallback');
+      fallbackCompute();
+    }
+    function fallbackCompute() {
       const apneaEvents = detailsData
         .filter(r => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
         .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
@@ -550,13 +577,12 @@ function App() {
         .filter(cl => cl.durationSec <= clusterParams.maxClusterSec)
         .map(cl => ({ ...cl, severity: computeClusterSeverity(cl) }));
       setApneaClusters(validClusters);
-      // detect potential false negatives via flow-limit events
       setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
-      // end processing phase after clustering/detection
       setProcessingDetails(false);
-    }, 0);
+    }
     return () => {
-      clearTimeout(timer);
+      cancelled = true;
+      try { worker && worker.terminate && worker.terminate(); } catch {}
       setProcessingDetails(false);
     };
   }
