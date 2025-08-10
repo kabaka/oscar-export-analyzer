@@ -7,10 +7,9 @@ describe('GuideLink', () => {
     const handler = vi.fn();
     window.addEventListener('open-guide', handler, { once: true });
     render(<GuideLink anchor="usage-patterns" />);
-    fireEvent.click(screen.getByRole('link', { name: /guide/i }));
+    fireEvent.click(screen.getByRole('button', { name: /guide/i }));
     expect(handler).toHaveBeenCalledOnce();
     const evt = handler.mock.calls[0][0];
     expect(evt.detail.anchor).toBe('usage-patterns');
   });
 });
-
