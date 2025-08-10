@@ -420,6 +420,17 @@ function FalseNegativesAnalysis({ list }) {
 
 function App() {
   const prefersDark = useEffectiveDarkMode();
+  const tocSections = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'usage-patterns', label: 'Usage Patterns' },
+    { id: 'ahi-trends', label: 'AHI Trends' },
+    { id: 'pressure-settings', label: 'Pressure Settings' },
+    { id: 'apnea-characteristics', label: 'Apnea Events' },
+    { id: 'clustered-apnea', label: 'Clusters' },
+    { id: 'false-negatives', label: 'False Negatives' },
+    { id: 'raw-data-explorer', label: 'Raw Data' },
+  ];
+  const [activeId, setActiveId] = useState('overview');
   const {
     summaryData,
     detailsData,
@@ -513,6 +524,59 @@ function App() {
     });
   }, [detailsData, dateFilter]);
 
+  // IntersectionObserver to highlight active TOC link based on visible section
+  useEffect(() => {
+    const root = document.documentElement;
+    const cssVar = getComputedStyle(root).getPropertyValue('--header-offset').trim();
+    const headerOffset = cssVar.endsWith('px') ? parseFloat(cssVar) : Number(cssVar) || 58;
+    const topMargin = headerOffset + 8;
+
+    const pickActive = () => {
+      // choose the last heading whose top is above the threshold
+      const ids = tocSections.map(s => s.id);
+      let current = ids[0];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top - topMargin <= 0) {
+          current = id;
+        }
+      });
+      setActiveId(current);
+    };
+
+    const observer = new IntersectionObserver(() => {
+      pickActive();
+    }, {
+      root: null,
+      // Trigger when headings cross just below the sticky header and before bottom of viewport
+      rootMargin: `-${topMargin}px 0px -70% 0px`,
+      threshold: [0, 0.25, 0.5, 0.75, 1],
+    });
+
+    // Observe any headings currently in the DOM
+    tocSections.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    // Also recompute on hash change (e.g., when user clicks a link)
+    const onHash = () => {
+      const h = (window.location.hash || '').replace('#', '');
+      if (h) setActiveId(h);
+    };
+    window.addEventListener('hashchange', onHash);
+
+    // Initial selection
+    pickActive();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('hashchange', onHash);
+    };
+  }, []);
+
   return (
     <div className="container">
       <header className="app-header">
@@ -525,14 +589,16 @@ function App() {
         </div>
       </header>
       <nav className="toc">
-        <a href="#overview">Overview</a>
-        <a href="#usage-patterns">Usage Patterns</a>
-        <a href="#ahi-trends">AHI Trends</a>
-        <a href="#pressure-settings">Pressure Settings</a>
-        <a href="#apnea-characteristics">Apnea Events</a>
-        <a href="#clustered-apnea">Clusters</a>
-        <a href="#false-negatives">False Negatives</a>
-        <a href="#raw-data-explorer">Raw Data</a>
+        {tocSections.map(s => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            className={activeId === s.id ? 'active' : undefined}
+            onClick={() => setActiveId(s.id)}
+          >
+            {s.label}
+          </a>
+        ))}
       </nav>
       <div className="section controls">
         <label>

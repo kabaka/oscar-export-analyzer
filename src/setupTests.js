@@ -8,3 +8,16 @@ vi.mock('react-plotly.js', () => {
     default: (props) => React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
   };
 });
+
+// Provide a minimal IntersectionObserver polyfill for jsdom
+if (typeof global.IntersectionObserver === 'undefined') {
+  class MockIO {
+    constructor() {}
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() { return []; }
+  }
+  // eslint-disable-next-line no-undef
+  global.IntersectionObserver = MockIO;
+}
