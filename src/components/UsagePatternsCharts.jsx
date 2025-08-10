@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { parseDuration, quantile, computeUsageRolling, computeAdherenceStreaks, detectUsageBreakpoints } from '../utils/stats';
+import { parseDuration, quantile, computeUsageRolling, computeAdherenceStreaks, detectUsageBreakpoints, detectChangePoints } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
@@ -8,7 +8,7 @@ import VizHelp from './VizHelp';
 
 export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
   // Prepare sorted date and usage arrays
-  const { dates, usageHours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, dowHeatmap } = useMemo(() => {
+  const { dates, usageHours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, cpDates, dowHeatmap } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), hours: parseDuration(r['Total Time']) / 3600 }))
       .sort((a, b) => a.date - b.date);
@@ -23,6 +23,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
     const r30High = rolling['avg30_ci_high'];
     const compliance4_30 = rolling['compliance4_30'];
     const breakDates = detectUsageBreakpoints(rolling7, rolling30, datesArr);
+    const cpDates = detectChangePoints(hours, datesArr, 8);
 
     // Day-of-week weekly heatmap (GitHub-style)
     const toISODate = d => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -58,7 +59,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
       : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
 
-    return { dates: datesArr, usageHours: hours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, dowHeatmap };
+    return { dates: datesArr, usageHours: hours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, cpDates, dowHeatmap };
   }, [data]);
 
   // Summary stats and adaptive bins for histogram
@@ -167,7 +168,10 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           xaxis: { title: 'Date' },
           yaxis: { title: 'Hours of Use' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
-          shapes: breakDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#aa3377', width: 1, dash: 'dot' } })) || [],
+          shapes: [
+            ...(breakDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#aa3377', width: 1, dash: 'dot' } })) || []),
+            ...(cpDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#6a3d9a', width: 2 } })) || []),
+          ],
         })}
         config={{
           responsive: true,
@@ -176,7 +180,7 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
           toImageButtonOptions: { format: 'svg', filename: 'usage_hours_over_time' },
         }}
         />
-        <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Dotted vertical lines mark potential breakpoints; look for sustained trends above 4–6 hours." />
+        <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints." />
       </div>
 
       {/* Histogram and boxplot side-by-side on large screens, stacked on narrow */}

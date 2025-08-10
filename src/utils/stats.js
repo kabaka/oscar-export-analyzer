@@ -266,6 +266,61 @@ export function detectUsageBreakpoints(rolling7, rolling30, dates, minDelta = 0.
   return points;
 }
 
+// Change-point detection via least-squares segmentation (PELT-like DP, O(n^2)).
+// Returns array of Date objects where a change is detected.
+export function detectChangePoints(series, dates, penalty = 10) {
+  const n = series.length;
+  if (!n) return [];
+  // Prefix sums for fast SSE cost
+  const pref = new Array(n + 1).fill(0);
+  const pref2 = new Array(n + 1).fill(0);
+  for (let i = 0; i < n; i++) {
+    const v = series[i] ?? 0;
+    pref[i + 1] = pref[i] + v;
+    pref2[i + 1] = pref2[i] + v * v;
+  }
+  const costSeg = (i, j) => {
+    // cost for segment [i..j] inclusive as SSE
+    const len = j - i + 1;
+    if (len <= 0) return 0;
+    const sum = pref[j + 1] - pref[i];
+    const sum2 = pref2[j + 1] - pref2[i];
+    const mean = sum / len;
+    return sum2 - 2 * mean * sum + len * mean * mean;
+  };
+  // DP: F[t] = min cost up to t, with change set C[t]
+  const F = new Array(n + 1).fill(0);
+  const prev = new Array(n + 1).fill(-1);
+  F[0] = -penalty; // allow first segment without penalty
+  for (let t = 1; t <= n; t++) {
+    let best = Infinity;
+    let bestK = -1;
+    for (let k = 0; k < t; k++) {
+      const cost = F[k] + costSeg(k, t - 1) + penalty;
+      if (cost < best) { best = cost; bestK = k; }
+    }
+    F[t] = best;
+    prev[t] = bestK;
+  }
+  // backtrack to get change indices
+  const cps = [];
+  let t = n;
+  while (t > 0) {
+    const k = prev[t];
+    if (k <= 0) break;
+    cps.push(k);
+    t = k;
+  }
+  cps.reverse();
+  // map to dates and compute simple strength: abs(diff of means) at CP
+  const cpDates = [];
+  for (let idx of cps) {
+    if (dates && dates[idx]) cpDates.push(dates[idx]);
+    else cpDates.push(idx);
+  }
+  return cpDates;
+}
+
 // Compute AHI trend metrics from summary data rows
 export function computeAHITrends(data) {
   const ahis = data.map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
