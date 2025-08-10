@@ -241,7 +241,7 @@ export default function RawDataExplorer({
                 height={360}
                 renderRow={(row, idx) => (
                   <div role="row" key={idx} style={{ display: 'table', tableLayout: 'fixed', width: '100%' }}>
-                    <div role="cell" style={{ display: 'table-cell', padding: '4px 6px', borderBottom: '1px solid #eee', position: 'sticky', left: 0, background: 'var(--bg, #fff)' }}>
+                    <div role="cell" className="table-sticky-left" style={{ display: 'table-cell', padding: '4px 6px', borderBottom: '1px solid #eee' }}>
                       <input type="checkbox" checked={selected.has(idx)} onChange={() => toggleSelect(idx)} aria-label={`Select row ${idx+1}`} />
                     </div>
                     {(visibleCols.length ? visibleCols : allColumns).map(c => (
