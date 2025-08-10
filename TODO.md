@@ -245,7 +245,7 @@ Wave 4 — Architecture & UX
 
 Wave 5 — Reporting, Docs, and QA
 
-- [ ] Reporting exports (CSV aggregates, PDF report)
+- [x] Reporting exports (CSV aggregates, print-to-PDF report)
   - Deliver: CSV exports for aggregates and clusters; PDF with KPIs/charts/parameters.
   - Tests: Snapshot tests for report assembly; CSV schema tests.
   - Docs: Export options and examples.

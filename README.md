@@ -147,3 +147,8 @@ Future iterations may include additional visualizations, improved styling, and a
 - Clustering refinements: Clusters can optionally enforce a minimum density (events per minute). FLG-based boundary extension uses dual thresholds (enter/exit) with hysteresis so brief dips don’t break edges. Parameters are exposed in the Clusters panel.
 
 - False-negative presets: A presets control (Strict / Balanced / Lenient) tunes FLG threshold, min duration, and confidence requirement for identifying potential false-negative intervals.
+
+## Reporting & Export
+
+- Aggregates CSV: Export a CSV of high-level metrics (usage, AHI, EPAP) via the Aggregates button in the controls.
+- Print Report: Open a print-friendly summary page (Usage, AHI, EPAP KPIs, counts of clusters/false-negatives). Use your browser’s “Save as PDF” to archive.
