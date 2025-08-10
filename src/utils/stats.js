@@ -680,3 +680,85 @@ export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
   }
   return res;
 }
+
+// OLS residuals of y ~ [1, controls]
+function olsResiduals(y, controls) {
+  const n = y.length;
+  const p = controls[0] ? controls[0].length : 0;
+  if (!n || !p) return y.slice();
+  // Build X with intercept
+  const X = new Array(n);
+  for (let i = 0; i < n; i++) {
+    X[i] = [1];
+    for (let j = 0; j < p; j++) X[i].push(controls[i][j]);
+  }
+  const k = p + 1;
+  const XtX = Array.from({ length: k }, () => new Array(k).fill(0));
+  const Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++) {
+    const xi = X[i];
+    for (let a = 0; a < k; a++) {
+      Xty[a] += xi[a] * y[i];
+      for (let b = 0; b < k; b++) XtX[a][b] += xi[a] * xi[b];
+    }
+  }
+  const XtXinv = invertMatrix(XtX);
+  if (!XtXinv) return y.slice();
+  // beta = XtXinv * Xty
+  const beta = new Array(k).fill(0);
+  for (let a = 0; a < k; a++) {
+    for (let b = 0; b < k; b++) beta[a] += XtXinv[a][b] * Xty[b];
+  }
+  // residuals r = y - X*beta
+  const r = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    let yhat = 0;
+    for (let a = 0; a < k; a++) yhat += X[i][a] * beta[a];
+    r[i] = y[i] - yhat;
+  }
+  return r;
+}
+
+function invertMatrix(A) {
+  const n = A.length;
+  // Create augmented [A | I]
+  const M = A.map((row, i) => row.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))));
+  // Gauss-Jordan elimination
+  for (let col = 0; col < n; col++) {
+    // find pivot
+    let pivot = col;
+    for (let i = col + 1; i < n; i++) if (Math.abs(M[i][col]) > Math.abs(M[pivot][col])) pivot = i;
+    const pv = M[pivot][col];
+    if (Math.abs(pv) < 1e-12) return null; // singular
+    // swap
+    if (pivot !== col) { const tmp = M[pivot]; M[pivot] = M[col]; M[col] = tmp; }
+    // normalize
+    for (let j = 0; j < 2 * n; j++) M[col][j] /= pv;
+    // eliminate others
+    for (let i = 0; i < n; i++) {
+      if (i === col) continue;
+      const factor = M[i][col];
+      for (let j = 0; j < 2 * n; j++) M[i][j] -= factor * M[col][j];
+    }
+  }
+  // extract right half
+  const inv = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) inv[i][j] = M[i][n + j];
+  return inv;
+}
+
+// Partial correlation of x and y controlling for controls (matrix of columns)
+export function partialCorrelation(x, y, controls) {
+  const n = Math.min(x.length, y.length);
+  if (n < 3) return NaN;
+  // Build controls matrix with rows aligned
+  const p = controls?.[0]?.length ?? 0;
+  if (!p) return pearson(x, y);
+  const C = Array.from({ length: n }, (_, i) => new Array(p).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < p; j++) C[i][j] = controls[i][j];
+  }
+  const xr = olsResiduals(x, C);
+  const yr = olsResiduals(y, C);
+  return pearson(xr, yr);
+}

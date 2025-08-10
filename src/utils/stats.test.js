@@ -3,7 +3,7 @@ import { parseDuration, quantile, computeApneaEventStats, summarizeUsage, comput
 import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
 import { detectChangePoints } from './stats';
-import { loessSmooth, runningQuantileXY } from './stats';
+import { loessSmooth, runningQuantileXY, partialCorrelation, pearson } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -12,6 +12,21 @@ describe('parseDuration', () => {
 
   it('handles MM:SS format', () => {
     expect(parseDuration('2:03')).toBe(123);
+  });
+});
+
+describe('partialCorrelation (controls reduce confounding)', () => {
+  it('shrinks correlation when controlling for confounder', () => {
+    const n = 120;
+    const z = Array.from({ length: n }, (_, i) => i / n);
+    const x = z.map(v => v + 0.1 * Math.sin(10 * v));
+    const y = z.map(v => 0.8 * v + 0.1 * Math.cos(8 * v));
+    const r = (a, b) => pearson(a, b);
+    const naive = r(x, y);
+    // controls matrix: one column z
+    const controls = z.map(v => [v]);
+    const pc = partialCorrelation(x, y, controls);
+    expect(Math.abs(pc)).toBeLessThan(Math.abs(naive));
   });
 });
 
