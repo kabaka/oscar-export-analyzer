@@ -174,3 +174,92 @@ src/
 - Which OSCAR columns are consistently present across devices/versions?
 - Typical CSV sizes in the wild; target performance budgets?
 - Desired export formats for team sharing (PDF length, CSV columns)?
+
+## 14. Implementation Plan (Iteration 1)
+
+This is a concrete, stepwise plan we will iterate on until all tasks are complete. Each task includes acceptance criteria and test/doc updates. We will check items off as they’re delivered.
+
+Wave 1 — Foundations and Core Analytics
+
+- [ ] Date-aware rolling windows and CI ribbons
+  - Deliver: Update `computeUsageRolling` to use actual day gaps; add bootstrap CIs for rolling averages/medians; render ribbons in Usage/AHI charts.
+  - Tests: Irregular dates windowing; CI array lengths; rendering smoke.
+  - Docs: Methods note on rolling windows and bootstrap.
+
+- [ ] Exact Mann–Whitney U with tie handling + effect size CI
+  - Deliver: Exact U for small n (fallback to normal for large n), tie correction; rank-biserial effect with CI.
+  - Integrate: Update EPAP titration readout in `EpapTrendsCharts` with effect CI.
+  - Tests: Known small-sample cases; ties; approximation parity for larger n.
+  - Docs: Methods section for MW U assumptions and interpretation.
+
+- [ ] Change-point detection (CUSUM/PELT) for usage and AHI
+  - Deliver: `detectChangePoints(series, dates, penalty)` with strength; replace/augment crossover markers.
+  - Tests: Synthetic step-change datasets; precision/recall against seeded changes.
+  - Docs: Brief on algorithm choice and penalty tuning.
+
+Wave 2 — Relationships and Visual Depth
+
+- [ ] EPAP–AHI LOESS smoother and quantile curves (p50/p90)
+  - Deliver: Lightweight LOESS; overlay median/p90 curves on scatter; legend entries and toggles.
+  - Tests: Monotonic data produces monotone fit; bounds match quantiles.
+  - Docs: Explain smoothing and quantile overlays.
+
+- [ ] Partial correlation matrix (control for usage/leak)
+  - Deliver: Compute partial r for EPAP vs AHI controlling for usage and/or leak; show side-by-side with Pearson.
+  - Tests: Simulated confounding scenario where partial r shrinks toward 0.
+  - Docs: Interpretation caveats (correlation ≠ causation).
+
+- [ ] Survival curve for apnea event durations
+  - Deliver: Kaplan–Meier style survival of event durations with CI; plot alongside histogram.
+  - Tests: Synthetic durations; boundary conditions.
+  - Docs: How to read survival curves.
+
+Wave 3 — Clustering & False Negatives
+
+- [ ] Density-aware clustering and FLG hysteresis
+  - Deliver: Add min events/min density and dual-threshold FLG (enter/exit) for boundary extension; parameterize in UI.
+  - Tests: Boundary extensions only on sustained edges; noise tolerance.
+  - Docs: Explain parameters and defaults.
+
+- [ ] False-negatives tuning and presets
+  - Deliver: Add continuity checks and proximity penalty; presets (strict/balanced/lenient) with estimated FP/FN guidance.
+  - Tests: Scenarios with nearby true events; long sparse FLG runs.
+  - Docs: Explain confidence and tradeoffs.
+
+Wave 4 — Architecture & UX
+
+- [ ] Workerize parsing and analytics (Comlink)
+  - Deliver: Parser + analytics workers; streamed aggregates; error handling; cancellation.
+  - Tests: Integration for upload → parse → compute; cancel/retry paths.
+  - Docs: Architecture diagram and troubleshooting.
+
+- [ ] Cross-filtering and range comparisons
+  - Deliver: Brushing on time-series filters all views; A vs B date range deltas with significance/effect.
+  - Tests: Filter propagation to tables/charts; correctness of A/B stats.
+  - Docs: How to set ranges and interpret deltas.
+
+- [ ] Persistence + session export/import
+  - Deliver: IndexedDB persistence for parsed data/metrics; JSON session export/import; Clear Data control.
+  - Tests: Round-trip integrity and versioning guard.
+  - Docs: Privacy and storage notes.
+
+Wave 5 — Reporting, Docs, and QA
+
+- [ ] Reporting exports (CSV aggregates, PDF report)
+  - Deliver: CSV exports for aggregates and clusters; PDF with KPIs/charts/parameters.
+  - Tests: Snapshot tests for report assembly; CSV schema tests.
+  - Docs: Export options and examples.
+
+- [ ] Documentation: Methods appendix, data dictionary, timezone policy
+  - Deliver: README/Docs pages updated with formulas, column mapping, and timezone behavior.
+  - Tests: N/A.
+
+- [ ] Accessibility and performance checks
+  - Deliver: Axe checks on key pages; document results; basic render-time budgets; guardrails if exceeded.
+  - Tests: Axe in CI (allowlist violations if needed).
+
+Guardrails for all tasks
+
+- Update tests and docs with each change; prefer user-facing assertions.
+- Keep changes focused; avoid unrelated fixes; maintain clean Vite builds with zero warnings.
+- Use Conventional Commits; include screenshots/GIFs for notable UI changes in PRs.
