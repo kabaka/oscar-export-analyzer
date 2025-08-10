@@ -126,6 +126,7 @@ button[disabled] { opacity: 0.6; cursor: not-allowed; }
 .toc { position: sticky; top: var(--header-offset); background: var(--color-toc-bg); border: 1px solid var(--color-border-light); border-radius: var(--radius); padding: 8px 10px; margin: 12px 0 18px; display: flex; flex-wrap: wrap; gap: 8px; box-shadow: var(--shadow-1); }
 .toc a { color: var(--color-link); text-decoration: none; font-size: 0.94rem; padding: 6px 10px; border-radius: 8px; }
 .toc a:hover { color: var(--color-link-hover); background: color-mix(in oklab, var(--color-kpi-bg) 60%, transparent); }
+.toc a.active { background: color-mix(in oklab, var(--color-kpi-bg) 85%, transparent); color: var(--color-text); box-shadow: inset 0 0 0 1px var(--color-border-light); font-weight: 600; }
 
 /* Ensure in-page anchors are not hidden beneath sticky header */
 h2[id], h3[id], h4[id] { scroll-margin-top: calc(var(--header-offset) + 8px); }
