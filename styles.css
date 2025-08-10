@@ -123,8 +123,16 @@ button { background: var(--color-kpi-bg); color: var(--color-text); border: 1px 
 button:hover { background-color: color-mix(in oklab, var(--color-kpi-bg) 70%, var(--color-accent) 30%); border-color: color-mix(in oklab, var(--color-border) 60%, var(--color-accent) 40%); }
 button:active { transform: translateY(1px); }
 button[disabled] { opacity: 0.6; cursor: not-allowed; }
-.btn-primary { background: var(--color-accent); color: #ffffff; border-color: color-mix(in oklab, var(--color-accent) 70%, black 30%); }
-.btn-primary:hover { background: color-mix(in oklab, var(--color-accent) 85%, black 15%); }
+/* High-emphasis button: match theme, avoid harsh saturated blue */
+.btn-primary {
+  background: color-mix(in oklab, var(--color-accent) 25%, var(--color-surface));
+  color: var(--color-text);
+  border-color: color-mix(in oklab, var(--color-border) 60%, var(--color-accent) 40%);
+}
+.btn-primary:hover {
+  background: color-mix(in oklab, var(--color-accent) 40%, var(--color-surface));
+  border-color: color-mix(in oklab, var(--color-border) 40%, var(--color-accent) 60%);
+}
 .btn-ghost { background: transparent; border-color: var(--color-border); }
 .btn-ghost:hover { background: color-mix(in oklab, var(--color-kpi-bg) 60%, transparent); }
 
