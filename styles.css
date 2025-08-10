@@ -109,6 +109,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* Controls container */
 .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.control-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 8px; border: 1px dashed var(--color-border-light); border-radius: 10px; background: color-mix(in oklab, var(--color-kpi-bg) 40%, transparent); }
+.control-title { font-weight: 600; color: var(--color-text-muted); margin-right: 4px; }
 
 /* Inputs and buttons */
 input[type="text"], input[type="number"], input[type="date"], select { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 8px; outline: none; box-shadow: var(--shadow-1); }
@@ -180,3 +182,6 @@ h2[id], h3[id], h4[id] { scroll-margin-top: calc(var(--header-offset) + 8px); }
 .viz-tooltip { position: absolute; top: 24px; left: 0; z-index: 10; max-width: 480px; padding: 8px 10px; border-radius: 8px; background: var(--color-text); color: var(--color-bg); box-shadow: var(--shadow-2); font-size: 12px; line-height: 1.35; opacity: 0; pointer-events: none; transition: opacity 120ms ease-in-out; }
 .viz-help:hover .viz-tooltip, .viz-help:focus .viz-tooltip { opacity: 0.95; }
 .viz-overlay .viz-tooltip { left: auto; right: 0; }
+
+/* Focus styles for keyboard users */
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid color-mix(in oklab, var(--color-accent) 40%, transparent); outline-offset: 2px; }

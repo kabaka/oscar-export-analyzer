@@ -66,6 +66,21 @@ Persistence & Sessions (opt-in)
 
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
+### Data Dictionary (expected columns)
+
+- Summary CSV (night-level):
+  - `Date`: ISO or locale date per night.
+  - `Total Time`: string duration `HH:MM:SS` (used for usage hours).
+  - `AHI`: numeric apnea–hypopnea index.
+  - `Median EPAP`: numeric cmH₂O.
+  - Optional leak columns: e.g., `Leak Median`, `Leak % > thr` (auto-detected by name).
+- Details CSV (event-level):
+  - `Event`: one of `ClearAirway`, `Obstructive`, `Mixed`, `FLG` (flow limitation), etc.
+  - `DateTime`: timestamp for event start.
+  - `Data/Duration`: numeric; for apneas = duration (s), for FLG = level.
+
+If your exports use different column names, adjust in code or add a mapping layer.
+
 ### Local development
 
 After installing dependencies with `npm install`, run the development server:
@@ -152,3 +167,9 @@ Future iterations may include additional visualizations, improved styling, and a
 
 - Aggregates CSV: Export a CSV of high-level metrics (usage, AHI, EPAP) via the Aggregates button in the controls.
 - Print Report: Open a print-friendly summary page (Usage, AHI, EPAP KPIs, counts of clusters/false-negatives). Use your browser’s “Save as PDF” to archive.
+
+## Accessibility & Performance
+
+- Keyboard focus: Inputs and buttons show clear focus; charts are accompanied by help text and labeled controls.
+- Color/contrast: Theming ensures readable contrast in light and dark; primary buttons are theme-tinted rather than overly saturated.
+- Performance: Parsing and analytics run in workers when available; long tables are virtualized; avoid loading very large files in one go if memory is constrained.
