@@ -524,7 +524,7 @@ function App() {
     });
   }, [detailsData, dateFilter]);
 
-  // IntersectionObserver to highlight active TOC link based on visible section
+  // Highlight active TOC link based on visible section
   useEffect(() => {
     const root = document.documentElement;
     const cssVar = getComputedStyle(root).getPropertyValue('--header-offset').trim();
@@ -568,14 +568,23 @@ function App() {
     };
     window.addEventListener('hashchange', onHash);
 
+    // Update on scroll/resize to ensure responsiveness in all browsers
+    const onScroll = () => pickActive();
+    const onResize = () => pickActive();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
     // Initial selection
     pickActive();
 
     return () => {
       observer.disconnect();
       window.removeEventListener('hashchange', onHash);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
     };
-  }, []);
+  // Re-run when data presence changes which may mount/unmount sections
+  }, [filteredSummary, filteredDetails]);
 
   return (
     <div className="container">

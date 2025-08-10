@@ -78,5 +78,22 @@ describe('TOC active highlighting', () => {
     });
     const pressureLink = screen.getByRole('link', { name: /Pressure Settings/i });
     expect(pressureLink).toHaveClass('active');
+
+    // Scroll-based activation using mocked geometry
+    const overviewEl = document.getElementById('overview');
+    const ahiEl = document.getElementById('ahi-trends');
+    // Mock positions: overview above header, AHI newly above threshold after scroll
+    overviewEl.getBoundingClientRect = () => ({ top: -200 });
+    ahiEl.getBoundingClientRect = () => ({ top: -10 });
+    const others = ['usage-patterns', 'pressure-settings', 'apnea-characteristics', 'clustered-apnea', 'false-negatives', 'raw-data-explorer'];
+    others.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.getBoundingClientRect = () => ({ top: 500 });
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    const ahiLink2 = screen.getByRole('link', { name: /AHI Trends/i });
+    expect(ahiLink2).toHaveClass('active');
   });
 });
