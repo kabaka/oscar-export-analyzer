@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import GuideLink from './GuideLink';
 
 // Lightweight CSV export util for selected rows
 function rowsToCsv(rows, columns) {
@@ -183,7 +184,7 @@ export default function RawDataExplorer({
 
   return (
     <section>
-      <h2 id="raw-data-explorer">Raw Data Explorer</h2>
+      <h2 id="raw-data-explorer">Raw Data Explorer <GuideLink anchor="raw-data-explorer" label="Guide" /></h2>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <div role="tablist" aria-label="Raw data tabs" style={{ display: 'inline-flex', gap: 4 }}>
           <button aria-selected={tab==='summary'} onClick={() => setTab('summary')} disabled={!summaryRows?.length}>Summary</button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { summarizeUsage, computeAHITrends, computeEPAPTrends } from '../utils/stats';
 import MetricGrid from './MetricGrid';
+import GuideLink from './GuideLink';
 import KPICard from './KPICard';
 
 /**
@@ -42,7 +43,7 @@ export default function Overview({ summaryData, clusters, falseNegatives }) {
 
   return (
     <div className="overview-dashboard">
-      <h2 id="overview">Overview Dashboard</h2>
+      <h2 id="overview">Overview Dashboard <GuideLink anchor="overview-dashboard" label="Guide" /></h2>
       <MetricGrid>
         <KPICard title="Avg Usage (hrs)" value={usage.avgHours.toFixed(2)}>
           <Sparkline data={usage.usageHours} />

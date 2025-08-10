@@ -27,6 +27,7 @@ import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
 import ThemeToggle from './components/ThemeToggle';
 import DocsModal from './components/DocsModal';
+import GuideLink from './components/GuideLink';
 import VizHelp from './components/VizHelp';
 import { buildSession, applySession } from './utils/session';
 import { putLastSession, getLastSession, clearLastSession } from './utils/db';
@@ -122,7 +123,7 @@ function SummaryAnalysis({ data, clusters = [] }) {
   const epap = computeEPAPTrends(data);
   return (
     <div>
-      <h2 id="usage-patterns">1. Usage Patterns</h2>
+      <h2 id="usage-patterns">1. Usage Patterns <GuideLink anchor="usage-patterns" label="Guide" /></h2>
       <table>
         <tbody>
           <tr><td>Total nights analyzed</td><td>{usage.totalNights}</td></tr>
@@ -145,7 +146,7 @@ function SummaryAnalysis({ data, clusters = [] }) {
       </ul>
       <UsagePatternsCharts data={data} onRangeSelect={({ start, end }) => console.log('range', start, end)} />
 
-      <h2 id="ahi-trends">2. AHI Trends</h2>
+      <h2 id="ahi-trends">2. AHI Trends <GuideLink anchor="ahi-trends" label="Guide" /></h2>
       <table>
         <tbody>
           <tr><td>Average AHI</td><td>{ahi.avgAHI.toFixed(2)} events/hour</td></tr>
@@ -162,7 +163,7 @@ function SummaryAnalysis({ data, clusters = [] }) {
       </ul>
       <AhiTrendsCharts data={data} clusters={clusters} onRangeSelect={({ start, end }) => console.log('range', start, end)} />
 
-      <h2 id="pressure-settings">3. Pressure Settings and Performance</h2>
+      <h2 id="pressure-settings">3. Pressure Settings and Performance <GuideLink anchor="pressure-correlation-epap" label="Guide" /></h2>
       <h3 id="epap-distribution">3.1 EPAP Distribution & Percentiles</h3>
       <table>
         <tbody>
@@ -228,7 +229,7 @@ function ApneaClusterAnalysis({
 
   return (
     <div className="section">
-      <h2 id="clustered-apnea">Clustered Apnea Events</h2>
+      <h2 id="clustered-apnea">Clustered Apnea Events <GuideLink anchor="clustered-apnea-events-details-csv" label="Guide" /></h2>
 
       <div className="controls" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'end' }} aria-label="Cluster parameters">
         <span className="control-title" style={{ marginBottom: 6 }}>Clustering Params</span>
@@ -402,7 +403,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   const prefersDark = useEffectiveDarkMode();
   return (
     <div>
-      <h2 id="false-negatives">Potential False Negatives</h2>
+      <h2 id="false-negatives">Potential False Negatives <GuideLink anchor="potential-false-negatives-details-csv" label="Guide" /></h2>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
         <label>
           Preset:
@@ -547,6 +548,17 @@ function App() {
     setGuideAnchor(anchor);
     setGuideOpen(true);
   };
+
+  // Global event to open guide from inline links without prop drilling
+  useEffect(() => {
+    const handler = (e) => {
+      const anchor = e?.detail?.anchor || '';
+      setGuideAnchor(anchor);
+      setGuideOpen(true);
+    };
+    window.addEventListener('open-guide', handler);
+    return () => window.removeEventListener('open-guide', handler);
+  }, []);
 
   // Session persistence (opt-in and explicit load/save to avoid conflicts with frequent uploads)
   const [persistEnabled, setPersistEnabled] = useState(() => {
@@ -848,7 +860,7 @@ function App() {
             clusters={apneaClusters}
           />
           <div style={{ marginTop: 8 }}>
-            <h2 id="range-compare">Range Comparisons</h2>
+            <h2 id="range-compare">Range Comparisons <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" /></h2>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
               <div>
                 <label>Range A start <input type="date" onChange={e => setRangeA(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
