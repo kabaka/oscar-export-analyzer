@@ -204,7 +204,7 @@ Wave 2 — Relationships and Visual Depth
   - Tests: Monotonic data produces monotone fit; bounds match quantiles.
   - Docs: Explain smoothing and quantile overlays.
 
-- [ ] Partial correlation matrix (control for usage/leak)
+- [x] Partial correlation matrix (control for usage/leak)
   - Deliver: Compute partial r for EPAP vs AHI controlling for usage and/or leak; show side-by-side with Pearson.
   - Tests: Simulated confounding scenario where partial r shrinks toward 0.
   - Docs: Interpretation caveats (correlation ≠ causation).

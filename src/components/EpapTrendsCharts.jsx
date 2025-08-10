@@ -121,8 +121,86 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
     }
     const labels = vars.map(v => v.key);
     const z = labels.map((_, i) => labels.map((_, j) => pearson(vars[i].values, vars[j].values)));
-    return { labels, z, leakMedKey, leakMed, leakPctKey, leakPct };
+    // Partial correlations controlling for Usage and Leak variables if present
+    const controlIdx = labels.reduce((arr, k, i) => {
+      if (/usage/i.test(k) || /leak/i.test(k)) arr.push(i);
+      return arr;
+    }, []);
+    let zPartial = null;
+    if (controlIdx.length) {
+      zPartial = labels.map((_, i) => labels.map((_, j) => {
+        if (i === j) return 1;
+        // Build controls matrix from selected control variables (excluding target vars if they are controls)
+        const controls = [];
+        for (let row = 0; row < epaps.length; row++) {
+          const rowVals = [];
+          controlIdx.forEach(ci => {
+            if (ci !== i && ci !== j) rowVals.push(vars[ci].values[row]);
+          });
+          controls.push(rowVals);
+        }
+        return controls[0].length ? pearson(
+          olsResidualsFromVars(vars[i].values, controls),
+          olsResidualsFromVars(vars[j].values, controls)
+        ) : z[i][j];
+      }));
+    }
+    return { labels, z, zPartial, leakMedKey, leakMed, leakPctKey, leakPct };
   }, [data, epaps, ahis]);
+
+  function olsResidualsFromVars(arr, controls) {
+    // thin wrapper to use stats.js olsResiduals via dynamic import pattern avoided; reimplement minimal since controls small
+    const n = arr.length;
+    if (!controls || !controls[0] || controls[0].length === 0) return arr.slice();
+    const p = controls[0].length;
+    // Build X with intercept
+    const X = new Array(n);
+    for (let i = 0; i < n; i++) {
+      X[i] = [1];
+      for (let j = 0; j < p; j++) X[i].push(controls[i][j]);
+    }
+    const k = p + 1;
+    const XtX = Array.from({ length: k }, () => new Array(k).fill(0));
+    const Xty = new Array(k).fill(0);
+    for (let i = 0; i < n; i++) {
+      const xi = X[i];
+      for (let a = 0; a < k; a++) {
+        Xty[a] += xi[a] * arr[i];
+        for (let b = 0; b < k; b++) XtX[a][b] += xi[a] * xi[b];
+      }
+    }
+    const inv = (A) => {
+      const nn = A.length;
+      const M = A.map((row, i) => row.concat(Array.from({ length: nn }, (_, j) => (i === j ? 1 : 0))));
+      for (let col = 0; col < nn; col++) {
+        let pivot = col;
+        for (let i = col + 1; i < nn; i++) if (Math.abs(M[i][col]) > Math.abs(M[pivot][col])) pivot = i;
+        const pv = M[pivot][col];
+        if (Math.abs(pv) < 1e-12) return null;
+        if (pivot !== col) { const tmp = M[pivot]; M[pivot] = M[col]; M[col] = tmp; }
+        for (let j = 0; j < 2 * nn; j++) M[col][j] /= pv;
+        for (let i = 0; i < nn; i++) {
+          if (i === col) continue;
+          const f = M[i][col];
+          for (let j = 0; j < 2 * nn; j++) M[i][j] -= f * M[col][j];
+        }
+      }
+      const invA = Array.from({ length: nn }, () => new Array(nn).fill(0));
+      for (let i = 0; i < nn; i++) for (let j = 0; j < nn; j++) invA[i][j] = M[i][nn + j];
+      return invA;
+    };
+    const XtXinv = inv(XtX);
+    if (!XtXinv) return arr.slice();
+    const beta = new Array(k).fill(0);
+    for (let a = 0; a < k; a++) for (let b = 0; b < k; b++) beta[a] += XtXinv[a][b] * Xty[b];
+    const r = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      let yhat = 0;
+      for (let a = 0; a < k; a++) yhat += X[i][a] * beta[a];
+      r[i] = arr[i] - yhat;
+    }
+    return r;
+  }
 
   // Mann–Whitney titration helper for EPAP <7 vs ≥7 bins
   const titration = useMemo(() => {
@@ -284,6 +362,33 @@ export default function EpapTrendsCharts({ data, width = 700, height = 300 }) {
             config={{ responsive: true, displaylogo: false }}
           />
           <VizHelp text="Correlation matrix (Pearson r) among available variables; cell labels show the correlation value." />
+        </div>
+      )}
+
+      {corrMatrix.zPartial && (
+        <div className="chart-item chart-with-help" style={{ marginTop: '12px' }}>
+          <Plot
+            key={isDark ? 'dark-corr-partial' : 'light-corr-partial'}
+            useResizeHandler
+            style={{ width: '100%', height: '300px' }}
+            data={[{ z: corrMatrix.zPartial, x: corrMatrix.labels, y: corrMatrix.labels, type: 'heatmap', colorscale: isDark ? [
+              [0.0, '#9e2f2f'],
+              [0.25, '#d04a4a'],
+              [0.5, '#1a2330'],
+              [0.75, '#4a7bd0'],
+              [1.0, '#2f5aa6'],
+            ] : 'RdBu', zmin: -1, zmax: 1, reversescale: !isDark }]}
+            layout={applyChartTheme(isDark, {
+              title: 'Partial Correlation (controls: Usage, Leak)',
+              autosize: true,
+              xaxis: { title: 'Variable' },
+              yaxis: { title: 'Variable' },
+              margin: { t: 40, l: 80, r: 20, b: 80 },
+              annotations: corrMatrix.zPartial.flatMap((row, i) => row.map((v, j) => ({ x: corrMatrix.labels[j], y: corrMatrix.labels[i], text: isFinite(v) ? v.toFixed(2) : '—', showarrow: false, font: { color: isDark ? '#fff' : '#000' } }))),
+            })}
+            config={{ responsive: true, displaylogo: false }}
+          />
+          <VizHelp text="Partial correlations controlling for Usage and Leak (if available). Helps assess EPAP–AHI relationship net of confounding." />
         </div>
       )}
 
