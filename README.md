@@ -6,6 +6,10 @@ Design refresh: the UI now uses a clean, card-based layout and polished typograp
 
 ## Usage
 
+For a full walkthrough and interpretation tips, see the Usage & Interpretation Guide:
+
+- docs/USAGE_GUIDE.md
+
 1. Install dependencies and start the development server:
 
    ```bash
@@ -15,17 +19,17 @@ Design refresh: the UI now uses a clean, card-based layout and polished typograp
 
 2. Open your browser to the URL shown in the terminal (usually `http://localhost:5173`).
 
-3. Use the file inputs to select your OSCAR **Summary** and **Details** CSV files from the `data/` directory.
+3. Use the file inputs to select your OSCAR **Summary** and **Details** CSV files from the `data/` directory. See the Data Dictionary in docs/USAGE_GUIDE.md for expected columns and auto-detection rules.
 4. Use the theme toggle in the header to switch between Light, Dark, or System (follows OS).
 
 4. The app will parse and display (determinate progress bars show parsing progress for each file):
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
    - Expanded usage analytics: 7/30-night moving averages, adherence breakpoints, compliance KPIs (≥4h/≥6h), and a weekly calendar heatmap
-   - AHI trends (time-series, histogram, boxplot, average, min, max, threshold line at AHI > 5)
+  - AHI trends (time-series, histogram, boxplot, violin/QQ plots, averages, min/max, threshold line at AHI > 5)
    - Pressure & leak: EPAP trends and distribution, EPAP vs AHI scatter and 2D density, correlation matrix (EPAP, AHI, usage, optional leak), and EPAP titration helper with Mann–Whitney test
    - Clustered apnea events: parameter panel allows tuning gap seconds, FLG bridge threshold, FLG gap, minimum event count, and min/max total duration; clusters recompute live. Table is sortable (duration, count, severity) and supports CSV export. Click a row to view an event-level Gantt timeline for the selected cluster.
  - Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
-  - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights)
+  - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights, KM survival)
 
 ### Navigation
 
