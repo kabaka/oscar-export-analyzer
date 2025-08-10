@@ -784,10 +784,12 @@ function App() {
         )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
           <label><input type="checkbox" checked={persistEnabled} onChange={e => setPersistEnabled(e.target.checked)} /> Remember data locally</label>
-          <button onClick={handleSaveNow} disabled={!persistEnabled}>Save now</button>
-          <button onClick={handleLoadSaved}>Load saved</button>
-          <button onClick={handleClearSaved}>Clear saved</button>
-          <button onClick={handleExportJson} disabled={!summaryData && !detailsData}>Export JSON</button>
+          <button className="btn-ghost" onClick={handleSaveNow} disabled={!persistEnabled}>Save now</button>
+          <button className="btn-ghost" onClick={handleLoadSaved}>Load saved</button>
+          <button className="btn-ghost" onClick={handleClearSaved}>Clear saved</button>
+          <button className="btn-primary" onClick={handleExportJson} disabled={!summaryData && !detailsData}>Export JSON</button>
+          <button className="btn-primary" onClick={() => downloadTextFile('aggregates.csv', buildSummaryAggregatesCSV(summaryData||[]), 'text/csv')} disabled={!summaryData}>Export Aggregates CSV</button>
+          <button className="btn-primary" onClick={() => openPrintReportHTML(summaryData||[], apneaClusters||[], falseNegatives||[])} disabled={!summaryData}>Open Print Report</button>
           <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
             Import JSON
             <input type="file" accept="application/json" onChange={handleImportJson} />

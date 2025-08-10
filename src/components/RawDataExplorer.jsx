@@ -204,9 +204,9 @@ export default function RawDataExplorer({
           End date:
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </label>
-        <button onClick={doApplyDateFilter} disabled={!onApplyDateFilter}>Apply to charts</button>
-        <button onClick={() => { setStartDate(''); setEndDate(''); setQuery(''); }}>Reset</button>
-        <button onClick={exportSelection}>Export CSV</button>
+        <button className="btn-primary" onClick={doApplyDateFilter} disabled={!onApplyDateFilter}>Apply to charts</button>
+        <button className="btn-ghost" onClick={() => { setStartDate(''); setEndDate(''); setQuery(''); }}>Reset</button>
+        <button className="btn-primary" onClick={exportSelection}>Export CSV</button>
       </div>
 
       <details style={{ marginTop: 8 }}>
@@ -259,7 +259,7 @@ export default function RawDataExplorer({
 
       <div style={{ marginTop: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
         <strong>Rows:</strong> <span data-testid="row-count">{sorted.length}</span>
-        <button onClick={clearSelection} disabled={selected.size === 0}>Clear selection</button>
+        <button className="btn-ghost" onClick={clearSelection} disabled={selected.size === 0}>Clear selection</button>
         <label>
           Pivot by:
           <select value={pivotBy} onChange={e => setPivotBy(e.target.value)}>
