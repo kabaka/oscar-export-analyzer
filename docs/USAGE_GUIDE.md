@@ -138,6 +138,7 @@ Interpretation & caveats:
 ## Persistence, Export, and Reporting
 
 - Local sessions: enable “Remember data locally” to auto-save to IndexedDB; use explicit Save/Load/Clear controls.
+ - Save now is enabled only after turning on “Remember data locally”. “Load saved” is always available and restores the last saved session if present.
 - Export JSON: snapshot of data, params, and ranges; Import to restore.
 - Aggregates CSV: high-level metrics (usage, AHI, EPAP) suitable for spreadsheets.
 - Print Report: opens a print-friendly page; use your browser’s “Save as PDF” to archive or share.
@@ -177,4 +178,3 @@ If your exports differ, you may need to adjust parsing keys in `src/utils/stats.
 ## Disclaimers
 
 - This tool is not a medical device. Visualizations are exploratory and for educational purposes. Consult a clinician before changing therapy.
-

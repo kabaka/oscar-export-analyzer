@@ -101,6 +101,9 @@ function useCsvFiles() {
     loadingDetails,
     detailsProgress,
     detailsProgressMax,
+    // Expose setters so App can restore from saved sessions
+    setSummaryData,
+    setDetailsData,
     onSummaryFile: handleFile(
       setSummaryData,
       setLoadingSummary,
@@ -497,6 +500,8 @@ function App() {
     detailsProgressMax,
     onSummaryFile,
     onDetailsFile,
+    setSummaryData,
+    setDetailsData,
   } = useCsvFiles();
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
