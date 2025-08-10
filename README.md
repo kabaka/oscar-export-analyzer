@@ -123,3 +123,5 @@ Future iterations may include additional visualizations, improved styling, and a
 - Confidence intervals: We draw uncertainty ribbons around rolling means using a normal approximation (mean ± 1.96·SE with unbiased variance inside the window). For rolling medians, we compute an order-statistic–based, distribution-free CI via a binomial approximation. These are efficient client-side methods; in future workerized passes we may offer bootstrap CIs.
 
 - Mann–Whitney U test: For small samples, we compute an exact two-sided p-value by enumerating the rank-sum distribution (with average ranks for ties). For larger samples, we use a tie-corrected normal approximation. We report the rank-biserial effect size and an approximate 95% CI derived from a Wilson interval on the common language effect (CL), transformed via effect = 2·CL − 1.
+
+- Change-point detection: We apply least-squares segmentation (PELT-style dynamic programming) with a configurable penalty to locate structural breaks in AHI and usage series. Detected change-points are marked as solid purple lines; crossover-based breakpoints remain as dotted guides.

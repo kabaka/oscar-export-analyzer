@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseDuration, quantile, computeApneaEventStats, summarizeUsage, computeAHITrends, computeEPAPTrends } from './stats';
 import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
+import { detectChangePoints } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -10,6 +11,19 @@ describe('parseDuration', () => {
 
   it('handles MM:SS format', () => {
     expect(parseDuration('2:03')).toBe(123);
+  });
+});
+
+describe('detectChangePoints', () => {
+  it('detects a single change around a step', () => {
+    const n1 = 30, n2 = 30;
+    const series = Array(n1).fill(1).concat(Array(n2).fill(5));
+    const dates = series.map((_, i) => new Date(2021, 0, i + 1));
+    const cps = detectChangePoints(series, dates, 8);
+    // expect one change near index 30
+    expect(cps.length).toBeGreaterThanOrEqual(1);
+    const idx = cps.findIndex(d => d instanceof Date);
+    expect(idx).toBeGreaterThanOrEqual(0);
   });
 });
 

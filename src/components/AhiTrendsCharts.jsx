@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { quantile, detectUsageBreakpoints, computeUsageRolling } from '../utils/stats';
+import { quantile, detectUsageBreakpoints, computeUsageRolling, detectChangePoints } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 
 export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
-  const { dates, ahis, rolling7, rolling30, r7Low, r7High, r30Low, r30High, breakDates, oai, cai, mai } = useMemo(() => {
+  const { dates, ahis, rolling7, rolling30, r7Low, r7High, r30Low, r30High, breakDates, cpDates, oai, cai, mai } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), ahi: parseFloat(r['AHI']) }))
       .filter(p => !isNaN(p.ahi))
@@ -22,6 +22,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
     const r30Low = rolling['avg30_ci_low'];
     const r30High = rolling['avg30_ci_high'];
     const breakDates = detectUsageBreakpoints(rolling7, rolling30, datesArr, 0.5);
+    const cpDates = detectChangePoints(ahisArr, datesArr, 6);
 
     // Optional decomposition if columns present
     const keys = data.length ? Object.keys(data[0]) : [];
@@ -45,6 +46,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
       rolling30,
       breakDates,
       oai, cai, mai,
+      cpDates,
       r7Low, r7High, r30Low, r30High,
     };
   }, [data]);
@@ -171,6 +173,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
           shapes: [
             { type: 'line', xref: 'paper', x0: 0, x1: 1, y0: 5, y1: 5, line: { color: COLORS.threshold, dash: 'dashdot' } },
             ...(breakDates || []).map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#aa3377', width: 1, dash: 'dot' } })),
+            ...(cpDates || []).map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#6a3d9a', width: 2 } })),
           ],
           annotations: [
             { xref: 'paper', x: 1, y: 5, xanchor: 'left', text: 'AHI threshold (5)', showarrow: false, font: { color: COLORS.threshold } },
@@ -186,7 +189,7 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
           toImageButtonOptions: { format: 'svg', filename: 'ahi_over_time' },
         }}
         />
-        <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5 indicates the conventional threshold; dotted verticals show potential breakpoints." />
+        <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5; purple lines mark detected change-points; dotted verticals show crossover breakpoints." />
       </div>
 
       <div className="usage-charts-grid">

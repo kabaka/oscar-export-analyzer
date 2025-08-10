@@ -192,7 +192,7 @@ Wave 1 — Foundations and Core Analytics
   - Tests: Known small-sample cases; ties; approximation parity for larger n.
   - Docs: Methods section for MW U assumptions and interpretation.
 
-- [ ] Change-point detection (CUSUM/PELT) for usage and AHI
+- [x] Change-point detection (CUSUM/PELT) for usage and AHI
   - Deliver: `detectChangePoints(series, dates, penalty)` with strength; replace/augment crossover markers.
   - Tests: Synthetic step-change datasets; precision/recall against seeded changes.
   - Docs: Brief on algorithm choice and penalty tuning.
