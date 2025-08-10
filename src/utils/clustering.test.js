@@ -25,6 +25,33 @@ describe('clusterApneaEvents', () => {
     expect(c.end.getTime()).toBe(base.getTime() + 50000 + 5000);
     expect(c.count).toBe(2);
   });
+
+  it('applies density filter when minDensityPerMin > 0', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    // events far apart -> low density
+    const events = [
+      { date: new Date(base.getTime() + 0), durationSec: 10 },
+      { date: new Date(base.getTime() + 180000), durationSec: 10 }, // 3 minutes later
+    ];
+    const clusters = clusterApneaEvents(events, [], 300, 0.1, 60, 0.5, 0.35, 10, 1.5);
+    // density = 2 events over ~3+ minutes -> < 1.5 ev/min, so filtered out
+    expect(clusters.length).toBe(0);
+  });
+
+  it('extends boundaries using FLG hysteresis enter/exit', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    const events = [ { date: new Date(base.getTime() + 60000), durationSec: 10 } ]; // event at t=60s
+    // FLG just before event: starts above enter (0.5), then decays above exit (0.35)
+    const flg = [
+      { date: new Date(base.getTime() + 30000), level: 0.6 },
+      { date: new Date(base.getTime() + 40000), level: 0.45 },
+      { date: new Date(base.getTime() + 50000), level: 0.38 },
+    ];
+    const clusters = clusterApneaEvents(events, flg, 120, 0.1, 60, 0.5, 0.35, 5, 0);
+    expect(clusters.length).toBe(1);
+    // start should be extended back to first FLG in edge segment (30s)
+    expect(clusters[0].start.getTime()).toBe(base.getTime() + 30000);
+  });
 });
 
 describe('detectFalseNegatives', () => {
@@ -39,6 +66,17 @@ describe('detectFalseNegatives', () => {
     expect(fns).toHaveLength(1);
     expect(fns[0].durationSec).toBeGreaterThanOrEqual(60);
     expect(fns[0].confidence).toBe(1);
+  });
+
+  it('respects false-negative detection options (threshold and confidence)', () => {
+    const details = [
+      { Event: 'FLG', 'Data/Duration': 0.8, DateTime: '2021-01-01T00:00:00Z' },
+      { Event: 'FLG', 'Data/Duration': 0.8, DateTime: '2021-01-01T00:00:40Z' },
+    ];
+    const strict = detectFalseNegatives(details, { flThreshold: 0.9, confidenceMin: 0.95, gapSec: 60, minDurationSec: 30 });
+    const lenient = detectFalseNegatives(details, { flThreshold: 0.7, confidenceMin: 0.7, gapSec: 60, minDurationSec: 30 });
+    expect(strict.length).toBe(0);
+    expect(lenient.length).toBe(1);
   });
 });
 

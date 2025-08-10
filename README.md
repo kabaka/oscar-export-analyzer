@@ -131,3 +131,7 @@ Future iterations may include additional visualizations, improved styling, and a
 - Partial correlations: When Usage and/or Leak variables are available, a partial correlation heatmap shows pairwise relationships after linearly controlling for those confounders (via OLS residuals). This helps isolate EPAP–AHI association net of usage/leak effects.
 
 - Survival analysis: Apnea event duration survival is shown via the Kaplan–Meier estimator (all events uncensored). Confidence bands use a log–log Greenwood approximation; interpret as approximate 95% pointwise intervals.
+
+- Clustering refinements: Clusters can optionally enforce a minimum density (events per minute). FLG-based boundary extension uses dual thresholds (enter/exit) with hysteresis so brief dips don’t break edges. Parameters are exposed in the Clusters panel.
+
+- False-negative presets: A presets control (Strict / Balanced / Lenient) tunes FLG threshold, min duration, and confidence requirement for identifying potential false-negative intervals.

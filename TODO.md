@@ -216,12 +216,12 @@ Wave 2 — Relationships and Visual Depth
 
 Wave 3 — Clustering & False Negatives
 
-- [ ] Density-aware clustering and FLG hysteresis
+- [x] Density-aware clustering and FLG hysteresis
   - Deliver: Add min events/min density and dual-threshold FLG (enter/exit) for boundary extension; parameterize in UI.
   - Tests: Boundary extensions only on sustained edges; noise tolerance.
   - Docs: Explain parameters and defaults.
 
-- [ ] False-negatives tuning and presets
+- [x] False-negatives tuning and presets
   - Deliver: Add continuity checks and proximity penalty; presets (strict/balanced/lenient) with estimated FP/FN guidance.
   - Tests: Scenarios with nearby true events; long sparse FLG runs.
   - Docs: Explain confidence and tradeoffs.

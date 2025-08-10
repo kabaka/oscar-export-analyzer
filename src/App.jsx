@@ -11,6 +11,8 @@ import {
   MAX_CLUSTER_DURATION_SEC,
   APNEA_GAP_DEFAULT,
   FLG_CLUSTER_GAP_DEFAULT,
+  FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
+  FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
   computeClusterSeverity,
   clustersToCsv,
 } from './utils/clustering';
@@ -258,6 +260,30 @@ function ApneaClusterAnalysis({
           </label>
         </div>
         <div>
+          <label>Edge enter ≥
+            <input
+              type="number"
+              step="0.05"
+              min={0}
+              max={2}
+              value={params.edgeEnter}
+              onChange={e => onParamChange({ edgeEnter: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>Edge exit ≥
+            <input
+              type="number"
+              step="0.05"
+              min={0}
+              max={2}
+              value={params.edgeExit}
+              onChange={e => onParamChange({ edgeExit: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
           <label>Min event count
             <input
               type="number"
@@ -284,6 +310,17 @@ function ApneaClusterAnalysis({
               min={0}
               value={params.maxClusterSec}
               onChange={e => onParamChange({ maxClusterSec: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div>
+          <label>Min density (evt/min)
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              value={params.minDensity}
+              onChange={e => onParamChange({ minDensity: Number(e.target.value) })}
             />
           </label>
         </div>
@@ -355,11 +392,22 @@ function ApneaClusterAnalysis({
   );
 }
 
-function FalseNegativesAnalysis({ list }) {
+function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   const prefersDark = useEffectiveDarkMode();
   return (
     <div>
       <h2 id="false-negatives">Potential False Negatives</h2>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+        <label>
+          Preset:
+          <select value={preset} onChange={e => onPresetChange?.(e.target.value)}>
+            <option value="strict">Strict</option>
+            <option value="balanced">Balanced</option>
+            <option value="lenient">Lenient</option>
+          </select>
+        </label>
+        <span style={{ opacity: 0.8 }}>Thresholds tuned for sensitivity/specificity</span>
+      </div>
       <div>
         <h3>False Negative Clusters by Confidence Over Time</h3>
         <div className="chart-with-help">
@@ -454,7 +502,19 @@ function App() {
     minCount: 3,
     minTotalSec: APOEA_CLUSTER_MIN_TOTAL_SEC,
     maxClusterSec: MAX_CLUSTER_DURATION_SEC,
+    minDensity: 0,
+    edgeEnter: FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
+    edgeExit: FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
   });
+  const [fnPreset, setFnPreset] = useState('balanced');
+  const fnOptions = useMemo(() => {
+    const presets = {
+      strict: { flThreshold: Math.max(0.9, FLG_BRIDGE_THRESHOLD), confidenceMin: 0.98, gapSec: FLG_CLUSTER_GAP_DEFAULT, minDurationSec: 120 },
+      balanced: { flThreshold: FLG_BRIDGE_THRESHOLD, confidenceMin: FALSE_NEG_CONFIDENCE_MIN, gapSec: FLG_CLUSTER_GAP_DEFAULT, minDurationSec: 60 },
+      lenient: { flThreshold: Math.max(0.5, FLG_BRIDGE_THRESHOLD * 0.8), confidenceMin: 0.85, gapSec: FLG_CLUSTER_GAP_DEFAULT, minDurationSec: 45 },
+    };
+    return presets[fnPreset] || presets.balanced;
+  }, [fnPreset]);
 
   const onClusterParamChange = (patch) => {
     setClusterParams(prev => ({ ...prev, ...patch }));
@@ -478,7 +538,11 @@ function App() {
         flgEvents,
         clusterParams.gapSec,
         clusterParams.bridgeThreshold,
-        clusterParams.bridgeSec
+        clusterParams.bridgeSec,
+        clusterParams.edgeEnter,
+        clusterParams.edgeExit,
+        10,
+        clusterParams.minDensity
       );
       const validClusters = rawClusters
         .filter(cl => cl.count >= clusterParams.minCount)
@@ -487,7 +551,7 @@ function App() {
         .map(cl => ({ ...cl, severity: computeClusterSeverity(cl) }));
       setApneaClusters(validClusters);
       // detect potential false negatives via flow-limit events
-      setFalseNegatives(detectFalseNegatives(detailsData));
+      setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
       // end processing phase after clustering/detection
       setProcessingDetails(false);
     }, 0);
@@ -653,7 +717,7 @@ function App() {
             />
           </div>
           <div className="section">
-            <FalseNegativesAnalysis list={falseNegatives} />
+            <FalseNegativesAnalysis list={falseNegatives} preset={fnPreset} onPresetChange={setFnPreset} />
           </div>
           <div className="section">
             <RawDataExplorer
