@@ -21,6 +21,7 @@ import UsagePatternsCharts from './components/UsagePatternsCharts';
 import AhiTrendsCharts from './components/AhiTrendsCharts';
 import EpapTrendsCharts from './components/EpapTrendsCharts';
 import ApneaEventStats from './components/ApneaEventStats';
+import RangeComparisons from './components/RangeComparisons';
 import Plot from 'react-plotly.js';
 import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
@@ -139,7 +140,7 @@ function SummaryAnalysis({ data, clusters = [] }) {
       <ul>
         <li>Usage distributions highlight variability and potential adherence issues.</li>
       </ul>
-      <UsagePatternsCharts data={data} />
+      <UsagePatternsCharts data={data} onRangeSelect={({ start, end }) => console.log('range', start, end)} />
 
       <h2 id="ahi-trends">2. AHI Trends</h2>
       <table>
@@ -156,7 +157,7 @@ function SummaryAnalysis({ data, clusters = [] }) {
       <ul>
         <li>Outlier nights (AHI ≥ Q3+1.5×IQR): {ahi.ahis.filter(v => v >= (ahi.p75AHI + 1.5 * ahi.iqrAHI)).length}</li>
       </ul>
-      <AhiTrendsCharts data={data} clusters={clusters} />
+      <AhiTrendsCharts data={data} clusters={clusters} onRangeSelect={({ start, end }) => console.log('range', start, end)} />
 
       <h2 id="pressure-settings">3. Pressure Settings and Performance</h2>
       <h3 id="epap-distribution">3.1 EPAP Distribution & Percentiles</h3>
@@ -495,6 +496,8 @@ function App() {
   const [falseNegatives, setFalseNegatives] = useState([]);
   const [processingDetails, setProcessingDetails] = useState(false);
   const [dateFilter, setDateFilter] = useState({ start: null, end: null });
+  const [rangeA, setRangeA] = useState({ start: null, end: null });
+  const [rangeB, setRangeB] = useState({ start: null, end: null });
   const [clusterParams, setClusterParams] = useState({
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
@@ -715,6 +718,15 @@ function App() {
             max={loadingDetails ? detailsProgressMax : undefined}
           />
         )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'end' }}>
+          <div>
+            <label>Filter start <input type="date" onChange={e => setDateFilter(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
+          </div>
+          <div>
+            <label>Filter end <input type="date" onChange={e => setDateFilter(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : null }))} /></label>
+          </div>
+          <button onClick={() => setDateFilter({ start: null, end: null })}>Reset filter</button>
+        </div>
       </div>
       {filteredSummary && (
         <div className="section">
@@ -727,7 +739,31 @@ function App() {
       )}
       {filteredSummary && (
         <div className="section">
-          <SummaryAnalysis data={filteredSummary} clusters={apneaClusters} />
+          <SummaryAnalysis
+            data={filteredSummary}
+            clusters={apneaClusters}
+          />
+          <div style={{ marginTop: 8 }}>
+            <h2 id="range-compare">Range Comparisons</h2>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+              <div>
+                <label>Range A start <input type="date" onChange={e => setRangeA(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
+              </div>
+              <div>
+                <label>Range A end <input type="date" onChange={e => setRangeA(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : null }))} /></label>
+              </div>
+              <button onClick={() => setRangeA(dateFilter)}>Use current filter as A</button>
+              <div style={{ width: 12 }} />
+              <div>
+                <label>Range B start <input type="date" onChange={e => setRangeB(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
+              </div>
+              <div>
+                <label>Range B end <input type="date" onChange={e => setRangeB(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : null }))} /></label>
+              </div>
+              <button onClick={() => setRangeB(dateFilter)}>Use current filter as B</button>
+            </div>
+            <RangeComparisons summaryData={summaryData || []} rangeA={rangeA} rangeB={rangeB} />
+          </div>
         </div>
       )}
       {filteredDetails && (

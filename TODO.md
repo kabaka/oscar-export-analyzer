@@ -233,7 +233,7 @@ Wave 4 — Architecture & UX
   - Tests: Integration for upload → parse → compute; cancel/retry paths.
   - Docs: Architecture diagram and troubleshooting.
 
-- [ ] Cross-filtering and range comparisons
+- [x] Cross-filtering and range comparisons
   - Deliver: Brushing on time-series filters all views; A vs B date range deltas with significance/effect.
   - Tests: Filter propagation to tables/charts; correctness of A/B stats.
   - Docs: How to set ranges and interpret deltas.

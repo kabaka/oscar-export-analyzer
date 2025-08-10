@@ -6,7 +6,7 @@ import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 
-export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300 }) {
+export default function AhiTrendsCharts({ data, clusters = [], width = 700, height = 300, onRangeSelect }) {
   const { dates, ahis, rolling7, rolling30, r7Low, r7High, r30Low, r30High, breakDates, cpDates, oai, cai, mai } = useMemo(() => {
     const pts = data
       .map(r => ({ date: new Date(r['Date']), ahi: parseFloat(r['AHI']) }))
@@ -182,6 +182,13 @@ export default function AhiTrendsCharts({ data, clusters = [], width = 700, heig
           yaxis: { title: 'AHI (events/hour)' },
           margin: { t: 40, l: 60, r: 20, b: 50 },
         })}
+        onRelayout={(ev) => {
+          const x0 = ev?.['xaxis.range[0]'];
+          const x1 = ev?.['xaxis.range[1]'];
+          if (x0 && x1 && onRangeSelect) {
+            onRangeSelect({ start: new Date(x0), end: new Date(x1) });
+          }
+        }}
         config={{
           responsive: true,
           displaylogo: false,

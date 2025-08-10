@@ -6,7 +6,7 @@ import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 
-export default function UsagePatternsCharts({ data, width = 700, height = 300 }) {
+export default function UsagePatternsCharts({ data, width = 700, height = 300, onRangeSelect }) {
   // Prepare sorted date and usage arrays
   const { dates, usageHours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, cpDates, dowHeatmap } = useMemo(() => {
     const pts = data
@@ -173,6 +173,13 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300 })
             ...(cpDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#6a3d9a', width: 2 } })) || []),
           ],
         })}
+        onRelayout={(ev) => {
+          const x0 = ev?.['xaxis.range[0]'];
+          const x1 = ev?.['xaxis.range[1]'];
+          if (x0 && x1 && onRangeSelect) {
+            onRangeSelect({ start: new Date(x0), end: new Date(x1) });
+          }
+        }}
         config={{
           responsive: true,
           displaylogo: false,
