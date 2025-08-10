@@ -52,3 +52,13 @@
 .doc-content ul, .doc-content ol { margin: 6px 0 6px 20px; }
 .doc-code { background: color-mix(in oklab, var(--color-kpi-bg) 35%, transparent); color: inherit; padding: 10px; border-radius: 6px; overflow: auto; }
 
+.guide-inline {
+  margin-left: 8px;
+  font-size: 0.85em;
+  text-decoration: none;
+  color: var(--color-link);
+  border: 1px solid var(--color-border-light);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.guide-inline:hover { text-decoration: underline; }

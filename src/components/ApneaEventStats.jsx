@@ -4,6 +4,7 @@ import { computeApneaEventStats, kmSurvival } from '../utils/stats';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
+import GuideLink from './GuideLink';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -19,7 +20,7 @@ export default function ApneaEventStats({ data, width = 700, height = 300 }) {
 
   return (
     <div>
-      <h2 id="apnea-characteristics">Apnea Event Characteristics</h2>
+      <h2 id="apnea-characteristics">Apnea Event Characteristics <GuideLink anchor="apnea-event-characteristics-details-csv" label="Guide" /></h2>
       <table>
         <tbody>
           <tr><td>Total apnea events</td><td>{stats.totalEvents}</td></tr>
