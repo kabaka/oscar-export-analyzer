@@ -58,12 +58,9 @@
 .doc-content h4[id] { scroll-margin-top: 0 !important; }
 
 .guide-inline {
-  margin-left: 8px;
-  font-size: 0.85em;
-  text-decoration: none;
-  color: var(--color-link);
-  border: 1px solid var(--color-border-light);
-  padding: 2px 6px;
-  border-radius: 999px;
+  float: right;
+  margin-left: 12px;
+  display: inline-block;
+  font-size: 0.9rem;
+  padding: 6px 10px;
 }
-.guide-inline:hover { text-decoration: underline; }
