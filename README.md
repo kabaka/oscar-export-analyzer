@@ -129,3 +129,5 @@ Future iterations may include additional visualizations, improved styling, and a
 - LOESS and running quantiles: The EPAP×AHI scatter includes a LOESS smoother (tricube-weighted local linear fit) and running quantile curves (median p50, high-tail p90) computed over k-nearest neighbors along EPAP. These summarize central tendency and high-end burden across pressures.
 
 - Partial correlations: When Usage and/or Leak variables are available, a partial correlation heatmap shows pairwise relationships after linearly controlling for those confounders (via OLS residuals). This helps isolate EPAP–AHI association net of usage/leak effects.
+
+- Survival analysis: Apnea event duration survival is shown via the Kaplan–Meier estimator (all events uncensored). Confidence bands use a log–log Greenwood approximation; interpret as approximate 95% pointwise intervals.
