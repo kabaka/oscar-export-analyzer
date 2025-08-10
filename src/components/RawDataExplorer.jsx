@@ -224,7 +224,7 @@ export default function RawDataExplorer({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ position: 'sticky', left: 0, background: 'var(--bg, #fff)' }}>Sel</th>
+              <th className="table-sticky-left" style={{ position: 'sticky', left: 0 }}>Sel</th>
               {(visibleCols.length ? visibleCols : allColumns).map(c => (
                 <th key={c} onClick={() => setSortBy(s => ({ key: c, dir: s.key === c && s.dir === 'asc' ? 'desc' : 'asc' }))} style={{ cursor: 'pointer' }}>
                   {c}{sortBy.key === c ? (sortBy.dir === 'asc' ? ' ▲' : ' ▼') : ''}
