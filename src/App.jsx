@@ -27,6 +27,8 @@ import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
 import ThemeToggle from './components/ThemeToggle';
 import VizHelp from './components/VizHelp';
+import { buildSession, applySession } from './utils/session';
+import { putLastSession, getLastSession, clearLastSession } from './utils/db';
 
 
 // Hook for loading CSV files via file input
@@ -523,6 +525,67 @@ function App() {
     setClusterParams(prev => ({ ...prev, ...patch }));
   };
 
+  // Session persistence (opt-in and explicit load/save to avoid conflicts with frequent uploads)
+  const [persistEnabled, setPersistEnabled] = useState(() => {
+    try { return localStorage.getItem('persistEnabled') === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('persistEnabled', persistEnabled ? '1' : '0'); } catch {}
+  }, [persistEnabled]);
+  useEffect(() => {
+    if (!persistEnabled) return;
+    const timer = setTimeout(() => {
+      const session = buildSession({ summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset });
+      putLastSession(session).catch(() => {});
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [persistEnabled, summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset]);
+  const handleSaveNow = async () => {
+    const session = buildSession({ summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset });
+    await putLastSession(session).catch(() => {});
+  };
+  const handleLoadSaved = async () => {
+    const sess = await getLastSession().catch(() => null);
+    if (sess) {
+      const patch = applySession(sess);
+      if (patch) {
+        setClusterParams(patch.clusterParams || clusterParams);
+        setDateFilter(patch.dateFilter || { start: null, end: null });
+        setRangeA(patch.rangeA || { start: null, end: null });
+        setRangeB(patch.rangeB || { start: null, end: null });
+        setSummaryData(patch.summaryData || null);
+        setDetailsData(patch.detailsData || null);
+      }
+    }
+  };
+  const handleClearSaved = async () => { await clearLastSession().catch(() => {}); };
+  const handleExportJson = () => {
+    const session = buildSession({ summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset });
+    const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'oscar_session.json'; a.click(); URL.revokeObjectURL(url);
+  };
+  const handleImportJson = (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const sess = JSON.parse(reader.result);
+        const patch = applySession(sess);
+        if (patch) {
+          setClusterParams(patch.clusterParams || clusterParams);
+          setDateFilter(patch.dateFilter || { start: null, end: null });
+          setRangeA(patch.rangeA || { start: null, end: null });
+          setRangeB(patch.rangeB || { start: null, end: null });
+          setSummaryData(patch.summaryData || null);
+          setDetailsData(patch.detailsData || null);
+        }
+      } catch {}
+    };
+    reader.readAsText(file);
+  };
+
   useEffect(() => {
   if (detailsData) {
     // begin processing phase
@@ -718,6 +781,17 @@ function App() {
             max={loadingDetails ? detailsProgressMax : undefined}
           />
         )}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 6 }}>
+          <label><input type="checkbox" checked={persistEnabled} onChange={e => setPersistEnabled(e.target.checked)} /> Remember data locally</label>
+          <button onClick={handleSaveNow} disabled={!persistEnabled}>Save now</button>
+          <button onClick={handleLoadSaved}>Load saved</button>
+          <button onClick={handleClearSaved}>Clear saved</button>
+          <button onClick={handleExportJson} disabled={!summaryData && !detailsData}>Export JSON</button>
+          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+            Import JSON
+            <input type="file" accept="application/json" onChange={handleImportJson} />
+          </label>
+        </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'end' }}>
           <div>
             <label>Filter start <input type="date" onChange={e => setDateFilter(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>

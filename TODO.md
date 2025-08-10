@@ -238,7 +238,7 @@ Wave 4 — Architecture & UX
   - Tests: Filter propagation to tables/charts; correctness of A/B stats.
   - Docs: How to set ranges and interpret deltas.
 
-- [ ] Persistence + session export/import
+- [x] Persistence + session export/import
   - Deliver: IndexedDB persistence for parsed data/metrics; JSON session export/import; Clear Data control.
   - Tests: Round-trip integrity and versioning guard.
   - Docs: Privacy and storage notes.
