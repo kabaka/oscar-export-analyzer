@@ -206,6 +206,7 @@ function ApneaClusterAnalysis({
   clusters,
   params,
   onParamChange,
+  details,
 }) {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });
@@ -218,6 +219,23 @@ function ApneaClusterAnalysis({
     if (va > vb) return 1 * dir;
     return 0;
   });
+
+  const selectedCluster = selected !== null ? sorted[selected] : null;
+  const { leakTrace, pressureTrace } = useMemo(() => {
+    if (!selectedCluster || !details?.length) return { leakTrace: [], pressureTrace: [] };
+    const padMs = 30000; // 30s padding around cluster
+    const start = new Date(selectedCluster.start.getTime() - padMs);
+    const end = new Date(selectedCluster.end.getTime() + padMs);
+    const leak = [], pressure = [];
+    details.forEach(r => {
+      const dt = new Date(r['DateTime']);
+      if (dt < start || dt > end) return;
+      const val = parseFloat(r['Data/Duration']);
+      if (r['Event'] === 'Leak') leak.push({ x: dt, y: val });
+      if (r['Event'] === 'Pressure' || r['Event'] === 'EPAP') pressure.push({ x: dt, y: val });
+    });
+    return { leakTrace: leak, pressureTrace: pressure };
+  }, [selectedCluster, details]);
 
   const handleExport = () => {
     const csv = clustersToCsv(clusters);
@@ -338,7 +356,7 @@ function ApneaClusterAnalysis({
         </div>
       </div>
 
-      {selected !== null && sorted[selected] && (
+      {selectedCluster && (
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
             <div className="chart-with-help">
@@ -366,6 +384,47 @@ function ApneaClusterAnalysis({
               />
               <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
             </div>
+        </div>
+      )}
+
+      {selectedCluster && (leakTrace.length || pressureTrace.length) && (
+        <div>
+          <h3>Leak/Pressure around Cluster</h3>
+          <div className="chart-with-help">
+            <Plot
+              key={isDark ? 'dark-leak-pressure' : 'light-leak-pressure'}
+              data={[
+                leakTrace.length && {
+                  type: 'scatter',
+                  mode: 'lines',
+                  name: 'Leak',
+                  x: leakTrace.map(p => p.x),
+                  y: leakTrace.map(p => p.y),
+                  yaxis: 'y1',
+                },
+                pressureTrace.length && {
+                  type: 'scatter',
+                  mode: 'lines',
+                  name: 'Pressure',
+                  x: pressureTrace.map(p => p.x),
+                  y: pressureTrace.map(p => p.y),
+                  yaxis: leakTrace.length ? 'y2' : 'y1',
+                },
+              ].filter(Boolean)}
+              layout={applyChartTheme(isDark, {
+                title: 'Leak/Pressure around Cluster',
+                xaxis: { type: 'date', title: 'Time' },
+                yaxis: { title: leakTrace.length ? 'Leak' : 'Pressure', side: 'left' },
+                ...(leakTrace.length && pressureTrace.length
+                  ? { yaxis2: { title: 'Pressure', overlaying: 'y', side: 'right' } }
+                  : {}),
+                margin: { l: 80, r: 20, t: 40, b: 40 },
+                height: 300,
+              })}
+              config={{ displayModeBar: false }}
+            />
+            <VizHelp text="Leak and pressure traces provide context around the cluster window." />
+          </div>
         </div>
       )}
 
@@ -897,6 +956,7 @@ function App() {
               clusters={apneaClusters}
               params={clusterParams}
               onParamChange={onClusterParamChange}
+              details={filteredDetails}
             />
           </div>
           <div className="section">
@@ -917,3 +977,4 @@ function App() {
 }
 
 export default App;
+export { ApneaClusterAnalysis };
