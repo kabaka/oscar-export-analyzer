@@ -1,6 +1,6 @@
 # OSCAR Sleep Data Analysis Web App
 
-This is a React-based web application for evaluating OSCAR sleep data exports.
+This is a React-based web application for evaluating OSCAR sleep data exports. It requires Node.js 20.19 or newer.
 
 Design refresh: the UI now uses a clean, card-based layout and polished typography with consistent spacing. It supports both light and dark modes with a theme toggle (Light / Dark / System) that persists your preference.
 
