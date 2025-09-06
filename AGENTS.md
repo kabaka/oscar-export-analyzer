@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests via Vitest and Testing Library. Use Node 18 and npm.
+This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests via Vitest and Testing Library. Use Node 20 and npm.
 
 ## Project Structure & Module Organization
 - `src/`: React app code.
@@ -38,6 +38,6 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 - PRs: include clear description, linked issues, and screenshots/GIFs for UI changes. Ensure CI passes.
 
 ## Security & Configuration Tips
-- Node: use version 18 (see CI). Avoid committing data exports containing sensitive information.
+- Node: use version 20 (see CI). Avoid committing data exports containing sensitive information.
 - Vite config: see `vite.config.js`. For hooks, run `npm run prepare` after install.
 
