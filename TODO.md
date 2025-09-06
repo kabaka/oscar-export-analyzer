@@ -90,10 +90,10 @@ src/
 - 2D density/hexbin: EPAP vs AHI. [Implemented]
 
 ### 4.4 Event Clusters (keep and enrich)
-- Parameter panel: gap sec, FLG thresholds, min counts; live recompute in worker.
-- Severity score per cluster: total duration, density, and FLG edge strength; sortable table.
-- Interactive Gantt: brush to zoom, cross-highlight with details table; export cluster intervals to CSV.
-- Overlay leak/pressure traces (if available) around cluster window for context.
+- Parameter panel: gap sec, FLG thresholds, min counts; live recompute in worker. [Implemented]
+- Severity score per cluster: total duration, density, and FLG edge strength; sortable table. [Implemented]
+- Interactive Gantt: brush to zoom, cross-highlight with details table; export cluster intervals to CSV. [Partially implemented: Gantt and CSV export]
+- Overlay leak/pressure traces (if available) around cluster window for context. [Implemented]
 
 ### 4.5 Potential False Negatives (keep and enrich)
 - Threshold tuning UI with presets; display ROC-style guidance based on retrospective labels (if user marks reviewed).

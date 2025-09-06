@@ -107,7 +107,7 @@ Parameters (tune in the Clusters panel):
 
 Outputs:
 - Sortable cluster table shows Start, Duration, Count, and a heuristic Severity score (combining total event time, density, and edge extension).
-- Selecting a row reveals an event-level timeline (Gantt-style) to inspect intra-cluster durations.
+- Selecting a row reveals an event-level timeline (Gantt-style) and overlays leak/pressure traces around the cluster window for context.
 - Export clusters as CSV for offline review.
 
 Interpretation:
