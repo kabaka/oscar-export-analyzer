@@ -2,6 +2,9 @@
   "name": "oscar-sleep-data-analysis",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
