@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ApneaClusterAnalysis } from './App.jsx';
+import ApneaClusterAnalysis from './ApneaClusterAnalysis.jsx';
 
 describe('ApneaClusterAnalysis overlay', () => {
   it('shows leak/pressure chart when selecting a cluster', async () => {
