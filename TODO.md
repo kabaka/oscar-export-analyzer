@@ -92,24 +92,26 @@ src/
 ### 4.4 Event Clusters (keep and enrich)
 - Parameter panel: gap sec, FLG thresholds, min counts; live recompute in worker. [Implemented]
 - Severity score per cluster: total duration, density, and FLG edge strength; sortable table. [Implemented]
-- Interactive Gantt: brush to zoom, cross-highlight with details table; export cluster intervals to CSV. [Partially implemented: Gantt and CSV export]
+- Interactive Gantt: brush to zoom, cross-highlight with details table.
+- Export cluster intervals to CSV. [Implemented]
 - Overlay leak/pressure traces (if available) around cluster window for context. [Implemented]
 
 ### 4.5 Potential False Negatives (keep and enrich)
-- Threshold tuning UI with presets; display ROC-style guidance based on retrospective labels (if user marks reviewed).
+- Threshold tuning UI with presets. [Implemented]
+- Display ROC-style guidance based on retrospective labels (if user marks reviewed).
 - Review workflow: mark as reviewed/hidden; persist in IndexedDB; export reviewed set.
 - Explainability: show top drivers (duration, peak FLG) and nearby annotated events.
 
 ### 4.6 Raw Data Explorer (add, do not replace)
-- Virtualized, column-configurable table for Summary and Details with filters, sort, and search.
-- Pivot-like aggregations (group by date, event type) and quick stats footer.
-- Cross-filtering: selecting ranges updates charts; reset/undo controls.
-- Export selected rows/slices to CSV.
+- Virtualized, column-configurable table for Summary and Details with filters, sort, and search. [Implemented]
+- Pivot-like aggregations (group by date, event type) and quick stats footer. [Implemented]
+- Cross-filtering: selecting ranges updates charts; reset/undo controls. [Implemented]
+- Export selected rows/slices to CSV. [Implemented]
 
 ### 4.7 Reporting & Export
 - One-click PDF: Overview KPIs, key charts, and narrative insights with timestamps and parameters.
 - CSV exports: summary metrics, cluster intervals, false-negative candidates.
-- JSON session: data fingerprints + visualization state for reproducibility/sharing (without data upload).
+- JSON session: data fingerprints + visualization state for reproducibility/sharing (without data upload). [Implemented]
 
 ### 4.8 Reproducibility & Notebooks (optional, scientist-friendly)
 - Export tidy CSV/Parquet; provide Python/R snippets to replicate core charts.
