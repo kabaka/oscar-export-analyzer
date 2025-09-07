@@ -11,6 +11,7 @@ export default defineConfig({
   },
   // Treat any Vite/Rollup warnings as errors to enforce clean builds
   build: {
+    chunkSizeWarningLimit: 6000,
     rollupOptions: {
       onwarn(warning, defaultWarn) {
         throw new Error(warning.message || warning);

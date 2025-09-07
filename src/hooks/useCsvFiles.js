@@ -12,6 +12,7 @@ export function useCsvFiles() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsProgress, setDetailsProgress] = useState(0);
   const [detailsProgressMax, setDetailsProgressMax] = useState(0);
+  const [error, setError] = useState(null);
 
   /**
    * Generic CSV loader with optional event filtering.
@@ -31,6 +32,7 @@ export function useCsvFiles() {
     const file = e.target.files[0];
     if (!file) return;
     setLoading(true);
+    setError(null);
     setProgress(0);
     setProgressMax(file.size);
     const rows = [];
@@ -58,6 +60,10 @@ export function useCsvFiles() {
         setter(rows);
         setLoading(false);
       },
+      error: err => {
+        setLoading(false);
+        setError(err?.message || String(err));
+      },
     });
   };
 
@@ -70,6 +76,7 @@ export function useCsvFiles() {
     loadingDetails,
     detailsProgress,
     detailsProgressMax,
+    error,
     // Expose setters so App can restore from saved sessions
     setSummaryData,
     setDetailsData,

@@ -130,6 +130,7 @@ function App() {
     onDetailsFile,
     setSummaryData,
     setDetailsData,
+    error,
   } = useCsvFiles();
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
@@ -449,6 +450,11 @@ function App() {
             value={loadingDetails ? detailsProgress : undefined}
             max={loadingDetails ? detailsProgressMax : undefined}
           />
+        )}
+        {error && (
+          <div role="alert" style={{ color: 'red' }}>
+            {error}
+          </div>
         )}
         <div className="control-group" aria-label="Session controls" style={{ marginTop: 6 }}>
           <span className="control-title">Session</span>
