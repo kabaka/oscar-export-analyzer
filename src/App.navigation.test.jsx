@@ -40,6 +40,9 @@ describe('In-page navigation', () => {
       expect(screen.getByRole('heading', { name: /Overview Dashboard/i })).toBeInTheDocument();
     });
 
+    // SummaryAnalysis section should also render
+    expect(screen.getByRole('heading', { name: /Usage Patterns/i })).toBeInTheDocument();
+
     // Clicking the Overview link should update the hash
     const overviewLink = screen.getByRole('link', { name: /Overview/i });
     expect(overviewLink).toHaveAttribute('href', '#overview');
