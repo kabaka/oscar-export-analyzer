@@ -1,4 +1,10 @@
 node_modules/
 dist/
+coverage/
 *.log
 data/
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
