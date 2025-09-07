@@ -56,7 +56,7 @@ The Raw Data Explorer (see "Raw Data" in-page link) provides an efficient, virtu
 
 ## Development
 
-The app is built with Vite, React, and PapaParse.
+The app is built with Vite, React, and PapaParse. Environment variables for local configuration can be stored in a `.env` file at the project root, which is ignored by Git.
 
 Workers
 - Parsing: PapaParse runs in a web worker (`worker: true`).
