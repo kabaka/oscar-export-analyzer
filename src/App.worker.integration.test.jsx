@@ -43,4 +43,24 @@ describe('Worker Integration Tests', () => {
       expect(screen.getByText(/Total nights analyzed/i)).toBeInTheDocument();
     });
   });
+
+  it('renders an error message when CSV parsing fails', async () => {
+    const parseMock = vi.spyOn(Papa, 'parse').mockImplementation((file, options) => {
+      if (options.error) {
+        options.error(new Error('Malformed CSV'));
+      }
+    });
+
+    render(<App />);
+    const file = new File(['bad'], 'bad.csv', { type: 'text/csv' });
+    const input = screen.getByLabelText(/Summary CSV/i);
+    await userEvent.upload(input, file);
+
+    expect(parseMock).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Malformed CSV');
+    });
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
 });
