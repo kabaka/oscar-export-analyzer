@@ -1,10 +1,18 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import ApneaEventStats from './ApneaEventStats';
 
 const sampleDetails = [
-  { Event: 'Obstructive', 'Data/Duration': '30', DateTime: '2021-01-01T00:00:00Z' },
-  { Event: 'ClearAirway', 'Data/Duration': '60', DateTime: '2021-01-01T00:02:00Z' },
+  {
+    Event: 'Obstructive',
+    'Data/Duration': '30',
+    DateTime: '2021-01-01T00:00:00Z',
+  },
+  {
+    Event: 'ClearAirway',
+    'Data/Duration': '60',
+    DateTime: '2021-01-01T00:02:00Z',
+  },
 ];
 
 describe('ApneaEventStats', () => {

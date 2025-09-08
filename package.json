@@ -12,7 +12,9 @@
     "prepare": "husky install",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .js,.jsx",
+    "format": "prettier . --write"
   },
   "dependencies": {
     "papaparse": "^5.3.2",
@@ -27,8 +29,13 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.0.0",
     "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^8.0.0",
     "jsdom": "^26.1.0",
+    "prettier": "^3.6.2",
     "vite": "^7.1.4",
     "vitest": "^3.2.4"
   }

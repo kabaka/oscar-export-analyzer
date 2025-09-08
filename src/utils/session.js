@@ -26,10 +26,13 @@ export function buildSession(state) {
 }
 
 function serializeRange(r) {
-  return !r ? { start: null, end: null } : {
-    start: r.start instanceof Date ? r.start.toISOString() : (r.start || null),
-    end: r.end instanceof Date ? r.end.toISOString() : (r.end || null),
-  };
+  return !r
+    ? { start: null, end: null }
+    : {
+        start:
+          r.start instanceof Date ? r.start.toISOString() : r.start || null,
+        end: r.end instanceof Date ? r.end.toISOString() : r.end || null,
+      };
 }
 
 function parseMaybeDate(v) {
@@ -40,16 +43,32 @@ function parseMaybeDate(v) {
 
 export function applySession(session) {
   if (!session || typeof session !== 'object') return null;
-  const { summaryData = [], detailsData = [], clusterParams = {}, dateFilter, rangeA, rangeB, fnPreset = 'balanced' } = session;
+  const {
+    summaryData = [],
+    detailsData = [],
+    clusterParams = {},
+    dateFilter,
+    rangeA,
+    rangeB,
+    fnPreset = 'balanced',
+  } = session;
   const patch = {
     summaryData,
     detailsData,
     clusterParams,
-    dateFilter: { start: parseMaybeDate(dateFilter?.start), end: parseMaybeDate(dateFilter?.end) },
-    rangeA: { start: parseMaybeDate(rangeA?.start), end: parseMaybeDate(rangeA?.end) },
-    rangeB: { start: parseMaybeDate(rangeB?.start), end: parseMaybeDate(rangeB?.end) },
+    dateFilter: {
+      start: parseMaybeDate(dateFilter?.start),
+      end: parseMaybeDate(dateFilter?.end),
+    },
+    rangeA: {
+      start: parseMaybeDate(rangeA?.start),
+      end: parseMaybeDate(rangeA?.end),
+    },
+    rangeB: {
+      start: parseMaybeDate(rangeB?.start),
+      end: parseMaybeDate(rangeB?.end),
+    },
     fnPreset,
   };
   return patch;
 }
-

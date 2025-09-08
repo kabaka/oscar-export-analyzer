@@ -56,7 +56,10 @@ function renderMarkdown(md) {
   };
   const closeAllBlockContexts = () => {
     if (listStack.length) {
-      if (openLiLevel >= 0) { parts.push('</li>'); openLiLevel = -1; }
+      if (openLiLevel >= 0) {
+        parts.push('</li>');
+        openLiLevel = -1;
+      }
       closeListsTo(0);
     }
   };
@@ -69,18 +72,23 @@ function renderMarkdown(md) {
     if (fence) {
       if (inCode) {
         parts.push('</code></pre>');
-        inCode = false; codeLang = '';
+        inCode = false;
+        codeLang = '';
       } else {
         closeAllBlockContexts();
         codeLang = fence[1]?.trim() || '';
-        parts.push(`<pre class=\"doc-code\"><code${codeLang ? ` data-lang=\"${escapeHtml(codeLang)}\"` : ''}>`);
+        parts.push(
+          `<pre class="doc-code"><code${codeLang ? ` data-lang="${escapeHtml(codeLang)}"` : ''}>`
+        );
         inCode = true;
       }
-      i++; continue;
+      i++;
+      continue;
     }
     if (inCode) {
       parts.push(escapeHtml(raw) + '\n');
-      i++; continue;
+      i++;
+      continue;
     }
     // headings
     const h = line.match(/^(#{1,6})\s+(.+)$/);
@@ -90,8 +98,9 @@ function renderMarkdown(md) {
       const text = h[2].trim();
       const id = slugify(text);
       toc.push({ level, id, text });
-      parts.push(`<h${level} id=\"${id}\">${escapeHtml(text)}</h${level}>`);
-      i++; continue;
+      parts.push(`<h${level} id="${id}">${escapeHtml(text)}</h${level}>`);
+      i++;
+      continue;
     }
     // nested lists by indentation (2 spaces per level)
     const mUl = line.match(/^(\s*)[-*]\s+(.+)$/);
@@ -102,30 +111,45 @@ function renderMarkdown(md) {
       const type = mUl ? 'ul' : 'ol';
       const level = Math.floor(indent.replace(/\t/g, '  ').length / 2);
       ensureListLevel(level, type);
-      if (openLiLevel === level) { parts.push('</li>'); openLiLevel = -1; }
+      if (openLiLevel === level) {
+        parts.push('</li>');
+        openLiLevel = -1;
+      }
       parts.push(`<li>${inline(text)}`);
       openLiLevel = level;
-      i++; continue;
+      i++;
+      continue;
     }
     // blank line
     if (/^\s*$/.test(line)) {
-      if (openLiLevel >= 0) { parts.push('</li>'); openLiLevel = -1; }
+      if (openLiLevel >= 0) {
+        parts.push('</li>');
+        openLiLevel = -1;
+      }
       parts.push('');
-      i++; continue;
+      i++;
+      continue;
     }
     // paragraph
     closeAllBlockContexts();
     parts.push(`<p>${inline(line)}</p>`);
     i++;
   }
-  if (openLiLevel >= 0) { parts.push('</li>'); openLiLevel = -1; }
+  if (openLiLevel >= 0) {
+    parts.push('</li>');
+    openLiLevel = -1;
+  }
   closeListsTo(0);
   return { html: parts.join('\n'), toc };
 
   function inline(txt) {
     let s = escapeHtml(txt);
     s = s.replace(/`([^`]+)`/g, (_m, g1) => `<code>${escapeHtml(g1)}</code>`);
-    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, t, url) => `<a href=\"${escapeHtml(url)}\" target=\"_blank\" rel=\"noopener\">${escapeHtml(t)}</a>`);
+    s = s.replace(
+      /\[([^\]]+)\]\(([^)\s]+)\)/g,
+      (_m, t, url) =>
+        `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(t)}</a>`
+    );
     return s;
   }
 }
@@ -151,21 +175,48 @@ export default function DocsModal({ isOpen, onClose, initialAnchor }) {
 
   if (!isOpen) return null;
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Usage Guide">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Usage Guide"
+    >
       <div className="modal">
         <div className="modal-header">
           <h3 style={{ margin: 0 }}>Usage & Interpretation Guide</h3>
-          <button className="btn-ghost" onClick={onClose} aria-label="Close guide">Close</button>
+          <button
+            className="btn-ghost"
+            onClick={onClose}
+            aria-label="Close guide"
+          >
+            Close
+          </button>
         </div>
         <div className="modal-body">
           <aside className="doc-toc" aria-label="Guide sections">
-            {parsed.toc.filter(h => h.level <= 2).map(h => (
-              <a key={h.id} href={`#${h.id}`} onClick={(e) => { e.preventDefault(); const el = contentRef.current?.querySelector(`#${CSS.escape(h.id)}`); el?.scrollIntoView({ block: 'start' }); }}>
-                {h.text}
-              </a>
-            ))}
+            {parsed.toc
+              .filter((h) => h.level <= 2)
+              .map((h) => (
+                <a
+                  key={h.id}
+                  href={`#${h.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = contentRef.current?.querySelector(
+                      `#${CSS.escape(h.id)}`
+                    );
+                    el?.scrollIntoView({ block: 'start' });
+                  }}
+                >
+                  {h.text}
+                </a>
+              ))}
           </aside>
-          <article className="doc-content" ref={contentRef} dangerouslySetInnerHTML={{ __html: parsed.html }} />
+          <article
+            className="doc-content"
+            ref={contentRef}
+            dangerouslySetInnerHTML={{ __html: parsed.html }}
+          />
         </div>
       </div>
     </div>

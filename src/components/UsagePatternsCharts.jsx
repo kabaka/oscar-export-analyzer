@@ -1,19 +1,42 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
-import { parseDuration, quantile, computeUsageRolling, computeAdherenceStreaks, detectUsageBreakpoints, detectChangePoints } from '../utils/stats';
+import {
+  parseDuration,
+  quantile,
+  computeUsageRolling,
+  computeAdherenceStreaks,
+  detectUsageBreakpoints,
+  detectChangePoints,
+} from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 
-export default function UsagePatternsCharts({ data, width = 700, height = 300, onRangeSelect }) {
+export default function UsagePatternsCharts({ data, onRangeSelect }) {
   // Prepare sorted date and usage arrays
-  const { dates, usageHours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, cpDates, dowHeatmap } = useMemo(() => {
+  const {
+    dates,
+    usageHours,
+    rolling7,
+    rolling30,
+    r7Low,
+    r7High,
+    r30Low,
+    r30High,
+    compliance4_30,
+    breakDates,
+    cpDates,
+    dowHeatmap,
+  } = useMemo(() => {
     const pts = data
-      .map(r => ({ date: new Date(r['Date']), hours: parseDuration(r['Total Time']) / 3600 }))
+      .map((r) => ({
+        date: new Date(r['Date']),
+        hours: parseDuration(r['Total Time']) / 3600,
+      }))
       .sort((a, b) => a.date - b.date);
-    const hours = pts.map(p => p.hours);
-    const datesArr = pts.map(p => p.date);
+    const hours = pts.map((p) => p.hours);
+    const datesArr = pts.map((p) => p.date);
     const rolling = computeUsageRolling(datesArr, hours, [7, 30]);
     const rolling7 = rolling.avg7;
     const rolling30 = rolling.avg30;
@@ -26,30 +49,37 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
     const cpDates = detectChangePoints(hours, datesArr, 8);
 
     // Day-of-week weekly heatmap (GitHub-style)
-    const toISODate = d => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const getWeekStart = d => {
+    const toISODate = (d) =>
+      new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const getWeekStart = (d) => {
       const nd = new Date(d);
       const day = (nd.getDay() + 6) % 7; // Mon=0..Sun=6
       nd.setDate(nd.getDate() - day);
       return toISODate(nd);
     };
-    const dateToStr = d => d.toISOString().slice(0, 10);
+    const dateToStr = (d) => d.toISOString().slice(0, 10);
     const byDate = new Map();
     datesArr.forEach((d, i) => byDate.set(dateToStr(toISODate(d)), hours[i]));
     const start = datesArr.length ? getWeekStart(datesArr[0]) : null;
-    const end = datesArr.length ? getWeekStart(datesArr[datesArr.length - 1]) : null;
+    const end = datesArr.length
+      ? getWeekStart(datesArr[datesArr.length - 1])
+      : null;
     const weekStarts = [];
     if (start && end && start <= end) {
       const maxWeeks = 600; // ~11.5 years safety cap
       let iter = 0;
-      for (let w = new Date(start); w <= end && iter < maxWeeks; w.setDate(w.getDate() + 7), iter++) {
+      for (
+        let w = new Date(start);
+        w <= end && iter < maxWeeks;
+        w.setDate(w.getDate() + 7), iter++
+      ) {
         weekStarts.push(new Date(w));
       }
     }
-    const yLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const yLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const z = weekStarts.length
       ? yLabels.map((_, dowIdx) =>
-          weekStarts.map(ws => {
+          weekStarts.map((ws) => {
             const d = new Date(ws);
             d.setDate(d.getDate() + dowIdx);
             const key = dateToStr(toISODate(d));
@@ -59,7 +89,20 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
       : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
 
-    return { dates: datesArr, usageHours: hours, rolling7, rolling30, r7Low, r7High, r30Low, r30High, compliance4_30, breakDates, cpDates, dowHeatmap };
+    return {
+      dates: datesArr,
+      usageHours: hours,
+      rolling7,
+      rolling30,
+      r7Low,
+      r7High,
+      r30Low,
+      r30High,
+      compliance4_30,
+      breakDates,
+      cpDates,
+      dowHeatmap,
+    };
   }, [data]);
 
   // Summary stats and adaptive bins for histogram
@@ -78,11 +121,42 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
   return (
     <div className="usage-charts">
       {/* Compliance KPIs */}
-      <div className="kpi-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: '12px', marginBottom: '8px' }}>
-        <div><strong>% nights ≥ 4h:</strong> {((usageHours.filter(h => h >= 4).length / usageHours.length) * 100).toFixed(0)}%</div>
-        <div><strong>% nights ≥ 6h:</strong> {((usageHours.filter(h => h >= 6).length / usageHours.length) * 100).toFixed(0)}%</div>
-        <div><strong>Current 30-night ≥4h:</strong> {compliance4_30?.length ? compliance4_30[compliance4_30.length - 1].toFixed(0) : '—'}%</div>
-        <div><strong>Longest streak ≥4h/≥6h:</strong> {longest_4 || 0} / {longest_6 || 0} nights</div>
+      <div
+        className="kpi-row"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))',
+          gap: '12px',
+          marginBottom: '8px',
+        }}
+      >
+        <div>
+          <strong>% nights ≥ 4h:</strong>{' '}
+          {(
+            (usageHours.filter((h) => h >= 4).length / usageHours.length) *
+            100
+          ).toFixed(0)}
+          %
+        </div>
+        <div>
+          <strong>% nights ≥ 6h:</strong>{' '}
+          {(
+            (usageHours.filter((h) => h >= 6).length / usageHours.length) *
+            100
+          ).toFixed(0)}
+          %
+        </div>
+        <div>
+          <strong>Current 30-night ≥4h:</strong>{' '}
+          {compliance4_30?.length
+            ? compliance4_30[compliance4_30.length - 1].toFixed(0)
+            : '—'}
+          %
+        </div>
+        <div>
+          <strong>Longest streak ≥4h/≥6h:</strong> {longest_4 || 0} /{' '}
+          {longest_6 || 0} nights
+        </div>
       </div>
       {/* Time-series usage with rolling average, full-width responsive */}
       <div className="chart-with-help">
@@ -90,102 +164,121 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
           key={isDark ? 'dark' : 'light'}
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
-        data={[
-          {
-            x: dates,
-            y: usageHours,
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Usage (hrs)',
-            line: { width: 1, color: COLORS.primary },
-          },
-          // 7-day CI ribbon (low then high with fill)
-          {
-            x: dates,
-            y: r7Low,
-            type: 'scatter',
-            mode: 'lines',
-            name: '7-night Avg CI low',
-            line: { width: 0 },
-            hoverinfo: 'skip',
-            showlegend: false,
-          },
-          {
-            x: dates,
-            y: r7High,
-            type: 'scatter',
-            mode: 'lines',
-            name: '7-night Avg CI',
-            fill: 'tonexty',
-            fillcolor: 'rgba(255,127,14,0.15)',
-            line: { width: 0 },
-            hoverinfo: 'skip',
-            showlegend: true,
-          },
-          {
-            x: dates,
-            y: rolling7,
-            type: 'scatter',
-            mode: 'lines',
-            name: '7-night Avg',
-            line: { dash: 'dash', width: 2, color: COLORS.secondary },
-          },
-          // 30-day CI ribbon
-          {
-            x: dates,
-            y: r30Low,
-            type: 'scatter',
-            mode: 'lines',
-            name: '30-night Avg CI low',
-            line: { width: 0 },
-            hoverinfo: 'skip',
-            showlegend: false,
-          },
-          {
-            x: dates,
-            y: r30High,
-            type: 'scatter',
-            mode: 'lines',
-            name: '30-night Avg CI',
-            fill: 'tonexty',
-            fillcolor: 'rgba(44,160,44,0.15)',
-            line: { width: 0 },
-            hoverinfo: 'skip',
-            showlegend: true,
-          },
-          {
-            x: dates,
-            y: rolling30,
-            type: 'scatter',
-            mode: 'lines',
-            name: '30-night Avg',
-            line: { dash: 'dot', width: 2, color: COLORS.accent },
-          },
-        ]}
-        layout={applyChartTheme(isDark, {
-          title: 'Nightly Usage Hours Over Time',
-          legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
-          xaxis: { title: 'Date' },
-          yaxis: { title: 'Hours of Use' },
-          margin: { t: 40, l: 60, r: 20, b: 50 },
-          shapes: [
-            ...(breakDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#aa3377', width: 1, dash: 'dot' } })) || []),
-            ...(cpDates?.map(d => ({ type: 'line', x0: d, x1: d, yref: 'paper', y0: 0, y1: 1, line: { color: '#6a3d9a', width: 2 } })) || []),
-          ],
-        })}
-        onRelayout={(ev) => {
-          const x0 = ev?.['xaxis.range[0]'];
-          const x1 = ev?.['xaxis.range[1]'];
-          if (x0 && x1 && onRangeSelect) {
-            onRangeSelect({ start: new Date(x0), end: new Date(x1) });
-          }
-        }}
-        config={{
-          responsive: true,
-          displaylogo: false,
-          modeBarButtonsToAdd: ['toImage'],
-          toImageButtonOptions: { format: 'svg', filename: 'usage_hours_over_time' },
-        }}
+          data={[
+            {
+              x: dates,
+              y: usageHours,
+              type: 'scatter',
+              mode: 'lines',
+              name: 'Usage (hrs)',
+              line: { width: 1, color: COLORS.primary },
+            },
+            // 7-day CI ribbon (low then high with fill)
+            {
+              x: dates,
+              y: r7Low,
+              type: 'scatter',
+              mode: 'lines',
+              name: '7-night Avg CI low',
+              line: { width: 0 },
+              hoverinfo: 'skip',
+              showlegend: false,
+            },
+            {
+              x: dates,
+              y: r7High,
+              type: 'scatter',
+              mode: 'lines',
+              name: '7-night Avg CI',
+              fill: 'tonexty',
+              fillcolor: 'rgba(255,127,14,0.15)',
+              line: { width: 0 },
+              hoverinfo: 'skip',
+              showlegend: true,
+            },
+            {
+              x: dates,
+              y: rolling7,
+              type: 'scatter',
+              mode: 'lines',
+              name: '7-night Avg',
+              line: { dash: 'dash', width: 2, color: COLORS.secondary },
+            },
+            // 30-day CI ribbon
+            {
+              x: dates,
+              y: r30Low,
+              type: 'scatter',
+              mode: 'lines',
+              name: '30-night Avg CI low',
+              line: { width: 0 },
+              hoverinfo: 'skip',
+              showlegend: false,
+            },
+            {
+              x: dates,
+              y: r30High,
+              type: 'scatter',
+              mode: 'lines',
+              name: '30-night Avg CI',
+              fill: 'tonexty',
+              fillcolor: 'rgba(44,160,44,0.15)',
+              line: { width: 0 },
+              hoverinfo: 'skip',
+              showlegend: true,
+            },
+            {
+              x: dates,
+              y: rolling30,
+              type: 'scatter',
+              mode: 'lines',
+              name: '30-night Avg',
+              line: { dash: 'dot', width: 2, color: COLORS.accent },
+            },
+          ]}
+          layout={applyChartTheme(isDark, {
+            title: 'Nightly Usage Hours Over Time',
+            legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+            xaxis: { title: 'Date' },
+            yaxis: { title: 'Hours of Use' },
+            margin: { t: 40, l: 60, r: 20, b: 50 },
+            shapes: [
+              ...(breakDates?.map((d) => ({
+                type: 'line',
+                x0: d,
+                x1: d,
+                yref: 'paper',
+                y0: 0,
+                y1: 1,
+                line: { color: '#aa3377', width: 1, dash: 'dot' },
+              })) || []),
+              ...(cpDates?.map((d) => ({
+                type: 'line',
+                x0: d,
+                x1: d,
+                yref: 'paper',
+                y0: 0,
+                y1: 1,
+                line: { color: '#6a3d9a', width: 2 },
+              })) || []),
+            ],
+          })}
+          onRelayout={(ev) => {
+            const x0 = ev?.['xaxis.range[0]'];
+            const x1 = ev?.['xaxis.range[1]'];
+            if (x0 && x1 && onRangeSelect) {
+              onRangeSelect({ start: new Date(x0), end: new Date(x1) });
+            }
+          }}
+          config={{
+            responsive: true,
+            displaylogo: false,
+            modeBarButtonsToAdd: ['toImage'],
+            toImageButtonOptions: {
+              format: 'svg',
+              filename: 'usage_hours_over_time',
+            },
+          }}
         />
         <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints." />
       </div>
@@ -193,42 +286,75 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
       {/* Histogram and boxplot side-by-side on large screens, stacked on narrow */}
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-        <Plot
-          key={isDark ? 'dark-hist' : 'light-hist'}
-          useResizeHandler
-          style={{ width: '100%', height: '300px' }}
-          data={[
-            {
-              x: usageHours,
-              type: 'histogram',
-              nbinsx: nbins,
-              name: 'Usage Distribution',
-              marker: { color: COLORS.primary },
-            },
-          ]}
-        layout={applyChartTheme(isDark, {
-            title: 'Distribution of Nightly Usage',
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
-            xaxis: { title: 'Hours' },
-            yaxis: { title: 'Count' },
-            shapes: [
-              { type: 'line', x0: median, x1: median, yref: 'paper', y0: 0, y1: 1, line: { color: COLORS.secondary, dash: 'dash' } },
-              { type: 'line', x0: mean, x1: mean, yref: 'paper', y0: 0, y1: 1, line: { color: COLORS.accent, dash: 'dot' } },
-            ],
-            annotations: [
-              { x: median, yref: 'paper', y: 1.05, text: `Median: ${median.toFixed(2)}`, showarrow: false, font: { color: COLORS.secondary } },
-              { x: mean, yref: 'paper', y: 1.1, text: `Mean: ${mean.toFixed(2)}`, showarrow: false, font: { color: COLORS.accent } },
-            ],
-            margin: { t: 40, l: 60, r: 20, b: 50 },
-          })}
-          config={{
-            responsive: true,
-            displaylogo: false,
-            modeBarButtonsToAdd: ['toImage'],
-            toImageButtonOptions: { format: 'svg', filename: 'usage_distribution' },
-          }}
-        />
-        <VizHelp text="Distribution of nightly usage hours. Dashed line marks the median; dotted line marks the mean." />
+          <Plot
+            key={isDark ? 'dark-hist' : 'light-hist'}
+            useResizeHandler
+            style={{ width: '100%', height: '300px' }}
+            data={[
+              {
+                x: usageHours,
+                type: 'histogram',
+                nbinsx: nbins,
+                name: 'Usage Distribution',
+                marker: { color: COLORS.primary },
+              },
+            ]}
+            layout={applyChartTheme(isDark, {
+              title: 'Distribution of Nightly Usage',
+              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              xaxis: { title: 'Hours' },
+              yaxis: { title: 'Count' },
+              shapes: [
+                {
+                  type: 'line',
+                  x0: median,
+                  x1: median,
+                  yref: 'paper',
+                  y0: 0,
+                  y1: 1,
+                  line: { color: COLORS.secondary, dash: 'dash' },
+                },
+                {
+                  type: 'line',
+                  x0: mean,
+                  x1: mean,
+                  yref: 'paper',
+                  y0: 0,
+                  y1: 1,
+                  line: { color: COLORS.accent, dash: 'dot' },
+                },
+              ],
+              annotations: [
+                {
+                  x: median,
+                  yref: 'paper',
+                  y: 1.05,
+                  text: `Median: ${median.toFixed(2)}`,
+                  showarrow: false,
+                  font: { color: COLORS.secondary },
+                },
+                {
+                  x: mean,
+                  yref: 'paper',
+                  y: 1.1,
+                  text: `Mean: ${mean.toFixed(2)}`,
+                  showarrow: false,
+                  font: { color: COLORS.accent },
+                },
+              ],
+              margin: { t: 40, l: 60, r: 20, b: 50 },
+            })}
+            config={{
+              responsive: true,
+              displaylogo: false,
+              modeBarButtonsToAdd: ['toImage'],
+              toImageButtonOptions: {
+                format: 'svg',
+                filename: 'usage_distribution',
+              },
+            }}
+          />
+          <VizHelp text="Distribution of nightly usage hours. Dashed line marks the median; dotted line marks the mean." />
         </div>
         <div className="chart-item chart-with-help">
           <Plot
@@ -254,7 +380,10 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
               responsive: true,
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
-              toImageButtonOptions: { format: 'svg', filename: 'usage_boxplot' },
+              toImageButtonOptions: {
+                format: 'svg',
+                filename: 'usage_boxplot',
+              },
             }}
           />
           <VizHelp text="Boxplot summarizing nightly usage; box shows the interquartile range (IQR), whiskers extend to typical range, points indicate outliers." />
@@ -282,7 +411,8 @@ export default function UsagePatternsCharts({ data, width = 700, height = 300, o
                     [1, '#58a6ff'],
                   ]
                 : 'Blues',
-              hovertemplate: '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
+              hovertemplate:
+                '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
             },
           ]}
           layout={applyChartTheme(isDark, {

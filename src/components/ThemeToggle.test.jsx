@@ -14,7 +14,9 @@ describe('ThemeToggle', () => {
     render(<ThemeToggle />);
     expect(document.documentElement.getAttribute('data-theme')).toBe(null);
     const group = screen.getByRole('group', { name: /theme/i });
-    const active = within(group).getAllByRole('radio').filter(r => r.checked);
+    const active = within(group)
+      .getAllByRole('radio')
+      .filter((r) => r.checked);
     expect(active).toHaveLength(1);
     expect(active[0]).toHaveAttribute('value', 'system');
   });
@@ -40,4 +42,3 @@ describe('ThemeToggle', () => {
     expect(window.localStorage.getItem('theme')).toBe(null);
   });
 });
-

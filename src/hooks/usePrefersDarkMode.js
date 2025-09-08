@@ -13,7 +13,7 @@ export function usePrefersDarkMode() {
   useEffect(() => {
     if (!window.matchMedia) return;
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const listener = e => setIsDark(e.matches);
+    const listener = (e) => setIsDark(e.matches);
     mql.addEventListener('change', listener);
     return () => mql.removeEventListener('change', listener);
   }, []);

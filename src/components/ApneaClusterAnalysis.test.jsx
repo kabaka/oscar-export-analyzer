@@ -19,8 +19,16 @@ describe('ApneaClusterAnalysis overlay', () => {
       ],
     };
     const details = [
-      { Event: 'Leak', 'Data/Duration': 20, DateTime: new Date(base.getTime() + 55000).toISOString() },
-      { Event: 'Pressure', 'Data/Duration': 8, DateTime: new Date(base.getTime() + 70000).toISOString() },
+      {
+        Event: 'Leak',
+        'Data/Duration': 20,
+        DateTime: new Date(base.getTime() + 55000).toISOString(),
+      },
+      {
+        Event: 'Pressure',
+        'Data/Duration': 8,
+        DateTime: new Date(base.getTime() + 70000).toISOString(),
+      },
     ];
     const params = {
       gapSec: 120,
@@ -43,6 +51,8 @@ describe('ApneaClusterAnalysis overlay', () => {
     );
     const rows = screen.getAllByRole('row');
     await userEvent.click(rows[1]);
-    expect(await screen.findByText(/Leak\/Pressure around Cluster/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Leak\/Pressure around Cluster/)
+    ).toBeInTheDocument();
   });
 });

@@ -10,8 +10,12 @@ class IO {
     IO._instances.push({ cb, options, observed: new Set() });
     this._idx = IO._instances.length - 1;
   }
-  observe(el) { IO._instances[this._idx].observed.add(el); }
-  unobserve(el) { IO._instances[this._idx].observed.delete(el); }
+  observe(el) {
+    IO._instances[this._idx].observed.add(el);
+  }
+  unobserve(el) {
+    IO._instances[this._idx].observed.delete(el);
+  }
   disconnect() {
     const inst = IO._instances[this._idx];
     if (inst) inst.observed.clear();
@@ -34,13 +38,16 @@ describe('TOC active highlighting', () => {
 
   function mockSummaryParse() {
     return vi.spyOn(Papa, 'parse').mockImplementation((file, options) => {
-      const rows = [{
-        Date: '2025-06-01',
-        'Total Time': '08:00:00',
-        AHI: '5',
-        'Median EPAP': '6'
-      }];
-      if (options.chunk) options.chunk({ data: rows, meta: { cursor: file.size } });
+      const rows = [
+        {
+          Date: '2025-06-01',
+          'Total Time': '08:00:00',
+          AHI: '5',
+          'Median EPAP': '6',
+        },
+      ];
+      if (options.chunk)
+        options.chunk({ data: rows, meta: { cursor: file.size } });
       if (options.complete) options.complete({ data: rows });
     });
   }
@@ -49,11 +56,15 @@ describe('TOC active highlighting', () => {
     mockSummaryParse();
     render(<App />);
 
-    const file = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', { type: 'text/csv' });
+    const file = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
+      type: 'text/csv',
+    });
     await userEvent.upload(screen.getByLabelText(/Summary CSV/i), file);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Overview Dashboard/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /Overview Dashboard/i })
+      ).toBeInTheDocument();
     });
 
     // Click-based activation
@@ -76,7 +87,9 @@ describe('TOC active highlighting', () => {
         },
       ]);
     });
-    const pressureLink = screen.getByRole('link', { name: /Pressure Settings/i });
+    const pressureLink = screen.getByRole('link', {
+      name: /Pressure Settings/i,
+    });
     expect(pressureLink).toHaveClass('active');
 
     // Scroll-based activation using mocked geometry
@@ -85,8 +98,15 @@ describe('TOC active highlighting', () => {
     // Mock positions: overview above header, AHI newly above threshold after scroll
     overviewEl.getBoundingClientRect = () => ({ top: -200 });
     ahiEl.getBoundingClientRect = () => ({ top: -10 });
-    const others = ['usage-patterns', 'pressure-settings', 'apnea-characteristics', 'clustered-apnea', 'false-negatives', 'raw-data-explorer'];
-    others.forEach(id => {
+    const others = [
+      'usage-patterns',
+      'pressure-settings',
+      'apnea-characteristics',
+      'clustered-apnea',
+      'false-negatives',
+      'raw-data-explorer',
+    ];
+    others.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.getBoundingClientRect = () => ({ top: 500 });
     });

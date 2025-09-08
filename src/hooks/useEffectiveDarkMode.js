@@ -18,13 +18,18 @@ export function useEffectiveDarkMode() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    const mql = window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)')
+      : null;
 
     const update = () => setIsDark(computeIsDark());
 
     // Observe data-theme attribute changes
     const observer = new MutationObserver(update);
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
 
     // React to system theme changes when in system mode
     if (mql && mql.addEventListener) {
@@ -38,11 +43,11 @@ export function useEffectiveDarkMode() {
 
     return () => {
       observer.disconnect();
-      if (mql && mql.removeEventListener) mql.removeEventListener('change', update);
+      if (mql && mql.removeEventListener)
+        mql.removeEventListener('change', update);
       else if (mql && mql.removeListener) mql.removeListener(update);
     };
   }, []);
 
   return isDark;
 }
-

@@ -15,7 +15,9 @@ export function useTheme() {
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return THEMES.SYSTEM;
     const stored = window.localStorage.getItem('theme');
-    return stored === THEMES.LIGHT || stored === THEMES.DARK ? stored : THEMES.SYSTEM;
+    return stored === THEMES.LIGHT || stored === THEMES.DARK
+      ? stored
+      : THEMES.SYSTEM;
   });
 
   useEffect(() => {
@@ -32,4 +34,3 @@ export function useTheme() {
 
   return { theme, setTheme };
 }
-
