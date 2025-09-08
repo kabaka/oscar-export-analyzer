@@ -38,9 +38,9 @@ export function quantile(arr, q) {
 export function computeApneaEventStats(details) {
   // Extract apnea event durations (seconds)
   const durations = details
-    .filter(r => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
-    .map(r => parseFloat(r['Data/Duration']))
-    .filter(v => !isNaN(v));
+    .filter((r) => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
+    .map((r) => parseFloat(r['Data/Duration']))
+    .filter((v) => !isNaN(v));
   const totalEvents = durations.length;
   if (totalEvents === 0) {
     return { durations, totalEvents };
@@ -51,13 +51,15 @@ export function computeApneaEventStats(details) {
   const iqrDur = p75Dur - p25Dur;
   const p95Dur = quantile(durations, 0.95);
   const maxDur = Math.max(...durations);
-  const countOver30 = durations.filter(v => v > 30).length;
-  const countOver60 = durations.filter(v => v > 60).length;
-  const countOutlierEvents = durations.filter(v => v >= (p75Dur + 1.5 * iqrDur)).length;
+  const countOver30 = durations.filter((v) => v > 30).length;
+  const countOver60 = durations.filter((v) => v > 60).length;
+  const countOutlierEvents = durations.filter(
+    (v) => v >= p75Dur + 1.5 * iqrDur
+  ).length;
 
   // Compute events per night
   const nightCounts = {};
-  details.forEach(r => {
+  details.forEach((r) => {
     if (!['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event'])) return;
     const d = new Date(r['DateTime']);
     if (isNaN(d)) return;
@@ -65,8 +67,11 @@ export function computeApneaEventStats(details) {
     nightCounts[key] = (nightCounts[key] || 0) + 1;
   });
   const nightDates = Object.keys(nightCounts).sort();
-  const eventsPerNight = nightDates.map(d => nightCounts[d]);
-  let p25Night = 0, medianNight = 0, p75Night = 0, iqrNight = 0;
+  const eventsPerNight = nightDates.map((d) => nightCounts[d]);
+  let p25Night = 0,
+    medianNight = 0,
+    p75Night = 0,
+    iqrNight = 0;
   if (eventsPerNight.length) {
     p25Night = quantile(eventsPerNight, 0.25);
     medianNight = quantile(eventsPerNight, 0.5);
@@ -75,8 +80,12 @@ export function computeApneaEventStats(details) {
   }
   const minNight = eventsPerNight.length ? Math.min(...eventsPerNight) : 0;
   const maxNight = eventsPerNight.length ? Math.max(...eventsPerNight) : 0;
-  const outlierNightHigh = eventsPerNight.filter(v => v >= (p75Night + 1.5 * iqrNight)).length;
-  const outlierNightLow = eventsPerNight.filter(v => v <= (p25Night - 1.5 * iqrNight)).length;
+  const outlierNightHigh = eventsPerNight.filter(
+    (v) => v >= p75Night + 1.5 * iqrNight
+  ).length;
+  const outlierNightLow = eventsPerNight.filter(
+    (v) => v <= p25Night - 1.5 * iqrNight
+  ).length;
 
   return {
     durations,
@@ -107,12 +116,12 @@ export function computeApneaEventStats(details) {
 export function summarizeUsage(data) {
   const totalNights = data.length;
   const usageHours = data
-    .map(r => parseDuration(r['Total Time']) / 3600)
-    .filter(h => !isNaN(h));
+    .map((r) => parseDuration(r['Total Time']) / 3600)
+    .filter((h) => !isNaN(h));
   const sumHours = usageHours.reduce((sum, h) => sum + h, 0);
   const avgHours = sumHours / totalNights;
-  const nightsLong = usageHours.filter(h => h >= 4).length;
-  const nightsLong6 = usageHours.filter(h => h >= 6).length;
+  const nightsLong = usageHours.filter((h) => h >= 4).length;
+  const nightsLong6 = usageHours.filter((h) => h >= 6).length;
   const nightsShort = totalNights - nightsLong;
   const minHours = Math.min(...usageHours);
   const maxHours = Math.max(...usageHours);
@@ -121,10 +130,10 @@ export function summarizeUsage(data) {
   const p75Hours = quantile(usageHours, 0.75);
   const iqrHours = p75Hours - p25Hours;
   const outlierLowCount = usageHours.filter(
-    h => h < p25Hours - 1.5 * iqrHours
+    (h) => h < p25Hours - 1.5 * iqrHours
   ).length;
   const outlierHighCount = usageHours.filter(
-    h => h > p75Hours + 1.5 * iqrHours
+    (h) => h > p75Hours + 1.5 * iqrHours
   ).length;
   return {
     totalNights,
@@ -150,9 +159,9 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
   // Also compute normal-approx CI for mean and distribution-free CI for median.
   const n = usageHours.length;
   const result = {};
-  const toDay = d => Math.floor(new Date(d).getTime() / (24 * 3600 * 1000));
+  const toDay = (d) => Math.floor(new Date(d).getTime() / (24 * 3600 * 1000));
   const days = dates.map(toDay);
-  windows.forEach(w => {
+  windows.forEach((w) => {
     const avg = new Array(n).fill(0);
     const avg_ci_low = new Array(n).fill(NaN);
     const avg_ci_high = new Array(n).fill(NaN);
@@ -198,7 +207,10 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
         const m = sum / len;
         avg[i] = m;
         // mean CI via normal approx: m ± 1.96 * s/√n
-        const variance = Math.max(0, (sumsq - (sum * sum) / len) / Math.max(1, len - 1));
+        const variance = Math.max(
+          0,
+          (sumsq - (sum * sum) / len) / Math.max(1, len - 1)
+        );
         const se = Math.sqrt(variance) / Math.sqrt(len);
         const z = 1.96;
         avg_ci_low[i] = m - z * se;
@@ -208,7 +220,8 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
         // median and its CI via order-statistics (binomial approx)
         const sorted = windowVals.slice().sort((a, b) => a - b);
         const mid = Math.floor((len - 1) / 2);
-        median[i] = len % 2 === 1 ? sorted[mid] : (sorted[mid] + sorted[mid + 1]) / 2;
+        median[i] =
+          len % 2 === 1 ? sorted[mid] : (sorted[mid] + sorted[mid + 1]) / 2;
         // approximate nonparametric CI bounds for median
         const p = 0.5;
         const s = Math.sqrt(len * p * (1 - p));
@@ -236,7 +249,7 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
 // Compute adherence streaks for thresholds (e.g., >=4h and >=6h)
 export function computeAdherenceStreaks(usageHours, thresholds = [4, 6]) {
   const map = {};
-  thresholds.forEach(th => {
+  thresholds.forEach((th) => {
     let longest = 0;
     let current = 0;
     for (let i = 0; i < usageHours.length; i++) {
@@ -253,7 +266,12 @@ export function computeAdherenceStreaks(usageHours, thresholds = [4, 6]) {
 }
 
 // Lightweight breakpoint detection: sign changes where 7d vs 30d diff crosses, beyond threshold
-export function detectUsageBreakpoints(rolling7, rolling30, dates, minDelta = 0.75) {
+export function detectUsageBreakpoints(
+  rolling7,
+  rolling30,
+  dates,
+  minDelta = 0.75
+) {
   const points = [];
   for (let i = 1; i < rolling7.length; i++) {
     const prev = rolling7[i - 1] - rolling30[i - 1];
@@ -297,7 +315,10 @@ export function detectChangePoints(series, dates, penalty = 10) {
     let bestK = -1;
     for (let k = 0; k < t; k++) {
       const cost = F[k] + costSeg(k, t - 1) + penalty;
-      if (cost < best) { best = cost; bestK = k; }
+      if (cost < best) {
+        best = cost;
+        bestK = k;
+      }
     }
     F[t] = best;
     prev[t] = bestK;
@@ -323,7 +344,7 @@ export function detectChangePoints(series, dates, penalty = 10) {
 
 // Compute AHI trend metrics from summary data rows
 export function computeAHITrends(data) {
-  const ahis = data.map(r => parseFloat(r['AHI'])).filter(v => !isNaN(v));
+  const ahis = data.map((r) => parseFloat(r['AHI'])).filter((v) => !isNaN(v));
   const avgAHI = ahis.reduce((a, b) => a + b, 0) / ahis.length;
   const minAHI = Math.min(...ahis);
   const maxAHI = Math.max(...ahis);
@@ -331,18 +352,18 @@ export function computeAHITrends(data) {
   const p25AHI = quantile(ahis, 0.25);
   const p75AHI = quantile(ahis, 0.75);
   const iqrAHI = p75AHI - p25AHI;
-  const nightsAHIover5 = ahis.filter(v => v > 5).length;
+  const nightsAHIover5 = ahis.filter((v) => v > 5).length;
   const sortedByDate = data
     .slice()
     .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
   const first = sortedByDate
     .slice(0, 30)
-    .map(r => parseFloat(r['AHI']))
-    .filter(v => !isNaN(v));
+    .map((r) => parseFloat(r['AHI']))
+    .filter((v) => !isNaN(v));
   const last = sortedByDate
     .slice(-30)
-    .map(r => parseFloat(r['AHI']))
-    .filter(v => !isNaN(v));
+    .map((r) => parseFloat(r['AHI']))
+    .filter((v) => !isNaN(v));
   const first30AvgAHI = first.reduce((a, b) => a + b, 0) / first.length;
   const last30AvgAHI = last.reduce((a, b) => a + b, 0) / last.length;
   return {
@@ -362,7 +383,9 @@ export function computeAHITrends(data) {
 
 // Compute EPAP trend metrics from summary data rows
 export function computeEPAPTrends(data) {
-  const epaps = data.map(r => parseFloat(r['Median EPAP'])).filter(v => !isNaN(v));
+  const epaps = data
+    .map((r) => parseFloat(r['Median EPAP']))
+    .filter((v) => !isNaN(v));
   const minEPAP = Math.min(...epaps);
   const maxEPAP = Math.max(...epaps);
   const medianEPAP = quantile(epaps, 0.5);
@@ -374,23 +397,27 @@ export function computeEPAPTrends(data) {
     .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
   const first30 = sortedByDate
     .slice(0, 30)
-    .map(r => parseFloat(r['Median EPAP']))
-    .filter(v => !isNaN(v));
+    .map((r) => parseFloat(r['Median EPAP']))
+    .filter((v) => !isNaN(v));
   const last30 = sortedByDate
     .slice(-30)
-    .map(r => parseFloat(r['Median EPAP']))
-    .filter(v => !isNaN(v));
-  const avgMedianEPAPFirst30 = first30.reduce((a, b) => a + b, 0) / first30.length;
+    .map((r) => parseFloat(r['Median EPAP']))
+    .filter((v) => !isNaN(v));
+  const avgMedianEPAPFirst30 =
+    first30.reduce((a, b) => a + b, 0) / first30.length;
   const avgMedianEPAPLast30 = last30.reduce((a, b) => a + b, 0) / last30.length;
   const epapAhiPairs = data
-    .map(r => [parseFloat(r['Median EPAP']), parseFloat(r['AHI'])])
+    .map((r) => [parseFloat(r['Median EPAP']), parseFloat(r['AHI'])])
     .filter(([p, a]) => !isNaN(p) && !isNaN(a));
   const meanEpap =
     epapAhiPairs.reduce((sum, [p]) => sum + p, 0) / epapAhiPairs.length;
   const meanAhi =
     epapAhiPairs.reduce((sum, [, a]) => sum + a, 0) / epapAhiPairs.length;
   const cov =
-    epapAhiPairs.reduce((sum, [p, a]) => sum + (p - meanEpap) * (a - meanAhi), 0) /
+    epapAhiPairs.reduce(
+      (sum, [p, a]) => sum + (p - meanEpap) * (a - meanAhi),
+      0
+    ) /
     (epapAhiPairs.length - 1);
   const stdEp = Math.sqrt(
     epapAhiPairs.reduce((sum, [p]) => sum + (p - meanEpap) ** 2, 0) /
@@ -402,13 +429,13 @@ export function computeEPAPTrends(data) {
   );
   const corrEPAPAHI = cov / (stdEp * stdAh);
   const lowGroup = data
-    .filter(r => parseFloat(r['Median EPAP']) < 7)
-    .map(r => parseFloat(r['AHI']))
-    .filter(v => !isNaN(v));
+    .filter((r) => parseFloat(r['Median EPAP']) < 7)
+    .map((r) => parseFloat(r['AHI']))
+    .filter((v) => !isNaN(v));
   const highGroup = data
-    .filter(r => parseFloat(r['Median EPAP']) >= 7)
-    .map(r => parseFloat(r['AHI']))
-    .filter(v => !isNaN(v));
+    .filter((r) => parseFloat(r['Median EPAP']) >= 7)
+    .map((r) => parseFloat(r['AHI']))
+    .filter((v) => !isNaN(v));
   const countLow = lowGroup.length;
   const countHigh = highGroup.length;
   const avgAHILow = lowGroup.reduce((a, b) => a + b, 0) / (countLow || 1);
@@ -438,13 +465,20 @@ export function computeEPAPTrends(data) {
 export function pearson(x, y) {
   const n = Math.min(x.length, y.length);
   if (n < 2) return NaN;
-  let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  let sx = 0,
+    sy = 0,
+    sxx = 0,
+    syy = 0,
+    sxy = 0;
   for (let i = 0; i < n; i++) {
     const xi = x[i];
     const yi = y[i];
     if (!isFinite(xi) || !isFinite(yi)) continue;
-    sx += xi; sy += yi;
-    sxx += xi * xi; syy += yi * yi; sxy += xi * yi;
+    sx += xi;
+    sy += yi;
+    sxx += xi * xi;
+    syy += yi * yi;
+    sxy += xi * yi;
   }
   const cov = (sxy - (sx * sy) / n) / (n - 1);
   const vx = (sxx - (sx * sx) / n) / (n - 1);
@@ -477,18 +511,25 @@ export function spearman(x, y) {
 // Standard normal CDF approximation
 export function normalCdf(z) {
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
-  const d = 0.3989423 * Math.exp(-z * z / 2);
-  let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  const d = 0.3989423 * Math.exp((-z * z) / 2);
+  let prob =
+    d *
+    t *
+    (0.3193815 +
+      t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
   if (z > 0) prob = 1 - prob;
   return prob;
 }
 
 // Mann-Whitney U test with normal approximation (two-sided)
 export function mannWhitneyUTest(a, b) {
-  const n1 = a.length, n2 = b.length;
-  if (n1 === 0 || n2 === 0) return { U: NaN, z: NaN, p: NaN, effect: NaN, method: 'NA' };
+  const n1 = a.length,
+    n2 = b.length;
+  if (n1 === 0 || n2 === 0)
+    return { U: NaN, z: NaN, p: NaN, effect: NaN, method: 'NA' };
   // ranks on combined (average ranks for ties)
-  const combined = a.map((v, i) => ({ v, g: 1, idx: i }))
+  const combined = a
+    .map((v, i) => ({ v, g: 1, idx: i }))
     .concat(b.map((v, i) => ({ v, g: 2, idx: i })));
   combined.sort((x, y) => x.v - y.v);
   let rankSum1 = 0;
@@ -513,8 +554,12 @@ export function mannWhitneyUTest(a, b) {
   const U = Math.min(U1, U2);
   const mu = (n1 * n2) / 2;
   // tie correction for variance
-  const tieCorr = 1 - tieGroups.reduce((acc, t) => acc + (t * (t * t - 1)), 0) / ((n1 + n2) * ((n1 + n2) * (n1 + n2) - 1));
-  const sigma = Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12) * Math.sqrt(Math.max(0, tieCorr));
+  const tieCorr =
+    1 -
+    tieGroups.reduce((acc, t) => acc + t * (t * t - 1), 0) /
+      ((n1 + n2) * ((n1 + n2) * (n1 + n2) - 1));
+  const sigma =
+    Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12) * Math.sqrt(Math.max(0, tieCorr));
 
   // Decide method: exact for small samples, otherwise normal approx
   const n = n1 + n2;
@@ -525,7 +570,7 @@ export function mannWhitneyUTest(a, b) {
   if (n <= EXACT_MAX_N) {
     method = 'exact';
     // Build rank-sum distribution via DP over individual items (distinguishable), using scaled integer ranks (x2)
-    const ranksScaled = ranks.map(r => Math.round(r * 2));
+    const ranksScaled = ranks.map((r) => Math.round(r * 2));
     const targetK = n1;
     // dp[k] = Map(sumScaled -> count)
     const dp = new Array(targetK + 1).fill(0).map(() => new Map());
@@ -576,17 +621,23 @@ function binom(n, k) {
   let num = 1;
   let den = 1;
   for (let i = 1; i <= k; i++) {
-    num *= (n - (k - i));
+    num *= n - (k - i);
     den *= i;
     const g = gcd(num, den);
-    num /= g; den /= g;
+    num /= g;
+    den /= g;
   }
   return Math.round(num / den);
 }
 
 function gcd(a, b) {
-  a = Math.abs(a); b = Math.abs(b);
-  while (b) { const t = b; b = a % b; a = t; }
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) {
+    const t = b;
+    b = a % b;
+    a = t;
+  }
   return a || 1;
 }
 
@@ -595,7 +646,8 @@ function proportionCI(p, n, z = 1.96) {
   if (!isFinite(p) || !isFinite(n) || n <= 0) return { low: NaN, high: NaN };
   const denom = 1 + (z * z) / n;
   const center = (p + (z * z) / (2 * n)) / denom;
-  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
+  const half =
+    (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
   return { low: Math.max(0, center - half), high: Math.min(1, center + half) };
 }
 
@@ -606,13 +658,14 @@ export function loessSmooth(x, y, xs, alpha = 0.3) {
   if (!n || !xs?.length) return [];
   const pairs = [];
   for (let i = 0; i < n; i++) {
-    const xi = x[i]; const yi = y[i];
+    const xi = x[i];
+    const yi = y[i];
     if (isFinite(xi) && isFinite(yi)) pairs.push([xi, yi]);
   }
   pairs.sort((a, b) => a[0] - b[0]);
   const xsOut = xs.slice();
   const m = Math.max(2, Math.floor(alpha * pairs.length));
-  const tricube = u => {
+  const tricube = (u) => {
     const t = Math.max(0, 1 - Math.pow(Math.abs(u), 3));
     return Math.pow(t, 3);
   };
@@ -624,20 +677,36 @@ export function loessSmooth(x, y, xs, alpha = 0.3) {
     let right = 0;
     // two-pointer expand around insertion point
     let idx = binarySearch(pairs, x0);
-    left = idx - 1; right = idx;
+    left = idx - 1;
+    right = idx;
     const neighbors = [];
     while (neighbors.length < m && (left >= 0 || right < pairs.length)) {
       const dl = left >= 0 ? Math.abs(pairs[left][0] - x0) : Infinity;
-      const dr = right < pairs.length ? Math.abs(pairs[right][0] - x0) : Infinity;
-      if (dl <= dr) { neighbors.push(pairs[left]); left--; }
-      else { neighbors.push(pairs[right]); right++; }
+      const dr =
+        right < pairs.length ? Math.abs(pairs[right][0] - x0) : Infinity;
+      if (dl <= dr) {
+        neighbors.push(pairs[left]);
+        left--;
+      } else {
+        neighbors.push(pairs[right]);
+        right++;
+      }
     }
-    const maxD = neighbors.reduce((mx, p) => Math.max(mx, Math.abs(p[0] - x0)), 0) || 1;
+    const maxD =
+      neighbors.reduce((mx, p) => Math.max(mx, Math.abs(p[0] - x0)), 0) || 1;
     // Weighted linear regression y = a + b x
-    let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+    let sw = 0,
+      swx = 0,
+      swy = 0,
+      swxx = 0,
+      swxy = 0;
     for (const [xi, yi] of neighbors) {
       const w = tricube((xi - x0) / maxD);
-      sw += w; swx += w * xi; swy += w * yi; swxx += w * xi * xi; swxy += w * xi * yi;
+      sw += w;
+      swx += w * xi;
+      swy += w * yi;
+      swxx += w * xi * xi;
+      swxy += w * xi * yi;
     }
     const den = sw * swxx - swx * swx;
     const b = den !== 0 ? (sw * swxy - swx * swy) / den : 0;
@@ -648,10 +717,12 @@ export function loessSmooth(x, y, xs, alpha = 0.3) {
 }
 
 function binarySearch(pairs, x0) {
-  let lo = 0, hi = pairs.length;
+  let lo = 0,
+    hi = pairs.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (pairs[mid][0] < x0) lo = mid + 1; else hi = mid;
+    if (pairs[mid][0] < x0) lo = mid + 1;
+    else hi = mid;
   }
   return lo;
 }
@@ -661,19 +732,32 @@ export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
   const n = Math.min(x.length, y.length);
   if (!n || !xs?.length) return [];
   const pts = [];
-  for (let i = 0; i < n; i++) { const xi = x[i]; const yi = y[i]; if (isFinite(xi) && isFinite(yi)) pts.push([xi, yi]); }
+  for (let i = 0; i < n; i++) {
+    const xi = x[i];
+    const yi = y[i];
+    if (isFinite(xi) && isFinite(yi)) pts.push([xi, yi]);
+  }
   pts.sort((a, b) => a[0] - b[0]);
   const res = new Array(xs.length).fill(NaN);
   const nn = Math.max(3, Math.min(k, pts.length));
   for (let i = 0; i < xs.length; i++) {
     const x0 = xs[i];
-    let left = 0, right = 0, idx = binarySearch(pts, x0);
-    left = idx - 1; right = idx;
+    let left = 0,
+      right = 0,
+      idx = binarySearch(pts, x0);
+    left = idx - 1;
+    right = idx;
     const neighbors = [];
     while (neighbors.length < nn && (left >= 0 || right < pts.length)) {
       const dl = left >= 0 ? Math.abs(pts[left][0] - x0) : Infinity;
       const dr = right < pts.length ? Math.abs(pts[right][0] - x0) : Infinity;
-      if (dl <= dr) { neighbors.push(pts[left][1]); left--; } else { neighbors.push(pts[right][1]); right++; }
+      if (dl <= dr) {
+        neighbors.push(pts[left][1]);
+        left--;
+      } else {
+        neighbors.push(pts[right][1]);
+        right++;
+      }
     }
     neighbors.sort((a, b) => a - b);
     res[i] = quantile(neighbors, q);
@@ -684,7 +768,10 @@ export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
 // Kaplan–Meier survival for uncensored durations (all events observed)
 // Returns stepwise survival at unique event times and approximate 95% CIs (log-log Greenwood)
 export function kmSurvival(durations, z = 1.96) {
-  const vals = (durations || []).map(Number).filter(v => Number.isFinite(v) && v >= 0).sort((a, b) => a - b);
+  const vals = (durations || [])
+    .map(Number)
+    .filter((v) => Number.isFinite(v) && v >= 0)
+    .sort((a, b) => a - b);
   const n = vals.length;
   if (!n) return { times: [], survival: [], lower: [], upper: [] };
   const times = [];
@@ -771,16 +858,23 @@ function olsResiduals(y, controls) {
 function invertMatrix(A) {
   const n = A.length;
   // Create augmented [A | I]
-  const M = A.map((row, i) => row.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))));
+  const M = A.map((row, i) =>
+    row.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)))
+  );
   // Gauss-Jordan elimination
   for (let col = 0; col < n; col++) {
     // find pivot
     let pivot = col;
-    for (let i = col + 1; i < n; i++) if (Math.abs(M[i][col]) > Math.abs(M[pivot][col])) pivot = i;
+    for (let i = col + 1; i < n; i++)
+      if (Math.abs(M[i][col]) > Math.abs(M[pivot][col])) pivot = i;
     const pv = M[pivot][col];
     if (Math.abs(pv) < 1e-12) return null; // singular
     // swap
-    if (pivot !== col) { const tmp = M[pivot]; M[pivot] = M[col]; M[col] = tmp; }
+    if (pivot !== col) {
+      const tmp = M[pivot];
+      M[pivot] = M[col];
+      M[col] = tmp;
+    }
     // normalize
     for (let j = 0; j < 2 * n; j++) M[col][j] /= pv;
     // eliminate others
@@ -792,7 +886,8 @@ function invertMatrix(A) {
   }
   // extract right half
   const inv = Array.from({ length: n }, () => new Array(n).fill(0));
-  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) inv[i][j] = M[i][n + j];
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++) inv[i][j] = M[i][n + j];
   return inv;
 }
 
@@ -803,7 +898,7 @@ export function partialCorrelation(x, y, controls) {
   // Build controls matrix with rows aligned
   const p = controls?.[0]?.length ?? 0;
   if (!p) return pearson(x, y);
-  const C = Array.from({ length: n }, (_, i) => new Array(p).fill(0));
+  const C = Array.from({ length: n }, () => new Array(p).fill(0));
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < p; j++) C[i][j] = controls[i][j];
   }

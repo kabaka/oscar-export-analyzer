@@ -26,17 +26,20 @@ export default function ApneaClusterAnalysis({
 
   const selectedCluster = selected !== null ? sorted[selected] : null;
   const { leakTrace, pressureTrace } = useMemo(() => {
-    if (!selectedCluster || !details?.length) return { leakTrace: [], pressureTrace: [] };
+    if (!selectedCluster || !details?.length)
+      return { leakTrace: [], pressureTrace: [] };
     const padMs = 30000; // 30s padding around cluster
     const start = new Date(selectedCluster.start.getTime() - padMs);
     const end = new Date(selectedCluster.end.getTime() + padMs);
-    const leak = [], pressure = [];
-    details.forEach(r => {
+    const leak = [],
+      pressure = [];
+    details.forEach((r) => {
       const dt = new Date(r['DateTime']);
       if (dt < start || dt > end) return;
       const val = parseFloat(r['Data/Duration']);
       if (r['Event'] === 'Leak') leak.push({ x: dt, y: val });
-      if (r['Event'] === 'Pressure' || r['Event'] === 'EPAP') pressure.push({ x: dt, y: val });
+      if (r['Event'] === 'Pressure' || r['Event'] === 'EPAP')
+        pressure.push({ x: dt, y: val });
     });
     return { leakTrace: leak, pressureTrace: pressure };
   }, [selectedCluster, details]);
@@ -54,104 +57,145 @@ export default function ApneaClusterAnalysis({
 
   return (
     <div className="section">
-      <h2 id="clustered-apnea">Clustered Apnea Events <GuideLink anchor="clustered-apnea-events-details-csv" label="Guide" /></h2>
+      <h2 id="clustered-apnea">
+        Clustered Apnea Events{' '}
+        <GuideLink anchor="clustered-apnea-events-details-csv" label="Guide" />
+      </h2>
 
-      <div className="controls" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'end' }} aria-label="Cluster parameters">
-        <span className="control-title" style={{ marginBottom: 6 }}>Clustering Params</span>
+      <div
+        className="controls"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
+          alignItems: 'end',
+        }}
+        aria-label="Cluster parameters"
+      >
+        <span className="control-title" style={{ marginBottom: 6 }}>
+          Clustering Params
+        </span>
         <div>
-          <label>Gap sec
+          <label>
+            Gap sec
             <input
               type="number"
               min={0}
               value={params.gapSec}
-              onChange={e => onParamChange({ gapSec: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ gapSec: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>FLG bridge ≥
+          <label>
+            FLG bridge ≥
             <input
               type="number"
               step="0.05"
               min={0}
               max={2}
               value={params.bridgeThreshold}
-              onChange={e => onParamChange({ bridgeThreshold: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ bridgeThreshold: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>FLG gap sec
+          <label>
+            FLG gap sec
             <input
               type="number"
               min={0}
               value={params.bridgeSec}
-              onChange={e => onParamChange({ bridgeSec: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ bridgeSec: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>Edge enter ≥
+          <label>
+            Edge enter ≥
             <input
               type="number"
               step="0.05"
               min={0}
               max={2}
               value={params.edgeEnter}
-              onChange={e => onParamChange({ edgeEnter: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ edgeEnter: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>Edge exit ≥
+          <label>
+            Edge exit ≥
             <input
               type="number"
               step="0.05"
               min={0}
               max={2}
               value={params.edgeExit}
-              onChange={e => onParamChange({ edgeExit: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ edgeExit: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>Min event count
+          <label>
+            Min event count
             <input
               type="number"
               min={1}
               value={params.minCount}
-              onChange={e => onParamChange({ minCount: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ minCount: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>Min total apnea sec
+          <label>
+            Min total apnea sec
             <input
               type="number"
               min={0}
               value={params.minTotalSec}
-              onChange={e => onParamChange({ minTotalSec: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ minTotalSec: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>Max cluster sec
+          <label>
+            Max cluster sec
             <input
               type="number"
               min={0}
               value={params.maxClusterSec}
-              onChange={e => onParamChange({ maxClusterSec: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ maxClusterSec: Number(e.target.value) })
+              }
             />
           </label>
         </div>
         <div>
-          <label>Min density (evt/min)
+          <label>
+            Min density (evt/min)
             <input
               type="number"
               step="0.1"
               min={0}
               value={params.minDensity}
-              onChange={e => onParamChange({ minDensity: Number(e.target.value) })}
+              onChange={(e) =>
+                onParamChange({ minDensity: Number(e.target.value) })
+              }
             />
           </label>
         </div>
@@ -163,31 +207,39 @@ export default function ApneaClusterAnalysis({
       {selectedCluster && (
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
-            <div className="chart-with-help">
-              <Plot
-            key={isDark ? 'dark-cluster' : 'light-cluster'}
-            data={[{
-              type: 'bar',
-              orientation: 'h',
-              y: sorted[selected].events.map((_, i) => `Evt ${i + 1}`),
-              x: sorted[selected].events.map(e => e.durationSec * 1000),
-              base: sorted[selected].events.map(e => e.date.toISOString()),
-              marker: { color: '#ff7f0e' },
-              hovertemplate: sorted[selected].events.map(e =>
-                `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`
-              )
-            }]}
-            layout={applyChartTheme(isDark, {
-              title: `Cluster #${selected + 1} Event Timeline`,
-              xaxis: { type: 'date', title: 'Event Start Time' },
-              yaxis: { title: 'Event #' },
-              margin: { l: 80, r: 20, t: 40, b: 40 },
-              height: Math.max(200, sorted[selected].events.length * 30 + 100)
-            })}
-            config={{ displayModeBar: false }}
-              />
-              <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
-            </div>
+          <div className="chart-with-help">
+            <Plot
+              key={isDark ? 'dark-cluster' : 'light-cluster'}
+              data={[
+                {
+                  type: 'bar',
+                  orientation: 'h',
+                  y: sorted[selected].events.map((_, i) => `Evt ${i + 1}`),
+                  x: sorted[selected].events.map((e) => e.durationSec * 1000),
+                  base: sorted[selected].events.map((e) =>
+                    e.date.toISOString()
+                  ),
+                  marker: { color: '#ff7f0e' },
+                  hovertemplate: sorted[selected].events.map(
+                    (e) =>
+                      `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`
+                  ),
+                },
+              ]}
+              layout={applyChartTheme(isDark, {
+                title: `Cluster #${selected + 1} Event Timeline`,
+                xaxis: { type: 'date', title: 'Event Start Time' },
+                yaxis: { title: 'Event #' },
+                margin: { l: 80, r: 20, t: 40, b: 40 },
+                height: Math.max(
+                  200,
+                  sorted[selected].events.length * 30 + 100
+                ),
+              })}
+              config={{ displayModeBar: false }}
+            />
+            <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
+          </div>
         </div>
       )}
 
@@ -202,25 +254,34 @@ export default function ApneaClusterAnalysis({
                   type: 'scatter',
                   mode: 'lines',
                   name: 'Leak',
-                  x: leakTrace.map(p => p.x),
-                  y: leakTrace.map(p => p.y),
+                  x: leakTrace.map((p) => p.x),
+                  y: leakTrace.map((p) => p.y),
                   yaxis: 'y1',
                 },
                 pressureTrace.length && {
                   type: 'scatter',
                   mode: 'lines',
                   name: 'Pressure',
-                  x: pressureTrace.map(p => p.x),
-                  y: pressureTrace.map(p => p.y),
+                  x: pressureTrace.map((p) => p.x),
+                  y: pressureTrace.map((p) => p.y),
                   yaxis: leakTrace.length ? 'y2' : 'y1',
                 },
               ].filter(Boolean)}
               layout={applyChartTheme(isDark, {
                 title: 'Leak/Pressure around Cluster',
                 xaxis: { type: 'date', title: 'Time' },
-                yaxis: { title: leakTrace.length ? 'Leak' : 'Pressure', side: 'left' },
+                yaxis: {
+                  title: leakTrace.length ? 'Leak' : 'Pressure',
+                  side: 'left',
+                },
                 ...(leakTrace.length && pressureTrace.length
-                  ? { yaxis2: { title: 'Pressure', overlaying: 'y', side: 'right' } }
+                  ? {
+                      yaxis2: {
+                        title: 'Pressure',
+                        overlaying: 'y',
+                        side: 'right',
+                      },
+                    }
                   : {}),
                 margin: { l: 80, r: 20, t: 40, b: 40 },
                 height: 300,
@@ -238,9 +299,43 @@ export default function ApneaClusterAnalysis({
             <tr>
               <th>#</th>
               <th>Start</th>
-              <th style={{cursor:'pointer'}} onClick={() => setSortBy(s => ({ key:'durationSec', dir: s.key==='durationSec' && s.dir==='desc' ? 'asc' : 'desc' }))}>Duration (s)</th>
-              <th style={{cursor:'pointer'}} onClick={() => setSortBy(s => ({ key:'count', dir: s.key==='count' && s.dir==='desc' ? 'asc' : 'desc' }))}>Count</th>
-              <th style={{cursor:'pointer'}} onClick={() => setSortBy(s => ({ key:'severity', dir: s.key==='severity' && s.dir==='desc' ? 'asc' : 'desc' }))}>Severity</th>
+              <th
+                style={{ cursor: 'pointer' }}
+                onClick={() =>
+                  setSortBy((s) => ({
+                    key: 'durationSec',
+                    dir:
+                      s.key === 'durationSec' && s.dir === 'desc'
+                        ? 'asc'
+                        : 'desc',
+                  }))
+                }
+              >
+                Duration (s)
+              </th>
+              <th
+                style={{ cursor: 'pointer' }}
+                onClick={() =>
+                  setSortBy((s) => ({
+                    key: 'count',
+                    dir: s.key === 'count' && s.dir === 'desc' ? 'asc' : 'desc',
+                  }))
+                }
+              >
+                Count
+              </th>
+              <th
+                style={{ cursor: 'pointer' }}
+                onClick={() =>
+                  setSortBy((s) => ({
+                    key: 'severity',
+                    dir:
+                      s.key === 'severity' && s.dir === 'desc' ? 'asc' : 'desc',
+                  }))
+                }
+              >
+                Severity
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -264,4 +359,3 @@ export default function ApneaClusterAnalysis({
     </div>
   );
 }
-

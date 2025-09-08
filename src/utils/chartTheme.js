@@ -19,10 +19,13 @@ export function applyChartTheme(isDark, layout = {}) {
   const mergeFont = { ...(layout.font || {}), ...(t.font || {}) };
 
   // Normalize title and axis titles to object form to ensure consistent rendering
-  const toTitleObj = (v) => (typeof v === 'string' ? { text: v } : (v || {}));
+  const toTitleObj = (v) => (typeof v === 'string' ? { text: v } : v || {});
   const normAxis = (ax = {}) => ({
     ...ax,
-    title: { standoff: (ax.title && ax.title.standoff) ?? 8, ...toTitleObj(ax.title) },
+    title: {
+      standoff: (ax.title && ax.title.standoff) ?? 8,
+      ...toTitleObj(ax.title),
+    },
     automargin: ax.automargin ?? true,
   });
 
@@ -36,17 +39,26 @@ export function applyChartTheme(isDark, layout = {}) {
       ...normAxis(layout.xaxis || {}),
       color: (layout.xaxis && layout.xaxis.color) || t.axisColor,
       gridcolor: (layout.xaxis && layout.xaxis.gridcolor) || t.gridColor,
-      zerolinecolor: (layout.xaxis && layout.xaxis.zerolinecolor) || t.zeroLineColor || t.gridColor,
+      zerolinecolor:
+        (layout.xaxis && layout.xaxis.zerolinecolor) ||
+        t.zeroLineColor ||
+        t.gridColor,
     },
     yaxis: {
       ...normAxis(layout.yaxis || {}),
       color: (layout.yaxis && layout.yaxis.color) || t.axisColor,
       gridcolor: (layout.yaxis && layout.yaxis.gridcolor) || t.gridColor,
-      zerolinecolor: (layout.yaxis && layout.yaxis.zerolinecolor) || t.zeroLineColor || t.gridColor,
+      zerolinecolor:
+        (layout.yaxis && layout.yaxis.zerolinecolor) ||
+        t.zeroLineColor ||
+        t.gridColor,
     },
     legend: {
       ...(layout.legend || {}),
-      font: { ...((layout.legend && layout.legend.font) || {}), color: mergeFont.color },
+      font: {
+        ...((layout.legend && layout.legend.font) || {}),
+        color: mergeFont.color,
+      },
     },
   };
   return lx;

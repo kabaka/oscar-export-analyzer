@@ -1,9 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { parseDuration, quantile, computeApneaEventStats, summarizeUsage, computeAHITrends, computeEPAPTrends } from './stats';
+import {
+  parseDuration,
+  quantile,
+  computeApneaEventStats,
+  summarizeUsage,
+  computeAHITrends,
+  computeEPAPTrends,
+} from './stats';
 import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
 import { detectChangePoints } from './stats';
-import { loessSmooth, runningQuantileXY, partialCorrelation, pearson } from './stats';
+import {
+  loessSmooth,
+  runningQuantileXY,
+  partialCorrelation,
+  pearson,
+} from './stats';
 import { kmSurvival } from './stats';
 
 describe('parseDuration', () => {
@@ -25,7 +37,8 @@ describe('kmSurvival (Kaplan–Meier) uncensored', () => {
     expect(survival[1]).toBeCloseTo(0.25);
     expect(survival[2]).toBeCloseTo(0);
     // monotone non-increasing
-    for (let i = 1; i < survival.length; i++) expect(survival[i]).toBeLessThanOrEqual(survival[i - 1]);
+    for (let i = 1; i < survival.length; i++)
+      expect(survival[i]).toBeLessThanOrEqual(survival[i - 1]);
     expect(lower.length).toBe(times.length);
     expect(upper.length).toBe(times.length);
   });
@@ -35,12 +48,12 @@ describe('partialCorrelation (controls reduce confounding)', () => {
   it('shrinks correlation when controlling for confounder', () => {
     const n = 120;
     const z = Array.from({ length: n }, (_, i) => i / n);
-    const x = z.map(v => v + 0.1 * Math.sin(10 * v));
-    const y = z.map(v => 0.8 * v + 0.1 * Math.cos(8 * v));
+    const x = z.map((v) => v + 0.1 * Math.sin(10 * v));
+    const y = z.map((v) => 0.8 * v + 0.1 * Math.cos(8 * v));
     const r = (a, b) => pearson(a, b);
     const naive = r(x, y);
     // controls matrix: one column z
-    const controls = z.map(v => [v]);
+    const controls = z.map((v) => [v]);
     const pc = partialCorrelation(x, y, controls);
     expect(Math.abs(pc)).toBeLessThan(Math.abs(naive));
   });
@@ -49,7 +62,7 @@ describe('partialCorrelation (controls reduce confounding)', () => {
 describe('loessSmooth and runningQuantileXY', () => {
   it('loess reproduces linear relationship approximately', () => {
     const x = Array.from({ length: 20 }, (_, i) => i);
-    const y = x.map(v => 2 * v + 1);
+    const y = x.map((v) => 2 * v + 1);
     const xs = [0, 5, 10, 15, 19];
     const sm = loessSmooth(x, y, xs, 0.4);
     expect(sm).toHaveLength(xs.length);
@@ -62,7 +75,7 @@ describe('loessSmooth and runningQuantileXY', () => {
 
   it('runningQuantileXY returns plausible quantiles', () => {
     const x = Array.from({ length: 30 }, (_, i) => i);
-    const y = x.map(v => v); // identity
+    const y = x.map((v) => v); // identity
     const xs = [0, 10, 20, 29];
     const q50 = runningQuantileXY(x, y, xs, 0.5, 11);
     expect(q50).toHaveLength(xs.length);
@@ -70,7 +83,7 @@ describe('loessSmooth and runningQuantileXY', () => {
     for (let i = 1; i < q50.length; i++) {
       expect(q50[i]).toBeGreaterThanOrEqual(q50[i - 1]);
     }
-    q50.forEach(v => {
+    q50.forEach((v) => {
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThanOrEqual(29);
     });
@@ -83,13 +96,14 @@ describe('loessSmooth and runningQuantileXY', () => {
 
 describe('detectChangePoints', () => {
   it('detects a single change around a step', () => {
-    const n1 = 30, n2 = 30;
+    const n1 = 30,
+      n2 = 30;
     const series = Array(n1).fill(1).concat(Array(n2).fill(5));
     const dates = series.map((_, i) => new Date(2021, 0, i + 1));
     const cps = detectChangePoints(series, dates, 8);
     // expect one change near index 30
     expect(cps.length).toBeGreaterThanOrEqual(1);
-    const idx = cps.findIndex(d => d instanceof Date);
+    const idx = cps.findIndex((d) => d instanceof Date);
     expect(idx).toBeGreaterThanOrEqual(0);
   });
 });
@@ -130,9 +144,21 @@ describe('quantile', () => {
 describe('computeApneaEventStats', () => {
   it('computes duration and night statistics', () => {
     const details = [
-      { Event: 'ClearAirway', 'Data/Duration': '30', DateTime: '2021-01-01T00:00:00Z' },
-      { Event: 'Obstructive', 'Data/Duration': '60', DateTime: '2021-01-01T00:02:00Z' },
-      { Event: 'FLG', 'Data/Duration': '1.0', DateTime: '2021-01-01T00:01:00Z' }
+      {
+        Event: 'ClearAirway',
+        'Data/Duration': '30',
+        DateTime: '2021-01-01T00:00:00Z',
+      },
+      {
+        Event: 'Obstructive',
+        'Data/Duration': '60',
+        DateTime: '2021-01-01T00:02:00Z',
+      },
+      {
+        Event: 'FLG',
+        'Data/Duration': '1.0',
+        DateTime: '2021-01-01T00:01:00Z',
+      },
     ];
     const stats = computeApneaEventStats(details);
     expect(stats.totalEvents).toBe(2);
@@ -146,10 +172,7 @@ describe('computeApneaEventStats', () => {
 
 describe('summarizeUsage', () => {
   it('summarizes usage hours and outliers', () => {
-    const data = [
-      { 'Total Time': '1:00:00' },
-      { 'Total Time': '3:00:00' }
-    ];
+    const data = [{ 'Total Time': '1:00:00' }, { 'Total Time': '3:00:00' }];
     const usage = summarizeUsage(data);
     expect(usage.totalNights).toBe(2);
     expect(usage.avgHours).toBe(2);
@@ -165,7 +188,7 @@ describe('computeAHITrends', () => {
     const data = [
       { Date: '2021-01-01', AHI: '1' },
       { Date: '2021-01-02', AHI: '5' },
-      { Date: '2021-01-03', AHI: '10' }
+      { Date: '2021-01-03', AHI: '10' },
     ];
     const ahi = computeAHITrends(data);
     expect(ahi.avgAHI).toBeCloseTo((1 + 5 + 10) / 3);
@@ -180,7 +203,7 @@ describe('computeEPAPTrends', () => {
   it('computes EPAP percentiles, correlation with AHI, and group means', () => {
     const data = [
       { Date: '2021-01-01', 'Median EPAP': '5', AHI: '1' },
-      { Date: '2021-01-02', 'Median EPAP': '9', AHI: '3' }
+      { Date: '2021-01-02', 'Median EPAP': '9', AHI: '3' },
     ];
     const epap = computeEPAPTrends(data);
     expect(epap.medianEPAP).toBe(7);

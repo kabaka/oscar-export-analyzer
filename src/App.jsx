@@ -28,56 +28,86 @@ import GuideLink from './components/GuideLink';
 import VizHelp from './components/VizHelp';
 import { buildSession, applySession } from './utils/session';
 import { putLastSession, getLastSession, clearLastSession } from './utils/db';
-
+import {
+  buildSummaryAggregatesCSV,
+  downloadTextFile,
+  openPrintReportHTML,
+} from './utils/export';
 
 function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   const prefersDark = useEffectiveDarkMode();
   return (
     <div>
-      <h2 id="false-negatives">Potential False Negatives <GuideLink anchor="potential-false-negatives-details-csv" label="Guide" /></h2>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+      <h2 id="false-negatives">
+        Potential False Negatives{' '}
+        <GuideLink
+          anchor="potential-false-negatives-details-csv"
+          label="Guide"
+        />
+      </h2>
+      <div
+        style={{
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
         <label>
           Preset:
-          <select value={preset} onChange={e => onPresetChange?.(e.target.value)}>
+          <select
+            value={preset}
+            onChange={(e) => onPresetChange?.(e.target.value)}
+          >
             <option value="strict">Strict</option>
             <option value="balanced">Balanced</option>
             <option value="lenient">Lenient</option>
           </select>
         </label>
-        <span style={{ opacity: 0.8 }}>Thresholds tuned for sensitivity/specificity</span>
+        <span style={{ opacity: 0.8 }}>
+          Thresholds tuned for sensitivity/specificity
+        </span>
       </div>
       <div>
         <h3>False Negative Clusters by Confidence Over Time</h3>
         <div className="chart-with-help">
           <Plot
-          key={prefersDark ? 'dark-fn' : 'light-fn'}
-          useResizeHandler
-          style={{ width: '100%', height: '400px' }}
-          data={[{
-            type: 'scatter',
-            mode: 'markers',
-            x: list.map(cl => cl.start),
-            y: list.map(cl => cl.confidence * 100),
-            marker: {
-              size: list.map(cl => Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5))),
-              color: list.map(cl => cl.confidence * 100),
-              colorscale: 'Viridis',
-              showscale: true,
-              colorbar: { title: 'Confidence (%)' }
-            },
-            text: list.map(cl =>
-              `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`
-            ),
-            hovertemplate: '%{text}<extra></extra>'
-          }]}
-          layout={applyChartTheme(prefersDark, {
-            title: 'False Negative Clusters by Confidence Over Time',
-            xaxis: { type: 'date', title: 'Cluster Start Time' },
-            yaxis: { title: 'Confidence (%)', range: [FALSE_NEG_CONFIDENCE_MIN * 100, 100] },
-            margin: { l: 80, r: 20, t: 40, b: 40 },
-            height: 400
-          })}
-          config={{ responsive: true, displaylogo: false }}
+            key={prefersDark ? 'dark-fn' : 'light-fn'}
+            useResizeHandler
+            style={{ width: '100%', height: '400px' }}
+            data={[
+              {
+                type: 'scatter',
+                mode: 'markers',
+                x: list.map((cl) => cl.start),
+                y: list.map((cl) => cl.confidence * 100),
+                marker: {
+                  size: list.map((cl) =>
+                    Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5))
+                  ),
+                  color: list.map((cl) => cl.confidence * 100),
+                  colorscale: 'Viridis',
+                  showscale: true,
+                  colorbar: { title: 'Confidence (%)' },
+                },
+                text: list.map(
+                  (cl) =>
+                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`
+                ),
+                hovertemplate: '%{text}<extra></extra>',
+              },
+            ]}
+            layout={applyChartTheme(prefersDark, {
+              title: 'False Negative Clusters by Confidence Over Time',
+              xaxis: { type: 'date', title: 'Cluster Start Time' },
+              yaxis: {
+                title: 'Confidence (%)',
+                range: [FALSE_NEG_CONFIDENCE_MIN * 100, 100],
+              },
+              margin: { l: 80, r: 20, t: 40, b: 40 },
+              height: 400,
+            })}
+            config={{ responsive: true, displaylogo: false }}
           />
           <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />
         </div>
@@ -85,7 +115,12 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
       <div className="cluster-table-container">
         <table>
           <thead>
-            <tr><th>#</th><th>Start</th><th>Duration (s)</th><th>Confidence</th></tr>
+            <tr>
+              <th>#</th>
+              <th>Start</th>
+              <th>Duration (s)</th>
+              <th>Confidence</th>
+            </tr>
           </thead>
           <tbody>
             {list.map((cl, i) => (
@@ -103,19 +138,20 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   );
 }
 
-
 function App() {
-  const prefersDark = useEffectiveDarkMode();
-  const tocSections = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'usage-patterns', label: 'Usage Patterns' },
-    { id: 'ahi-trends', label: 'AHI Trends' },
-    { id: 'pressure-settings', label: 'Pressure Settings' },
-    { id: 'apnea-characteristics', label: 'Apnea Events' },
-    { id: 'clustered-apnea', label: 'Clusters' },
-    { id: 'false-negatives', label: 'False Negatives' },
-    { id: 'raw-data-explorer', label: 'Raw Data' },
-  ];
+  const tocSections = useMemo(
+    () => [
+      { id: 'overview', label: 'Overview' },
+      { id: 'usage-patterns', label: 'Usage Patterns' },
+      { id: 'ahi-trends', label: 'AHI Trends' },
+      { id: 'pressure-settings', label: 'Pressure Settings' },
+      { id: 'apnea-characteristics', label: 'Apnea Events' },
+      { id: 'clustered-apnea', label: 'Clusters' },
+      { id: 'false-negatives', label: 'False Negatives' },
+      { id: 'raw-data-explorer', label: 'Raw Data' },
+    ],
+    []
+  );
   const [activeId, setActiveId] = useState('overview');
   const {
     summaryData,
@@ -154,15 +190,30 @@ function App() {
   const [fnPreset, setFnPreset] = useState('balanced');
   const fnOptions = useMemo(() => {
     const presets = {
-      strict: { flThreshold: Math.max(0.9, FLG_BRIDGE_THRESHOLD), confidenceMin: 0.98, gapSec: FLG_CLUSTER_GAP_DEFAULT, minDurationSec: 120 },
-      balanced: { flThreshold: FLG_BRIDGE_THRESHOLD, confidenceMin: FALSE_NEG_CONFIDENCE_MIN, gapSec: FLG_CLUSTER_GAP_DEFAULT, minDurationSec: 60 },
-      lenient: { flThreshold: Math.max(0.5, FLG_BRIDGE_THRESHOLD * 0.8), confidenceMin: 0.85, gapSec: FLG_CLUSTER_GAP_DEFAULT, minDurationSec: 45 },
+      strict: {
+        flThreshold: Math.max(0.9, FLG_BRIDGE_THRESHOLD),
+        confidenceMin: 0.98,
+        gapSec: FLG_CLUSTER_GAP_DEFAULT,
+        minDurationSec: 120,
+      },
+      balanced: {
+        flThreshold: FLG_BRIDGE_THRESHOLD,
+        confidenceMin: FALSE_NEG_CONFIDENCE_MIN,
+        gapSec: FLG_CLUSTER_GAP_DEFAULT,
+        minDurationSec: 60,
+      },
+      lenient: {
+        flThreshold: Math.max(0.5, FLG_BRIDGE_THRESHOLD * 0.8),
+        confidenceMin: 0.85,
+        gapSec: FLG_CLUSTER_GAP_DEFAULT,
+        minDurationSec: 45,
+      },
     };
     return presets[fnPreset] || presets.balanced;
   }, [fnPreset]);
 
   const onClusterParamChange = (patch) => {
-    setClusterParams(prev => ({ ...prev, ...patch }));
+    setClusterParams((prev) => ({ ...prev, ...patch }));
   };
 
   // Map in-app sections to guide anchors
@@ -196,21 +247,54 @@ function App() {
 
   // Session persistence (opt-in and explicit load/save to avoid conflicts with frequent uploads)
   const [persistEnabled, setPersistEnabled] = useState(() => {
-    try { return localStorage.getItem('persistEnabled') === '1'; } catch { return false; }
+    try {
+      return localStorage.getItem('persistEnabled') === '1';
+    } catch {
+      return false;
+    }
   });
   useEffect(() => {
-    try { localStorage.setItem('persistEnabled', persistEnabled ? '1' : '0'); } catch {}
+    try {
+      localStorage.setItem('persistEnabled', persistEnabled ? '1' : '0');
+    } catch {
+      // ignore persistence errors
+    }
   }, [persistEnabled]);
   useEffect(() => {
     if (!persistEnabled) return;
     const timer = setTimeout(() => {
-      const session = buildSession({ summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset });
+      const session = buildSession({
+        summaryData,
+        detailsData,
+        clusterParams,
+        dateFilter,
+        rangeA,
+        rangeB,
+        fnPreset,
+      });
       putLastSession(session).catch(() => {});
     }, 500);
     return () => clearTimeout(timer);
-  }, [persistEnabled, summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset]);
+  }, [
+    persistEnabled,
+    summaryData,
+    detailsData,
+    clusterParams,
+    dateFilter,
+    rangeA,
+    rangeB,
+    fnPreset,
+  ]);
   const handleSaveNow = async () => {
-    const session = buildSession({ summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset });
+    const session = buildSession({
+      summaryData,
+      detailsData,
+      clusterParams,
+      dateFilter,
+      rangeA,
+      rangeB,
+      fnPreset,
+    });
     await putLastSession(session).catch(() => {});
   };
   const handleLoadSaved = async () => {
@@ -227,16 +311,32 @@ function App() {
       }
     }
   };
-  const handleClearSaved = async () => { await clearLastSession().catch(() => {}); };
+  const handleClearSaved = async () => {
+    await clearLastSession().catch(() => {});
+  };
   const handleExportJson = () => {
-    const session = buildSession({ summaryData, detailsData, clusterParams, dateFilter, rangeA, rangeB, fnPreset });
-    const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
+    const session = buildSession({
+      summaryData,
+      detailsData,
+      clusterParams,
+      dateFilter,
+      rangeA,
+      rangeB,
+      fnPreset,
+    });
+    const blob = new Blob([JSON.stringify(session, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'oscar_session.json'; a.click(); URL.revokeObjectURL(url);
+    a.href = url;
+    a.download = 'oscar_session.json';
+    a.click();
+    URL.revokeObjectURL(url);
   };
   const handleImportJson = (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -250,85 +350,115 @@ function App() {
           setSummaryData(patch.summaryData || null);
           setDetailsData(patch.detailsData || null);
         }
-      } catch {}
+      } catch {
+        // ignore invalid JSON
+      }
     };
     reader.readAsText(file);
   };
 
   useEffect(() => {
-  if (detailsData) {
-    // begin processing phase
-    setProcessingDetails(true);
-    // defer clustering/detection to next tick so UI can update (e.g., hide parse progress)
-    let cancelled = false;
-    let worker;
-    try {
-      // eslint-disable-next-line no-undef
-      worker = new Worker(new URL('./workers/analytics.worker.js', import.meta.url), { type: 'module' });
-      worker.onmessage = (evt) => {
-        if (cancelled) return;
-        const { ok, data, error } = evt.data || {};
-        if (ok) {
-          const rawClusters = data.clusters || [];
-          const validClusters = rawClusters
-            .filter(cl => cl.count >= clusterParams.minCount)
-            .filter(cl => cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= clusterParams.minTotalSec)
-            .filter(cl => cl.durationSec <= clusterParams.maxClusterSec)
-            .map(cl => ({ ...cl, severity: computeClusterSeverity(cl) }));
-          setApneaClusters(validClusters);
-          setFalseNegatives(data.falseNegatives || []);
-          setProcessingDetails(false);
-        } else {
-          console.warn('Analytics worker error:', error);
-          fallbackCompute();
+    if (detailsData) {
+      // begin processing phase
+      setProcessingDetails(true);
+      // defer clustering/detection to next tick so UI can update (e.g., hide parse progress)
+      let cancelled = false;
+      let worker;
+      try {
+        // eslint-disable-next-line no-undef
+        worker = new Worker(
+          new URL('./workers/analytics.worker.js', import.meta.url),
+          { type: 'module' }
+        );
+        worker.onmessage = (evt) => {
+          if (cancelled) return;
+          const { ok, data, error } = evt.data || {};
+          if (ok) {
+            const rawClusters = data.clusters || [];
+            const validClusters = rawClusters
+              .filter((cl) => cl.count >= clusterParams.minCount)
+              .filter(
+                (cl) =>
+                  cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
+                  clusterParams.minTotalSec
+              )
+              .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
+              .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
+            setApneaClusters(validClusters);
+            setFalseNegatives(data.falseNegatives || []);
+            setProcessingDetails(false);
+          } else {
+            console.warn('Analytics worker error:', error);
+            fallbackCompute();
+          }
+        };
+        worker.postMessage({
+          action: 'analyzeDetails',
+          payload: { detailsData, params: clusterParams, fnOptions },
+        });
+      } catch (err) {
+        console.warn('Worker unavailable, using fallback', err);
+        fallbackCompute();
+      }
+      function fallbackCompute() {
+        const apneaEvents = detailsData
+          .filter((r) =>
+            ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event'])
+          )
+          .map((r) => ({
+            date: new Date(r['DateTime']),
+            durationSec: parseFloat(r['Data/Duration']),
+          }));
+        const flgEvents = detailsData
+          .filter((r) => r['Event'] === 'FLG')
+          .map((r) => ({
+            date: new Date(r['DateTime']),
+            level: parseFloat(r['Data/Duration']),
+          }));
+        const rawClusters = clusterApneaEvents(
+          apneaEvents,
+          flgEvents,
+          clusterParams.gapSec,
+          clusterParams.bridgeThreshold,
+          clusterParams.bridgeSec,
+          clusterParams.edgeEnter,
+          clusterParams.edgeExit,
+          10,
+          clusterParams.minDensity
+        );
+        const validClusters = rawClusters
+          .filter((cl) => cl.count >= clusterParams.minCount)
+          .filter(
+            (cl) =>
+              cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
+              clusterParams.minTotalSec
+          )
+          .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
+          .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
+        setApneaClusters(validClusters);
+        setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
+        setProcessingDetails(false);
+      }
+      return () => {
+        cancelled = true;
+        try {
+          worker && worker.terminate && worker.terminate();
+        } catch {
+          // ignore termination errors
         }
+        setProcessingDetails(false);
       };
-      worker.postMessage({ action: 'analyzeDetails', payload: { detailsData, params: clusterParams, fnOptions } });
-    } catch (e) {
-      console.warn('Worker unavailable, using fallback');
-      fallbackCompute();
     }
-    function fallbackCompute() {
-      const apneaEvents = detailsData
-        .filter(r => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
-        .map(r => ({ date: new Date(r['DateTime']), durationSec: parseFloat(r['Data/Duration']) }));
-      const flgEvents = detailsData
-        .filter(r => r['Event'] === 'FLG')
-        .map(r => ({ date: new Date(r['DateTime']), level: parseFloat(r['Data/Duration']) }));
-      const rawClusters = clusterApneaEvents(
-        apneaEvents,
-        flgEvents,
-        clusterParams.gapSec,
-        clusterParams.bridgeThreshold,
-        clusterParams.bridgeSec,
-        clusterParams.edgeEnter,
-        clusterParams.edgeExit,
-        10,
-        clusterParams.minDensity
-      );
-      const validClusters = rawClusters
-        .filter(cl => cl.count >= clusterParams.minCount)
-        .filter(cl => cl.events.reduce((sum, e) => sum + e.durationSec, 0) >= clusterParams.minTotalSec)
-        .filter(cl => cl.durationSec <= clusterParams.maxClusterSec)
-        .map(cl => ({ ...cl, severity: computeClusterSeverity(cl) }));
-      setApneaClusters(validClusters);
-      setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
-      setProcessingDetails(false);
-    }
-    return () => {
-      cancelled = true;
-      try { worker && worker.terminate && worker.terminate(); } catch {}
-      setProcessingDetails(false);
-    };
-  }
-  }, [detailsData, clusterParams]);
+  }, [detailsData, clusterParams, fnOptions]);
 
   const filteredSummary = useMemo(() => {
     if (!summaryData) return null;
     const { start, end } = dateFilter || {};
-    const dateCol = summaryData.length ? Object.keys(summaryData[0]).find(c => /date/i.test(c)) : null;
+    const dateCol = summaryData.length
+      ? Object.keys(summaryData[0]).find((c) => /date/i.test(c))
+      : null;
     if (!dateCol || (!start && !end)) return summaryData;
-    return summaryData.filter(r => {
+    return summaryData.filter((r) => {
       const d = new Date(r[dateCol]);
       if (start && d < start) return false;
       if (end && d > end) return false;
@@ -339,9 +469,11 @@ function App() {
   const filteredDetails = useMemo(() => {
     if (!detailsData) return null;
     const { start, end } = dateFilter || {};
-    const dateCol = detailsData.length ? Object.keys(detailsData[0]).find(c => /date/i.test(c)) : null;
+    const dateCol = detailsData.length
+      ? Object.keys(detailsData[0]).find((c) => /date/i.test(c))
+      : null;
     if (!dateCol || (!start && !end)) return detailsData;
-    return detailsData.filter(r => {
+    return detailsData.filter((r) => {
       const d = new Date(r[dateCol]);
       if (start && d < start) return false;
       if (end && d > end) return false;
@@ -352,15 +484,19 @@ function App() {
   // Highlight active TOC link based on visible section
   useEffect(() => {
     const root = document.documentElement;
-    const cssVar = getComputedStyle(root).getPropertyValue('--header-offset').trim();
-    const headerOffset = cssVar.endsWith('px') ? parseFloat(cssVar) : Number(cssVar) || 58;
+    const cssVar = getComputedStyle(root)
+      .getPropertyValue('--header-offset')
+      .trim();
+    const headerOffset = cssVar.endsWith('px')
+      ? parseFloat(cssVar)
+      : Number(cssVar) || 58;
     const topMargin = headerOffset + 8;
 
     const pickActive = () => {
       // choose the last heading whose top is above the threshold
-      const ids = tocSections.map(s => s.id);
+      const ids = tocSections.map((s) => s.id);
       let current = ids[0];
-      ids.forEach(id => {
+      ids.forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
         const rect = el.getBoundingClientRect();
@@ -371,14 +507,17 @@ function App() {
       setActiveId(current);
     };
 
-    const observer = new IntersectionObserver(() => {
-      pickActive();
-    }, {
-      root: null,
-      // Trigger when headings cross just below the sticky header and before bottom of viewport
-      rootMargin: `-${topMargin}px 0px -70% 0px`,
-      threshold: [0, 0.25, 0.5, 0.75, 1],
-    });
+    const observer = new IntersectionObserver(
+      () => {
+        pickActive();
+      },
+      {
+        root: null,
+        // Trigger when headings cross just below the sticky header and before bottom of viewport
+        rootMargin: `-${topMargin}px 0px -70% 0px`,
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      }
+    );
 
     // Observe any headings currently in the DOM
     tocSections.forEach(({ id }) => {
@@ -408,8 +547,8 @@ function App() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
     };
-  // Re-run when data presence changes which may mount/unmount sections
-  }, [filteredSummary, filteredDetails]);
+    // Re-run when data presence changes which may mount/unmount sections
+  }, [filteredSummary, filteredDetails, tocSections]);
 
   return (
     <div className="container">
@@ -420,11 +559,18 @@ function App() {
             <span className="badge">beta</span>
           </div>
           <ThemeToggle />
-          <button className="btn-ghost" style={{ marginLeft: 8 }} onClick={openGuideForActive} aria-label="Open Usage Guide">Guide</button>
+          <button
+            className="btn-ghost"
+            style={{ marginLeft: 8 }}
+            onClick={openGuideForActive}
+            aria-label="Open Usage Guide"
+          >
+            Guide
+          </button>
         </div>
       </header>
       <nav className="toc">
-        {tocSections.map(s => (
+        {tocSections.map((s) => (
           <a
             key={s.id}
             href={`#${s.id}`}
@@ -437,13 +583,15 @@ function App() {
       </nav>
       <div className="section controls" aria-label="Data and export controls">
         <label>
-          Summary CSV: <input type="file" accept=".csv" onChange={onSummaryFile} />
+          Summary CSV:{' '}
+          <input type="file" accept=".csv" onChange={onSummaryFile} />
         </label>
         {loadingSummary && (
           <progress value={summaryProgress} max={summaryProgressMax} />
         )}
         <label>
-          Details CSV: <input type="file" accept=".csv" onChange={onDetailsFile} />
+          Details CSV:{' '}
+          <input type="file" accept=".csv" onChange={onDetailsFile} />
         </label>
         {(loadingDetails || processingDetails) && (
           <progress
@@ -456,31 +604,129 @@ function App() {
             {error}
           </div>
         )}
-        <div className="control-group" aria-label="Session controls" style={{ marginTop: 6 }}>
+        <div
+          className="control-group"
+          aria-label="Session controls"
+          style={{ marginTop: 6 }}
+        >
           <span className="control-title">Session</span>
-          <label title="Enable local session persistence"><input type="checkbox" checked={persistEnabled} onChange={e => setPersistEnabled(e.target.checked)} /> Remember data locally</label>
-          <button className="btn-ghost" onClick={handleSaveNow} disabled={!persistEnabled} aria-label="Save session now">Save now</button>
-          <button className="btn-ghost" onClick={handleLoadSaved} aria-label="Load saved session">Load saved</button>
-          <button className="btn-ghost" onClick={handleClearSaved} aria-label="Clear saved session">Clear saved</button>
-          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }} title="Import session JSON">
+          <label title="Enable local session persistence">
+            <input
+              type="checkbox"
+              checked={persistEnabled}
+              onChange={(e) => setPersistEnabled(e.target.checked)}
+            />{' '}
+            Remember data locally
+          </label>
+          <button
+            className="btn-ghost"
+            onClick={handleSaveNow}
+            disabled={!persistEnabled}
+            aria-label="Save session now"
+          >
+            Save now
+          </button>
+          <button
+            className="btn-ghost"
+            onClick={handleLoadSaved}
+            aria-label="Load saved session"
+          >
+            Load saved
+          </button>
+          <button
+            className="btn-ghost"
+            onClick={handleClearSaved}
+            aria-label="Clear saved session"
+          >
+            Clear saved
+          </button>
+          <label
+            style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}
+            title="Import session JSON"
+          >
             Import JSON
-            <input type="file" accept="application/json" onChange={handleImportJson} />
+            <input
+              type="file"
+              accept="application/json"
+              onChange={handleImportJson}
+            />
           </label>
         </div>
         <div className="control-group" aria-label="Export controls">
           <span className="control-title">Export</span>
-          <button className="btn-primary" onClick={handleExportJson} disabled={!summaryData && !detailsData}>Export JSON</button>
-          <button className="btn-primary" onClick={() => downloadTextFile('aggregates.csv', buildSummaryAggregatesCSV(summaryData||[]), 'text/csv')} disabled={!summaryData}>Export Aggregates CSV</button>
-          <button className="btn-primary" onClick={() => openPrintReportHTML(summaryData||[], apneaClusters||[], falseNegatives||[])} disabled={!summaryData}>Open Print Report</button>
+          <button
+            className="btn-primary"
+            onClick={handleExportJson}
+            disabled={!summaryData && !detailsData}
+          >
+            Export JSON
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              downloadTextFile(
+                'aggregates.csv',
+                buildSummaryAggregatesCSV(summaryData || []),
+                'text/csv'
+              )
+            }
+            disabled={!summaryData}
+          >
+            Export Aggregates CSV
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              openPrintReportHTML(
+                summaryData || [],
+                apneaClusters || [],
+                falseNegatives || []
+              )
+            }
+            disabled={!summaryData}
+          >
+            Open Print Report
+          </button>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'end' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            alignItems: 'end',
+          }}
+        >
           <div>
-            <label>Filter start <input type="date" onChange={e => setDateFilter(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
+            <label>
+              Filter start{' '}
+              <input
+                type="date"
+                onChange={(e) =>
+                  setDateFilter((prev) => ({
+                    ...prev,
+                    start: e.target.value ? new Date(e.target.value) : null,
+                  }))
+                }
+              />
+            </label>
           </div>
           <div>
-            <label>Filter end <input type="date" onChange={e => setDateFilter(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : null }))} /></label>
+            <label>
+              Filter end{' '}
+              <input
+                type="date"
+                onChange={(e) =>
+                  setDateFilter((prev) => ({
+                    ...prev,
+                    end: e.target.value ? new Date(e.target.value) : null,
+                  }))
+                }
+              />
+            </label>
           </div>
-          <button onClick={() => setDateFilter({ start: null, end: null })}>Reset filter</button>
+          <button onClick={() => setDateFilter({ start: null, end: null })}>
+            Reset filter
+          </button>
         </div>
       </div>
       {filteredSummary && (
@@ -494,30 +740,89 @@ function App() {
       )}
       {filteredSummary && (
         <div className="section">
-          <SummaryAnalysis
-            data={filteredSummary}
-            clusters={apneaClusters}
-          />
+          <SummaryAnalysis data={filteredSummary} clusters={apneaClusters} />
           <div style={{ marginTop: 8 }}>
-            <h2 id="range-compare">Range Comparisons <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" /></h2>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+            <h2 id="range-compare">
+              Range Comparisons{' '}
+              <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" />
+            </h2>
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                flexWrap: 'wrap',
+                alignItems: 'end',
+              }}
+            >
               <div>
-                <label>Range A start <input type="date" onChange={e => setRangeA(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
+                <label>
+                  Range A start{' '}
+                  <input
+                    type="date"
+                    onChange={(e) =>
+                      setRangeA((prev) => ({
+                        ...prev,
+                        start: e.target.value ? new Date(e.target.value) : null,
+                      }))
+                    }
+                  />
+                </label>
               </div>
               <div>
-                <label>Range A end <input type="date" onChange={e => setRangeA(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : null }))} /></label>
+                <label>
+                  Range A end{' '}
+                  <input
+                    type="date"
+                    onChange={(e) =>
+                      setRangeA((prev) => ({
+                        ...prev,
+                        end: e.target.value ? new Date(e.target.value) : null,
+                      }))
+                    }
+                  />
+                </label>
               </div>
-              <button onClick={() => setRangeA(dateFilter)}>Use current filter as A</button>
+              <button onClick={() => setRangeA(dateFilter)}>
+                Use current filter as A
+              </button>
               <div style={{ width: 12 }} />
               <div>
-                <label>Range B start <input type="date" onChange={e => setRangeB(prev => ({ ...prev, start: e.target.value ? new Date(e.target.value) : null }))} /></label>
+                <label>
+                  Range B start{' '}
+                  <input
+                    type="date"
+                    onChange={(e) =>
+                      setRangeB((prev) => ({
+                        ...prev,
+                        start: e.target.value ? new Date(e.target.value) : null,
+                      }))
+                    }
+                  />
+                </label>
               </div>
               <div>
-                <label>Range B end <input type="date" onChange={e => setRangeB(prev => ({ ...prev, end: e.target.value ? new Date(e.target.value) : null }))} /></label>
+                <label>
+                  Range B end{' '}
+                  <input
+                    type="date"
+                    onChange={(e) =>
+                      setRangeB((prev) => ({
+                        ...prev,
+                        end: e.target.value ? new Date(e.target.value) : null,
+                      }))
+                    }
+                  />
+                </label>
               </div>
-              <button onClick={() => setRangeB(dateFilter)}>Use current filter as B</button>
+              <button onClick={() => setRangeB(dateFilter)}>
+                Use current filter as B
+              </button>
             </div>
-            <RangeComparisons summaryData={summaryData || []} rangeA={rangeA} rangeB={rangeB} />
+            <RangeComparisons
+              summaryData={summaryData || []}
+              rangeA={rangeA}
+              rangeB={rangeB}
+            />
           </div>
         </div>
       )}
@@ -535,18 +840,28 @@ function App() {
             />
           </div>
           <div className="section">
-            <FalseNegativesAnalysis list={falseNegatives} preset={fnPreset} onPresetChange={setFnPreset} />
+            <FalseNegativesAnalysis
+              list={falseNegatives}
+              preset={fnPreset}
+              onPresetChange={setFnPreset}
+            />
           </div>
           <div className="section">
             <RawDataExplorer
               summaryRows={summaryData || []}
               detailRows={detailsData || []}
-              onApplyDateFilter={({ start, end }) => setDateFilter({ start, end })}
+              onApplyDateFilter={({ start, end }) =>
+                setDateFilter({ start, end })
+              }
             />
           </div>
         </>
       )}
-      <DocsModal isOpen={guideOpen} onClose={() => setGuideOpen(false)} initialAnchor={guideAnchor} />
+      <DocsModal
+        isOpen={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        initialAnchor={guideAnchor}
+      />
     </div>
   );
 }

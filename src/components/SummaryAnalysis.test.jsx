@@ -10,7 +10,14 @@ import SummaryAnalysis from './SummaryAnalysis';
 import UsagePatternsCharts from './UsagePatternsCharts';
 import AhiTrendsCharts from './AhiTrendsCharts';
 
-const sample = [{ Date: '2025-06-01', 'Total Time': '08:00:00', AHI: '5', 'Median EPAP': '6' }];
+const sample = [
+  {
+    Date: '2025-06-01',
+    'Total Time': '08:00:00',
+    AHI: '5',
+    'Median EPAP': '6',
+  },
+];
 
 describe('SummaryAnalysis', () => {
   it('renders charts without range selection logging', () => {
@@ -19,4 +26,3 @@ describe('SummaryAnalysis', () => {
     expect(AhiTrendsCharts.mock.calls[0][0].onRangeSelect).toBeUndefined();
   });
 });
-

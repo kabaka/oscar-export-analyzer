@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RawDataExplorer from './RawDataExplorer';
 
@@ -9,13 +9,23 @@ const sampleSummary = [
 ];
 
 const sampleDetails = [
-  { DateTime: '2024-07-01T01:00:00', Event: 'ClearAirway', 'Data/Duration': 12 },
-  { DateTime: '2024-07-02T02:00:00', Event: 'Obstructive', 'Data/Duration': 25 },
+  {
+    DateTime: '2024-07-01T01:00:00',
+    Event: 'ClearAirway',
+    'Data/Duration': 12,
+  },
+  {
+    DateTime: '2024-07-02T02:00:00',
+    Event: 'Obstructive',
+    'Data/Duration': 25,
+  },
 ];
 
 describe('RawDataExplorer', () => {
   test('renders and filters summary rows by search', async () => {
-    render(<RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />);
+    render(
+      <RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />
+    );
     expect(screen.getByRole('tablist')).toBeInTheDocument();
     // Table should show 3 rows initially (reported count)
     expect(screen.getByTestId('row-count')).toHaveTextContent('3');
@@ -25,18 +35,24 @@ describe('RawDataExplorer', () => {
   });
 
   test('toggle columns visibility', async () => {
-    render(<RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />);
+    render(
+      <RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />
+    );
     const summary = screen.getByText('Columns');
     await userEvent.click(summary);
     const ahiToggle = screen.getByLabelText('AHI');
     expect(ahiToggle).toBeChecked();
     await userEvent.click(ahiToggle);
     // Column header should no longer include AHI
-    expect(screen.queryByRole('columnheader', { name: /AHI/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('columnheader', { name: /AHI/ })
+    ).not.toBeInTheDocument();
   });
 
   test('sorts by header click', async () => {
-    render(<RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />);
+    render(
+      <RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />
+    );
     // Click AHI header to sort asc
     const ahiHeader = await screen.findByRole('columnheader', { name: 'AHI' });
     await userEvent.click(ahiHeader);
@@ -50,12 +66,20 @@ describe('RawDataExplorer', () => {
 
   test('apply date filter triggers callback', async () => {
     const onApply = vi.fn();
-    render(<RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} onApplyDateFilter={onApply} />);
+    render(
+      <RawDataExplorer
+        summaryRows={sampleSummary}
+        detailRows={sampleDetails}
+        onApplyDateFilter={onApply}
+      />
+    );
     const start = screen.getByLabelText('Start date:');
     const end = screen.getByLabelText('End date:');
     await userEvent.type(start, '2024-07-02');
     await userEvent.type(end, '2024-07-03');
-    await userEvent.click(screen.getByRole('button', { name: /Apply to charts/i }));
+    await userEvent.click(
+      screen.getByRole('button', { name: /Apply to charts/i })
+    );
     expect(onApply).toHaveBeenCalledTimes(1);
     const arg = onApply.mock.calls[0][0];
     expect(arg.start).toBeInstanceOf(Date);
