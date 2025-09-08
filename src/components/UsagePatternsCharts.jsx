@@ -13,6 +13,14 @@ import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 
+/**
+ * Render usage and adherence charts for nightly data.
+ *
+ * @param {Object} props
+ * @param {Array<Object>} props.data - Array of summary rows with 'Date' and 'Total Time'.
+ * @param {(range: {start: Date, end: Date})=>void} [props.onRangeSelect] - Callback when a range is selected.
+ * @returns {JSX.Element}
+ */
 export default function UsagePatternsCharts({ data, onRangeSelect }) {
   // Prepare sorted date and usage arrays
   const {
