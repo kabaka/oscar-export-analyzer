@@ -1,7 +1,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,7 @@
   width: min(1000px, 96vw);
   max-height: 90vh;
   border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
 }
@@ -42,20 +42,40 @@
   color: var(--color-link);
   text-decoration: none;
 }
-.doc-toc a:hover { text-decoration: underline; }
+.doc-toc a:hover {
+  text-decoration: underline;
+}
 .doc-content {
   overflow: auto;
   padding-right: 8px;
 }
-.doc-content h1, .doc-content h2, .doc-content h3 { margin: 12px 0 6px; }
-.doc-content p { margin: 6px 0; line-height: 1.5; }
-.doc-content ul, .doc-content ol { margin: 6px 0 6px 20px; }
-.doc-code { background: color-mix(in oklab, var(--color-kpi-bg) 35%, transparent); color: inherit; padding: 10px; border-radius: 6px; overflow: auto; }
+.doc-content h1,
+.doc-content h2,
+.doc-content h3 {
+  margin: 12px 0 6px;
+}
+.doc-content p {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+.doc-content ul,
+.doc-content ol {
+  margin: 6px 0 6px 20px;
+}
+.doc-code {
+  background: color-mix(in oklab, var(--color-kpi-bg) 35%, transparent);
+  color: inherit;
+  padding: 10px;
+  border-radius: 6px;
+  overflow: auto;
+}
 /* Remove global sticky-header offset for headings inside the guide viewer */
 .doc-content h1[id],
 .doc-content h2[id],
 .doc-content h3[id],
-.doc-content h4[id] { scroll-margin-top: 0 !important; }
+.doc-content h4[id] {
+  scroll-margin-top: 0 !important;
+}
 
 .guide-inline {
   float: right;

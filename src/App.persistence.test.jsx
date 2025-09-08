@@ -8,9 +8,15 @@ const memoryStore = { last: null };
 
 vi.mock('./utils/db', () => {
   return {
-    putLastSession: vi.fn(async (session) => { memoryStore.last = session; return true; }),
+    putLastSession: vi.fn(async (session) => {
+      memoryStore.last = session;
+      return true;
+    }),
     getLastSession: vi.fn(async () => memoryStore.last),
-    clearLastSession: vi.fn(async () => { memoryStore.last = null; return true; }),
+    clearLastSession: vi.fn(async () => {
+      memoryStore.last = null;
+      return true;
+    }),
   };
 });
 
@@ -20,7 +26,11 @@ describe('App persistence flow', () => {
     memoryStore.last = null;
     vi.useFakeTimers();
     // Clear persistEnabled between tests
-    try { window.localStorage.removeItem('persistEnabled'); } catch {}
+    try {
+      window.localStorage.removeItem('persistEnabled');
+    } catch {
+      // ignore storage errors
+    }
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -31,8 +41,12 @@ describe('App persistence flow', () => {
 
     const remember = screen.getByLabelText(/remember data locally/i);
     const saveNow = screen.getByRole('button', { name: /save session now/i });
-    const loadSaved = screen.getByRole('button', { name: /load saved session/i });
-    const clearSaved = screen.getByRole('button', { name: /clear saved session/i });
+    const loadSaved = screen.getByRole('button', {
+      name: /load saved session/i,
+    });
+    const clearSaved = screen.getByRole('button', {
+      name: /clear saved session/i,
+    });
 
     // Initially disabled until opt-in
     expect(saveNow).toBeDisabled();
@@ -41,7 +55,9 @@ describe('App persistence flow', () => {
     fireEvent.click(remember);
     vi.advanceTimersByTime(600);
 
-    const { putLastSession, getLastSession, clearLastSession } = await import('./utils/db');
+    const { putLastSession, getLastSession, clearLastSession } = await import(
+      './utils/db'
+    );
     expect(putLastSession).toHaveBeenCalledTimes(1);
     expect(memoryStore.last).toBeTruthy();
     expect(memoryStore.last).toHaveProperty('clusterParams');

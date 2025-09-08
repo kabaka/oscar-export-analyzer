@@ -7,15 +7,15 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
-    include: ['src/**/*.test.{js,jsx,ts,tsx}']
+    include: ['src/**/*.test.{js,jsx,ts,tsx}'],
   },
   // Treat any Vite/Rollup warnings as errors to enforce clean builds
   build: {
     chunkSizeWarningLimit: 6000,
     rollupOptions: {
-      onwarn(warning, defaultWarn) {
+      onwarn(warning) {
         throw new Error(warning.message || warning);
-      }
-    }
-  }
+      },
+    },
+  },
 });
