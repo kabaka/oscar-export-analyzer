@@ -49,4 +49,3 @@ export async function clearLastSession() {
     tx.objectStore(STORE).delete('last');
   });
 }
-

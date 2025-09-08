@@ -14,7 +14,10 @@ export function buildSummaryAggregatesCSV(summaryData = []) {
     ['p75_usage_hours', round(usage.p75Hours, 3)],
     ['min_usage_hours', round(usage.minHours, 3)],
     ['max_usage_hours', round(usage.maxHours, 3)],
-    ['pct_nights_ge_4h', round((usage.nightsLong / usage.totalNights) * 100, 1)],
+    [
+      'pct_nights_ge_4h',
+      round((usage.nightsLong / usage.totalNights) * 100, 1),
+    ],
     ['avg_AHI', round(ahi.avgAHI, 3)],
     ['median_AHI', round(ahi.medianAHI, 3)],
     ['p25_AHI', round(ahi.p25AHI, 3)],
@@ -26,17 +29,24 @@ export function buildSummaryAggregatesCSV(summaryData = []) {
     ['p75_EPAP', round(epap.p75EPAP, 3)],
   ];
   const header = 'metric,value';
-  return [header, ...rows.map(r => r.join(','))].join('\n');
+  return [header, ...rows.map((r) => r.join(','))].join('\n');
 }
 
 export function downloadTextFile(name, content, type = 'text/plain') {
   const blob = new Blob([content], { type: `${type};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
-export function openPrintReportHTML(summaryData = [], clusters = [], falseNegatives = []) {
+export function openPrintReportHTML(
+  summaryData = [],
+  clusters = [],
+  falseNegatives = []
+) {
   const usage = summarizeUsage(summaryData || []);
   const ahi = computeAHITrends(summaryData || []);
   const epap = computeEPAPTrends(summaryData || []);
@@ -54,20 +64,20 @@ export function openPrintReportHTML(summaryData = [], clusters = [], falseNegati
     <h2>Usage</h2>
     <table><tbody>
       <tr><td>Total nights</td><td>${usage.totalNights}</td></tr>
-      <tr><td>Avg hours</td><td>${round(usage.avgHours,2)}</td></tr>
-      <tr><td>Median hours</td><td>${round(usage.medianHours,2)}</td></tr>
-      <tr><td>% nights ≥4h</td><td>${round((usage.nightsLong/usage.totalNights)*100,1)}%</td></tr>
+      <tr><td>Avg hours</td><td>${round(usage.avgHours, 2)}</td></tr>
+      <tr><td>Median hours</td><td>${round(usage.medianHours, 2)}</td></tr>
+      <tr><td>% nights ≥4h</td><td>${round((usage.nightsLong / usage.totalNights) * 100, 1)}%</td></tr>
     </tbody></table>
     <h2>AHI</h2>
     <table><tbody>
-      <tr><td>Average</td><td>${round(ahi.avgAHI,2)}</td></tr>
-      <tr><td>Median</td><td>${round(ahi.medianAHI,2)}</td></tr>
-      <tr><td>Min / Max</td><td>${round(ahi.minAHI,2)} / ${round(ahi.maxAHI,2)}</td></tr>
+      <tr><td>Average</td><td>${round(ahi.avgAHI, 2)}</td></tr>
+      <tr><td>Median</td><td>${round(ahi.medianAHI, 2)}</td></tr>
+      <tr><td>Min / Max</td><td>${round(ahi.minAHI, 2)} / ${round(ahi.maxAHI, 2)}</td></tr>
     </tbody></table>
     <h2>EPAP</h2>
     <table><tbody>
-      <tr><td>Median</td><td>${round(epap.medianEPAP,2)}</td></tr>
-      <tr><td>IQR</td><td>${round(epap.p25EPAP,2)}–${round(epap.p75EPAP,2)}</td></tr>
+      <tr><td>Median</td><td>${round(epap.medianEPAP, 2)}</td></tr>
+      <tr><td>IQR</td><td>${round(epap.p25EPAP, 2)}–${round(epap.p75EPAP, 2)}</td></tr>
     </tbody></table>
     <h2>Clusters & False Negatives</h2>
     <p>Clusters: ${clusters.length}; False negatives: ${falseNegatives.length}</p>
@@ -78,5 +88,6 @@ export function openPrintReportHTML(summaryData = [], clusters = [], falseNegati
   window.open(url, '_blank');
 }
 
-function round(v, d) { return Number.isFinite(v) ? Number(v).toFixed(d) : '—'; }
-
+function round(v, d) {
+  return Number.isFinite(v) ? Number(v).toFixed(d) : '—';
+}

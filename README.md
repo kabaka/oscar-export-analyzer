@@ -23,14 +23,15 @@ For a full walkthrough and interpretation tips, see the Usage & Interpretation G
    If a CSV fails to parse, an error message will appear below the file inputs.
 4. Use the theme toggle in the header to switch between Light, Dark, or System (follows OS).
 
-4. The app will parse and display (determinate progress bars show parsing progress for each file):
+5. The app will parse and display (determinate progress bars show parsing progress for each file):
    - Usage patterns over time (average usage, nights ≥ 4 h, etc.)
    - Expanded usage analytics: 7/30-night moving averages, adherence breakpoints, compliance KPIs (≥4h/≥6h), and a weekly calendar heatmap
-  - AHI trends (time-series, histogram, boxplot, violin/QQ plots, averages, min/max, threshold line at AHI > 5)
-   - Pressure & leak: EPAP trends and distribution, EPAP vs AHI scatter and 2D density, correlation matrix (EPAP, AHI, usage, optional leak), and EPAP titration helper with Mann–Whitney test
-  - Clustered apnea events: parameter panel allows tuning gap seconds, FLG bridge threshold, FLG gap, minimum event count, and min/max total duration; clusters recompute live. Table is sortable (duration, count, severity) and supports CSV export. Click a row to view an event-level Gantt timeline for the selected cluster and overlay leak/pressure traces for context.
- - Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
-  - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights, KM survival)
+
+- AHI trends (time-series, histogram, boxplot, violin/QQ plots, averages, min/max, threshold line at AHI > 5)
+- Pressure & leak: EPAP trends and distribution, EPAP vs AHI scatter and 2D density, correlation matrix (EPAP, AHI, usage, optional leak), and EPAP titration helper with Mann–Whitney test
+- Clustered apnea events: parameter panel allows tuning gap seconds, FLG bridge threshold, FLG gap, minimum event count, and min/max total duration; clusters recompute live. Table is sortable (duration, count, severity) and supports CSV export. Click a row to view an event-level Gantt timeline for the selected cluster and overlay leak/pressure traces for context.
+- Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
+- Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights, KM survival)
 
 ### Navigation
 
@@ -38,11 +39,12 @@ For a full walkthrough and interpretation tips, see the Usage & Interpretation G
 - The "Overview" section becomes available as soon as a Summary CSV is loaded (no Details file required).
 - The Table of Contents highlights the active section as you scroll, using IntersectionObserver; clicking a link also activates it immediately.
 - Use the header "Guide" button to open the full in-app Usage & Interpretation Guide. It auto-deep-links to the currently active section.
- - Inline “Guide” links appear next to section headers (e.g., Usage Patterns, AHI Trends, Clusters) to jump straight to the relevant guide section.
+- Inline “Guide” links appear next to section headers (e.g., Usage Patterns, AHI Trends, Clusters) to jump straight to the relevant guide section.
 
 ### Raw Data Explorer
 
 The Raw Data Explorer (see "Raw Data" in-page link) provides an efficient, virtualized table view over both Summary and Details CSVs.
+
 - Column toggles: choose which columns to display.
 - Search and sort: quick text filter across visible columns and sortable headers.
 - Date range filter: constrain rows by date; optionally apply to charts to cross-filter visualizations.
@@ -60,17 +62,20 @@ The Raw Data Explorer (see "Raw Data" in-page link) provides an efficient, virtu
 The app is built with Vite, React, and PapaParse. Environment variables for local configuration can be stored in a `.env` file at the project root, which is ignored by Git.
 
 Workers
+
 - Parsing: PapaParse runs in a web worker (`worker: true`).
 - Analytics: A lightweight module worker (`src/workers/analytics.worker.js`) computes apnea clusters and false negatives off the main thread. App code falls back to main-thread computation when Worker is unavailable (e.g., tests/jsdom).
 
 Cross-filtering & Range Comparisons
+
 - Cross-filtering: Brushing/zooming in Usage and AHI time-series updates the global date range, filtering all views.
 - Range comparisons: Define A and B date ranges to compare mean usage and AHI, with Mann–Whitney U p-values and rank-biserial effects.
 
 Persistence & Sessions (opt-in)
+
 - Opt-in local persistence: Enable “Remember data locally” to save parsed Summary/Details, parameters, and ranges in IndexedDB; saving is debounced to avoid churn during frequent uploads and dev hot reloads.
 - Explicit controls: Save now, Load saved, Clear saved. Export/import full JSON sessions for sharing or backup.
- - Save now is enabled only after turning on “Remember data locally”. “Load saved” is always available and restores the last saved session if present.
+- Save now is enabled only after turning on “Remember data locally”. “Load saved” is always available and restores the last saved session if present.
 
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
@@ -122,25 +127,40 @@ node analysis.js <detailsCsv> [YYYY-MM-DD] [groupGapSec]
 This project uses [Vitest](https://vitest.dev/) for unit and integration testing. Tests are colocated with source files using the `.test.*` suffix.
 
 **Run tests once:**
+
 ```bash
 npm run test
 ```
 
 **Run tests in watch mode:**
+
 ```bash
 npm run test:watch
 ```
 
 **Generate a coverage report:**
+
 ```bash
 npm run test:coverage
 ```
-
 
 Vite builds are also run in the pre-commit hook and CI to enforce clean builds without warnings; please resolve any Vite warnings before committing your code.
 Tests are automatically run before each commit via a Git hook configured with [Husky](https://typicode.github.io/husky/). After installing dependencies, run `npm run prepare` to set up Git hooks.
 
 Continuous integration is configured to run tests on GitHub Actions for each push and pull request (see `.github/workflows/ci.yml`).
+
+### Linting and Formatting
+
+Run ESLint to check code style and Prettier to format:
+
+```bash
+npm run lint
+npm run format
+```
+
+The linter enforces strict rules such as React hook dependency completeness,
+no unused variables or empty blocks, and rejection of irregular whitespace.
+The pre-commit hook runs `npm run lint` along with tests and the build.
 
 See `analysis.js` for usage details.
 

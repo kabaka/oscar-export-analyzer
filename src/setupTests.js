@@ -5,7 +5,8 @@ import { vi } from 'vitest';
 // Mock Plotly charts to simplify component tests
 vi.mock('react-plotly.js', () => {
   return {
-    default: (props) => React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
+    default: (props) =>
+      React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
   };
 });
 
@@ -16,7 +17,9 @@ if (typeof global.IntersectionObserver === 'undefined') {
     observe() {}
     unobserve() {}
     disconnect() {}
-    takeRecords() { return []; }
+    takeRecords() {
+      return [];
+    }
   }
   // eslint-disable-next-line no-undef
   global.IntersectionObserver = MockIO;

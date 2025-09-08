@@ -7,6 +7,13 @@ export default function GuideLink({ anchor, label = 'Guide' }) {
     window.dispatchEvent(evt);
   };
   return (
-    <button type="button" className="btn-ghost guide-inline" onClick={onClick} aria-label={`Open guide for ${label}`}>{label}</button>
+    <button
+      type="button"
+      className="btn-ghost guide-inline"
+      onClick={onClick}
+      aria-label={`Open guide for ${label}`}
+    >
+      {label}
+    </button>
   );
 }
