@@ -75,4 +75,27 @@ describe('App persistence flow', () => {
     expect(clearLastSession).toHaveBeenCalledTimes(1);
     expect(memoryStore.last).toBeNull();
   });
+
+  it('skips invalid duration strings when loading a saved session', async () => {
+    const { buildSession } = await import('./utils/session');
+    const stats = await import('./utils/stats');
+    const spy = vi.spyOn(stats, 'parseDuration');
+
+    memoryStore.last = buildSession({
+      summaryData: [
+        { Date: '2021-01-01', 'Total Time': '1:00:00', AHI: '1', 'Median EPAP': '5' },
+        { Date: '2021-01-02', 'Total Time': 'bad', AHI: '2', 'Median EPAP': '6' },
+      ],
+      detailsData: [],
+    });
+
+    render(<App />);
+    const loadSaved = screen.getByRole('button', { name: /load saved session/i });
+    fireEvent.click(loadSaved);
+
+    await vi.waitFor(() => expect(spy).toHaveBeenCalled());
+    expect(spy.mock.calls.some((c) => c[0] === 'bad')).toBe(true);
+    expect(spy.mock.results.some((r) => Number.isNaN(r.value))).toBe(true);
+    spy.mockRestore();
+  });
 });
