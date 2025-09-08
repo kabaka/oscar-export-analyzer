@@ -33,7 +33,7 @@ Interpretation: Use this as a quick status page. Pair the KPIs with the specific
 - Calendar Heatmap:
   - GitHub-style weekly calendar of usage hours by weekday.
 - Range Selection:
-  - Drag across the Usage or AHI time-series charts to highlight a date range for custom comparisons; the selection no longer prints to the console.
+  - Drag across the Usage or AHI time-series charts to highlight a date range for custom comparisons.
 
 How to read:
 - Flat or declining 7/30-night curves suggest adherence issues; sustained lifts indicate improvement.
