@@ -26,6 +26,17 @@ describe('parseDuration', () => {
   it('handles MM:SS format', () => {
     expect(parseDuration('2:03')).toBe(123);
   });
+
+  it('returns NaN for malformed strings', () => {
+    expect(parseDuration('abc')).toBeNaN();
+    expect(parseDuration('1:2:3:4')).toBeNaN();
+  });
+
+  it('throws on malformed input when requested', () => {
+    expect(() => parseDuration('bad', { throwOnError: true })).toThrow(
+      /invalid duration/i
+    );
+  });
 });
 
 describe('kmSurvival (Kaplan–Meier) uncensored', () => {

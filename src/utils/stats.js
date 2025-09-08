@@ -2,20 +2,49 @@
  * Utility functions for data parsing and statistical summaries.
  */
 
-// Parse a duration string "HH:MM:SS" into total seconds
-export function parseDuration(s) {
-  const parts = s.split(':').map(parseFloat);
-  let h = 0;
-  let m = 0;
-  let sec = 0;
-  if (parts.length === 3) {
-    [h, m, sec] = parts;
-  } else if (parts.length === 2) {
-    [m, sec] = parts;
-  } else if (parts.length === 1) {
-    [sec] = parts;
+/**
+ * Parse a duration string ("HH:MM:SS", "MM:SS", or "SS") into total seconds.
+ * Returns `NaN` for malformed strings or optionally throws an error when
+ * `throwOnError` is true.
+ *
+ * @param {string|number} s - Duration string or number of seconds.
+ * @param {{ throwOnError?: boolean }} [opts] - Optional behaviour flags.
+ * @returns {number} Total number of seconds or `NaN` if invalid.
+ * @throws {Error} When the input is malformed and `opts.throwOnError` is true.
+ */
+export function parseDuration(s, opts = {}) {
+  const { throwOnError = false } = opts;
+  if (typeof s === 'number' && Number.isFinite(s)) return s;
+  if (typeof s !== 'string') {
+    if (throwOnError) throw new Error('Duration must be a string');
+    return NaN;
   }
-  return (h || 0) * 3600 + (m || 0) * 60 + (sec || 0);
+  const parts = s.split(':');
+  if (parts.length === 0 || parts.length > 3) {
+    if (throwOnError)
+      throw new Error(`Invalid duration format: ${s}`);
+    return NaN;
+  }
+  const nums = [];
+  for (const p of parts) {
+    if (!/^\d+(?:\.\d+)?$/.test(p)) {
+      if (throwOnError)
+        throw new Error(`Invalid duration segment: ${p}`);
+      return NaN;
+    }
+    nums.push(parseFloat(p));
+  }
+  let h = 0,
+    m = 0,
+    sec = 0;
+  if (nums.length === 3) {
+    [h, m, sec] = nums;
+  } else if (nums.length === 2) {
+    [m, sec] = nums;
+  } else if (nums.length === 1) {
+    [sec] = nums;
+  }
+  return h * 3600 + m * 60 + sec;
 }
 
 // Compute approximate quantile (q in [0,1]) of numeric array
