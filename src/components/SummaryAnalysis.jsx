@@ -32,7 +32,7 @@ export default function SummaryAnalysis({ data, clusters = [] }) {
       <ul>
         <li>Usage distributions highlight variability and potential adherence issues.</li>
       </ul>
-      <UsagePatternsCharts data={data} onRangeSelect={({ start, end }) => console.log('range', start, end)} />
+      <UsagePatternsCharts data={data} />
 
       <h2 id="ahi-trends">2. AHI Trends <GuideLink anchor="ahi-trends" label="Guide" /></h2>
       <table>
@@ -49,7 +49,7 @@ export default function SummaryAnalysis({ data, clusters = [] }) {
       <ul>
         <li>Outlier nights (AHI ≥ Q3+1.5×IQR): {ahi.ahis.filter(v => v >= (ahi.p75AHI + 1.5 * ahi.iqrAHI)).length}</li>
       </ul>
-      <AhiTrendsCharts data={data} clusters={clusters} onRangeSelect={({ start, end }) => console.log('range', start, end)} />
+      <AhiTrendsCharts data={data} clusters={clusters} />
 
       <h2 id="pressure-settings">3. Pressure Settings and Performance <GuideLink anchor="pressure-correlation-epap" label="Guide" /></h2>
       <h3 id="epap-distribution">3.1 EPAP Distribution & Percentiles</h3>
