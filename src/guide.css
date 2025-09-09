@@ -36,6 +36,17 @@
   border-right: 1px solid var(--color-border-light);
   padding-right: 8px;
 }
+.doc-toc ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.doc-toc li {
+  margin: 4px 0;
+}
+.doc-toc li.level-2 {
+  margin-left: 16px;
+}
 .doc-toc a {
   display: block;
   padding: 6px 4px;
@@ -61,6 +72,16 @@
 .doc-content ul,
 .doc-content ol {
   margin: 6px 0 6px 20px;
+}
+.doc-content table {
+  border-collapse: collapse;
+  margin: 6px 0;
+}
+.doc-content th,
+.doc-content td {
+  border: 1px solid var(--color-border-light);
+  padding: 4px 8px;
+  text-align: left;
 }
 .doc-code {
   background: color-mix(in oklab, var(--color-kpi-bg) 35%, transparent);
