@@ -14,8 +14,9 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 - `npm run dev`: start Vite dev server with HMR.
 - `npm run build`: create production build to `dist/`.
 - `npm run preview`: serve the production build locally.
-- `npm test`: run unit/integration tests once.
-- `npm run test:watch`: run tests in watch mode.
+- `npm test`: run tests in watch mode.
+- `npm test -- --run`: run tests once without watch mode.
+- `npm run test:watch`: explicitly run tests in watch mode.
 - `npm run test:coverage`: run tests with coverage report.
 - `npm run prepare`: install Husky Git hooks.
 - `npm run lint`: run ESLint for code quality.
@@ -32,7 +33,7 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 - Frameworks: Vitest + @testing-library/react + jsdom.
 - Naming: `ComponentName.test.jsx` or `module.test.js` colocated with code.
 - Expectations: add tests for new logic and bug fixes; prefer user-facing assertions.
-- Run locally: `npm test` or `npm run test:watch`; check coverage via `npm run test:coverage`.
+- Run locally: `npm test` (watch mode) or `npm test -- --run` (single run); check coverage via `npm run test:coverage`.
 
 ## Commit & Pull Request Guidelines
 - Style: prefer Conventional Commits (e.g., `feat:`, `fix:`, `chore:`) as in history.
