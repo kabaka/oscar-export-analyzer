@@ -9,6 +9,7 @@ import {
   loessSmooth,
   runningQuantileXY,
 } from '../utils/stats';
+import { LOESS_SAMPLE_STEPS } from '../constants';
 
 /**
  * EPAP Analysis Charts: boxplot of nightly median EPAP,
@@ -85,7 +86,7 @@ function EpapTrendsCharts({ data }) {
     if (!epaps.length) return [];
     const min = Math.min(...epaps);
     const max = Math.max(...epaps);
-    const steps = 60;
+    const steps = LOESS_SAMPLE_STEPS;
     const arr = [];
     const step = (max - min) / Math.max(1, steps - 1);
     for (let i = 0; i < steps; i++) arr.push(min + i * step);
