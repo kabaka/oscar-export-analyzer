@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import RangeComparisons from './RangeComparisons';
+import { DataProvider } from '../context/DataContext';
 
 const summary = [
   { Date: '2024-01-01', 'Total Time': '01:00:00', AHI: '2' },
@@ -12,11 +13,12 @@ const summary = [
 describe('RangeComparisons', () => {
   it('renders comparison table with MW stats', () => {
     render(
-      <RangeComparisons
-        summaryData={summary}
-        rangeA={{ start: new Date('2024-01-01'), end: new Date('2024-01-10') }}
-        rangeB={{ start: new Date('2024-02-01'), end: new Date('2024-02-10') }}
-      />
+      <DataProvider summaryData={summary}>
+        <RangeComparisons
+          rangeA={{ start: new Date('2024-01-01'), end: new Date('2024-01-10') }}
+          rangeB={{ start: new Date('2024-02-01'), end: new Date('2024-02-10') }}
+        />
+      </DataProvider>
     );
     expect(screen.getByText(/Range Comparisons/)).toBeInTheDocument();
     expect(screen.getByText(/Usage/)).toBeInTheDocument();

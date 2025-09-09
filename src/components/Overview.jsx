@@ -7,6 +7,7 @@ import {
 import MetricGrid from './MetricGrid';
 import GuideLink from './GuideLink';
 import KPICard from './KPICard';
+import { useData } from '../context/DataContext';
 
 /**
  * Sparkline chart for a series of numeric data points.
@@ -40,10 +41,11 @@ function Sparkline({ data, width = 100, height = 30 }) {
 /**
  * Overview dashboard displaying high-level KPIs and sparklines.
  */
-export default function Overview({ summaryData, clusters, falseNegatives }) {
-  const usage = summarizeUsage(summaryData);
-  const ahi = computeAHITrends(summaryData);
-  const epap = computeEPAPTrends(summaryData);
+export default function Overview({ clusters, falseNegatives }) {
+  const { filteredSummary: summaryData } = useData();
+  const usage = summarizeUsage(summaryData || []);
+  const ahi = computeAHITrends(summaryData || []);
+  const epap = computeEPAPTrends(summaryData || []);
 
   return (
     <div className="overview-dashboard">
