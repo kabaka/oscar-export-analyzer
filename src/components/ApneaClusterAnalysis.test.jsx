@@ -1,7 +1,9 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ApneaClusterAnalysis from './ApneaClusterAnalysis.jsx';
+import * as ACA from './ApneaClusterAnalysis.jsx';
+
+const ApneaClusterAnalysis = ACA.default;
 
 describe('ApneaClusterAnalysis overlay', () => {
   it('shows leak/pressure chart when selecting a cluster', async () => {
@@ -54,5 +56,11 @@ describe('ApneaClusterAnalysis overlay', () => {
     expect(
       await screen.findByText(/Leak\/Pressure around Cluster/)
     ).toBeInTheDocument();
+  });
+});
+
+describe('ApneaClusterAnalysis memoization', () => {
+  it('exports a memoized component', () => {
+    expect(ApneaClusterAnalysis.type).toBe(ACA.ApneaClusterAnalysis);
   });
 });

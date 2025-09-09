@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import {
   parseDuration,
@@ -21,7 +21,7 @@ import VizHelp from './VizHelp';
  * @param {(range: {start: Date, end: Date})=>void} [props.onRangeSelect] - Callback when a range is selected.
  * @returns {JSX.Element}
  */
-export default function UsagePatternsCharts({ data, onRangeSelect }) {
+function UsagePatternsCharts({ data, onRangeSelect }) {
   // Prepare sorted date and usage arrays
   const {
     dates,
@@ -125,6 +125,17 @@ export default function UsagePatternsCharts({ data, onRangeSelect }) {
 
   const isDark = useEffectiveDarkMode();
   const { longest_4, longest_6 } = computeAdherenceStreaks(usageHours, [4, 6]);
+
+  const handleRelayout = useCallback(
+    (ev) => {
+      const x0 = ev?.['xaxis.range[0]'];
+      const x1 = ev?.['xaxis.range[1]'];
+      if (x0 && x1 && onRangeSelect) {
+        onRangeSelect({ start: new Date(x0), end: new Date(x1) });
+      }
+    },
+    [onRangeSelect]
+  );
 
   return (
     <div className="usage-charts">
@@ -271,13 +282,7 @@ export default function UsagePatternsCharts({ data, onRangeSelect }) {
               })) || []),
             ],
           })}
-          onRelayout={(ev) => {
-            const x0 = ev?.['xaxis.range[0]'];
-            const x1 = ev?.['xaxis.range[1]'];
-            if (x0 && x1 && onRangeSelect) {
-              onRangeSelect({ start: new Date(x0), end: new Date(x1) });
-            }
-          }}
+          onRelayout={handleRelayout}
           config={{
             responsive: true,
             displaylogo: false,
@@ -436,3 +441,6 @@ export default function UsagePatternsCharts({ data, onRangeSelect }) {
     </div>
   );
 }
+
+export { UsagePatternsCharts };
+export default React.memo(UsagePatternsCharts);
