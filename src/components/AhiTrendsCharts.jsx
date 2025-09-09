@@ -98,12 +98,20 @@ export default function AhiTrendsCharts({
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
 
   // Severity bands counts
-  const bands = {
-    le5: ahis.filter((v) => v <= 5).length,
-    b5_15: ahis.filter((v) => v > 5 && v <= 15).length,
-    b15_30: ahis.filter((v) => v > 15 && v <= 30).length,
-    gt30: ahis.filter((v) => v > 30).length,
-  };
+  const bands = useMemo(
+    () =>
+      ahis.reduce(
+        (acc, v) => {
+          if (v <= 5) acc.le5++;
+          else if (v <= 15) acc.b5_15++;
+          else if (v <= 30) acc.b15_30++;
+          else acc.gt30++;
+          return acc;
+        },
+        { le5: 0, b5_15: 0, b15_30: 0, gt30: 0 }
+      ),
+    [ahis]
+  );
 
   // QQ-plot against normal
   const n = ahis.length;
