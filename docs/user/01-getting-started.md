@@ -51,7 +51,7 @@ The application is organized into several views accessible from the sidebar:
 Use the theme toggle in the header to switch between light, dark, or system themes.  The interface responds to window resizing and touch input for tablets.
 
 ## 4. Saving and Restoring Sessions
-When **Remember data locally** is enabled, files and settings persist to `IndexedDB` so you can close and reopen the browser without reloading data.  The **Save/Load/Clear** controls let you store multiple named sessions.  Use **Export JSON** to download a portable snapshot that can be imported on another device.  The exported JSON includes all loaded rows but excludes any personal notes you may have added.
+When **Remember data locally** is enabled, files and settings persist to `IndexedDB` so you can close and reopen the browser without reloading data. Uploading a new Summary CSV replaces the previous session. The **Save/Load/Clear** controls manage that last session; choosing **Load Saved** replaces whatever files or settings are currently in memory. Disabling **Remember data locally** clears it. Use **Export JSON** to download a portable snapshot that can be imported on another device. The exported JSON includes all loaded rows but excludes any personal notes you may have added.
 
 ## 5. Example Workflow
 1. Load a year of summary and details data.
