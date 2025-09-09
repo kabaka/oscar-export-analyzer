@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 import '../styles.css';
 import './guide.css';
+import 'katex/dist/katex.min.css';
 
 const rootElement = document.getElementById('root');
 const root = ReactDOM.createRoot(rootElement);
