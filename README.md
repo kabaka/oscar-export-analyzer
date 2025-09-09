@@ -4,6 +4,10 @@ This is a React-based web application for evaluating OSCAR sleep data exports. I
 
 Design refresh: the UI now uses a clean, card-based layout and polished typography with consistent spacing. It supports both light and dark modes with a theme toggle (Light / Dark / System) that persists your preference.
 
+### State Management
+
+Parsed CSV rows and the active theme are shared across the app via a `DataContext`. Components read these values with `useData` or `useTheme` hooks, avoiding long prop chains.
+
 ## Usage
 
 For a full walkthrough and interpretation tips, see the Usage & Interpretation Guide:

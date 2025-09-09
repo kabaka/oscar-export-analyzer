@@ -8,11 +8,13 @@ import {
   computeAHITrends,
   computeEPAPTrends,
 } from '../utils/stats';
+import { useData } from '../context/DataContext';
 
-export default function SummaryAnalysis({ data, clusters = [] }) {
-  const usage = summarizeUsage(data);
-  const ahi = computeAHITrends(data);
-  const epap = computeEPAPTrends(data);
+export default function SummaryAnalysis({ clusters = [] }) {
+  const { filteredSummary: data } = useData();
+  const usage = summarizeUsage(data || []);
+  const ahi = computeAHITrends(data || []);
+  const epap = computeEPAPTrends(data || []);
   return (
     <div>
       <h2 id="usage-patterns">

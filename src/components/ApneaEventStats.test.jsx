@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import ApneaEventStats from './ApneaEventStats';
+import { DataProvider } from '../context/DataContext';
 
 const sampleDetails = [
   {
@@ -17,13 +18,19 @@ const sampleDetails = [
 
 describe('ApneaEventStats', () => {
   it('renders nothing when no events', () => {
-    const { container } = render(<ApneaEventStats data={[]} />);
+    const { container } = render(
+      <DataProvider filteredDetails={[]}>
+        <ApneaEventStats />
+      </DataProvider>
+    );
     expect(container.firstChild).toBeNull();
   });
 
   it('renders tables and plots for data with help tooltips', () => {
     const { getAllByTestId, getByText } = render(
-      <ApneaEventStats data={sampleDetails} />
+      <DataProvider filteredDetails={sampleDetails}>
+        <ApneaEventStats />
+      </DataProvider>
     );
     expect(getByText('Apnea Event Characteristics')).toBeInTheDocument();
     expect(getByText('Total apnea events')).toBeInTheDocument();

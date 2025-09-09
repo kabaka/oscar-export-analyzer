@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import Overview from './Overview';
+import { DataProvider } from '../context/DataContext';
 
 const summaryData = [
   {
@@ -22,11 +23,9 @@ const falseNegatives = [{}];
 describe('Overview', () => {
   it('renders KPI cards with correct titles and values', () => {
     render(
-      <Overview
-        summaryData={summaryData}
-        clusters={clusters}
-        falseNegatives={falseNegatives}
-      />
+      <DataProvider summaryData={summaryData} filteredSummary={summaryData}>
+        <Overview clusters={clusters} falseNegatives={falseNegatives} />
+      </DataProvider>
     );
     expect(screen.getByText('Overview Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Avg Usage (hrs)')).toBeInTheDocument();

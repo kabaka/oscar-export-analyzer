@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import GuideLink from './GuideLink';
+import { useData } from '../context/DataContext';
 
 // Lightweight CSV export util for selected rows
 function rowsToCsv(rows, columns) {
@@ -75,11 +76,9 @@ function dateFromAny(v) {
   return isNaN(d) ? null : d;
 }
 
-export default function RawDataExplorer({
-  summaryRows = [],
-  detailRows = [],
-  onApplyDateFilter, // optional: ({start, end}) => void
-}) {
+export default function RawDataExplorer({ onApplyDateFilter }) {
+  const { summaryData: summaryRows = [], detailsData: detailRows = [] } =
+    useData();
   const [tab, setTab] = useState('summary');
   const rows = tab === 'summary' ? summaryRows : detailRows;
   const allColumns = useMemo(() => uniqueCols(rows), [rows]);
