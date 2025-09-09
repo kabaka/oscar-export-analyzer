@@ -31,4 +31,15 @@ describe('DocsModal', () => {
     });
     expect(headings.length).toBeGreaterThan(0);
   });
+
+  it('sanitizes malicious markdown', async () => {
+    const malicious = `# Hello\n[link](javascript:alert(1))`;
+    render(
+      <DocsModal isOpen={true} onClose={() => {}} markdownSource={malicious} />
+    );
+    await screen.findByRole('heading', { level: 1, name: /hello/i });
+    const link = document.querySelector('.doc-content a');
+    expect(link.getAttribute('href')).toBe('');
+    expect(document.querySelector('script')).toBeNull();
+  });
 });
