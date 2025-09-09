@@ -21,6 +21,7 @@ import ApneaEventStats from './components/ApneaEventStats';
 import RangeComparisons from './components/RangeComparisons';
 import FalseNegativesAnalysis from './components/FalseNegativesAnalysis';
 import RawDataExplorer from './components/RawDataExplorer';
+import ErrorBoundary from './components/ErrorBoundary';
 import ThemeToggle from './components/ThemeToggle';
 import DocsModal from './components/DocsModal';
 import GuideLink from './components/GuideLink';
@@ -543,7 +544,9 @@ function App() {
       )}
       {filteredSummary && (
         <div className="section">
-          <SummaryAnalysis data={filteredSummary} clusters={apneaClusters} />
+          <ErrorBoundary>
+            <SummaryAnalysis data={filteredSummary} clusters={apneaClusters} />
+          </ErrorBoundary>
           <div style={{ marginTop: 8 }}>
             <h2 id="range-compare">
               Range Comparisons{' '}
@@ -621,42 +624,52 @@ function App() {
                 Use current filter as B
               </button>
             </div>
-            <RangeComparisons
-              summaryData={summaryData || []}
-              rangeA={rangeA}
-              rangeB={rangeB}
-            />
+            <ErrorBoundary>
+              <RangeComparisons
+                summaryData={summaryData || []}
+                rangeA={rangeA}
+                rangeB={rangeB}
+              />
+            </ErrorBoundary>
           </div>
         </div>
       )}
       {filteredDetails && (
         <>
           <div className="section">
-            <ApneaEventStats data={filteredDetails} />
+            <ErrorBoundary>
+              <ApneaEventStats data={filteredDetails} />
+            </ErrorBoundary>
           </div>
           <div className="section">
-            <ApneaClusterAnalysis
-              clusters={apneaClusters}
-              params={clusterParams}
-              onParamChange={onClusterParamChange}
-              details={filteredDetails}
-            />
+            <ErrorBoundary>
+              <ApneaClusterAnalysis
+                clusters={apneaClusters}
+                params={clusterParams}
+                onParamChange={onClusterParamChange}
+                details={filteredDetails}
+              />
+            </ErrorBoundary>
           </div>
           <div className="section">
-            <FalseNegativesAnalysis
-              list={falseNegatives}
-              preset={fnPreset}
-              onPresetChange={setFnPreset}
-            />
+            <ErrorBoundary>
+              <FalseNegativesAnalysis
+                list={falseNegatives}
+                preset={fnPreset}
+                onPresetChange={setFnPreset}
+              />
+            </ErrorBoundary>
           </div>
           <div className="section">
-            <RawDataExplorer
-              summaryRows={summaryData || []}
-              detailRows={detailsData || []}
-              onApplyDateFilter={({ start, end }) =>
-                setDateFilter({ start, end })
-              }
-            />
+            <ErrorBoundary>
+              <RawDataExplorer
+                summaryRows={summaryData || []}
+                detailRows={detailsData || []}
+                onApplyDateFilter={({ start, end }) =>
+                  setDateFilter({ start, end })
+                }
+              />
+            </ErrorBoundary>
           </div>
         </>
       )}
