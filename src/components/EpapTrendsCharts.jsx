@@ -16,7 +16,7 @@ import {
  * time-series of EPAP with first/last 30-night markers,
  * and scatter plot of EPAP vs AHI with regression line and correlation coefficient.
  */
-export default function EpapTrendsCharts({ data }) {
+function EpapTrendsCharts({ data }) {
   const {
     dates,
     epaps,
@@ -662,3 +662,6 @@ export default function EpapTrendsCharts({ data }) {
     </div>
   );
 }
+
+export { EpapTrendsCharts };
+export default React.memo(EpapTrendsCharts);
