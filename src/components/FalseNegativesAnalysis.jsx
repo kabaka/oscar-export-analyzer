@@ -1,13 +1,10 @@
 import React from 'react';
-import Plot from 'react-plotly.js';
 import { FALSE_NEG_CONFIDENCE_MIN } from '../utils/clustering';
-import { applyChartTheme } from '../utils/chartTheme';
-import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import GuideLink from './GuideLink';
 import VizHelp from './VizHelp';
+import ThemedPlot from './ThemedPlot';
 
 function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
-  const prefersDark = useEffectiveDarkMode();
   return (
     <div>
       <h2 id="false-negatives">
@@ -43,8 +40,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
       <div>
         <h3>False Negative Clusters by Confidence Over Time</h3>
         <div className="chart-with-help">
-          <Plot
-            key={prefersDark ? 'dark-fn' : 'light-fn'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '400px' }}
             data={[
@@ -69,7 +65,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                 hovertemplate: '%{text}<extra></extra>',
               },
             ]}
-            layout={applyChartTheme(prefersDark, {
+            layout={{
               title: 'False Negative Clusters by Confidence Over Time',
               xaxis: { type: 'date', title: 'Cluster Start Time' },
               yaxis: {
@@ -78,7 +74,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
               },
               margin: { l: 80, r: 20, t: 40, b: 40 },
               height: 400,
-            })}
+            }}
             config={{ responsive: true, displaylogo: false }}
           />
           <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />

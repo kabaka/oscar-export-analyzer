@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
-import Plot from 'react-plotly.js';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
+import ThemedPlot from './ThemedPlot';
 import {
   mannWhitneyUTest,
   pearson,
@@ -268,8 +267,7 @@ function EpapTrendsCharts({ data }) {
   return (
     <div className="usage-charts">
       <div className="chart-with-help">
-        <Plot
-          key={isDark ? 'dark' : 'light'}
+        <ThemedPlot
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
           data={[
@@ -298,13 +296,13 @@ function EpapTrendsCharts({ data }) {
               marker: { color: COLORS.secondary, size: 6 },
             },
           ]}
-          layout={applyChartTheme(isDark, {
+          layout={{
             title: 'Nightly Median EPAP Over Time',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
             xaxis: { title: 'Date' },
             yaxis: { title: 'EPAP (cmH₂O)' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          })}
+          }}
           config={{
             responsive: true,
             displaylogo: false,
@@ -317,8 +315,7 @@ function EpapTrendsCharts({ data }) {
 
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-box' : 'light-box'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -330,12 +327,12 @@ function EpapTrendsCharts({ data }) {
                 marker: { color: COLORS.box },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Boxplot of Nightly Median EPAP',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               yaxis: { title: 'EPAP (cmH₂O)', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
             config={{
               responsive: true,
               displaylogo: false,
@@ -346,8 +343,7 @@ function EpapTrendsCharts({ data }) {
           <VizHelp text="Boxplot of nightly median EPAP; box shows IQR and points indicate outliers." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-scatter' : 'light-scatter'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -396,13 +392,13 @@ function EpapTrendsCharts({ data }) {
                   ]
                 : []),
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: `EPAP vs AHI Scatter (r = ${corr.toFixed(2)})`,
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               xaxis: { title: 'Median EPAP (cmH₂O)' },
               yaxis: { title: 'AHI (events/hour)' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
             config={{
               responsive: true,
               displaylogo: false,
@@ -416,8 +412,7 @@ function EpapTrendsCharts({ data }) {
           <VizHelp text="Scatter of nightly EPAP vs AHI. Dots are nights; dashed line is linear fit; purple line is LOESS smoother; green/red lines are running p50/p90 quantiles." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-2d' : 'light-2d'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -428,12 +423,12 @@ function EpapTrendsCharts({ data }) {
                 colorscale: 'Viridis',
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'EPAP vs AHI Density (2D Histogram)',
               xaxis: { title: 'Median EPAP (cmH₂O)' },
               yaxis: { title: 'AHI (events/hour)' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
             config={{ responsive: true, displaylogo: false }}
           />
           <VizHelp text="2D histogram density of EPAP vs AHI, highlighting common combinations." />
@@ -445,8 +440,7 @@ function EpapTrendsCharts({ data }) {
           className="chart-item chart-with-help"
           style={{ marginTop: '16px' }}
         >
-          <Plot
-            key={isDark ? 'dark-corr' : 'light-corr'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -469,7 +463,7 @@ function EpapTrendsCharts({ data }) {
                 reversescale: !isDark,
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Correlation Matrix (Pearson r)',
               autosize: true,
               xaxis: { title: 'Variable' },
@@ -484,7 +478,7 @@ function EpapTrendsCharts({ data }) {
                   font: { color: isDark ? '#fff' : '#000' },
                 }))
               ),
-            })}
+            }}
             config={{ responsive: true, displaylogo: false }}
           />
           <VizHelp text="Correlation matrix (Pearson r) among available variables; cell labels show the correlation value." />
@@ -496,8 +490,7 @@ function EpapTrendsCharts({ data }) {
           className="chart-item chart-with-help"
           style={{ marginTop: '12px' }}
         >
-          <Plot
-            key={isDark ? 'dark-corr-partial' : 'light-corr-partial'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -520,7 +513,7 @@ function EpapTrendsCharts({ data }) {
                 reversescale: !isDark,
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Partial Correlation (controls: Usage, Leak)',
               autosize: true,
               xaxis: { title: 'Variable' },
@@ -535,7 +528,7 @@ function EpapTrendsCharts({ data }) {
                   font: { color: isDark ? '#fff' : '#000' },
                 }))
               ),
-            })}
+            }}
             config={{ responsive: true, displaylogo: false }}
           />
           <VizHelp text="Partial correlations controlling for Usage and Leak (if available). Helps assess EPAP–AHI relationship net of confounding." />
@@ -546,8 +539,7 @@ function EpapTrendsCharts({ data }) {
       {corrMatrix.leakMed && corrMatrix.leakMed.length ? (
         <div className="usage-charts-grid" style={{ marginTop: '16px' }}>
           <div className="chart-item chart-with-help">
-            <Plot
-              key={isDark ? 'dark-leak' : 'light-leak'}
+            <ThemedPlot
               useResizeHandler
               style={{ width: '100%', height: '300px' }}
               data={[
@@ -559,36 +551,34 @@ function EpapTrendsCharts({ data }) {
                   name: 'Leak Median',
                 },
               ]}
-              layout={applyChartTheme(isDark, {
+              layout={{
                 title: 'Leak Median Over Time',
                 xaxis: { title: 'Date' },
                 yaxis: { title: 'Leak (median)' },
                 margin: { t: 40, l: 60, r: 20, b: 50 },
-              })}
+              }}
               config={{ responsive: true, displaylogo: false }}
             />
             <VizHelp text="Leak median over time if available; trends can indicate mask fit or seal issues." />
           </div>
           <div className="chart-item chart-with-help">
-            <Plot
-              key={isDark ? 'dark-leak-hist' : 'light-leak-hist'}
+            <ThemedPlot
               useResizeHandler
               style={{ width: '100%', height: '300px' }}
               data={[{ x: corrMatrix.leakMed, type: 'histogram', nbinsx: 20 }]}
-              layout={applyChartTheme(isDark, {
+              layout={{
                 title: 'Leak Median Distribution',
                 xaxis: { title: 'Leak (median)' },
                 yaxis: { title: 'Count' },
                 margin: { t: 40, l: 60, r: 20, b: 50 },
-              })}
+              }}
               config={{ responsive: true, displaylogo: false }}
             />
             <VizHelp text="Distribution of nightly leak median values; helps identify consistent high-leak nights." />
           </div>
           {corrMatrix.leakPct && corrMatrix.leakPct.length ? (
             <div className="chart-item chart-with-help">
-              <Plot
-                key={isDark ? 'dark-leak-pct' : 'light-leak-pct'}
+              <ThemedPlot
                 useResizeHandler
                 style={{ width: '100%', height: '300px' }}
                 data={[
@@ -600,12 +590,12 @@ function EpapTrendsCharts({ data }) {
                     name: 'Leak % above thr',
                   },
                 ]}
-                layout={applyChartTheme(isDark, {
+                layout={{
                   title: 'Time Above Leak Threshold (%)',
                   xaxis: { title: 'Date' },
                   yaxis: { title: 'Percent of night (%)' },
                   margin: { t: 40, l: 60, r: 20, b: 50 },
-                })}
+                }}
                 config={{ responsive: true, displaylogo: false }}
               />
               <VizHelp text="Percent of each night above leak threshold; persistent high percentages may impair therapy." />

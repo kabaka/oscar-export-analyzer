@@ -1,11 +1,9 @@
 import React, { useMemo } from 'react';
-import Plot from 'react-plotly.js';
 import { computeApneaEventStats, kmSurvival } from '../utils/stats';
-import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import { applyChartTheme } from '../utils/chartTheme';
+import { useData } from '../context/DataContext';
+import ThemedPlot from './ThemedPlot';
 import VizHelp from './VizHelp';
 import GuideLink from './GuideLink';
-import { useData } from '../context/DataContext';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -18,7 +16,6 @@ export default function ApneaEventStats() {
     () => kmSurvival(stats.durations || []),
     [stats.durations]
   );
-  const isDark = useEffectiveDarkMode();
   if (!stats.totalEvents) {
     return null;
   }
@@ -78,8 +75,7 @@ export default function ApneaEventStats() {
       </table>
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-hist' : 'light-hist'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -90,18 +86,17 @@ export default function ApneaEventStats() {
                 name: 'Duration Dist',
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Distribution of Apnea Durations',
               xaxis: { title: 'Duration (s)' },
               yaxis: { title: 'Count' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="Distribution of individual apnea event durations. Helps spot unusually long events." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-box' : 'light-box'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -113,19 +108,18 @@ export default function ApneaEventStats() {
                 marker: { color: '#888' },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Apnea Duration Boxplot',
               yaxis: { title: 'Duration (s)', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="Boxplot of apnea event durations; box shows IQR, whiskers typical range, points outliers." />
         </div>
       </div>
 
       <div className="chart-item chart-with-help">
-        <Plot
-          key={isDark ? 'dark-surv' : 'light-surv'}
+        <ThemedPlot
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
           data={[
@@ -162,12 +156,12 @@ export default function ApneaEventStats() {
               line: { width: 2, color: '#1f77b4', shape: 'hv' },
             },
           ]}
-          layout={applyChartTheme(isDark, {
+          layout={{
             title: 'Apnea Event Duration Survival (KM)',
             xaxis: { title: 'Duration (s)' },
             yaxis: { title: 'Survival P(T > t)', rangemode: 'tozero' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          })}
+          }}
           config={{ responsive: true, displaylogo: false }}
         />
         <VizHelp text="KaplanâMeier survival of event durations (probability an event exceeds t seconds). Shaded band is the approximate 95% CI." />
@@ -204,8 +198,7 @@ export default function ApneaEventStats() {
       </table>
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-line' : 'light-line'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -218,18 +211,17 @@ export default function ApneaEventStats() {
                 line: { width: 1 },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Apnea Events per Night',
               xaxis: { title: 'Date' },
               yaxis: { title: 'Count' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="Events per night over time; look for spikes that may indicate rough nights." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-night-hist' : 'light-night-hist'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -240,12 +232,12 @@ export default function ApneaEventStats() {
                 name: 'Events/night Dist',
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Distribution of Events per Night',
               xaxis: { title: 'Count' },
               yaxis: { title: 'Nights' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="Distribution of nightly event counts; the shape shows how often high/low event nights occur." />
         </div>

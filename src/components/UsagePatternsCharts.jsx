@@ -1,5 +1,4 @@
 import React, { useMemo, useCallback } from 'react';
-import Plot from 'react-plotly.js';
 import {
   parseDuration,
   quantile,
@@ -10,7 +9,7 @@ import {
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import { applyChartTheme } from '../utils/chartTheme';
+import ThemedPlot from './ThemedPlot';
 import VizHelp from './VizHelp';
 
 /**
@@ -179,8 +178,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       </div>
       {/* Time-series usage with rolling average, full-width responsive */}
       <div className="chart-with-help">
-        <Plot
-          key={isDark ? 'dark' : 'light'}
+        <ThemedPlot
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
           data={[
@@ -255,7 +253,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               line: { dash: 'dot', width: 2, color: COLORS.accent },
             },
           ]}
-          layout={applyChartTheme(isDark, {
+          layout={{
             title: 'Nightly Usage Hours Over Time',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
             xaxis: { title: 'Date' },
@@ -281,7 +279,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 line: { color: '#6a3d9a', width: 2 },
               })) || []),
             ],
-          })}
+          }}
           onRelayout={handleRelayout}
           config={{
             responsive: true,
@@ -299,8 +297,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       {/* Histogram and boxplot side-by-side on large screens, stacked on narrow */}
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-hist' : 'light-hist'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -312,7 +309,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 marker: { color: COLORS.primary },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Distribution of Nightly Usage',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               xaxis: { title: 'Hours' },
@@ -356,7 +353,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 },
               ],
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
             config={{
               responsive: true,
               displaylogo: false,
@@ -370,8 +367,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
           <VizHelp text="Distribution of nightly usage hours. Dashed line marks the median; dotted line marks the mean." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-box' : 'light-box'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -383,12 +379,12 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 marker: { color: COLORS.box },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Boxplot of Nightly Usage',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               yaxis: { title: 'Hours of Use', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
             config={{
               responsive: true,
               displaylogo: false,
@@ -404,8 +400,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       </div>
       {/* Weekly calendar heatmap (Mon–Sun by columns of weeks) */}
       <div className="chart-item chart-with-help" style={{ marginTop: '16px' }}>
-        <Plot
-          key={isDark ? 'dark-heat' : 'light-heat'}
+        <ThemedPlot
           useResizeHandler
           style={{ width: '100%', height: '220px' }}
           data={[
@@ -428,12 +423,12 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
             },
           ]}
-          layout={applyChartTheme(isDark, {
+          layout={{
             title: 'Calendar Heatmap of Usage (hours)',
             xaxis: { title: 'Week', type: 'date', tickformat: '%Y-%m-%d' },
             yaxis: { title: 'Day of Week', autorange: 'reversed' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          })}
+          }}
           config={{ responsive: true, displaylogo: false }}
         />
         <VizHelp text="Calendar heatmap of nightly usage by day of week; darker tiles indicate more hours of use." />
