@@ -5,6 +5,7 @@ import {
   computeClusterSeverity,
   clustersToCsv,
 } from './clustering';
+import { EVENT_WINDOW_MS } from '../constants';
 
 describe('clusterApneaEvents', () => {
   it('returns empty array when no events', () => {
@@ -22,7 +23,7 @@ describe('clusterApneaEvents', () => {
     const [c] = clusters;
     // start at first event, end at last event + its duration
     expect(c.start).toEqual(base);
-    expect(c.end.getTime()).toBe(base.getTime() + 50000 + 5000);
+    expect(c.end.getTime()).toBe(base.getTime() + 50000 + EVENT_WINDOW_MS);
     expect(c.count).toBe(2);
   });
 
