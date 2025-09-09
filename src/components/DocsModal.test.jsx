@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import DocsModal from './DocsModal';
+import { fireEvent } from '@testing-library/react';
 
 describe('DocsModal', () => {
   it('renders guide content and closes', async () => {
@@ -41,5 +42,33 @@ describe('DocsModal', () => {
     const link = document.querySelector('.doc-content a');
     expect(link.getAttribute('href')).toBe('');
     expect(document.querySelector('script')).toBeNull();
+  });
+
+  it('renders math expressions', () => {
+    const md = '$$a^2$$';
+    render(
+      <DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />
+    );
+    expect(document.querySelector('.katex')).not.toBeNull();
+  });
+
+  it('converts internal links to anchors', async () => {
+    const md = `[Next](02-visualizations.md#rolling-windows)`;
+    render(
+      <DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />
+    );
+    const link = await screen.findByRole('link', { name: /next/i });
+    expect(link.getAttribute('href')).toBe('#rolling-windows');
+    fireEvent.click(link);
+  });
+
+  it('nests table of contents items', async () => {
+    const md = '# A\n\n## B\n\n# C';
+    render(
+      <DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />
+    );
+    await screen.findByRole('link', { name: 'A' });
+    const level2 = document.querySelector('.doc-toc .level-2');
+    expect(level2).not.toBeNull();
   });
 });

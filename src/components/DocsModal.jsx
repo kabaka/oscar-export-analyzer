@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import DOMPurify from 'dompurify';
 
 const DOCS = import.meta.glob('../../docs/user/*.md', {
@@ -27,6 +29,10 @@ function buildToc(md) {
       const text = title.trim();
       return { level, text, id: slugify(text) };
     });
+}
+
+function fileToSlug(filename) {
+  return slugify(filename.replace(/^[0-9]+-/, '').replace(/\.md$/, ''));
 }
 
 export default function DocsModal({
@@ -65,8 +71,36 @@ export default function DocsModal({
       };
     }
 
+    const linkComponent = ({ href = '', children }) => {
+      const isDoc = href.includes('.md');
+      if (!isDoc) return <a href={href}>{children}</a>;
+
+      const [file, hash] = href.split('#');
+      const target = hash || fileToSlug(file);
+      return (
+        <a
+          href={`#${target}`}
+          onClick={(e) => {
+            e.preventDefault();
+            const el = contentRef.current?.querySelector(
+              `#${CSS.escape(target)}`
+            );
+            el?.scrollIntoView({ block: 'start' });
+          }}
+        >
+          {children}
+        </a>
+      );
+    };
+
     const rawHtml = ReactDOMServer.renderToStaticMarkup(
-      <ReactMarkdown components={headingComponents}>{markdown}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{ ...headingComponents, a: linkComponent }}
+      >
+        {markdown}
+      </ReactMarkdown>
     );
     const html = DOMPurify.sanitize(rawHtml);
     const toc = buildToc(markdown);
@@ -107,23 +141,26 @@ export default function DocsModal({
         </div>
         <div className="modal-body">
           <aside className="doc-toc" aria-label="Guide sections">
-            {parsed.toc
-              .filter((h) => h.level <= 2)
-              .map((h) => (
-                <a
-                  key={h.id}
-                  href={`#${h.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const el = contentRef.current?.querySelector(
-                      `#${CSS.escape(h.id)}`
-                    );
-                    el?.scrollIntoView({ block: 'start' });
-                  }}
-                >
-                  {h.text}
-                </a>
-              ))}
+            <ul>
+              {parsed.toc
+                .filter((h) => h.level <= 2)
+                .map((h) => (
+                  <li key={h.id} className={`level-${h.level}`}>
+                    <a
+                      href={`#${h.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = contentRef.current?.querySelector(
+                          `#${CSS.escape(h.id)}`
+                        );
+                        el?.scrollIntoView({ block: 'start' });
+                      }}
+                    >
+                      {h.text}
+                    </a>
+                  </li>
+                ))}
+            </ul>
           </aside>
           <article
             className="doc-content"
