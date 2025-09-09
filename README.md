@@ -173,7 +173,7 @@ npm run test:coverage
 Vite builds are also run in the pre-commit hook and CI to enforce clean builds without warnings; please resolve any Vite warnings before committing your code.
 Tests are automatically run before each commit via a Git hook configured with [Husky](https://typicode.github.io/husky/). After installing dependencies, run `npm run prepare` to set up Git hooks.
 
-Continuous integration is configured to run tests on GitHub Actions for each push and pull request (see `.github/workflows/ci.yml`).
+Continuous integration runs lint, build, and tests in parallel on GitHub Actions for each push and pull request (see `.github/workflows/ci.yml`).
 
 ### Linting and Formatting
 
