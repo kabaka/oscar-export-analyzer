@@ -51,7 +51,7 @@ export default function DocsModal({
       const files = await Promise.all(
         Object.entries(DOCS)
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([, loader]) => loader())
+          .map(([, loader]) => loader()),
       );
       setMarkdown(files.join('\n'));
     }
@@ -84,7 +84,7 @@ export default function DocsModal({
           onClick={(e) => {
             e.preventDefault();
             const el = contentRef.current?.querySelector(
-              `#${CSS.escape(target)}`
+              `#${CSS.escape(target)}`,
             );
             el?.scrollIntoView({ block: 'start' });
           }}
@@ -101,7 +101,7 @@ export default function DocsModal({
         components={{ ...headingComponents, a: linkComponent }}
       >
         {markdown}
-      </ReactMarkdown>
+      </ReactMarkdown>,
     );
     const html = DOMPurify.sanitize(rawHtml);
     const toc = buildToc(markdown);
@@ -152,7 +152,7 @@ export default function DocsModal({
                       onClick={(e) => {
                         e.preventDefault();
                         const el = contentRef.current?.querySelector(
-                          `#${CSS.escape(h.id)}`
+                          `#${CSS.escape(h.id)}`,
                         );
                         el?.scrollIntoView({ block: 'start' });
                       }}
@@ -166,6 +166,8 @@ export default function DocsModal({
           <article
             className="doc-content"
             ref={contentRef}
+            // sanitized HTML; DOMPurify removes unsafe markup
+            // eslint-disable-next-line no-unsanitized/property
             dangerouslySetInnerHTML={{ __html: parsed.html }}
           />
         </div>
