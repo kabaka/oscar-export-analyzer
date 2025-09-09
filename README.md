@@ -76,6 +76,7 @@ Persistence & Sessions (opt-in)
 - Opt-in local persistence: Enable “Remember data locally” to save parsed Summary/Details, parameters, and ranges in IndexedDB; saving is debounced to avoid churn during frequent uploads and dev hot reloads.
 - Explicit controls: Save now, Load saved, Clear saved. Export/import full JSON sessions for sharing or backup.
 - Save now is enabled only after turning on “Remember data locally”. “Load saved” is always available and restores the last saved session if present.
+- The False Negatives view is implemented in a dedicated `FalseNegativesAnalysis` component, and session persistence is managed by a reusable `useSessionManager` hook.
 
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
