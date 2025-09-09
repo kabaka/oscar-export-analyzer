@@ -96,7 +96,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
           </thead>
           <tbody>
             {list.map((cl, i) => (
-              <tr key={i}>
+              <tr key={cl.start.getTime()}>
                 <td>{i + 1}</td>
                 <td>{cl.start.toLocaleString()}</td>
                 <td>{cl.durationSec.toFixed(0)}</td>
