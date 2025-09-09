@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useCsvFiles } from './hooks/useCsvFiles';
 import { useSessionManager } from './hooks/useSessionManager';
 import {
@@ -129,9 +129,9 @@ function App() {
     setDetailsData,
   });
 
-  const onClusterParamChange = (patch) => {
+  const onClusterParamChange = useCallback((patch) => {
     setClusterParams((prev) => ({ ...prev, ...patch }));
-  };
+  }, []);
 
   // Map in-app sections to guide anchors
   const guideMap = {
@@ -365,321 +365,325 @@ function App() {
       filteredDetails={filteredDetails}
     >
       <div className="container">
-      <header className="app-header">
-        <div className="inner">
-          <div className="title">
-            <h1>OSCAR Sleep Data Analysis</h1>
-            <span className="badge">beta</span>
-          </div>
-          <ThemeToggle />
-          <button
-            className="btn-ghost"
-            style={{ marginLeft: 8 }}
-            onClick={openGuideForActive}
-            aria-label="Open Usage Guide"
-          >
-            Guide
-          </button>
-        </div>
-      </header>
-      <nav className="toc">
-        {tocSections.map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            className={activeId === s.id ? 'active' : undefined}
-            onClick={() => setActiveId(s.id)}
-          >
-            {s.label}
-          </a>
-        ))}
-      </nav>
-      <div className="section controls" aria-label="Data and export controls">
-        <label>
-          Summary CSV:{' '}
-          <input type="file" accept=".csv" onChange={onSummaryFile} />
-        </label>
-        {loadingSummary && (
-          <progress value={summaryProgress} max={summaryProgressMax} />
-        )}
-        <label>
-          Details CSV:{' '}
-          <input type="file" accept=".csv" onChange={onDetailsFile} />
-        </label>
-        {(loadingDetails || processingDetails) && (
-          <progress
-            value={loadingDetails ? detailsProgress : undefined}
-            max={loadingDetails ? detailsProgressMax : undefined}
-          />
-        )}
-        {error && (
-          <div role="alert" style={{ color: 'red' }}>
-            {error}
-          </div>
-        )}
-        <div
-          className="control-group"
-          aria-label="Session controls"
-          style={{ marginTop: 6 }}
-        >
-          <span className="control-title">Session</span>
-          <label title="Enable local session persistence">
-            <input
-              type="checkbox"
-              checked={persistEnabled}
-              onChange={(e) => setPersistEnabled(e.target.checked)}
-            />{' '}
-            Remember data locally
-          </label>
-          <button
-            className="btn-ghost"
-            onClick={handleSaveNow}
-            disabled={!persistEnabled}
-            aria-label="Save session now"
-          >
-            Save now
-          </button>
-          <button
-            className="btn-ghost"
-            onClick={handleLoadSaved}
-            aria-label="Load saved session"
-          >
-            Load saved
-          </button>
-          <button
-            className="btn-ghost"
-            onClick={handleClearSaved}
-            aria-label="Clear saved session"
-          >
-            Clear saved
-          </button>
-          <label
-            style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}
-            title="Import session JSON"
-          >
-            Import JSON
-            <input
-              type="file"
-              accept="application/json"
-              onChange={handleImportJson}
-            />
-          </label>
-        </div>
-        <div className="control-group" aria-label="Export controls">
-          <span className="control-title">Export</span>
-          <button
-            className="btn-primary"
-            onClick={handleExportJson}
-            disabled={!summaryData && !detailsData}
-          >
-            Export JSON
-          </button>
-          <button
-            className="btn-primary"
-            onClick={() =>
-              downloadTextFile(
-                'aggregates.csv',
-                buildSummaryAggregatesCSV(summaryData || []),
-                'text/csv'
-              )
-            }
-            disabled={!summaryData}
-          >
-            Export Aggregates CSV
-          </button>
-          <button
-            className="btn-primary"
-            onClick={() =>
-              openPrintReportHTML(
-                summaryData || [],
-                apneaClusters || [],
-                falseNegatives || []
-              )
-            }
-            disabled={!summaryData}
-          >
-            Open Print Report
-          </button>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            alignItems: 'end',
-          }}
-        >
-          <div>
-            <label>
-              Filter start{' '}
-              <input
-                type="date"
-                onChange={(e) =>
-                  setDateFilter((prev) => ({
-                    ...prev,
-                    start: e.target.value ? new Date(e.target.value) : null,
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <div>
-            <label>
-              Filter end{' '}
-              <input
-                type="date"
-                onChange={(e) =>
-                  setDateFilter((prev) => ({
-                    ...prev,
-                    end: e.target.value ? new Date(e.target.value) : null,
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <button onClick={() => setDateFilter({ start: null, end: null })}>
-            Reset filter
-          </button>
-        </div>
-      </div>
-      {filteredSummary && (
-        <div className="section">
-          <Overview
-            clusters={apneaClusters}
-            falseNegatives={falseNegatives}
-          />
-        </div>
-      )}
-      {filteredSummary && (
-        <div className="section">
-          <ErrorBoundary>
-            <SummaryAnalysis clusters={apneaClusters} />
-          </ErrorBoundary>
-          <div style={{ marginTop: 8 }}>
-            <h2 id="range-compare">
-              Range Comparisons{' '}
-              <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" />
-            </h2>
-            <div
-              style={{
-                display: 'flex',
-                gap: 8,
-                flexWrap: 'wrap',
-                alignItems: 'end',
-              }}
-            >
-              <div>
-                <label>
-                  Range A start{' '}
-                  <input
-                    type="date"
-                    onChange={(e) =>
-                      setRangeA((prev) => ({
-                        ...prev,
-                        start: e.target.value ? new Date(e.target.value) : null,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              <div>
-                <label>
-                  Range A end{' '}
-                  <input
-                    type="date"
-                    onChange={(e) =>
-                      setRangeA((prev) => ({
-                        ...prev,
-                        end: e.target.value ? new Date(e.target.value) : null,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              <button onClick={() => setRangeA(dateFilter)}>
-                Use current filter as A
-              </button>
-              <div style={{ width: 12 }} />
-              <div>
-                <label>
-                  Range B start{' '}
-                  <input
-                    type="date"
-                    onChange={(e) =>
-                      setRangeB((prev) => ({
-                        ...prev,
-                        start: e.target.value ? new Date(e.target.value) : null,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              <div>
-                <label>
-                  Range B end{' '}
-                  <input
-                    type="date"
-                    onChange={(e) =>
-                      setRangeB((prev) => ({
-                        ...prev,
-                        end: e.target.value ? new Date(e.target.value) : null,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              <button onClick={() => setRangeB(dateFilter)}>
-                Use current filter as B
-              </button>
+        <header className="app-header">
+          <div className="inner">
+            <div className="title">
+              <h1>OSCAR Sleep Data Analysis</h1>
+              <span className="badge">beta</span>
             </div>
-            <ErrorBoundary>
-              <RangeComparisons rangeA={rangeA} rangeB={rangeB} />
-            </ErrorBoundary>
+            <ThemeToggle />
+            <button
+              className="btn-ghost"
+              style={{ marginLeft: 8 }}
+              onClick={openGuideForActive}
+              aria-label="Open Usage Guide"
+            >
+              Guide
+            </button>
+          </div>
+        </header>
+        <nav className="toc">
+          {tocSections.map((s) => (
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className={activeId === s.id ? 'active' : undefined}
+              onClick={() => setActiveId(s.id)}
+            >
+              {s.label}
+            </a>
+          ))}
+        </nav>
+        <div className="section controls" aria-label="Data and export controls">
+          <label>
+            Summary CSV:{' '}
+            <input type="file" accept=".csv" onChange={onSummaryFile} />
+          </label>
+          {loadingSummary && (
+            <progress value={summaryProgress} max={summaryProgressMax} />
+          )}
+          <label>
+            Details CSV:{' '}
+            <input type="file" accept=".csv" onChange={onDetailsFile} />
+          </label>
+          {(loadingDetails || processingDetails) && (
+            <progress
+              value={loadingDetails ? detailsProgress : undefined}
+              max={loadingDetails ? detailsProgressMax : undefined}
+            />
+          )}
+          {error && (
+            <div role="alert" style={{ color: 'red' }}>
+              {error}
+            </div>
+          )}
+          <div
+            className="control-group"
+            aria-label="Session controls"
+            style={{ marginTop: 6 }}
+          >
+            <span className="control-title">Session</span>
+            <label title="Enable local session persistence">
+              <input
+                type="checkbox"
+                checked={persistEnabled}
+                onChange={(e) => setPersistEnabled(e.target.checked)}
+              />{' '}
+              Remember data locally
+            </label>
+            <button
+              className="btn-ghost"
+              onClick={handleSaveNow}
+              disabled={!persistEnabled}
+              aria-label="Save session now"
+            >
+              Save now
+            </button>
+            <button
+              className="btn-ghost"
+              onClick={handleLoadSaved}
+              aria-label="Load saved session"
+            >
+              Load saved
+            </button>
+            <button
+              className="btn-ghost"
+              onClick={handleClearSaved}
+              aria-label="Clear saved session"
+            >
+              Clear saved
+            </button>
+            <label
+              style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}
+              title="Import session JSON"
+            >
+              Import JSON
+              <input
+                type="file"
+                accept="application/json"
+                onChange={handleImportJson}
+              />
+            </label>
+          </div>
+          <div className="control-group" aria-label="Export controls">
+            <span className="control-title">Export</span>
+            <button
+              className="btn-primary"
+              onClick={handleExportJson}
+              disabled={!summaryData && !detailsData}
+            >
+              Export JSON
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() =>
+                downloadTextFile(
+                  'aggregates.csv',
+                  buildSummaryAggregatesCSV(summaryData || []),
+                  'text/csv'
+                )
+              }
+              disabled={!summaryData}
+            >
+              Export Aggregates CSV
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() =>
+                openPrintReportHTML(
+                  summaryData || [],
+                  apneaClusters || [],
+                  falseNegatives || []
+                )
+              }
+              disabled={!summaryData}
+            >
+              Open Print Report
+            </button>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+              alignItems: 'end',
+            }}
+          >
+            <div>
+              <label>
+                Filter start{' '}
+                <input
+                  type="date"
+                  onChange={(e) =>
+                    setDateFilter((prev) => ({
+                      ...prev,
+                      start: e.target.value ? new Date(e.target.value) : null,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <div>
+              <label>
+                Filter end{' '}
+                <input
+                  type="date"
+                  onChange={(e) =>
+                    setDateFilter((prev) => ({
+                      ...prev,
+                      end: e.target.value ? new Date(e.target.value) : null,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <button onClick={() => setDateFilter({ start: null, end: null })}>
+              Reset filter
+            </button>
           </div>
         </div>
-      )}
-      {filteredDetails && (
-        <>
+        {filteredSummary && (
+          <div className="section">
+            <Overview
+              clusters={apneaClusters}
+              falseNegatives={falseNegatives}
+            />
+          </div>
+        )}
+        {filteredSummary && (
           <div className="section">
             <ErrorBoundary>
-              <ApneaEventStats />
+              <SummaryAnalysis clusters={apneaClusters} />
             </ErrorBoundary>
+            <div style={{ marginTop: 8 }}>
+              <h2 id="range-compare">
+                Range Comparisons{' '}
+                <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" />
+              </h2>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  flexWrap: 'wrap',
+                  alignItems: 'end',
+                }}
+              >
+                <div>
+                  <label>
+                    Range A start{' '}
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setRangeA((prev) => ({
+                          ...prev,
+                          start: e.target.value
+                            ? new Date(e.target.value)
+                            : null,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <div>
+                  <label>
+                    Range A end{' '}
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setRangeA((prev) => ({
+                          ...prev,
+                          end: e.target.value ? new Date(e.target.value) : null,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <button onClick={() => setRangeA(dateFilter)}>
+                  Use current filter as A
+                </button>
+                <div style={{ width: 12 }} />
+                <div>
+                  <label>
+                    Range B start{' '}
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setRangeB((prev) => ({
+                          ...prev,
+                          start: e.target.value
+                            ? new Date(e.target.value)
+                            : null,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <div>
+                  <label>
+                    Range B end{' '}
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setRangeB((prev) => ({
+                          ...prev,
+                          end: e.target.value ? new Date(e.target.value) : null,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+                <button onClick={() => setRangeB(dateFilter)}>
+                  Use current filter as B
+                </button>
+              </div>
+              <ErrorBoundary>
+                <RangeComparisons rangeA={rangeA} rangeB={rangeB} />
+              </ErrorBoundary>
+            </div>
           </div>
-          <div className="section">
-            <ErrorBoundary>
-              <ApneaClusterAnalysis
-                clusters={apneaClusters}
-                params={clusterParams}
-                onParamChange={onClusterParamChange}
-                details={filteredDetails}
-              />
-            </ErrorBoundary>
-          </div>
-          <div className="section">
-            <ErrorBoundary>
-              <FalseNegativesAnalysis
-                list={falseNegatives}
-                preset={fnPreset}
-                onPresetChange={setFnPreset}
-              />
-            </ErrorBoundary>
-          </div>
-          <div className="section">
-            <ErrorBoundary>
-              <RawDataExplorer
-                onApplyDateFilter={({ start, end }) =>
-                  setDateFilter({ start, end })
-                }
-              />
-            </ErrorBoundary>
-          </div>
-        </>
-      )}
-      <DocsModal
-        isOpen={guideOpen}
-        onClose={() => setGuideOpen(false)}
-        initialAnchor={guideAnchor}
-      />
+        )}
+        {filteredDetails && (
+          <>
+            <div className="section">
+              <ErrorBoundary>
+                <ApneaEventStats />
+              </ErrorBoundary>
+            </div>
+            <div className="section">
+              <ErrorBoundary>
+                <ApneaClusterAnalysis
+                  clusters={apneaClusters}
+                  params={clusterParams}
+                  onParamChange={onClusterParamChange}
+                  details={filteredDetails}
+                />
+              </ErrorBoundary>
+            </div>
+            <div className="section">
+              <ErrorBoundary>
+                <FalseNegativesAnalysis
+                  list={falseNegatives}
+                  preset={fnPreset}
+                  onPresetChange={setFnPreset}
+                />
+              </ErrorBoundary>
+            </div>
+            <div className="section">
+              <ErrorBoundary>
+                <RawDataExplorer
+                  onApplyDateFilter={({ start, end }) =>
+                    setDateFilter({ start, end })
+                  }
+                />
+              </ErrorBoundary>
+            </div>
+          </>
+        )}
+        <DocsModal
+          isOpen={guideOpen}
+          onClose={() => setGuideOpen(false)}
+          initialAnchor={guideAnchor}
+        />
       </div>
     </DataProvider>
   );

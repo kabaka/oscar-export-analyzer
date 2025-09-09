@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Plot from 'react-plotly.js';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { clustersToCsv } from '../utils/clustering';
@@ -6,12 +6,7 @@ import { applyChartTheme } from '../utils/chartTheme';
 import GuideLink from './GuideLink';
 import VizHelp from './VizHelp';
 
-export default function ApneaClusterAnalysis({
-  clusters,
-  params,
-  onParamChange,
-  details,
-}) {
+function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });
   const isDark = useEffectiveDarkMode();
@@ -44,7 +39,7 @@ export default function ApneaClusterAnalysis({
     return { leakTrace: leak, pressureTrace: pressure };
   }, [selectedCluster, details]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     const csv = clustersToCsv(clusters);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -53,7 +48,7 @@ export default function ApneaClusterAnalysis({
     a.download = 'apnea_clusters.csv';
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [clusters]);
 
   return (
     <div className="section">
@@ -359,3 +354,6 @@ export default function ApneaClusterAnalysis({
     </div>
   );
 }
+
+export { ApneaClusterAnalysis };
+export default React.memo(ApneaClusterAnalysis);

@@ -1,6 +1,8 @@
 import React from 'react';
 import { render } from '@testing-library/react';
-import UsagePatternsCharts from './UsagePatternsCharts';
+import * as UPC from './UsagePatternsCharts';
+
+const UsagePatternsCharts = UPC.default;
 
 const data = [
   { Date: '2021-01-01', 'Total Time': '1:00:00' },
@@ -14,5 +16,11 @@ describe('UsagePatternsCharts', () => {
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
     // 4 charts => at least 4 help tooltips
     expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe('UsagePatternsCharts memoization', () => {
+  it('exports a memoized component', () => {
+    expect(UsagePatternsCharts.type).toBe(UPC.UsagePatternsCharts);
   });
 });

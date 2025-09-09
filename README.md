@@ -77,6 +77,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 </ErrorBoundary>;
 ```
 
+### Performance
+
+`ApneaClusterAnalysis`, `EpapTrendsCharts`, and `UsagePatternsCharts` are wrapped in `React.memo` to skip unnecessary re-renders. When passing callbacks (e.g., `onParamChange`), wrap them with `useCallback` so their references remain stable.
+
 Workers
 
 - Parsing: PapaParse runs in a web worker (`worker: true`).
