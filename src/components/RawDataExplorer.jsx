@@ -343,7 +343,7 @@ export default function RawDataExplorer({
                   renderRow={(row, idx) => (
                     <div
                       role="row"
-                      key={idx}
+                      key={row.id ?? row.DateTime ?? row.Date ?? idx}
                       style={{
                         display: 'table',
                         tableLayout: 'fixed',
@@ -431,8 +431,8 @@ export default function RawDataExplorer({
               </tr>
             </thead>
             <tbody>
-              {pivot.rows.map((r, i) => (
-                <tr key={i}>
+              {pivot.rows.map((r) => (
+                <tr key={r[pivotBy]}>
                   {pivot.columns.map((c) => (
                     <td key={c}>
                       {typeof r[c] === 'number'
