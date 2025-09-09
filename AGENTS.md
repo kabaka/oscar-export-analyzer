@@ -18,13 +18,15 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 - `npm run test:watch`: run tests in watch mode.
 - `npm run test:coverage`: run tests with coverage report.
 - `npm run prepare`: install Husky Git hooks.
+- `npm run lint`: run ESLint for code quality.
+- `npm run format`: apply Prettier formatting.
 
 ## Coding Style & Naming Conventions
 - Indentation: 2 spaces; semicolons optional but be consistent.
 - Components: `PascalCase` filenames (e.g., `UsagePatternsCharts.jsx`).
 - Functions/vars: `camelCase`; constants: `UPPER_SNAKE_CASE`.
 - Keep components functional and focused; co-locate tests and small helpers.
-- No linter is configured; ensure clean Vite builds with zero warnings.
+- ESLint and Prettier are configured; run `npm run lint` and `npm run format` to maintain code quality.
 
 ## Testing Guidelines
 - Frameworks: Vitest + @testing-library/react + jsdom.
@@ -34,8 +36,8 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 
 ## Commit & Pull Request Guidelines
 - Style: prefer Conventional Commits (e.g., `feat:`, `fix:`, `chore:`) as in history.
-- Pre-commit: Husky runs `npm test` and `npm run build`; ensure both pass and builds have no warnings.
-- PRs: include clear description, linked issues, and screenshots/GIFs for UI changes. Ensure CI passes.
+- Pre-commit: Husky runs `npm run lint`, `npm test`, and `npm run build`; ensure all pass and builds have no warnings.
+- PRs: include clear description, linked issues, and screenshots/GIFs for UI changes. Ensure CI (lint, build, tests) passes.
 
 ## Security & Configuration Tips
 - Node: use version 20 (see CI). Avoid committing data exports containing sensitive information.

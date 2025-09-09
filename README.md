@@ -160,7 +160,7 @@ npm run format
 
 The linter enforces strict rules such as React hook dependency completeness,
 no unused variables or empty blocks, and rejection of irregular whitespace.
-The pre-commit hook runs `npm run lint` along with tests and the build.
+The pre-commit hook runs `npm run lint` along with tests and the build, and CI also runs lint before building and testing.
 
 See `analysis.js` for usage details.
 
