@@ -12,8 +12,9 @@ module.exports = {
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'prettier',
+    'plugin:prettier/recommended',
   ],
+  plugins: ['no-unsanitized'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
@@ -30,5 +31,9 @@ module.exports = {
     'no-unused-vars': 'error',
     'no-empty': 'error',
     'no-irregular-whitespace': 'error',
+    'prettier/prettier': 'warn',
+    'no-unsanitized/method': 'error',
+    'no-unsanitized/property': 'error',
+    'no-magic-numbers': 'warn',
   },
 };
