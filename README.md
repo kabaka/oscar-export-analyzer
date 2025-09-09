@@ -152,16 +152,16 @@ node analysis.js <detailsCsv> [YYYY-MM-DD] [groupGapSec]
 
 This project uses [Vitest](https://vitest.dev/) for unit and integration testing. Tests are colocated with source files using the `.test.*` suffix.
 
-**Run tests once:**
+**Run tests in watch mode:**
 
 ```bash
 npm run test
 ```
 
-**Run tests in watch mode:**
+**Run the full suite once (CI-style):**
 
 ```bash
-npm run test:watch
+npm test -- --run
 ```
 
 **Generate a coverage report:**
