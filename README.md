@@ -1,6 +1,6 @@
 # OSCAR Export Analyzer
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/kabaka/oscar-export-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produced by the [OSCAR](https://www.sleepfiles.com/OSCAR/) sleep‑therapy companion. It was built for curious patients, clinicians, and researchers who want to inspect nightly therapy performance in greater depth than OSCAR’s own interface. The application parses both nightly summary exports and detailed event logs, renders a large collection of interactive charts, and surfaces statistics that help guide conversations with a healthcare professional.
