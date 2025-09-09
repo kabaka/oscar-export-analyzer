@@ -1,15 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import Plot from 'react-plotly.js';
-import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { clustersToCsv } from '../utils/clustering';
-import { applyChartTheme } from '../utils/chartTheme';
+import ThemedPlot from './ThemedPlot';
 import GuideLink from './GuideLink';
 import VizHelp from './VizHelp';
 
 function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });
-  const isDark = useEffectiveDarkMode();
   const sorted = [...clusters].sort((a, b) => {
     const dir = sortBy.dir === 'asc' ? 1 : -1;
     const va = a[sortBy.key] ?? 0;
@@ -203,8 +200,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
         <div>
           <h3>Event-level Timeline for Cluster #{selected + 1}</h3>
           <div className="chart-with-help">
-            <Plot
-              key={isDark ? 'dark-cluster' : 'light-cluster'}
+            <ThemedPlot
               data={[
                 {
                   type: 'bar',
@@ -221,7 +217,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                   ),
                 },
               ]}
-              layout={applyChartTheme(isDark, {
+              layout={{
                 title: `Cluster #${selected + 1} Event Timeline`,
                 xaxis: { type: 'date', title: 'Event Start Time' },
                 yaxis: { title: 'Event #' },
@@ -230,7 +226,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                   200,
                   sorted[selected].events.length * 30 + 100
                 ),
-              })}
+              }}
               config={{ displayModeBar: false }}
             />
             <VizHelp text="Horizontal bars show individual event durations positioned by start time. Longer bars mean longer apneas within the selected cluster." />
@@ -242,8 +238,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
         <div>
           <h3>Leak/Pressure around Cluster</h3>
           <div className="chart-with-help">
-            <Plot
-              key={isDark ? 'dark-leak-pressure' : 'light-leak-pressure'}
+            <ThemedPlot
               data={[
                 leakTrace.length && {
                   type: 'scatter',
@@ -262,7 +257,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                   yaxis: leakTrace.length ? 'y2' : 'y1',
                 },
               ].filter(Boolean)}
-              layout={applyChartTheme(isDark, {
+              layout={{
                 title: 'Leak/Pressure around Cluster',
                 xaxis: { type: 'date', title: 'Time' },
                 yaxis: {
@@ -280,7 +275,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                   : {}),
                 margin: { l: 80, r: 20, t: 40, b: 40 },
                 height: 300,
-              })}
+              }}
               config={{ displayModeBar: false }}
             />
             <VizHelp text="Leak and pressure traces provide context around the cluster window." />
