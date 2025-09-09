@@ -88,7 +88,7 @@ Extensive documentation lives in the [`docs`](./docs) folder.
 
 - **User Guide** – Eight chapters cover setup, visualization interpretation, statistical concepts, and more.
 - **Developer Guide** – Explains project structure, coding conventions, and how to run tests.
-- **Rendering** – Markdown guides are rendered with [react-markdown](https://github.com/remarkjs/react-markdown) and sanitized using [DOMPurify](https://github.com/cure53/DOMPurify) to guard against malicious input.
+- **Rendering** – Markdown guides are rendered with [react-markdown](https://github.com/remarkjs/react-markdown), [KaTeX](https://katex.org/) for math using GitHub-compatible `$`/`$$` delimiters, and [remark-gfm](https://github.com/remarkjs/remark-gfm) for tables, then sanitized with [DOMPurify](https://github.com/cure53/DOMPurify) to guard against malicious input.
 
 ## Contributing
 
