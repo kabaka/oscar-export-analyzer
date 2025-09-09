@@ -17,6 +17,7 @@ import {
   pearson,
 } from './stats';
 import { kmSurvival } from './stats';
+import { normalQuantile, normalCdf } from './stats';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -149,6 +150,21 @@ describe('quantile', () => {
 
   it('interpolates for even-length array', () => {
     expect(quantile([0, 10], 0.5)).toBe(5);
+  });
+});
+
+describe('normalQuantile', () => {
+  it('inverts normalCdf at common probabilities', () => {
+    const probs = [0.025, 0.5, 0.975];
+    probs.forEach((p) => {
+      const z = normalQuantile(p);
+      expect(normalCdf(z)).toBeCloseTo(p, 4);
+    });
+  });
+
+  it('matches known z-scores', () => {
+    expect(normalQuantile(0.841344746)).toBeCloseTo(1, 4);
+    expect(normalQuantile(0.158655254)).toBeCloseTo(-1, 4);
   });
 });
 
