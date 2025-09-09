@@ -5,13 +5,15 @@ import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../utils/chartTheme';
 import VizHelp from './VizHelp';
 import GuideLink from './GuideLink';
+import { useData } from '../context/DataContext';
 
 /**
  * Displays statistics and charts for individual apnea event durations
  * and their frequency per night to highlight anomalies and outliers.
  */
-export default function ApneaEventStats({ data }) {
-  const stats = useMemo(() => computeApneaEventStats(data), [data]);
+export default function ApneaEventStats() {
+  const { filteredDetails: data } = useData();
+  const stats = useMemo(() => computeApneaEventStats(data || []), [data]);
   const km = useMemo(
     () => kmSurvival(stats.durations || []),
     [stats.durations]

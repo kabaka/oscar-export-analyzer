@@ -9,6 +9,7 @@ vi.mock('./EpapTrendsCharts', () => ({ default: () => null }));
 import SummaryAnalysis from './SummaryAnalysis';
 import UsagePatternsCharts from './UsagePatternsCharts';
 import AhiTrendsCharts from './AhiTrendsCharts';
+import { DataProvider } from '../context/DataContext';
 
 const sample = [
   {
@@ -21,7 +22,11 @@ const sample = [
 
 describe('SummaryAnalysis', () => {
   it('renders charts without range selection logging', () => {
-    render(<SummaryAnalysis data={sample} />);
+    render(
+      <DataProvider summaryData={sample} filteredSummary={sample}>
+        <SummaryAnalysis />
+      </DataProvider>
+    );
     expect(UsagePatternsCharts.mock.calls[0][0].onRangeSelect).toBeUndefined();
     expect(AhiTrendsCharts.mock.calls[0][0].onRangeSelect).toBeUndefined();
   });

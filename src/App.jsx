@@ -30,6 +30,7 @@ import {
   downloadTextFile,
   openPrintReportHTML,
 } from './utils/export';
+import { DataProvider } from './context/DataContext';
 
 function App() {
   const tocSections = useMemo(
@@ -355,7 +356,15 @@ function App() {
   }, [filteredSummary, filteredDetails, tocSections]);
 
   return (
-    <div className="container">
+    <DataProvider
+      summaryData={summaryData}
+      setSummaryData={setSummaryData}
+      detailsData={detailsData}
+      setDetailsData={setDetailsData}
+      filteredSummary={filteredSummary}
+      filteredDetails={filteredDetails}
+    >
+      <div className="container">
       <header className="app-header">
         <div className="inner">
           <div className="title">
@@ -536,7 +545,6 @@ function App() {
       {filteredSummary && (
         <div className="section">
           <Overview
-            summaryData={filteredSummary}
             clusters={apneaClusters}
             falseNegatives={falseNegatives}
           />
@@ -545,7 +553,7 @@ function App() {
       {filteredSummary && (
         <div className="section">
           <ErrorBoundary>
-            <SummaryAnalysis data={filteredSummary} clusters={apneaClusters} />
+            <SummaryAnalysis clusters={apneaClusters} />
           </ErrorBoundary>
           <div style={{ marginTop: 8 }}>
             <h2 id="range-compare">
@@ -625,11 +633,7 @@ function App() {
               </button>
             </div>
             <ErrorBoundary>
-              <RangeComparisons
-                summaryData={summaryData || []}
-                rangeA={rangeA}
-                rangeB={rangeB}
-              />
+              <RangeComparisons rangeA={rangeA} rangeB={rangeB} />
             </ErrorBoundary>
           </div>
         </div>
@@ -638,7 +642,7 @@ function App() {
         <>
           <div className="section">
             <ErrorBoundary>
-              <ApneaEventStats data={filteredDetails} />
+              <ApneaEventStats />
             </ErrorBoundary>
           </div>
           <div className="section">
@@ -663,8 +667,6 @@ function App() {
           <div className="section">
             <ErrorBoundary>
               <RawDataExplorer
-                summaryRows={summaryData || []}
-                detailRows={detailsData || []}
                 onApplyDateFilter={({ start, end }) =>
                   setDateFilter({ start, end })
                 }
@@ -678,7 +680,8 @@ function App() {
         onClose={() => setGuideOpen(false)}
         initialAnchor={guideAnchor}
       />
-    </div>
+      </div>
+    </DataProvider>
   );
 }
 
