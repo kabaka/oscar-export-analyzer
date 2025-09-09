@@ -21,15 +21,13 @@ export function parseDuration(s, opts = {}) {
   }
   const parts = s.split(':');
   if (parts.length === 0 || parts.length > 3) {
-    if (throwOnError)
-      throw new Error(`Invalid duration format: ${s}`);
+    if (throwOnError) throw new Error(`Invalid duration format: ${s}`);
     return NaN;
   }
   const nums = [];
   for (const p of parts) {
     if (!/^\d+(?:\.\d+)?$/.test(p)) {
-      if (throwOnError)
-        throw new Error(`Invalid duration segment: ${p}`);
+      if (throwOnError) throw new Error(`Invalid duration segment: ${p}`);
       return NaN;
     }
     nums.push(parseFloat(p));
@@ -535,6 +533,38 @@ export function spearman(x, y) {
   const rx = rank(x);
   const ry = rank(y);
   return pearson(rx, ry);
+}
+
+// Standard normal quantile (inverse CDF) approximation
+// Uses the Beasley-Springer/Moro algorithm for high accuracy
+export function normalQuantile(p) {
+  const a = [2.50662823884, -18.61500062529, 41.39119773534, -25.44106049637];
+  const b = [-8.4735109309, 23.08336743743, -21.06224101826, 3.13082909833];
+  const c = [
+    0.3374754822726147, 0.9761690190917186, 0.1607979714918209,
+    0.0276438810333863, 0.0038405729373609, 0.0003951896511919,
+    0.0000321767881768, 0.0000002888167364, 0.0000003960315187,
+  ];
+  const y = p - 0.5;
+  if (Math.abs(y) < 0.42) {
+    const r = y * y;
+    const num = y * (((a[3] * r + a[2]) * r + a[1]) * r + a[0]);
+    const den = (((b[3] * r + b[2]) * r + b[1]) * r + b[0]) * r + 1;
+    return num / den;
+  }
+  let r = p;
+  if (y > 0) r = 1 - p;
+  r = Math.log(-Math.log(r));
+  let x =
+    c[0] +
+    r *
+      (c[1] +
+        r *
+          (c[2] +
+            r *
+              (c[3] +
+                r * (c[4] + r * (c[5] + r * (c[6] + r * (c[7] + r * c[8])))))));
+  return y < 0 ? -x : x;
 }
 
 // Standard normal CDF approximation

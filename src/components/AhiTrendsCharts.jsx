@@ -4,6 +4,7 @@ import {
   detectUsageBreakpoints,
   computeUsageRolling,
   detectChangePoints,
+  normalQuantile,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import ThemedPlot from './ThemedPlot';
@@ -112,37 +113,6 @@ export default function AhiTrendsCharts({
     sorted.reduce((s, v) => s + (v - mu) ** 2, 0) / Math.max(1, n - 1)
   );
   const probs = sorted.map((_, i) => (i + 1) / (n + 1));
-  const normalQuantile = (p) => {
-    // Beasley-Springer/Moro approx via inverse error function
-    const a = [2.50662823884, -18.61500062529, 41.39119773534, -25.44106049637];
-    const b = [-8.4735109309, 23.08336743743, -21.06224101826, 3.13082909833];
-    const c = [
-      0.3374754822726147, 0.9761690190917186, 0.1607979714918209,
-      0.0276438810333863, 0.0038405729373609, 0.0003951896511919,
-      0.0000321767881768, 0.0000002888167364, 0.0000003960315187,
-    ];
-    const y = p - 0.5;
-    if (Math.abs(y) < 0.42) {
-      const r = y * y;
-      const num = y * (((a[3] * r + a[2]) * r + a[1]) * r + a[0]);
-      const den = (((b[3] * r + b[2]) * r + b[1]) * r + b[0]) * r + 1;
-      return num / den;
-    }
-    let r = p;
-    if (y > 0) r = 1 - p;
-    r = Math.log(-Math.log(r));
-    let x =
-      c[0] +
-      r *
-        (c[1] +
-          r *
-            (c[2] +
-              r *
-                (c[3] +
-                  r *
-                    (c[4] + r * (c[5] + r * (c[6] + r * (c[7] + r * c[8])))))));
-    return y < 0 ? -x : x;
-  };
   const theo = probs.map((p) => mu + sigma * normalQuantile(p));
 
   // Bad-night tagging with explanations
