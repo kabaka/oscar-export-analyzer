@@ -1,5 +1,9 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import GUIDE_MD from '../../docs/USAGE_GUIDE.md?raw';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+const DOCS = import.meta.glob('../../docs/user/*.md', {
+  query: '?raw',
+  import: 'default',
+});
 
 function slugify(text) {
   return String(text)
@@ -156,14 +160,29 @@ function renderMarkdown(md) {
 
 export default function DocsModal({ isOpen, onClose, initialAnchor }) {
   const contentRef = useRef(null);
-  const parsed = useMemo(() => renderMarkdown(GUIDE_MD), []);
+  const [markdown, setMarkdown] = useState('');
+
+  useEffect(() => {
+    async function load() {
+      const files = await Promise.all(
+        Object.entries(DOCS)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([, loader]) => loader())
+      );
+      setMarkdown(files.join('\n'));
+    }
+    load();
+  }, []);
+
+  const parsed = useMemo(
+    () => (markdown ? renderMarkdown(markdown) : { html: '', toc: [] }),
+    [markdown]
+  );
 
   useEffect(() => {
     if (!isOpen) return;
-    // after open, optionally scroll to anchor
     const id = initialAnchor;
     if (id) {
-      // wait a tick for innerHTML to render
       requestAnimationFrame(() => {
         const el = contentRef.current?.querySelector(`#${CSS.escape(id)}`);
         if (el && typeof el.scrollIntoView === 'function') {
@@ -171,7 +190,7 @@ export default function DocsModal({ isOpen, onClose, initialAnchor }) {
         }
       });
     }
-  }, [isOpen, initialAnchor]);
+  }, [isOpen, initialAnchor, markdown]);
 
   if (!isOpen) return null;
   return (
