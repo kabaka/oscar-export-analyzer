@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import Plot from 'react-plotly.js';
 import {
   quantile,
   detectUsageBreakpoints,
@@ -7,8 +6,7 @@ import {
   detectChangePoints,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
-import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import { applyChartTheme } from '../utils/chartTheme';
+import ThemedPlot from './ThemedPlot';
 import VizHelp from './VizHelp';
 
 export default function AhiTrendsCharts({
@@ -98,8 +96,6 @@ export default function AhiTrendsCharts({
   const range = Math.max(...ahis) - Math.min(...ahis);
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
 
-  const isDark = useEffectiveDarkMode();
-
   // Severity bands counts
   const bands = {
     le5: ahis.filter((v) => v <= 5).length,
@@ -182,8 +178,7 @@ export default function AhiTrendsCharts({
   return (
     <div className="usage-charts">
       <div className="chart-with-help">
-        <Plot
-          key={isDark ? 'dark' : 'light'}
+        <ThemedPlot
           useResizeHandler
           style={{ width: '100%', height: '300px' }}
           data={[
@@ -292,7 +287,7 @@ export default function AhiTrendsCharts({
                 ]
               : []),
           ]}
-          layout={applyChartTheme(isDark, {
+          layout={{
             title: 'Nightly AHI Over Time',
             legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
             shapes: [
@@ -338,7 +333,7 @@ export default function AhiTrendsCharts({
             xaxis: { title: 'Date' },
             yaxis: { title: 'AHI (events/hour)' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
-          })}
+          }}
           onRelayout={(ev) => {
             const x0 = ev?.['xaxis.range[0]'];
             const x1 = ev?.['xaxis.range[1]'];
@@ -358,8 +353,7 @@ export default function AhiTrendsCharts({
 
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-hist' : 'light-hist'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -371,7 +365,7 @@ export default function AhiTrendsCharts({
                 marker: { color: COLORS.primary },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Distribution of Nightly AHI',
               legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
               shapes: [
@@ -415,7 +409,7 @@ export default function AhiTrendsCharts({
               xaxis: { title: 'AHI (events/hour)' },
               yaxis: { title: 'Count' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
             config={{
               responsive: true,
               displaylogo: false,
@@ -429,8 +423,7 @@ export default function AhiTrendsCharts({
           <VizHelp text="Distribution of nightly AHI values. Dashed line marks the median; dotted line marks the mean." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-box' : 'light-box'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -442,19 +435,18 @@ export default function AhiTrendsCharts({
                 marker: { color: '#888' },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Boxplot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)', zeroline: false },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="Boxplot of nightly AHI; box shows the interquartile range (IQR) and points indicate outliers." />
         </div>
       </div>
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-violin' : 'light-violin'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -466,17 +458,16 @@ export default function AhiTrendsCharts({
                 box: { visible: true },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'Violin Plot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="Violin plot of nightly AHI; width shows density of values. Inner box shows quartiles and median." />
         </div>
         <div className="chart-item chart-with-help">
-          <Plot
-            key={isDark ? 'dark-qq' : 'light-qq'}
+          <ThemedPlot
             useResizeHandler
             style={{ width: '100%', height: '300px' }}
             data={[
@@ -497,12 +488,12 @@ export default function AhiTrendsCharts({
                 line: { dash: 'dash' },
               },
             ]}
-            layout={applyChartTheme(isDark, {
+            layout={{
               title: 'QQ Plot vs Normal',
               xaxis: { title: 'Theoretical Quantiles' },
               yaxis: { title: 'Observed AHI Quantiles' },
               margin: { t: 40, l: 60, r: 20, b: 50 },
-            })}
+            }}
           />
           <VizHelp text="QQ plot comparing observed AHI quantiles to a theoretical normal distribution. Deviations from the dashed y=x line indicate non-normality." />
         </div>
