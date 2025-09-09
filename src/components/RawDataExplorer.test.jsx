@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RawDataExplorer from './RawDataExplorer';
+import { DataProvider } from '../context/DataContext';
 
 const sampleSummary = [
   { Date: '2024-07-01', UsageHours: 7.2, AHI: 3.1 },
@@ -24,7 +25,9 @@ const sampleDetails = [
 describe('RawDataExplorer', () => {
   test('renders and filters summary rows by search', async () => {
     render(
-      <RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />
+      <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
+        <RawDataExplorer />
+      </DataProvider>
     );
     expect(screen.getByRole('tablist')).toBeInTheDocument();
     // Table should show 3 rows initially (reported count)
@@ -36,7 +39,9 @@ describe('RawDataExplorer', () => {
 
   test('toggle columns visibility', async () => {
     render(
-      <RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />
+      <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
+        <RawDataExplorer />
+      </DataProvider>
     );
     const summary = screen.getByText('Columns');
     await userEvent.click(summary);
@@ -51,7 +56,9 @@ describe('RawDataExplorer', () => {
 
   test('sorts by header click', async () => {
     render(
-      <RawDataExplorer summaryRows={sampleSummary} detailRows={sampleDetails} />
+      <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
+        <RawDataExplorer />
+      </DataProvider>
     );
     // Click AHI header to sort asc
     const ahiHeader = await screen.findByRole('columnheader', { name: 'AHI' });
@@ -67,11 +74,9 @@ describe('RawDataExplorer', () => {
   test('apply date filter triggers callback', async () => {
     const onApply = vi.fn();
     render(
-      <RawDataExplorer
-        summaryRows={sampleSummary}
-        detailRows={sampleDetails}
-        onApplyDateFilter={onApply}
-      />
+      <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
+        <RawDataExplorer onApplyDateFilter={onApply} />
+      </DataProvider>
     );
     const start = screen.getByLabelText('Start date:');
     const end = screen.getByLabelText('End date:');

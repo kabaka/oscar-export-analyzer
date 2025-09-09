@@ -1,16 +1,17 @@
 import React, { useMemo, useCallback } from 'react';
 import { parseDuration, mannWhitneyUTest } from '../utils/stats';
+import { useData } from '../context/DataContext';
 
 /**
  * Compare usage hours and AHI across two date ranges.
  *
  * @param {Object} props
- * @param {Array<Object>} [props.summaryData] - Summary rows containing 'Total Time' and 'AHI' fields.
  * @param {{ start: Date|null, end: Date|null }} [props.rangeA] - Range A.
  * @param {{ start: Date|null, end: Date|null }} [props.rangeB] - Range B.
  * @returns {JSX.Element|null}
  */
-export default function RangeComparisons({ summaryData = [], rangeA, rangeB }) {
+export default function RangeComparisons({ rangeA, rangeB }) {
+  const { summaryData = [] } = useData();
   const pick = useCallback(
     (r) => {
       if (!r) return [];
