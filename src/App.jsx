@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useEffectiveDarkMode } from './hooks/useEffectiveDarkMode';
 import { useCsvFiles } from './hooks/useCsvFiles';
 import {
   clusterApneaEvents,
@@ -19,124 +18,17 @@ import SummaryAnalysis from './components/SummaryAnalysis';
 import ApneaClusterAnalysis from './components/ApneaClusterAnalysis';
 import ApneaEventStats from './components/ApneaEventStats';
 import RangeComparisons from './components/RangeComparisons';
-import Plot from 'react-plotly.js';
-import { applyChartTheme } from './utils/chartTheme';
 import RawDataExplorer from './components/RawDataExplorer';
 import ThemeToggle from './components/ThemeToggle';
 import DocsModal from './components/DocsModal';
 import GuideLink from './components/GuideLink';
-import VizHelp from './components/VizHelp';
-import { buildSession, applySession } from './utils/session';
-import { putLastSession, getLastSession, clearLastSession } from './utils/db';
+import FalseNegativesAnalysis from './components/FalseNegativesAnalysis';
+import useSessionManager from './hooks/useSessionManager';
 import {
   buildSummaryAggregatesCSV,
   downloadTextFile,
   openPrintReportHTML,
 } from './utils/export';
-
-function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
-  const prefersDark = useEffectiveDarkMode();
-  return (
-    <div>
-      <h2 id="false-negatives">
-        Potential False Negatives{' '}
-        <GuideLink
-          anchor="potential-false-negatives-details-csv"
-          label="Guide"
-        />
-      </h2>
-      <div
-        style={{
-          display: 'flex',
-          gap: 12,
-          alignItems: 'center',
-          marginBottom: 8,
-        }}
-      >
-        <label>
-          Preset:
-          <select
-            value={preset}
-            onChange={(e) => onPresetChange?.(e.target.value)}
-          >
-            <option value="strict">Strict</option>
-            <option value="balanced">Balanced</option>
-            <option value="lenient">Lenient</option>
-          </select>
-        </label>
-        <span style={{ opacity: 0.8 }}>
-          Thresholds tuned for sensitivity/specificity
-        </span>
-      </div>
-      <div>
-        <h3>False Negative Clusters by Confidence Over Time</h3>
-        <div className="chart-with-help">
-          <Plot
-            key={prefersDark ? 'dark-fn' : 'light-fn'}
-            useResizeHandler
-            style={{ width: '100%', height: '400px' }}
-            data={[
-              {
-                type: 'scatter',
-                mode: 'markers',
-                x: list.map((cl) => cl.start),
-                y: list.map((cl) => cl.confidence * 100),
-                marker: {
-                  size: list.map((cl) =>
-                    Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5))
-                  ),
-                  color: list.map((cl) => cl.confidence * 100),
-                  colorscale: 'Viridis',
-                  showscale: true,
-                  colorbar: { title: 'Confidence (%)' },
-                },
-                text: list.map(
-                  (cl) =>
-                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`
-                ),
-                hovertemplate: '%{text}<extra></extra>',
-              },
-            ]}
-            layout={applyChartTheme(prefersDark, {
-              title: 'False Negative Clusters by Confidence Over Time',
-              xaxis: { type: 'date', title: 'Cluster Start Time' },
-              yaxis: {
-                title: 'Confidence (%)',
-                range: [FALSE_NEG_CONFIDENCE_MIN * 100, 100],
-              },
-              margin: { l: 80, r: 20, t: 40, b: 40 },
-              height: 400,
-            })}
-            config={{ responsive: true, displaylogo: false }}
-          />
-          <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />
-        </div>
-      </div>
-      <div className="cluster-table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Start</th>
-              <th>Duration (s)</th>
-              <th>Confidence</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((cl, i) => (
-              <tr key={i}>
-                <td>{i + 1}</td>
-                <td>{cl.start.toLocaleString()}</td>
-                <td>{cl.durationSec.toFixed(0)}</td>
-                <td>{(cl.confidence * 100).toFixed(0)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   const tocSections = useMemo(
@@ -245,38 +137,15 @@ function App() {
     return () => window.removeEventListener('open-guide', handler);
   }, []);
 
-  // Session persistence (opt-in and explicit load/save to avoid conflicts with frequent uploads)
-  const [persistEnabled, setPersistEnabled] = useState(() => {
-    try {
-      return localStorage.getItem('persistEnabled') === '1';
-    } catch {
-      return false;
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem('persistEnabled', persistEnabled ? '1' : '0');
-    } catch {
-      // ignore persistence errors
-    }
-  }, [persistEnabled]);
-  useEffect(() => {
-    if (!persistEnabled) return;
-    const timer = setTimeout(() => {
-      const session = buildSession({
-        summaryData,
-        detailsData,
-        clusterParams,
-        dateFilter,
-        rangeA,
-        rangeB,
-        fnPreset,
-      });
-      putLastSession(session).catch(() => {});
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [
+  const {
     persistEnabled,
+    setPersistEnabled,
+    handleSaveNow,
+    handleLoadSaved,
+    handleClearSaved,
+    handleExportJson,
+    handleImportJson,
+  } = useSessionManager({
     summaryData,
     detailsData,
     clusterParams,
@@ -284,78 +153,13 @@ function App() {
     rangeA,
     rangeB,
     fnPreset,
-  ]);
-  const handleSaveNow = async () => {
-    const session = buildSession({
-      summaryData,
-      detailsData,
-      clusterParams,
-      dateFilter,
-      rangeA,
-      rangeB,
-      fnPreset,
-    });
-    await putLastSession(session).catch(() => {});
-  };
-  const handleLoadSaved = async () => {
-    const sess = await getLastSession().catch(() => null);
-    if (sess) {
-      const patch = applySession(sess);
-      if (patch) {
-        setClusterParams(patch.clusterParams || clusterParams);
-        setDateFilter(patch.dateFilter || { start: null, end: null });
-        setRangeA(patch.rangeA || { start: null, end: null });
-        setRangeB(patch.rangeB || { start: null, end: null });
-        setSummaryData(patch.summaryData || null);
-        setDetailsData(patch.detailsData || null);
-      }
-    }
-  };
-  const handleClearSaved = async () => {
-    await clearLastSession().catch(() => {});
-  };
-  const handleExportJson = () => {
-    const session = buildSession({
-      summaryData,
-      detailsData,
-      clusterParams,
-      dateFilter,
-      rangeA,
-      rangeB,
-      fnPreset,
-    });
-    const blob = new Blob([JSON.stringify(session, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'oscar_session.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-  const handleImportJson = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const sess = JSON.parse(reader.result);
-        const patch = applySession(sess);
-        if (patch) {
-          setClusterParams(patch.clusterParams || clusterParams);
-          setDateFilter(patch.dateFilter || { start: null, end: null });
-          setRangeA(patch.rangeA || { start: null, end: null });
-          setRangeB(patch.rangeB || { start: null, end: null });
-          setSummaryData(patch.summaryData || null);
-          setDetailsData(patch.detailsData || null);
-        }
-      } catch {
-        // ignore invalid JSON
-      }
-    };
-    reader.readAsText(file);
-  };
+    setClusterParams,
+    setDateFilter,
+    setRangeA,
+    setRangeB,
+    setSummaryData,
+    setDetailsData,
+  });
 
   useEffect(() => {
     if (detailsData) {

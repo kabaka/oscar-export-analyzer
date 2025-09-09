@@ -30,7 +30,7 @@ For a full walkthrough and interpretation tips, see the Usage & Interpretation G
 - AHI trends (time-series, histogram, boxplot, violin/QQ plots, averages, min/max, threshold line at AHI > 5)
 - Pressure & leak: EPAP trends and distribution, EPAP vs AHI scatter and 2D density, correlation matrix (EPAP, AHI, usage, optional leak), and EPAP titration helper with Mann–Whitney test
 - Clustered apnea events: parameter panel allows tuning gap seconds, FLG bridge threshold, FLG gap, minimum event count, and min/max total duration; clusters recompute live. Table is sortable (duration, count, severity) and supports CSV export. Click a row to view an event-level Gantt timeline for the selected cluster and overlay leak/pressure traces for context.
-- Timeline overlay and table of potential false negatives (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
+- Timeline overlay and table of potential false negatives handled by the `FalseNegativesAnalysis` component (clusters of high flow-limit events with no obstructive/central events; shows start time, duration, and confidence score)
 - Apnea event characteristics and anomaly reporting (event duration percentiles, extreme and outlier events, per-night event frequency and outlier nights, KM survival)
 
 ### Navigation
@@ -76,6 +76,7 @@ Persistence & Sessions (opt-in)
 - Opt-in local persistence: Enable “Remember data locally” to save parsed Summary/Details, parameters, and ranges in IndexedDB; saving is debounced to avoid churn during frequent uploads and dev hot reloads.
 - Explicit controls: Save now, Load saved, Clear saved. Export/import full JSON sessions for sharing or backup.
 - Save now is enabled only after turning on “Remember data locally”. “Load saved” is always available and restores the last saved session if present.
+- Session persistence logic lives in the `useSessionManager` hook to keep UI components focused.
 
 For contribution and workflow details, see [AGENTS.md](AGENTS.md).
 
