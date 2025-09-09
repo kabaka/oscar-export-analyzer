@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 /**
  * Small inline help tooltip for visualizations.
+ * Uses `useId` for a deterministic tooltip id; pass `id` to override.
  * Usage: place inside a relatively positioned container.
  */
 export default function VizHelp({ text, id, style, inline = true }) {
-  const tipId = id || `viz-tip-${Math.random().toString(36).slice(2)}`;
+  const generatedId = useId();
+  const tipId = id || `viz-tip-${generatedId}`;
   const className = `viz-help ${inline ? 'viz-inline' : 'viz-overlay'}`;
   const posStyle = inline
     ? {}
