@@ -135,6 +135,11 @@ npm run build
 
 Built files will be output to the `dist/` directory.
 
+#### Bundle analysis
+
+`npm run build` also creates a `stats.html` report using `rollup-plugin-visualizer`.
+Open this file in a browser to inspect bundle composition.
+
 ### Running analysis script
 
 An optional CLI tool is provided for detailed event analysis:

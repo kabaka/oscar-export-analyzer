@@ -50,7 +50,7 @@ describe('In-page navigation', () => {
 
     // SummaryAnalysis section should also render
     expect(
-      screen.getByRole('heading', { name: /Usage Patterns/i })
+      await screen.findByRole('heading', { name: /Usage Patterns/i })
     ).toBeInTheDocument();
 
     // Clicking the Overview link should update the hash

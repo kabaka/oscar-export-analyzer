@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  lazy,
+  Suspense,
+} from 'react';
 import { useCsvFiles } from './hooks/useCsvFiles';
 import { useSessionManager } from './hooks/useSessionManager';
 import {
@@ -15,11 +22,15 @@ import {
   computeClusterSeverity,
 } from './utils/clustering';
 import Overview from './components/Overview';
-import SummaryAnalysis from './components/SummaryAnalysis';
-import ApneaClusterAnalysis from './components/ApneaClusterAnalysis';
-import ApneaEventStats from './components/ApneaEventStats';
+const SummaryAnalysis = lazy(() => import('./components/SummaryAnalysis'));
+const ApneaClusterAnalysis = lazy(
+  () => import('./components/ApneaClusterAnalysis')
+);
+const ApneaEventStats = lazy(() => import('./components/ApneaEventStats'));
+const FalseNegativesAnalysis = lazy(
+  () => import('./components/FalseNegativesAnalysis')
+);
 import RangeComparisons from './components/RangeComparisons';
-import FalseNegativesAnalysis from './components/FalseNegativesAnalysis';
 import RawDataExplorer from './components/RawDataExplorer';
 import ErrorBoundary from './components/ErrorBoundary';
 import ThemeToggle from './components/ThemeToggle';
@@ -553,7 +564,9 @@ function App() {
         {filteredSummary && (
           <div className="section">
             <ErrorBoundary>
-              <SummaryAnalysis clusters={apneaClusters} />
+              <Suspense fallback={<div>Loading...</div>}>
+                <SummaryAnalysis clusters={apneaClusters} />
+              </Suspense>
             </ErrorBoundary>
             <div style={{ marginTop: 8 }}>
               <h2 id="range-compare">
@@ -646,26 +659,32 @@ function App() {
           <>
             <div className="section">
               <ErrorBoundary>
-                <ApneaEventStats />
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ApneaEventStats />
+                </Suspense>
               </ErrorBoundary>
             </div>
             <div className="section">
               <ErrorBoundary>
-                <ApneaClusterAnalysis
-                  clusters={apneaClusters}
-                  params={clusterParams}
-                  onParamChange={onClusterParamChange}
-                  details={filteredDetails}
-                />
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ApneaClusterAnalysis
+                    clusters={apneaClusters}
+                    params={clusterParams}
+                    onParamChange={onClusterParamChange}
+                    details={filteredDetails}
+                  />
+                </Suspense>
               </ErrorBoundary>
             </div>
             <div className="section">
               <ErrorBoundary>
-                <FalseNegativesAnalysis
-                  list={falseNegatives}
-                  preset={fnPreset}
-                  onPresetChange={setFnPreset}
-                />
+                <Suspense fallback={<div>Loading...</div>}>
+                  <FalseNegativesAnalysis
+                    list={falseNegatives}
+                    preset={fnPreset}
+                    onPresetChange={setFnPreset}
+                  />
+                </Suspense>
               </ErrorBoundary>
             </div>
             <div className="section">

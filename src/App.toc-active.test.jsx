@@ -67,6 +67,8 @@ describe('TOC active highlighting', () => {
       ).toBeInTheDocument();
     });
 
+    await screen.findByRole('heading', { name: /Pressure Settings/i });
+
     // Click-based activation
     const ahiLink = screen.getByRole('link', { name: /AHI Trends/i });
     await userEvent.click(ahiLink);
