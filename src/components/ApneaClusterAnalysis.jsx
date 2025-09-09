@@ -341,7 +341,7 @@ export default function ApneaClusterAnalysis({
           <tbody>
             {sorted.map((cl, i) => (
               <tr
-                key={i}
+                key={cl.start.getTime()}
                 onClick={() => setSelected(i)}
                 className={selected === i ? 'row-selected' : undefined}
                 style={{ cursor: 'pointer' }}

@@ -556,8 +556,8 @@ export default function AhiTrendsCharts({
               </tr>
             </thead>
             <tbody>
-              {badNights.slice(0, 10).map((b, i) => (
-                <tr key={i}>
+              {badNights.slice(0, 10).map((b) => (
+                <tr key={b.date.getTime()}>
                   <td>{b.date.toISOString().slice(0, 10)}</td>
                   <td>{b.ahi.toFixed(2)}</td>
                   <td>{b.reasons.join(', ')}</td>
