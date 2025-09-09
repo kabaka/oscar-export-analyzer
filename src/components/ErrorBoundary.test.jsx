@@ -28,6 +28,15 @@ describe('ErrorBoundary', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('fallback text');
   });
 
+  it('logs errors via console.error', () => {
+    render(
+      <ErrorBoundary fallback="fallback text">
+        <Bomb />
+      </ErrorBoundary>
+    );
+    expect(console.error).toHaveBeenCalled();
+  });
+
   it('renders children when there is no error', () => {
     render(
       <ErrorBoundary fallback="fallback text">
