@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ReactDOMServer from 'react-dom/server';
+import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 
 const DOCS = import.meta.glob('../../docs/user/*.md', {
   query: '?raw',
@@ -14,155 +17,29 @@ function slugify(text) {
     .replace(/-+/g, '-');
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+function buildToc(md) {
+  return md
+    .split(/\r?\n/)
+    .map((line) => line.match(/^(#{1,6})\s+(.+)$/))
+    .filter(Boolean)
+    .map(([, hashes, title]) => {
+      const level = hashes.length;
+      const text = title.trim();
+      return { level, text, id: slugify(text) };
+    });
 }
 
-function renderMarkdown(md) {
-  const lines = md.split(/\r?\n/);
-  const parts = [];
-  const toc = [];
-  let i = 0;
-  let inCode = false;
-  let codeLang = '';
-  // Nested list stack and open <li> tracking
-  const listStack = []; // [{ type: 'ul'|'ol', level: number }]
-  let openLiLevel = -1;
-
-  const closeLiIfOpenAt = (level) => {
-    if (openLiLevel === level) {
-      parts.push('</li>');
-      openLiLevel = -1;
-    }
-  };
-  const closeListsTo = (targetLen = 0) => {
-    closeLiIfOpenAt(listStack.length - 1);
-    while (listStack.length > targetLen) {
-      parts.push(`</${listStack.pop().type}>`);
-      closeLiIfOpenAt(listStack.length - 1);
-    }
-  };
-  const ensureListLevel = (level, type) => {
-    while (listStack.length < level + 1) {
-      parts.push(`<${type}>`);
-      listStack.push({ type, level: listStack.length });
-    }
-    if (listStack.length && listStack[listStack.length - 1].type !== type) {
-      closeListsTo(level);
-      parts.push(`<${type}>`);
-      listStack.push({ type, level });
-    }
-  };
-  const closeAllBlockContexts = () => {
-    if (listStack.length) {
-      if (openLiLevel >= 0) {
-        parts.push('</li>');
-        openLiLevel = -1;
-      }
-      closeListsTo(0);
-    }
-  };
-
-  while (i < lines.length) {
-    const raw = lines[i];
-    const line = raw.replace(/\t/g, '  ');
-    // fenced code
-    const fence = line.match(/^```(.*)$/);
-    if (fence) {
-      if (inCode) {
-        parts.push('</code></pre>');
-        inCode = false;
-        codeLang = '';
-      } else {
-        closeAllBlockContexts();
-        codeLang = fence[1]?.trim() || '';
-        parts.push(
-          `<pre class="doc-code"><code${codeLang ? ` data-lang="${escapeHtml(codeLang)}"` : ''}>`
-        );
-        inCode = true;
-      }
-      i++;
-      continue;
-    }
-    if (inCode) {
-      parts.push(escapeHtml(raw) + '\n');
-      i++;
-      continue;
-    }
-    // headings
-    const h = line.match(/^(#{1,6})\s+(.+)$/);
-    if (h) {
-      closeAllBlockContexts();
-      const level = h[1].length;
-      const text = h[2].trim();
-      const id = slugify(text);
-      toc.push({ level, id, text });
-      parts.push(`<h${level} id="${id}">${escapeHtml(text)}</h${level}>`);
-      i++;
-      continue;
-    }
-    // nested lists by indentation (2 spaces per level)
-    const mUl = line.match(/^(\s*)[-*]\s+(.+)$/);
-    const mOl = line.match(/^(\s*)\d+\.\s+(.+)$/);
-    if (mUl || mOl) {
-      const indent = (mUl || mOl)[1] || '';
-      const text = (mUl ? mUl[2] : mOl[2]).trim();
-      const type = mUl ? 'ul' : 'ol';
-      const level = Math.floor(indent.replace(/\t/g, '  ').length / 2);
-      ensureListLevel(level, type);
-      if (openLiLevel === level) {
-        parts.push('</li>');
-        openLiLevel = -1;
-      }
-      parts.push(`<li>${inline(text)}`);
-      openLiLevel = level;
-      i++;
-      continue;
-    }
-    // blank line
-    if (/^\s*$/.test(line)) {
-      if (openLiLevel >= 0) {
-        parts.push('</li>');
-        openLiLevel = -1;
-      }
-      parts.push('');
-      i++;
-      continue;
-    }
-    // paragraph
-    closeAllBlockContexts();
-    parts.push(`<p>${inline(line)}</p>`);
-    i++;
-  }
-  if (openLiLevel >= 0) {
-    parts.push('</li>');
-    openLiLevel = -1;
-  }
-  closeListsTo(0);
-  return { html: parts.join('\n'), toc };
-
-  function inline(txt) {
-    let s = escapeHtml(txt);
-    s = s.replace(/`([^`]+)`/g, (_m, g1) => `<code>${escapeHtml(g1)}</code>`);
-    s = s.replace(
-      /\[([^\]]+)\]\(([^)\s]+)\)/g,
-      (_m, t, url) =>
-        `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(t)}</a>`
-    );
-    return s;
-  }
-}
-
-export default function DocsModal({ isOpen, onClose, initialAnchor }) {
+export default function DocsModal({
+  isOpen,
+  onClose,
+  initialAnchor,
+  markdownSource,
+}) {
   const contentRef = useRef(null);
-  const [markdown, setMarkdown] = useState('');
+  const [markdown, setMarkdown] = useState(markdownSource ?? '');
 
   useEffect(() => {
+    if (markdownSource !== undefined) return;
     async function load() {
       const files = await Promise.all(
         Object.entries(DOCS)
@@ -172,12 +49,29 @@ export default function DocsModal({ isOpen, onClose, initialAnchor }) {
       setMarkdown(files.join('\n'));
     }
     load();
-  }, []);
+  }, [markdownSource]);
 
-  const parsed = useMemo(
-    () => (markdown ? renderMarkdown(markdown) : { html: '', toc: [] }),
-    [markdown]
-  );
+  const parsed = useMemo(() => {
+    if (!markdown) return { html: '', toc: [] };
+
+    const headingComponents = {};
+    for (let level = 1; level <= 6; level++) {
+      const Tag = `h${level}`;
+      // eslint-disable-next-line react/display-name
+      headingComponents[Tag] = (props) => {
+        const text = React.Children.toArray(props.children).join('');
+        const id = slugify(text);
+        return React.createElement(Tag, { id, ...props });
+      };
+    }
+
+    const rawHtml = ReactDOMServer.renderToStaticMarkup(
+      <ReactMarkdown components={headingComponents}>{markdown}</ReactMarkdown>
+    );
+    const html = DOMPurify.sanitize(rawHtml);
+    const toc = buildToc(markdown);
+    return { html, toc };
+  }, [markdown]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -190,7 +84,7 @@ export default function DocsModal({ isOpen, onClose, initialAnchor }) {
         }
       });
     }
-  }, [isOpen, initialAnchor, markdown]);
+  }, [isOpen, initialAnchor, parsed.html]);
 
   if (!isOpen) return null;
   return (
