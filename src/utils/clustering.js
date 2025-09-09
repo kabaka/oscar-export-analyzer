@@ -1,5 +1,7 @@
 // Utility functions for clustering apnea annotation events and detecting false negatives.
 
+import { EVENT_WINDOW_MS } from '../constants';
+
 // Default parameters for apnea clustering
 const DEFAULT_APNEA_GAP_SEC = 120; // max gap (sec) between annotation events to cluster
 const DEFAULT_FLG_BRIDGE_THRESHOLD = 0.1; // FLG level to bridge annotation events (low threshold)
@@ -182,8 +184,8 @@ export function detectFalseNegatives(details, opts = {}) {
         const t = new Date(r['DateTime']).getTime();
         return (
           ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']) &&
-          t >= cl.start.getTime() - 5000 &&
-          t <= cl.end.getTime() + 5000
+          t >= cl.start.getTime() - EVENT_WINDOW_MS &&
+          t <= cl.end.getTime() + EVENT_WINDOW_MS
         );
       });
     })
