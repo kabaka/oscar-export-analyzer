@@ -7,7 +7,7 @@ The overview combines key performance indicators (KPIs) with miniature sparkline
 
 | KPI | Definition | Calculation |
 | --- | ---------- | ----------- |
-| **Avg Usage (hrs)** | Mean nightly usage | \( \text{AvgUsage} = \frac{1}{n} \sum_{i=1}^n T_i \) where \(T_i\) is hours used on night \(i\) |
+| **Avg Usage (hrs)** | Mean nightly usage | $ \text{AvgUsage} = \frac{1}{n} \sum_{i=1}^n T_i $ where $T_i$ is hours used on night $i$ |
 | **Median AHI** | Middle value of nightly AHI | Median of nightly AHI series |
 | **Median EPAP** | Median expiratory pressure | Median of nightly `Median EPAP` column |
 | **Cluster Count** | Nights containing apnea clusters | Count of nights with ≥1 cluster |
@@ -20,11 +20,11 @@ This view answers **“How consistently am I using therapy?”**
 ### Time Series
 The line chart plots nightly usage hours with 7‑night and 30‑night rolling averages.  Change‑point markers highlight significant breaks.  For rolling averages we use:
 
-\[
+$$
 \text{RollingAvg}_{k}(t) = \frac{1}{k} \sum_{i=t-k+1}^{t} T_i
-\]
+$$
 
-where \(k\) is 7 or 30 and \(T_i\) is nightly usage.
+where $k$ is 7 or 30 and $T_i$ is nightly usage.
 
 ### Distribution Views
 - **Histogram** – Shows the frequency of usage hours; useful for spotting bimodal patterns.
@@ -57,18 +57,18 @@ Pearson and Spearman correlation coefficients are calculated between usage, AHI,
 ### Titration Helper
 Splits the dataset into low/high EPAP bins (default threshold is the median).  For each bin it computes mean AHI and a Mann–Whitney U test:
 
-\[
+$$
 U = n_1 n_2 + \frac{n_1(n_1+1)}{2} - R_1
-\]
+$$
 
-where \(R_1\) is the sum of ranks for group 1.  The test’s `p`‑value and rank‑biserial effect size quantify whether higher pressures reduce AHI.
+where $R_1$ is the sum of ranks for group 1.  The test’s `p`‑value and rank‑biserial effect size quantify whether higher pressures reduce AHI.
 
 ## Range Comparisons (A vs B)
 Use this view to evaluate an intervention by comparing two date ranges.  After selecting the ranges, the app computes deltas for usage and AHI:
 
-\[
+$$
 \Delta \text{Usage} = \bar{T}_B - \bar{T}_A \quad\quad \Delta \text{AHI} = \bar{A}_B - \bar{A}_A
-\]
+$$
 
 The table reports `p`‑values from the Mann–Whitney U test and the rank‑biserial effect size.  A waterfall chart visualizes the magnitude of changes.
 
