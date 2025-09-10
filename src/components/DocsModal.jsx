@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ReactDOMServer from 'react-dom/server';
+import { renderToStaticMarkup } from 'react-dom/server';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
@@ -94,7 +94,7 @@ export default function DocsModal({
       );
     };
 
-    const rawHtml = ReactDOMServer.renderToStaticMarkup(
+    const rawHtml = renderToStaticMarkup(
       <ReactMarkdown
         remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex]}
