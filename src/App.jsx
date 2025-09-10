@@ -362,6 +362,13 @@ function App() {
     // Re-run when data presence changes which may mount/unmount sections
   }, [filteredSummary, filteredDetails, tocSections]);
 
+  const formatDate = (d) =>
+    d
+      ? new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 10)
+      : '';
+
   return (
     <DataProvider
       summaryData={summaryData}
@@ -371,24 +378,59 @@ function App() {
       filteredSummary={filteredSummary}
       filteredDetails={filteredDetails}
     >
-      <div className="container">
-        <header className="app-header">
-          <div className="inner">
-            <div className="title">
-              <h1>OSCAR Sleep Data Analysis</h1>
-              <span className="badge">beta</span>
-            </div>
+      <header className="app-header">
+        <div className="inner">
+          <div className="title">
+            <h1>OSCAR Sleep Data Analysis</h1>
+            <span className="badge">beta</span>
+          </div>
+          <div className="date-filter">
+            <input
+              type="date"
+              value={formatDate(dateFilter.start)}
+              onChange={(e) =>
+                setDateFilter((prev) => ({
+                  ...prev,
+                  start: e.target.value ? new Date(e.target.value) : null,
+                }))
+              }
+              aria-label="Start date"
+            />
+            <span>-</span>
+            <input
+              type="date"
+              value={formatDate(dateFilter.end)}
+              onChange={(e) =>
+                setDateFilter((prev) => ({
+                  ...prev,
+                  end: e.target.value ? new Date(e.target.value) : null,
+                }))
+              }
+              aria-label="End date"
+            />
+            {(dateFilter.start || dateFilter.end) && (
+              <button
+                className="btn-ghost"
+                onClick={() => setDateFilter({ start: null, end: null })}
+                aria-label="Reset date filter"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="actions">
             <ThemeToggle />
             <button
               className="btn-ghost"
-              style={{ marginLeft: 8 }}
               onClick={openGuideForActive}
               aria-label="Open Usage Guide"
             >
               Guide
             </button>
           </div>
-        </header>
+        </div>
+      </header>
+      <div className="container">
         <nav className="toc">
           {tocSections.map((s) => (
             <a
@@ -500,46 +542,6 @@ function App() {
               disabled={!summaryData}
             >
               Print Page
-            </button>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              alignItems: 'end',
-            }}
-          >
-            <div>
-              <label>
-                Filter start{' '}
-                <input
-                  type="date"
-                  onChange={(e) =>
-                    setDateFilter((prev) => ({
-                      ...prev,
-                      start: e.target.value ? new Date(e.target.value) : null,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <div>
-              <label>
-                Filter end{' '}
-                <input
-                  type="date"
-                  onChange={(e) =>
-                    setDateFilter((prev) => ({
-                      ...prev,
-                      end: e.target.value ? new Date(e.target.value) : null,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <button onClick={() => setDateFilter({ start: null, end: null })}>
-              Reset filter
             </button>
           </div>
         </div>
