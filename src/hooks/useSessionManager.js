@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { buildSession, applySession } from '../utils/session';
 import { putLastSession, getLastSession, clearLastSession } from '../utils/db';
 
@@ -31,6 +31,14 @@ export function useSessionManager({
     } catch {
       // ignore persistence errors
     }
+  }, [persistEnabled]);
+
+  const prevPersistRef = useRef(persistEnabled);
+  useEffect(() => {
+    if (!persistEnabled && prevPersistRef.current) {
+      clearLastSession().catch(() => {});
+    }
+    prevPersistRef.current = persistEnabled;
   }, [persistEnabled]);
 
   useEffect(() => {

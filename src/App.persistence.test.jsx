@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import Papa from 'papaparse';
 import React from 'react';
 import App from './App.jsx';
 
@@ -74,6 +76,68 @@ describe('App persistence flow', () => {
     fireEvent.click(clearSaved);
     expect(clearLastSession).toHaveBeenCalledTimes(1);
     expect(memoryStore.last).toBeNull();
+
+    // Disabling persistence should clear again
+    fireEvent.click(remember);
+    expect(clearLastSession).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads saved session and overwrites current data', async () => {
+    vi.useRealTimers();
+    const { buildSession } = await import('./utils/session');
+    memoryStore.last = buildSession({
+      summaryData: [
+        {
+          Date: '2025-06-02',
+          'Total Time': '07:00:00',
+          AHI: '1',
+          'Median EPAP': '5',
+        },
+      ],
+      detailsData: [],
+    });
+
+    const parseMock = vi
+      .spyOn(Papa, 'parse')
+      .mockImplementation((file, options) => {
+        const rows = [
+          {
+            Date: '2025-06-01',
+            'Total Time': '08:00:00',
+            AHI: '5',
+            'Median EPAP': '6',
+          },
+        ];
+        if (options.chunk) {
+          options.chunk({ data: rows, meta: { cursor: file.size } });
+        }
+        if (options.complete) {
+          options.complete({ data: rows });
+        }
+      });
+
+    render(<App />);
+
+    const summaryInput = screen.getByLabelText(/Summary CSV/i);
+    const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
+      type: 'text/csv',
+    });
+    await userEvent.upload(summaryInput, summaryFile);
+
+    const card = await screen.findByText('Median AHI');
+    const cardEl = card.closest('.kpi-card');
+    expect(cardEl).not.toBeNull();
+    expect(within(cardEl).getByText('5.00')).toBeInTheDocument();
+
+    const loadSaved = screen.getByRole('button', { name: /load saved session/i });
+    fireEvent.click(loadSaved);
+
+    await waitFor(() => {
+      const updated = screen.getByText('Median AHI').closest('.kpi-card');
+      expect(within(updated).getByText('1.00')).toBeInTheDocument();
+    });
+
+    parseMock.mockRestore();
   });
 
   it('skips invalid duration strings when loading a saved session', async () => {
@@ -98,4 +162,5 @@ describe('App persistence flow', () => {
     expect(spy.mock.results.some((r) => Number.isNaN(r.value))).toBe(true);
     spy.mockRestore();
   });
+
 });

@@ -77,12 +77,15 @@ export function useCsvFiles() {
     // Expose setters so App can restore from saved sessions
     setSummaryData,
     setDetailsData,
-    onSummaryFile: handleFile(
-      setSummaryData,
-      setLoadingSummary,
-      setSummaryProgress,
-      setSummaryProgressMax
-    ),
+    onSummaryFile: (e) => {
+      setDetailsData(null);
+      handleFile(
+        setSummaryData,
+        setLoadingSummary,
+        setSummaryProgress,
+        setSummaryProgressMax
+      )(e);
+    },
     onDetailsFile: handleFile(
       setDetailsData,
       setLoadingDetails,

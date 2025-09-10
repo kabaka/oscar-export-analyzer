@@ -27,4 +27,4 @@ Store original OSCAR exports alongside your session JSON files.  Having raw data
 Check the project repository periodically for updates.  New versions may include additional visualizations, bug fixes, or improved statistical methods.
 
 ## Respect Data Privacy
-If using shared computers, disable **Remember data locally** and delete session files after use.  Sensitive health information should be handled carefully.
+If using shared computers, disable **Remember data locally** (which clears cached data) and delete any exported session files after use. Sensitive health information should be handled carefully.

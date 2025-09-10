@@ -83,4 +83,33 @@ describe('useSessionManager', () => {
     expect(getLastSession).toHaveBeenCalledTimes(1);
     expect(setSummaryData).toHaveBeenCalled();
   });
+
+  it('clears stored session when persistence is disabled', async () => {
+    const { result } = renderHook(() =>
+      useSessionManager({
+        summaryData: [],
+        detailsData: [],
+        clusterParams: {},
+        dateFilter: { start: null, end: null },
+        rangeA: { start: null, end: null },
+        rangeB: { start: null, end: null },
+        fnPreset: 'balanced',
+        setClusterParams: vi.fn(),
+        setDateFilter: vi.fn(),
+        setRangeA: vi.fn(),
+        setRangeB: vi.fn(),
+        setSummaryData: vi.fn(),
+        setDetailsData: vi.fn(),
+      })
+    );
+    act(() => result.current.setPersistEnabled(true));
+    vi.advanceTimersByTime(600);
+    expect(memoryStore.last).not.toBeNull();
+    await act(async () => {
+      result.current.setPersistEnabled(false);
+    });
+    const { clearLastSession } = await import('../utils/db');
+    expect(clearLastSession).toHaveBeenCalledTimes(1);
+    expect(memoryStore.last).toBeNull();
+  });
 });
