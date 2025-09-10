@@ -54,7 +54,7 @@ The application is organized into several views accessible from the sidebar:
 - **Event Analysis** – Includes apnea duration distributions, cluster detection, and potential false negatives.
 - **Raw Data** – Tabular view of the CSV contents with filtering and export.
 
-Use the theme toggle in the header to switch between light, dark, or system themes. The interface responds to window resizing and touch input for tablets.
+Use the theme toggle in the header to switch between light, dark, or system themes. A global date range filter beside the title narrows which nights are included in every view. The interface responds to window resizing and touch input for tablets.
 
 ## 4. Saving and Restoring Sessions
 

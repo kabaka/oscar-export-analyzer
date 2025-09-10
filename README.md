@@ -67,8 +67,9 @@ If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
 2. In the analyzer, use the **Summary CSV** picker to load the nightly summary file.
 3. Optionally load the **Details CSV** to unlock cluster detection and false‑negative analysis.
 4. Navigate via the sidebar to explore dashboards: **Overview**, **Usage Patterns**, **AHI Trends**, and more.
-5. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
-6. Enable **Remember data locally** if you want sessions to persist after closing the tab. Uploading a new Summary CSV replaces any previous session, and data is only saved after a file has been loaded so a refresh with no files won't wipe prior data. Use **Export JSON** to save a portable session snapshot.
+5. Use the date range filter in the header to limit which nights are included across all views.
+6. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
+7. Enable **Remember data locally** if you want sessions to persist after closing the tab. Uploading a new Summary CSV replaces any previous session, and data is only saved after a file has been loaded so a refresh with no files won't wipe prior data. Use **Export JSON** to save a portable session snapshot.
 
 ## Feature Tour
 
