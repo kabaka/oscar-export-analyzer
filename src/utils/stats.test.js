@@ -230,6 +230,14 @@ describe('summarizeUsage', () => {
     expect(usage.medianHours).toBe(2);
     expect(usage.iqrHours).toBe(1);
   });
+
+  it('handles empty input', () => {
+    const usage = summarizeUsage([]);
+    expect(usage.totalNights).toBe(0);
+    expect(Number.isNaN(usage.avgHours)).toBe(true);
+    expect(Number.isNaN(usage.minHours)).toBe(true);
+    expect(Number.isNaN(usage.maxHours)).toBe(true);
+  });
 });
 
 describe('computeAHITrends', () => {
@@ -245,6 +253,13 @@ describe('computeAHITrends', () => {
     expect(ahi.nightsAHIover5).toBe(1);
     expect(ahi.first30AvgAHI).toBeCloseTo(ahi.avgAHI);
     expect(ahi.last30AvgAHI).toBeCloseTo(ahi.avgAHI);
+  });
+
+  it('handles empty input', () => {
+    const ahi = computeAHITrends([]);
+    expect(Number.isNaN(ahi.avgAHI)).toBe(true);
+    expect(Number.isNaN(ahi.minAHI)).toBe(true);
+    expect(ahi.nightsAHIover5).toBe(0);
   });
 });
 
@@ -263,6 +278,16 @@ describe('computeEPAPTrends', () => {
     expect(epap.countHigh).toBe(1);
     expect(epap.avgAHILow).toBe(1);
     expect(epap.avgAHIHigh).toBe(3);
+  });
+
+  it('handles empty input', () => {
+    const epap = computeEPAPTrends([]);
+    expect(Number.isNaN(epap.minEPAP)).toBe(true);
+    expect(Number.isNaN(epap.maxEPAP)).toBe(true);
+    expect(Number.isNaN(epap.corrEPAPAHI)).toBe(true);
+    expect(epap.countLow).toBe(0);
+    expect(Number.isNaN(epap.avgAHILow)).toBe(true);
+    expect(Number.isNaN(epap.avgAHIHigh)).toBe(true);
   });
 });
 

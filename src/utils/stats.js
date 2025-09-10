@@ -148,22 +148,32 @@ export function summarizeUsage(data) {
     .map((r) => parseDuration(r['Total Time']) / 3600)
     .filter((h) => !isNaN(h));
   const sumHours = usageHours.reduce((sum, h) => sum + h, 0);
-  const avgHours = sumHours / totalNights;
+  const avgHours = totalNights ? sumHours / totalNights : NaN;
   const nightsLong = usageHours.filter((h) => h >= 4).length;
   const nightsLong6 = usageHours.filter((h) => h >= 6).length;
   const nightsShort = totalNights - nightsLong;
-  const minHours = Math.min(...usageHours);
-  const maxHours = Math.max(...usageHours);
-  const medianHours = quantile(usageHours, 0.5);
-  const p25Hours = quantile(usageHours, 0.25);
-  const p75Hours = quantile(usageHours, 0.75);
-  const iqrHours = p75Hours - p25Hours;
-  const outlierLowCount = usageHours.filter(
-    (h) => h < p25Hours - 1.5 * iqrHours,
-  ).length;
-  const outlierHighCount = usageHours.filter(
-    (h) => h > p75Hours + 1.5 * iqrHours,
-  ).length;
+  let minHours = NaN,
+    maxHours = NaN,
+    medianHours = NaN,
+    p25Hours = NaN,
+    p75Hours = NaN,
+    iqrHours = NaN,
+    outlierLowCount = 0,
+    outlierHighCount = 0;
+  if (usageHours.length) {
+    minHours = Math.min(...usageHours);
+    maxHours = Math.max(...usageHours);
+    medianHours = quantile(usageHours, 0.5);
+    p25Hours = quantile(usageHours, 0.25);
+    p75Hours = quantile(usageHours, 0.75);
+    iqrHours = p75Hours - p25Hours;
+    outlierLowCount = usageHours.filter(
+      (h) => h < p25Hours - 1.5 * iqrHours,
+    ).length;
+    outlierHighCount = usageHours.filter(
+      (h) => h > p75Hours + 1.5 * iqrHours,
+    ).length;
+  }
   return {
     totalNights,
     avgHours,
@@ -374,13 +384,23 @@ export function detectChangePoints(series, dates, penalty = 10) {
 // Compute AHI trend metrics from summary data rows
 export function computeAHITrends(data) {
   const ahis = data.map((r) => parseFloat(r['AHI'])).filter((v) => !isNaN(v));
-  const avgAHI = ahis.reduce((a, b) => a + b, 0) / ahis.length;
-  const minAHI = Math.min(...ahis);
-  const maxAHI = Math.max(...ahis);
-  const medianAHI = quantile(ahis, 0.5);
-  const p25AHI = quantile(ahis, 0.25);
-  const p75AHI = quantile(ahis, 0.75);
-  const iqrAHI = p75AHI - p25AHI;
+  const avgAHI = ahis.length
+    ? ahis.reduce((a, b) => a + b, 0) / ahis.length
+    : NaN;
+  let minAHI = NaN,
+    maxAHI = NaN,
+    medianAHI = NaN,
+    p25AHI = NaN,
+    p75AHI = NaN,
+    iqrAHI = NaN;
+  if (ahis.length) {
+    minAHI = Math.min(...ahis);
+    maxAHI = Math.max(...ahis);
+    medianAHI = quantile(ahis, 0.5);
+    p25AHI = quantile(ahis, 0.25);
+    p75AHI = quantile(ahis, 0.75);
+    iqrAHI = p75AHI - p25AHI;
+  }
   const nightsAHIover5 = ahis.filter((v) => v > 5).length;
   const sortedByDate = data
     .slice()
@@ -393,8 +413,12 @@ export function computeAHITrends(data) {
     .slice(-30)
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
-  const first30AvgAHI = first.reduce((a, b) => a + b, 0) / first.length;
-  const last30AvgAHI = last.reduce((a, b) => a + b, 0) / last.length;
+  const first30AvgAHI = first.length
+    ? first.reduce((a, b) => a + b, 0) / first.length
+    : NaN;
+  const last30AvgAHI = last.length
+    ? last.reduce((a, b) => a + b, 0) / last.length
+    : NaN;
   return {
     avgAHI,
     minAHI,
@@ -415,12 +439,20 @@ export function computeEPAPTrends(data) {
   const epaps = data
     .map((r) => parseFloat(r['Median EPAP']))
     .filter((v) => !isNaN(v));
-  const minEPAP = Math.min(...epaps);
-  const maxEPAP = Math.max(...epaps);
-  const medianEPAP = quantile(epaps, 0.5);
-  const p25EPAP = quantile(epaps, 0.25);
-  const p75EPAP = quantile(epaps, 0.75);
-  const iqrEPAP = p75EPAP - p25EPAP;
+  let minEPAP = NaN,
+    maxEPAP = NaN,
+    medianEPAP = NaN,
+    p25EPAP = NaN,
+    p75EPAP = NaN,
+    iqrEPAP = NaN;
+  if (epaps.length) {
+    minEPAP = Math.min(...epaps);
+    maxEPAP = Math.max(...epaps);
+    medianEPAP = quantile(epaps, 0.5);
+    p25EPAP = quantile(epaps, 0.25);
+    p75EPAP = quantile(epaps, 0.75);
+    iqrEPAP = p75EPAP - p25EPAP;
+  }
   const sortedByDate = data
     .slice()
     .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
@@ -432,31 +464,37 @@ export function computeEPAPTrends(data) {
     .slice(-30)
     .map((r) => parseFloat(r['Median EPAP']))
     .filter((v) => !isNaN(v));
-  const avgMedianEPAPFirst30 =
-    first30.reduce((a, b) => a + b, 0) / first30.length;
-  const avgMedianEPAPLast30 = last30.reduce((a, b) => a + b, 0) / last30.length;
+  const avgMedianEPAPFirst30 = first30.length
+    ? first30.reduce((a, b) => a + b, 0) / first30.length
+    : NaN;
+  const avgMedianEPAPLast30 = last30.length
+    ? last30.reduce((a, b) => a + b, 0) / last30.length
+    : NaN;
   const epapAhiPairs = data
     .map((r) => [parseFloat(r['Median EPAP']), parseFloat(r['AHI'])])
     .filter(([p, a]) => !isNaN(p) && !isNaN(a));
-  const meanEpap =
-    epapAhiPairs.reduce((sum, [p]) => sum + p, 0) / epapAhiPairs.length;
-  const meanAhi =
-    epapAhiPairs.reduce((sum, [, a]) => sum + a, 0) / epapAhiPairs.length;
-  const cov =
-    epapAhiPairs.reduce(
-      (sum, [p, a]) => sum + (p - meanEpap) * (a - meanAhi),
-      0,
-    ) /
-    (epapAhiPairs.length - 1);
-  const stdEp = Math.sqrt(
-    epapAhiPairs.reduce((sum, [p]) => sum + (p - meanEpap) ** 2, 0) /
-      (epapAhiPairs.length - 1),
-  );
-  const stdAh = Math.sqrt(
-    epapAhiPairs.reduce((sum, [, a]) => sum + (a - meanAhi) ** 2, 0) /
-      (epapAhiPairs.length - 1),
-  );
-  const corrEPAPAHI = cov / (stdEp * stdAh);
+  let corrEPAPAHI = NaN;
+  if (epapAhiPairs.length > 1) {
+    const meanEpap =
+      epapAhiPairs.reduce((sum, [p]) => sum + p, 0) / epapAhiPairs.length;
+    const meanAhi =
+      epapAhiPairs.reduce((sum, [, a]) => sum + a, 0) / epapAhiPairs.length;
+    const cov =
+      epapAhiPairs.reduce(
+        (sum, [p, a]) => sum + (p - meanEpap) * (a - meanAhi),
+        0,
+      ) /
+      (epapAhiPairs.length - 1);
+    const stdEp = Math.sqrt(
+      epapAhiPairs.reduce((sum, [p]) => sum + (p - meanEpap) ** 2, 0) /
+        (epapAhiPairs.length - 1),
+    );
+    const stdAh = Math.sqrt(
+      epapAhiPairs.reduce((sum, [, a]) => sum + (a - meanAhi) ** 2, 0) /
+        (epapAhiPairs.length - 1),
+    );
+    corrEPAPAHI = stdEp && stdAh ? cov / (stdEp * stdAh) : NaN;
+  }
   const lowGroup = data
     .filter((r) => parseFloat(r['Median EPAP']) < 7)
     .map((r) => parseFloat(r['AHI']))
@@ -467,8 +505,12 @@ export function computeEPAPTrends(data) {
     .filter((v) => !isNaN(v));
   const countLow = lowGroup.length;
   const countHigh = highGroup.length;
-  const avgAHILow = lowGroup.reduce((a, b) => a + b, 0) / (countLow || 1);
-  const avgAHIHigh = highGroup.reduce((a, b) => a + b, 0) / (countHigh || 1);
+  const avgAHILow = countLow
+    ? lowGroup.reduce((a, b) => a + b, 0) / countLow
+    : NaN;
+  const avgAHIHigh = countHigh
+    ? highGroup.reduce((a, b) => a + b, 0) / countHigh
+    : NaN;
   return {
     minEPAP,
     maxEPAP,
