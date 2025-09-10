@@ -63,7 +63,7 @@ describe('TOC active highlighting', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i })
+        screen.getByRole('heading', { name: /Overview Dashboard/i }),
       ).toBeInTheDocument();
     });
 

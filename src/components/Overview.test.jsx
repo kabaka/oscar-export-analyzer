@@ -25,7 +25,7 @@ describe('Overview', () => {
     render(
       <DataProvider summaryData={summaryData} filteredSummary={summaryData}>
         <Overview clusters={clusters} falseNegatives={falseNegatives} />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(screen.getByText('Overview Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Avg Usage (hrs)')).toBeInTheDocument();

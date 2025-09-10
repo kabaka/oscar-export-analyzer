@@ -91,7 +91,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             d.setDate(d.getDate() + dowIdx);
             const key = dateToStr(toISODate(d));
             return byDate.has(key) ? byDate.get(key) : null;
-          })
+          }),
         )
       : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
@@ -133,7 +133,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         onRangeSelect({ start: new Date(x0), end: new Date(x1) });
       }
     },
-    [onRangeSelect]
+    [onRangeSelect],
   );
 
   return (

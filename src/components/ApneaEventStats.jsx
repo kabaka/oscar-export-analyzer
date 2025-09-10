@@ -14,7 +14,7 @@ export default function ApneaEventStats() {
   const stats = useMemo(() => computeApneaEventStats(data || []), [data]);
   const km = useMemo(
     () => kmSurvival(stats.durations || []),
-    [stats.durations]
+    [stats.durations],
   );
   if (!stats.totalEvents) {
     return null;

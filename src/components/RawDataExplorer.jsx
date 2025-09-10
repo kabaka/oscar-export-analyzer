@@ -94,7 +94,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
 
   const toggleCol = (c) => {
     setVisibleCols((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
     );
   };
 
@@ -378,7 +378,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
                           >
                             {String(row?.[c] ?? '')}
                           </div>
-                        )
+                        ),
                       )}
                     </div>
                   )}

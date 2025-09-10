@@ -50,24 +50,24 @@ describe('CSV uploads and cross-component interactions', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i })
+        screen.getByRole('heading', { name: /Overview Dashboard/i }),
       ).toBeInTheDocument();
     });
     expect(
-      screen.queryByRole('heading', { name: /Raw Data Explorer/i })
+      screen.queryByRole('heading', { name: /Raw Data Explorer/i }),
     ).not.toBeInTheDocument();
 
     const detailsInput = screen.getByLabelText(/Details CSV/i);
     const detailsFile = new File(
       ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
       'details.csv',
-      { type: 'text/csv' }
+      { type: 'text/csv' },
     );
     await userEvent.upload(detailsInput, detailsFile);
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /Raw Data Explorer/i })
+        screen.getByRole('heading', { name: /Raw Data Explorer/i }),
       ).toBeInTheDocument();
     });
 
@@ -76,12 +76,12 @@ describe('CSV uploads and cross-component interactions', () => {
     expect(parseMock).toHaveBeenNthCalledWith(
       1,
       summaryFile,
-      expect.objectContaining({ worker: true })
+      expect.objectContaining({ worker: true }),
     );
     expect(parseMock).toHaveBeenNthCalledWith(
       2,
       detailsFile,
-      expect.objectContaining({ worker: true })
+      expect.objectContaining({ worker: true }),
     );
   });
 });

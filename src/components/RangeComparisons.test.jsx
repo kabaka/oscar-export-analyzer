@@ -15,10 +15,16 @@ describe('RangeComparisons', () => {
     render(
       <DataProvider summaryData={summary}>
         <RangeComparisons
-          rangeA={{ start: new Date('2024-01-01'), end: new Date('2024-01-10') }}
-          rangeB={{ start: new Date('2024-02-01'), end: new Date('2024-02-10') }}
+          rangeA={{
+            start: new Date('2024-01-01'),
+            end: new Date('2024-01-10'),
+          }}
+          rangeB={{
+            start: new Date('2024-02-01'),
+            end: new Date('2024-02-10'),
+          }}
         />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(screen.getByText(/Range Comparisons/)).toBeInTheDocument();
     expect(screen.getByText(/Usage/)).toBeInTheDocument();

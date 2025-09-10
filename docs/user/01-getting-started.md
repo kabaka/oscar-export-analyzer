@@ -1,16 +1,18 @@
 # OSCAR Export Analyzer — User Guide
 
-This guide shows how to load OSCAR CSV exports and interpret the resulting charts and tables.  It assumes you have already collected nightly therapy data with a PAP device and imported it into OSCAR.
+This guide shows how to load OSCAR CSV exports and interpret the resulting charts and tables. It assumes you have already collected nightly therapy data with a PAP device and imported it into OSCAR.
 
 ## 1. Preparing Your Data
+
 Before using the analyzer, export the necessary files from OSCAR:
 
 1. Open OSCAR and navigate to the patient profile of interest.
 2. From the **Data** menu choose **Export Data...**
-3. Select **Summary** and **Details** CSV exports.  The summary file contains one row per night; the details file lists individual apnea events and flow‑limitation intervals.
-4. Save the files to a convenient location.  Avoid renaming or modifying them so the analyzer can detect columns automatically.
+3. Select **Summary** and **Details** CSV exports. The summary file contains one row per night; the details file lists individual apnea events and flow‑limitation intervals.
+4. Save the files to a convenient location. Avoid renaming or modifying them so the analyzer can detect columns automatically.
 
 ### Summary CSV Columns
+
 The summary export typically includes:
 
 - `Date` – formatted as `YYYY-MM-DD`.
@@ -20,6 +22,7 @@ The summary export typically includes:
 - Optional leak statistics such as `Leak Rate Median` or `% Time above Leak Redline`.
 
 ### Details CSV Columns
+
 The details export provides higher fidelity information:
 
 - `Event` – `ClearAirway`, `Obstructive`, `Mixed`, or `FLG` (flow limitation).
@@ -27,17 +30,20 @@ The details export provides higher fidelity information:
 - `Data` or `Duration` – event duration in seconds or flow‑limitation magnitude.
 
 ## 2. Loading Files into the Analyzer
+
 1. Open <http://localhost:5173> after starting the development server or the deployed site if using a prebuilt bundle.
 2. Use the **Summary CSV** file input to choose the exported summary file.
-3. Optionally choose the **Details CSV** file.  Large files are parsed in a background worker and show progress bars.
+3. Optionally choose the **Details CSV** file. Large files are parsed in a background worker and show progress bars.
 4. Once loaded, the sidebar links become active and charts render automatically.
 
 ![File pickers with summary and details loaded](../images/getting-started-upload.png)
 
 ### Handling Large Files
-The parser streams rows so even multi‑year exports load gradually.  A counter displays how many rows have been processed and when parsing is complete.  If memory becomes an issue, consider trimming your export to a smaller date range.
+
+The parser streams rows so even multi‑year exports load gradually. A counter displays how many rows have been processed and when parsing is complete. If memory becomes an issue, consider trimming your export to a smaller date range.
 
 ## 3. Navigating the Interface
+
 The application is organized into several views accessible from the sidebar:
 
 - **Overview** – High‑level KPIs for usage and AHI.
@@ -48,26 +54,31 @@ The application is organized into several views accessible from the sidebar:
 - **Event Analysis** – Includes apnea duration distributions, cluster detection, and potential false negatives.
 - **Raw Data** – Tabular view of the CSV contents with filtering and export.
 
-Use the theme toggle in the header to switch between light, dark, or system themes.  The interface responds to window resizing and touch input for tablets.
+Use the theme toggle in the header to switch between light, dark, or system themes. The interface responds to window resizing and touch input for tablets.
 
 ## 4. Saving and Restoring Sessions
+
 When **Remember data locally** is enabled, files and settings persist to `IndexedDB` so you can close and reopen the browser without reloading data. Uploading a new Summary CSV replaces the previous session. The app only saves after at least one CSV has been loaded, preventing a refresh on an empty page from wiping prior data. The **Save/Load/Clear** controls manage that last session; choosing **Load Saved** replaces whatever files or settings are currently in memory. Disabling **Remember data locally** clears it. Use **Export JSON** to download a portable snapshot that can be imported on another device. The exported JSON includes all loaded rows but excludes any personal notes you may have added.
 
 ## 5. Example Workflow
+
 1. Load a year of summary and details data.
-2. Visit **Usage Patterns** to verify that at least 70% of nights exceed four hours of usage.  Investigate dips with the calendar heatmap.
-3. Open **AHI Trends** and note any nights above 5 AHI.  Use the table of "bad nights" to jot down potential causes in a journal.
-4. Go to **Pressure & Correlation** and check whether higher EPAP correlates with lower AHI.  If the LOESS trend slopes downward, discuss with your clinician whether pressure adjustments are warranted.
-5. Use **Range Comparison** to contrast the month before and after a mask change.  Look at `ΔUsage` and `ΔAHI` along with the `p`‑value to gauge the effect.
+2. Visit **Usage Patterns** to verify that at least 70% of nights exceed four hours of usage. Investigate dips with the calendar heatmap.
+3. Open **AHI Trends** and note any nights above 5 AHI. Use the table of "bad nights" to jot down potential causes in a journal.
+4. Go to **Pressure & Correlation** and check whether higher EPAP correlates with lower AHI. If the LOESS trend slopes downward, discuss with your clinician whether pressure adjustments are warranted.
+5. Use **Range Comparison** to contrast the month before and after a mask change. Look at `ΔUsage` and `ΔAHI` along with the `p`‑value to gauge the effect.
 
 ## 6. Keyboard Shortcuts
+
 - `?` – Open the help modal.
 - `t` – Toggle theme.
 - `s` – Save current session.
 - `l` – Load a saved session.
 
 ## 7. Troubleshooting
-See [06-troubleshooting.md](06-troubleshooting.md) for an extensive list of issues and remedies.  Common early hurdles include malformed CSV headers, missing columns, or browser extensions that block local file reads.
+
+See [06-troubleshooting.md](06-troubleshooting.md) for an extensive list of issues and remedies. Common early hurdles include malformed CSV headers, missing columns, or browser extensions that block local file reads.
 
 ## 8. Next Steps
+
 Once you are comfortable loading data and navigating the interface, explore the remaining chapters of the user guide to learn how to interpret specific visualizations and statistical outputs.

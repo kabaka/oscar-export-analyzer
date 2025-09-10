@@ -12,7 +12,7 @@ self.onmessage = (e) => {
     try {
       const apneaEvents = detailsData
         .filter((r) =>
-          ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event'])
+          ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']),
         )
         .map((r) => ({
           date: new Date(r['DateTime']),
@@ -33,7 +33,7 @@ self.onmessage = (e) => {
         params.edgeEnter,
         params.edgeExit,
         10,
-        params.minDensity
+        params.minDensity,
       );
       const fns = detectFalseNegatives(detailsData, fnOptions || {});
       self.postMessage({

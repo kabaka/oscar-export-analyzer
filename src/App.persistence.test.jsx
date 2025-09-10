@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Papa from 'papaparse';
 import React from 'react';
@@ -153,7 +159,9 @@ describe('App persistence flow', () => {
     expect(cardEl).not.toBeNull();
     expect(within(cardEl).getByText('5.00')).toBeInTheDocument();
 
-    const loadSaved = screen.getByRole('button', { name: /load saved session/i });
+    const loadSaved = screen.getByRole('button', {
+      name: /load saved session/i,
+    });
     fireEvent.click(loadSaved);
 
     await waitFor(() => {
@@ -189,14 +197,26 @@ describe('App persistence flow', () => {
 
     memoryStore.last = buildSession({
       summaryData: [
-        { Date: '2021-01-01', 'Total Time': '1:00:00', AHI: '1', 'Median EPAP': '5' },
-        { Date: '2021-01-02', 'Total Time': 'bad', AHI: '2', 'Median EPAP': '6' },
+        {
+          Date: '2021-01-01',
+          'Total Time': '1:00:00',
+          AHI: '1',
+          'Median EPAP': '5',
+        },
+        {
+          Date: '2021-01-02',
+          'Total Time': 'bad',
+          AHI: '2',
+          'Median EPAP': '6',
+        },
       ],
       detailsData: [],
     });
 
     render(<App />);
-    const loadSaved = screen.getByRole('button', { name: /load saved session/i });
+    const loadSaved = screen.getByRole('button', {
+      name: /load saved session/i,
+    });
     fireEvent.click(loadSaved);
 
     await vi.waitFor(() => expect(spy).toHaveBeenCalled());
@@ -204,5 +224,4 @@ describe('App persistence flow', () => {
     expect(spy.mock.results.some((r) => Number.isNaN(r.value))).toBe(true);
     spy.mockRestore();
   });
-
 });

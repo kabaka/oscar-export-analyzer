@@ -47,7 +47,7 @@ export default function AhiTrendsCharts({
       rolling7,
       rolling30,
       datesArr,
-      0.5
+      0.5,
     );
     const cpDates = detectChangePoints(ahisArr, datesArr, 6);
 
@@ -108,9 +108,9 @@ export default function AhiTrendsCharts({
           else acc.gt30++;
           return acc;
         },
-        { le5: 0, b5_15: 0, b15_30: 0, gt30: 0 }
+        { le5: 0, b5_15: 0, b15_30: 0, gt30: 0 },
       ),
-    [ahis]
+    [ahis],
   );
 
   // QQ-plot against normal
@@ -118,7 +118,7 @@ export default function AhiTrendsCharts({
   const sorted = ahis.slice().sort((a, b) => a - b);
   const mu = sorted.reduce((s, v) => s + v, 0) / n;
   const sigma = Math.sqrt(
-    sorted.reduce((s, v) => s + (v - mu) ** 2, 0) / Math.max(1, n - 1)
+    sorted.reduce((s, v) => s + (v - mu) ** 2, 0) / Math.max(1, n - 1),
   );
   const probs = sorted.map((_, i) => (i + 1) / (n + 1));
   const theo = probs.map((p) => mu + sigma * normalQuantile(p));

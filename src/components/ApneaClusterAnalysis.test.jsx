@@ -49,12 +49,12 @@ describe('ApneaClusterAnalysis overlay', () => {
         params={params}
         onParamChange={() => {}}
         details={details}
-      />
+      />,
     );
     const rows = screen.getAllByRole('row');
     await userEvent.click(rows[1]);
     expect(
-      await screen.findByText(/Leak\/Pressure around Cluster/)
+      await screen.findByText(/Leak\/Pressure around Cluster/),
     ).toBeInTheDocument();
   });
 });

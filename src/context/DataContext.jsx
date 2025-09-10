@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 export const THEMES = {
   SYSTEM: 'system',
@@ -56,7 +62,7 @@ export function DataProvider({
       filteredSummary,
       filteredDetails,
       theme,
-    ]
+    ],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
@@ -74,4 +80,3 @@ export function useTheme() {
 }
 
 export default DataContext;
-

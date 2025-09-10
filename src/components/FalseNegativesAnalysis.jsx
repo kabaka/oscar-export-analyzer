@@ -51,7 +51,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                 y: list.map((cl) => cl.confidence * 100),
                 marker: {
                   size: list.map((cl) =>
-                    Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5))
+                    Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5)),
                   ),
                   color: list.map((cl) => cl.confidence * 100),
                   colorscale: 'Viridis',
@@ -60,7 +60,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                 },
                 text: list.map(
                   (cl) =>
-                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`
+                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`,
                 ),
                 hovertemplate: '%{text}<extra></extra>',
               },

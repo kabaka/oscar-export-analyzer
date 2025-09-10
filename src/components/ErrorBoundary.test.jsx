@@ -23,7 +23,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary fallback="fallback text">
         <Bomb />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByRole('alert')).toHaveTextContent('fallback text');
   });
@@ -32,7 +32,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary fallback="fallback text">
         <Bomb />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(console.error).toHaveBeenCalled();
   });
@@ -41,7 +41,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary fallback="fallback text">
         <Okay />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText('ok')).toBeInTheDocument();
   });

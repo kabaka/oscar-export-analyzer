@@ -8,7 +8,7 @@ export function usePrefersDarkMode() {
   const [isDark, setIsDark] = useState(
     typeof window !== 'undefined' &&
       window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
+      window.matchMedia('(prefers-color-scheme: dark)').matches,
   );
   useEffect(() => {
     if (!window.matchMedia) return;

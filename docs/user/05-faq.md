@@ -18,7 +18,7 @@ When **Remember data locally** is enabled, files and settings are saved to Index
 
 ### Can I export results for my doctor?
 
-Use the print‑friendly PDF report or the aggregates CSV for sharing. The report contains key charts, while the aggregates file lists nightly usage, AHI, EPAP, and cluster metrics.
+Use the **Print Page** control to generate a PDF or the aggregates CSV for sharing. The print view hides navigation and buttons but preserves charts and summary tables.
 
 ### Is my data uploaded anywhere?
 
