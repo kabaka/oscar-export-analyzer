@@ -45,8 +45,10 @@ export function parseDuration(s, opts = {}) {
   return h * 3600 + m * 60 + sec;
 }
 
-// Compute approximate quantile (q in [0,1]) of numeric array
+// Compute approximate quantile (q in [0,1]) of numeric array.
+// Returns NaN when the input array is empty.
 export function quantile(arr, q) {
+  if (!arr.length) return NaN;
   const sorted = arr.slice().sort((a, b) => a - b);
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);

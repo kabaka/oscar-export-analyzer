@@ -169,6 +169,10 @@ describe('quantile', () => {
   it('interpolates for even-length array', () => {
     expect(quantile([0, 10], 0.5)).toBe(5);
   });
+
+  it('returns NaN for empty array', () => {
+    expect(quantile([], 0.5)).toBeNaN();
+  });
 });
 
 describe('normalQuantile', () => {
