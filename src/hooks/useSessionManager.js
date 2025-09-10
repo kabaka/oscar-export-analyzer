@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { buildSession, applySession } from '../utils/session';
 import { putLastSession, getLastSession, clearLastSession } from '../utils/db';
 
@@ -33,8 +33,17 @@ export function useSessionManager({
     }
   }, [persistEnabled]);
 
+  const prevPersistRef = useRef(persistEnabled);
+  useEffect(() => {
+    if (!persistEnabled && prevPersistRef.current) {
+      clearLastSession().catch(() => {});
+    }
+    prevPersistRef.current = persistEnabled;
+  }, [persistEnabled]);
+
   useEffect(() => {
     if (!persistEnabled) return;
+    if (!summaryData && !detailsData) return;
     const timer = setTimeout(() => {
       const session = buildSession({
         summaryData,
@@ -60,6 +69,7 @@ export function useSessionManager({
   ]);
 
   const handleSaveNow = async () => {
+    if (!summaryData && !detailsData) return;
     const session = buildSession({
       summaryData,
       detailsData,

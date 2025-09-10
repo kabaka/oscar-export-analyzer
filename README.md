@@ -60,7 +60,7 @@ The analyzer is implemented as a [Vite](https://vitejs.dev/) + [React](https://r
 3. Optionally load the **Details CSV** to unlock cluster detection and false‑negative analysis.
 4. Navigate via the sidebar to explore dashboards: **Overview**, **Usage Patterns**, **AHI Trends**, and more.
 5. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
-6. Enable **Remember data locally** if you want sessions to persist after closing the tab. Use **Export JSON** to save a portable session snapshot.
+6. Enable **Remember data locally** if you want sessions to persist after closing the tab. Uploading a new Summary CSV replaces any previous session, and data is only saved after a file has been loaded so a refresh with no files won't wipe prior data. Use **Export JSON** to save a portable session snapshot.
 
 ## Feature Tour
 
@@ -76,7 +76,7 @@ Each view includes contextual help links that open the corresponding page in the
 
 ## Data Privacy
 
-All processing occurs locally in your browser. The application never transmits your CSV files, computed statistics, or exported reports over the network. To remove all stored information, disable **Remember data locally** and click **Clear saved** in the session controls. You may also clear your browser cache or use a private/incognito window for one‑time analyses.
+All processing occurs locally in your browser. The application never transmits your CSV files, computed statistics, or exported reports over the network. Disabling **Remember data locally** clears stored information. You may also click **Clear saved**, clear your browser cache, or use a private/incognito window for one‑time analyses.
 
 ## Troubleshooting
 
