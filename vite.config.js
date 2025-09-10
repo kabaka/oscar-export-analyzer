@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
+import process from 'node:process';
 
 export default defineConfig({
+  base: process.env.BASE_URL || '/oscar-export-analyzer/',
   plugins: [
     react(),
     visualizer({ filename: 'stats.html', template: 'treemap', open: false }),
