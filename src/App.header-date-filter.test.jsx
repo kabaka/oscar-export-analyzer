@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 
 describe('Header date filter', () => {
   it('renders date inputs inside the header', () => {
@@ -10,5 +11,17 @@ describe('Header date filter', () => {
     const header = startInput.closest('header');
     expect(header).toHaveClass('app-header');
     expect(endInput.closest('header')).toBe(header);
+  });
+
+  it('ignores invalid dates without crashing', () => {
+    render(
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>,
+    );
+    const startInput = screen.getByLabelText(/start date/i);
+    fireEvent.change(startInput, { target: { value: 'not-a-date' } });
+    expect(startInput).toHaveValue('');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

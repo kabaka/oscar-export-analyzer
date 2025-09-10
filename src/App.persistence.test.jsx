@@ -69,7 +69,7 @@ describe('App persistence flow', () => {
     });
     fireEvent.change(summaryInput, { target: { files: [summaryFile] } });
     parseMock.mockRestore();
-    await screen.findByText('Median AHI');
+    await screen.findAllByText('Median AHI');
 
     const remember = screen.getByLabelText(/remember data locally/i);
     const saveNow = screen.getByRole('button', { name: /save session now/i });
@@ -154,8 +154,8 @@ describe('App persistence flow', () => {
     });
     await userEvent.upload(summaryInput, summaryFile);
 
-    const card = await screen.findByText('Median AHI');
-    const cardEl = card.closest('.kpi-card');
+    const cards = await screen.findAllByText('Median AHI');
+    const cardEl = cards[0].closest('.kpi-card');
     expect(cardEl).not.toBeNull();
     expect(within(cardEl).getByText('5.00')).toBeInTheDocument();
 
@@ -165,7 +165,7 @@ describe('App persistence flow', () => {
     fireEvent.click(loadSaved);
 
     await waitFor(() => {
-      const updated = screen.getByText('Median AHI').closest('.kpi-card');
+      const updated = screen.getAllByText('Median AHI')[0].closest('.kpi-card');
       expect(within(updated).getByText('1.00')).toBeInTheDocument();
     });
 
