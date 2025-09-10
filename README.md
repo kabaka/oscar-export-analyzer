@@ -108,8 +108,6 @@ npm test -- --run
 npm run build
 ```
 
-Dependabot monitors npm packages and GitHub Actions workflows, opening pull requests to keep dependencies up to date.
-
 Production builds are deployed to GitHub Pages. Pushes to `main` update the live site, while approved pull requests trigger temporary preview deployments via `.github/workflows/pages.yml`. After approving a PR, authorize the `pr-preview` environment to publish the preview.
 
 See the [Developer Guide](docs/developer/README.md) for testing patterns and architectural notes.
