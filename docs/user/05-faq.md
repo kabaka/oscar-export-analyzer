@@ -14,7 +14,7 @@ Ensure the file is exported from OSCAR and uses UTF‑8 encoding. Files edited i
 
 ### How is data stored?
 
-When **Remember data locally** is enabled, files and settings are saved to IndexedDB. Uploading a new Summary CSV overwrites any prior session and resets Details until a matching file is provided. Use **Load saved** to restore that session, replacing whatever data is currently in memory. Disabling the option immediately clears stored copies. You can also manually clear all cached data via the session controls.
+When **Remember data locally** is enabled, files and settings are saved to IndexedDB. Uploading a new Summary CSV overwrites any prior session and resets Details until a matching file is provided. The app only writes to storage after data has been loaded, so refreshing before uploading files won't wipe the stored session. Use **Load saved** to restore that session, replacing whatever data is currently in memory. Disabling the option immediately clears stored copies. You can also manually clear all cached data via the session controls.
 
 ### Can I export results for my doctor?
 

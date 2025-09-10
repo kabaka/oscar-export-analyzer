@@ -23,6 +23,7 @@ describe('useSessionManager', () => {
     } catch {
       // ignore
     }
+    vi.clearAllMocks();
     vi.useFakeTimers();
   });
   afterEach(() => {
@@ -51,6 +52,36 @@ describe('useSessionManager', () => {
     vi.advanceTimersByTime(600);
     const { putLastSession } = await import('../utils/db');
     expect(putLastSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not auto-save when no files are loaded', async () => {
+    memoryStore.last = buildSession({ summaryData: [{ AHI: '2' }] });
+    try {
+      window.localStorage.setItem('persistEnabled', '1');
+    } catch {
+      /* ignore */
+    }
+    renderHook(() =>
+      useSessionManager({
+        summaryData: null,
+        detailsData: null,
+        clusterParams: {},
+        dateFilter: { start: null, end: null },
+        rangeA: { start: null, end: null },
+        rangeB: { start: null, end: null },
+        fnPreset: 'balanced',
+        setClusterParams: vi.fn(),
+        setDateFilter: vi.fn(),
+        setRangeA: vi.fn(),
+        setRangeB: vi.fn(),
+        setSummaryData: vi.fn(),
+        setDetailsData: vi.fn(),
+      })
+    );
+    vi.advanceTimersByTime(600);
+    const { putLastSession } = await import('../utils/db');
+    expect(putLastSession).not.toHaveBeenCalled();
+    expect(memoryStore.last).not.toBeNull();
   });
 
   it('loads a saved session', async () => {

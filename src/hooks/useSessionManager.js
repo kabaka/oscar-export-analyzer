@@ -43,6 +43,7 @@ export function useSessionManager({
 
   useEffect(() => {
     if (!persistEnabled) return;
+    if (!summaryData && !detailsData) return;
     const timer = setTimeout(() => {
       const session = buildSession({
         summaryData,
@@ -68,6 +69,7 @@ export function useSessionManager({
   ]);
 
   const handleSaveNow = async () => {
+    if (!summaryData && !detailsData) return;
     const session = buildSession({
       summaryData,
       detailsData,
