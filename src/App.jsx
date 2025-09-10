@@ -362,8 +362,14 @@ function App() {
     // Re-run when data presence changes which may mount/unmount sections
   }, [filteredSummary, filteredDetails, tocSections]);
 
+  const parseDate = (val) => {
+    if (!val) return null;
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
   const formatDate = (d) =>
-    d
+    d instanceof Date && !Number.isNaN(d.getTime())
       ? new Date(d.getTime() - d.getTimezoneOffset() * 60000)
           .toISOString()
           .slice(0, 10)
@@ -391,7 +397,7 @@ function App() {
               onChange={(e) =>
                 setDateFilter((prev) => ({
                   ...prev,
-                  start: e.target.value ? new Date(e.target.value) : null,
+                  start: parseDate(e.target.value),
                 }))
               }
               aria-label="Start date"
@@ -403,7 +409,7 @@ function App() {
               onChange={(e) =>
                 setDateFilter((prev) => ({
                   ...prev,
-                  end: e.target.value ? new Date(e.target.value) : null,
+                  end: parseDate(e.target.value),
                 }))
               }
               aria-label="End date"
