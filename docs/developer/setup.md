@@ -82,8 +82,8 @@ Vite serves the optimized bundle so you can sanity‑check assets and network re
 
 ### Environment Tips
 
-- The app has no environment‑specific configuration beyond the Node version. If you need to tweak build behavior, see
-  `vite.config.js`.
+- The app has no environment‑specific configuration beyond the Node version, but you can override the base path for built
+  assets by setting `BASE_URL` before running `npm run build`. See `vite.config.js` for additional options.
 - When debugging workers, open the browser's dev tools and check the "Sources" panel under `Workers` for logs and stack
   traces.
 - Some tests rely on jsdom features that lag behind real browsers. If a test fails in jsdom but works in Chromium,
