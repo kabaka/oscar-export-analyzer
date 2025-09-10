@@ -24,7 +24,7 @@ export default function RangeComparisons({ rangeA, rangeB }) {
         return (!r.start || d >= r.start) && (!r.end || d <= r.end);
       });
     },
-    [summaryData]
+    [summaryData],
   );
   const A = useMemo(() => pick(rangeA), [pick, rangeA]);
   const B = useMemo(() => pick(rangeB), [pick, rangeB]);

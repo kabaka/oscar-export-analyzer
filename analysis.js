@@ -61,7 +61,7 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
     }
   }
   console.error(
-    `Parsed ${summaryEvents.length} apnea summary events, ${flgEvents.length} FLG events`
+    `Parsed ${summaryEvents.length} apnea summary events, ${flgEvents.length} FLG events`,
   );
 
   const clusters =
@@ -75,7 +75,7 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
           edgeEnter,
           edgeExit,
           edgeMinDurSec,
-          minDensityPerMin
+          minDensityPerMin,
         )
       : [];
   const valid = clusters.filter((c) => {
@@ -89,7 +89,7 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
   if (!valid.length) {
     console.log(
       `No apnea clusters (≥3 events and ≥${APOEA_CLUSTER_MIN_TOTAL_SEC}s total) found for`,
-      targetDateStr
+      targetDateStr,
     );
     return [];
   }
@@ -102,29 +102,29 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
     console.log(`  Events:`);
     c.events.forEach((e) =>
       console.log(
-        `    ${e.type} @ ${e.date.toISOString()} dur=${e.durationSec}s`
-      )
+        `    ${e.type} @ ${e.date.toISOString()} dur=${e.durationSec}s`,
+      ),
     );
     const flgIn = flgEvents
       .filter((f) => f.date >= c.start && f.date <= c.end)
       .map((f) => f.level);
     if (flgIn.length)
       console.log(
-        `  FLG levels: min=${Math.min(...flgIn)}, max=${Math.max(...flgIn)} (${flgIn.length} samples)`
+        `  FLG levels: min=${Math.min(...flgIn)}, max=${Math.max(...flgIn)} (${flgIn.length} samples)`,
       );
     const pIn = pressureEvents
       .filter((p) => p.date >= c.start && p.date <= c.end)
       .map((p) => p.level);
     if (pIn.length)
       console.log(
-        `  Pressure:   min=${Math.min(...pIn)}, max=${Math.max(...pIn)}`
+        `  Pressure:   min=${Math.min(...pIn)}, max=${Math.max(...pIn)}`,
       );
     const eIn = epapEvents
       .filter((p) => p.date >= c.start && p.date <= c.end)
       .map((p) => p.level);
     if (eIn.length)
       console.log(
-        `  EPAP:       min=${Math.min(...eIn)}, max=${Math.max(...eIn)}`
+        `  EPAP:       min=${Math.min(...eIn)}, max=${Math.max(...eIn)}`,
       );
   });
   return valid;
@@ -136,7 +136,7 @@ module.exports = { run };
 const args = process.argv.slice(2);
 if (args.length < 1) {
   console.error(
-    'Usage: node analysis.js <detailsCsv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec]'
+    'Usage: node analysis.js <detailsCsv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec]',
   );
   process.exit(1);
 }

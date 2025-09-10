@@ -27,7 +27,7 @@ describe('RawDataExplorer', () => {
     render(
       <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
         <RawDataExplorer />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(screen.getByRole('tablist')).toBeInTheDocument();
     // Table should show 3 rows initially (reported count)
@@ -41,7 +41,7 @@ describe('RawDataExplorer', () => {
     render(
       <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
         <RawDataExplorer />
-      </DataProvider>
+      </DataProvider>,
     );
     const summary = screen.getByText('Columns');
     await userEvent.click(summary);
@@ -50,7 +50,7 @@ describe('RawDataExplorer', () => {
     await userEvent.click(ahiToggle);
     // Column header should no longer include AHI
     expect(
-      screen.queryByRole('columnheader', { name: /AHI/ })
+      screen.queryByRole('columnheader', { name: /AHI/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('RawDataExplorer', () => {
     render(
       <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
         <RawDataExplorer />
-      </DataProvider>
+      </DataProvider>,
     );
     // Click AHI header to sort asc
     const ahiHeader = await screen.findByRole('columnheader', { name: 'AHI' });
@@ -76,14 +76,14 @@ describe('RawDataExplorer', () => {
     render(
       <DataProvider summaryData={sampleSummary} detailsData={sampleDetails}>
         <RawDataExplorer onApplyDateFilter={onApply} />
-      </DataProvider>
+      </DataProvider>,
     );
     const start = screen.getByLabelText('Start date:');
     const end = screen.getByLabelText('End date:');
     await userEvent.type(start, '2024-07-02');
     await userEvent.type(end, '2024-07-03');
     await userEvent.click(
-      screen.getByRole('button', { name: /Apply to charts/i })
+      screen.getByRole('button', { name: /Apply to charts/i }),
     );
     expect(onApply).toHaveBeenCalledTimes(1);
     const arg = onApply.mock.calls[0][0];

@@ -7,7 +7,7 @@ describe('KPICard', () => {
     const { asFragment } = render(
       <KPICard title="Test KPI" value="42">
         <span data-testid="child">Child Content</span>
-      </KPICard>
+      </KPICard>,
     );
     expect(screen.getByText('Test KPI')).toBeInTheDocument();
     expect(screen.getByText('42')).toBeInTheDocument();

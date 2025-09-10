@@ -24,11 +24,11 @@ import {
 import Overview from './components/Overview';
 const SummaryAnalysis = lazy(() => import('./components/SummaryAnalysis'));
 const ApneaClusterAnalysis = lazy(
-  () => import('./components/ApneaClusterAnalysis')
+  () => import('./components/ApneaClusterAnalysis'),
 );
 const ApneaEventStats = lazy(() => import('./components/ApneaEventStats'));
 const FalseNegativesAnalysis = lazy(
-  () => import('./components/FalseNegativesAnalysis')
+  () => import('./components/FalseNegativesAnalysis'),
 );
 import RangeComparisons from './components/RangeComparisons';
 import RawDataExplorer from './components/RawDataExplorer';
@@ -36,11 +36,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ThemeToggle from './components/ThemeToggle';
 import DocsModal from './components/DocsModal';
 import GuideLink from './components/GuideLink';
-import {
-  buildSummaryAggregatesCSV,
-  downloadTextFile,
-  openPrintReportHTML,
-} from './utils/export';
+import { buildSummaryAggregatesCSV, downloadTextFile } from './utils/export';
 import { DataProvider } from './context/DataContext';
 
 function App() {
@@ -55,7 +51,7 @@ function App() {
       { id: 'false-negatives', label: 'False Negatives' },
       { id: 'raw-data-explorer', label: 'Raw Data' },
     ],
-    []
+    [],
   );
   const [activeId, setActiveId] = useState('overview');
   const {
@@ -184,7 +180,7 @@ function App() {
         // eslint-disable-next-line no-undef
         worker = new Worker(
           new URL('./workers/analytics.worker.js', import.meta.url),
-          { type: 'module' }
+          { type: 'module' },
         );
         worker.onmessage = (evt) => {
           if (cancelled) return;
@@ -196,7 +192,7 @@ function App() {
               .filter(
                 (cl) =>
                   cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
-                  clusterParams.minTotalSec
+                  clusterParams.minTotalSec,
               )
               .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
               .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
@@ -219,7 +215,7 @@ function App() {
       function fallbackCompute() {
         const apneaEvents = detailsData
           .filter((r) =>
-            ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event'])
+            ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']),
           )
           .map((r) => ({
             date: new Date(r['DateTime']),
@@ -240,14 +236,14 @@ function App() {
           clusterParams.edgeEnter,
           clusterParams.edgeExit,
           10,
-          clusterParams.minDensity
+          clusterParams.minDensity,
         );
         const validClusters = rawClusters
           .filter((cl) => cl.count >= clusterParams.minCount)
           .filter(
             (cl) =>
               cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
-              clusterParams.minTotalSec
+              clusterParams.minTotalSec,
           )
           .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
           .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
@@ -332,7 +328,7 @@ function App() {
         // Trigger when headings cross just below the sticky header and before bottom of viewport
         rootMargin: `-${topMargin}px 0px -70% 0px`,
         threshold: [0, 0.25, 0.5, 0.75, 1],
-      }
+      },
     );
 
     // Observe any headings currently in the DOM
@@ -491,7 +487,7 @@ function App() {
                 downloadTextFile(
                   'aggregates.csv',
                   buildSummaryAggregatesCSV(summaryData || []),
-                  'text/csv'
+                  'text/csv',
                 )
               }
               disabled={!summaryData}
@@ -500,16 +496,10 @@ function App() {
             </button>
             <button
               className="btn-primary"
-              onClick={() =>
-                openPrintReportHTML(
-                  summaryData || [],
-                  apneaClusters || [],
-                  falseNegatives || []
-                )
-              }
+              onClick={() => window.print()}
               disabled={!summaryData}
             >
-              Open Print Report
+              Print Page
             </button>
           </div>
           <div

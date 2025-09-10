@@ -15,7 +15,7 @@ describe('ThemeToggle', () => {
     render(
       <DataProvider>
         <ThemeToggle />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(document.documentElement.getAttribute('data-theme')).toBe(null);
     const group = screen.getByRole('group', { name: /theme/i });
@@ -31,7 +31,7 @@ describe('ThemeToggle', () => {
     render(
       <DataProvider>
         <ThemeToggle />
-      </DataProvider>
+      </DataProvider>,
     );
     const dark = screen.getByRole('radio', { name: /dark/i });
     await user.click(dark);
@@ -44,7 +44,7 @@ describe('ThemeToggle', () => {
     render(
       <DataProvider>
         <ThemeToggle />
-      </DataProvider>
+      </DataProvider>,
     );
     const light = screen.getByRole('radio', { name: /light/i });
     const system = screen.getByRole('radio', { name: /system/i });

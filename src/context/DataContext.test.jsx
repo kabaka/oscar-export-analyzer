@@ -23,7 +23,7 @@ describe('DataContext provider', () => {
     render(
       <ErrorBoundary fallback="context error">
         <Consumer />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByRole('alert')).toHaveTextContent('context error');
   });
@@ -33,10 +33,10 @@ describe('DataContext provider', () => {
     render(
       <DataProvider>
         <div>child</div>
-      </DataProvider>
+      </DataProvider>,
     );
     expect(document.documentElement.getAttribute('data-theme')).toBe(
-      THEMES.DARK
+      THEMES.DARK,
     );
   });
 

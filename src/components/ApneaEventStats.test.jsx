@@ -21,7 +21,7 @@ describe('ApneaEventStats', () => {
     const { container } = render(
       <DataProvider filteredDetails={[]}>
         <ApneaEventStats />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -30,7 +30,7 @@ describe('ApneaEventStats', () => {
     const { getAllByTestId, getByText } = render(
       <DataProvider filteredDetails={sampleDetails}>
         <ApneaEventStats />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(getByText('Apnea Event Characteristics')).toBeInTheDocument();
     expect(getByText('Total apnea events')).toBeInTheDocument();

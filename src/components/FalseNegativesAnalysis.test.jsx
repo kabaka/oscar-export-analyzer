@@ -19,7 +19,7 @@ describe('FalseNegativesAnalysis', () => {
         list={sample}
         preset="balanced"
         onPresetChange={onChange}
-      />
+      />,
     );
     const select = screen.getByLabelText(/preset/i);
     fireEvent.change(select, { target: { value: 'strict' } });

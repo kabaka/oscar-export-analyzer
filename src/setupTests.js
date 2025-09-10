@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 // Mock Plotly charts to simplify component tests
 const plotlyMock = vi.fn((props) =>
-  React.createElement('div', { 'data-testid': 'plotly-chart', ...props })
+  React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
 );
 vi.mock('react-plotly.js', () => {
   return { default: plotlyMock };

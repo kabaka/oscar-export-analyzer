@@ -46,7 +46,7 @@ describe('useSessionManager', () => {
         setRangeB: vi.fn(),
         setSummaryData: vi.fn(),
         setDetailsData: vi.fn(),
-      })
+      }),
     );
     act(() => result.current.setPersistEnabled(true));
     vi.advanceTimersByTime(600);
@@ -76,7 +76,7 @@ describe('useSessionManager', () => {
         setRangeB: vi.fn(),
         setSummaryData: vi.fn(),
         setDetailsData: vi.fn(),
-      })
+      }),
     );
     vi.advanceTimersByTime(600);
     const { putLastSession } = await import('../utils/db');
@@ -105,7 +105,7 @@ describe('useSessionManager', () => {
         setRangeB: vi.fn(),
         setSummaryData,
         setDetailsData: vi.fn(),
-      })
+      }),
     );
     await act(async () => {
       await result.current.handleLoadSaved();
@@ -131,7 +131,7 @@ describe('useSessionManager', () => {
         setRangeB: vi.fn(),
         setSummaryData: vi.fn(),
         setDetailsData: vi.fn(),
-      })
+      }),
     );
     act(() => result.current.setPersistEnabled(true));
     vi.advanceTimersByTime(600);

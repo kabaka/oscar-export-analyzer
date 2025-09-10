@@ -42,7 +42,7 @@ describe('Worker Integration Tests', () => {
     // Expect Papa.parse to be called with worker:true
     expect(parseMock).toHaveBeenCalledWith(
       file,
-      expect.objectContaining({ worker: true })
+      expect.objectContaining({ worker: true }),
     );
 
     // Wait for the summary analysis to render

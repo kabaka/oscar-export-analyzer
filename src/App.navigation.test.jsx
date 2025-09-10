@@ -44,13 +44,13 @@ describe('In-page navigation', () => {
     // Overview section should render (no Details required)
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i })
+        screen.getByRole('heading', { name: /Overview Dashboard/i }),
       ).toBeInTheDocument();
     });
 
     // SummaryAnalysis section should also render
     expect(
-      await screen.findByRole('heading', { name: /Usage Patterns/i })
+      await screen.findByRole('heading', { name: /Usage Patterns/i }),
     ).toBeInTheDocument();
 
     // Clicking the Overview link should update the hash
@@ -62,7 +62,7 @@ describe('In-page navigation', () => {
     // Ensure Papa.parse was invoked using worker mode
     expect(parseMock).toHaveBeenCalledWith(
       file,
-      expect.objectContaining({ worker: true })
+      expect.objectContaining({ worker: true }),
     );
   });
 });

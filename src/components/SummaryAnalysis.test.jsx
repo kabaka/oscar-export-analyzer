@@ -25,7 +25,7 @@ describe('SummaryAnalysis', () => {
     render(
       <DataProvider summaryData={sample} filteredSummary={sample}>
         <SummaryAnalysis />
-      </DataProvider>
+      </DataProvider>,
     );
     expect(UsagePatternsCharts.mock.calls[0][0].onRangeSelect).toBeUndefined();
     expect(AhiTrendsCharts.mock.calls[0][0].onRangeSelect).toBeUndefined();

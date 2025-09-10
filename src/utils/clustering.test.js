@@ -43,7 +43,7 @@ describe('clusterApneaEvents', () => {
       0.5,
       0.35,
       10,
-      1.5
+      1.5,
     );
     // density = 2 events over ~3+ minutes -> < 1.5 ev/min, so filtered out
     expect(clusters.length).toBe(0);
@@ -69,7 +69,7 @@ describe('clusterApneaEvents', () => {
       0.5,
       0.35,
       5,
-      0
+      0,
     );
     expect(clusters.length).toBe(1);
     // start should be extended back to first FLG in edge segment (30s)
@@ -157,7 +157,7 @@ describe('computeClusterSeverity', () => {
         [30, 10],
       ],
       0,
-      60
+      60,
     ); // extension -> higher
     expect(s2).toBeGreaterThan(s1);
     expect(s3).toBeGreaterThan(s1);

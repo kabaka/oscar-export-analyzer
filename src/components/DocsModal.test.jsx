@@ -8,13 +8,13 @@ describe('DocsModal', () => {
     const onClose = vi.fn();
     render(<DocsModal isOpen={true} onClose={onClose} />);
     expect(
-      await screen.findByRole('dialog', { name: /usage guide/i })
+      await screen.findByRole('dialog', { name: /usage guide/i }),
     ).toBeInTheDocument();
     expect(
       await screen.findByRole('heading', {
         level: 3,
         name: /Usage & Interpretation Guide/i,
-      })
+      }),
     ).toBeInTheDocument();
   });
 
@@ -24,7 +24,7 @@ describe('DocsModal', () => {
         isOpen={true}
         onClose={() => {}}
         initialAnchor="usage-patterns"
-      />
+      />,
     );
     const headings = await screen.findAllByRole('heading', {
       level: 2,
@@ -36,7 +36,7 @@ describe('DocsModal', () => {
   it('sanitizes malicious markdown', async () => {
     const malicious = `# Hello\n[link](javascript:alert(1))`;
     render(
-      <DocsModal isOpen={true} onClose={() => {}} markdownSource={malicious} />
+      <DocsModal isOpen={true} onClose={() => {}} markdownSource={malicious} />,
     );
     await screen.findByRole('heading', { level: 1, name: /hello/i });
     const link = document.querySelector('.doc-content a');

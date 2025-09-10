@@ -83,7 +83,7 @@ export function useCsvFiles() {
         setSummaryData,
         setLoadingSummary,
         setSummaryProgress,
-        setSummaryProgressMax
+        setSummaryProgressMax,
       )(e);
     },
     onDetailsFile: handleFile(
@@ -91,7 +91,7 @@ export function useCsvFiles() {
       setLoadingDetails,
       setDetailsProgress,
       setDetailsProgressMax,
-      true /* filter to only apnea & FLG events */
+      true /* filter to only apnea & FLG events */,
     ),
   };
 }

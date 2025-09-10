@@ -37,7 +37,7 @@ export function clusterApneaEvents(
   edgeEnter = EDGE_THRESHOLD,
   edgeExit = EDGE_THRESHOLD * EDGE_EXIT_FRACTION,
   edgeMinDurSec = EDGE_MIN_DURATION_SEC,
-  minDensityPerMin = 0
+  minDensityPerMin = 0,
 ) {
   if (!events.length) return [];
   // FLG clusters for bridging annotation gaps (lower threshold)
@@ -108,16 +108,16 @@ export function clusterApneaEvents(
     let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
     const count = group.length;
     const validEdges = flgEdgeSegments.filter(
-      (cl) => (cl[cl.length - 1].date - cl[0].date) / 1000 >= edgeMinDurSec
+      (cl) => (cl[cl.length - 1].date - cl[0].date) / 1000 >= edgeMinDurSec,
     );
     const before = validEdges.find(
       (cl) =>
         cl[cl.length - 1].date <= start &&
-        (start - cl[cl.length - 1].date) / 1000 <= gapSec
+        (start - cl[cl.length - 1].date) / 1000 <= gapSec,
     );
     if (before) start = before[0].date;
     const after = validEdges.find(
-      (cl) => cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec
+      (cl) => cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec,
     );
     if (after) end = after[after.length - 1].date;
     const durationSec = (end - start) / 1000;
@@ -126,7 +126,7 @@ export function clusterApneaEvents(
   });
   // Optional density filter
   return clusters.filter((cl) =>
-    minDensityPerMin ? cl.density >= minDensityPerMin : true
+    minDensityPerMin ? cl.density >= minDensityPerMin : true,
   );
 }
 
@@ -176,7 +176,7 @@ export function detectFalseNegatives(details, opts = {}) {
     })
     .filter(
       (cl) =>
-        cl.durationSec >= minDurationSec && cl.durationSec <= maxDurationSec
+        cl.durationSec >= minDurationSec && cl.durationSec <= maxDurationSec,
     )
     .filter((cl) => {
       // no known apnea events within expanded window
@@ -216,12 +216,12 @@ export function computeClusterSeverity(cluster) {
   if (!cluster || !cluster.events?.length) return 0;
   const totalEvtDuration = cluster.events.reduce(
     (s, e) => s + (e.durationSec || 0),
-    0
+    0,
   );
   const firstStart = cluster.events[0].date;
   const lastEvt = cluster.events[cluster.events.length - 1];
   const lastEnd = new Date(
-    lastEvt.date.getTime() + (lastEvt.durationSec || 0) * 1000
+    lastEvt.date.getTime() + (lastEvt.durationSec || 0) * 1000,
   );
   const rawSpanSec = Math.max(1, (lastEnd - firstStart) / 1000);
   const windowMin = Math.max(1 / 60, cluster.durationSec / 60);

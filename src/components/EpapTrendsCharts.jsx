@@ -50,7 +50,7 @@ function EpapTrendsCharts({ data }) {
     const cov =
       epapAhiPairsArr.reduce(
         (sum, p) => sum + (p.epap - meanE) * (p.ahi - meanA),
-        0
+        0,
       ) /
       (n - 1);
     const varE =
@@ -59,7 +59,7 @@ function EpapTrendsCharts({ data }) {
     const stdE = Math.sqrt(varE);
     const stdA = Math.sqrt(
       epapAhiPairsArr.reduce((sum, p) => sum + (p.ahi - meanA) ** 2, 0) /
-        (n - 1)
+        (n - 1),
     );
     const corrVal = cov / (stdE * stdA);
     const slopeVal = cov / varE;
@@ -94,15 +94,15 @@ function EpapTrendsCharts({ data }) {
   }, [epaps]);
   const loess = useMemo(
     () => loessSmooth(epaps, ahis, xs, 0.3),
-    [epaps, ahis, xs]
+    [epaps, ahis, xs],
   );
   const q50 = useMemo(
     () => runningQuantileXY(epaps, ahis, xs, 0.5, 25),
-    [epaps, ahis, xs]
+    [epaps, ahis, xs],
   );
   const q90 = useMemo(
     () => runningQuantileXY(epaps, ahis, xs, 0.9, 25),
-    [epaps, ahis, xs]
+    [epaps, ahis, xs],
   );
 
   const isDark = useEffectiveDarkMode();
@@ -121,7 +121,7 @@ function EpapTrendsCharts({ data }) {
               .split(':')
               .reduce((a, b, i) => a + parseFloat(b) * [3600, 60, 1][i], 0) /
             3600
-          : parseFloat(v)
+          : parseFloat(v),
       )
       .filter((v) => !isNaN(v));
     if (usage.length === epaps.length)
@@ -130,7 +130,7 @@ function EpapTrendsCharts({ data }) {
     const keys = data.length ? Object.keys(data[0]) : [];
     const leakMedKey = keys.find((k) => /leak/i.test(k) && /median/i.test(k));
     const leakPctKey = keys.find(
-      (k) => /leak/i.test(k) && (/%/.test(k) || /time.*above/i.test(k))
+      (k) => /leak/i.test(k) && (/%/.test(k) || /time.*above/i.test(k)),
     );
     let leakMed = null;
     let leakPct = null;
@@ -154,7 +154,7 @@ function EpapTrendsCharts({ data }) {
     }
     const labels = vars.map((v) => v.key);
     const z = labels.map((_, i) =>
-      labels.map((_, j) => pearson(vars[i].values, vars[j].values))
+      labels.map((_, j) => pearson(vars[i].values, vars[j].values)),
     );
     // Partial correlations controlling for Usage and Leak variables if present
     const controlIdx = labels.reduce((arr, k, i) => {
@@ -178,10 +178,10 @@ function EpapTrendsCharts({ data }) {
           return controls[0].length
             ? pearson(
                 olsResidualsFromVars(vars[i].values, controls),
-                olsResidualsFromVars(vars[j].values, controls)
+                olsResidualsFromVars(vars[j].values, controls),
               )
             : z[i][j];
-        })
+        }),
       );
     }
     return { labels, z, zPartial, leakMedKey, leakMed, leakPctKey, leakPct };
@@ -212,7 +212,7 @@ function EpapTrendsCharts({ data }) {
     const inv = (A) => {
       const nn = A.length;
       const M = A.map((row, i) =>
-        row.concat(Array.from({ length: nn }, (_, j) => (i === j ? 1 : 0)))
+        row.concat(Array.from({ length: nn }, (_, j) => (i === j ? 1 : 0))),
       );
       for (let col = 0; col < nn; col++) {
         let pivot = col;
@@ -477,7 +477,7 @@ function EpapTrendsCharts({ data }) {
                   text: isFinite(v) ? v.toFixed(2) : '—',
                   showarrow: false,
                   font: { color: isDark ? '#fff' : '#000' },
-                }))
+                })),
               ),
             }}
             config={{ responsive: true, displaylogo: false }}
@@ -527,7 +527,7 @@ function EpapTrendsCharts({ data }) {
                   text: isFinite(v) ? v.toFixed(2) : '—',
                   showarrow: false,
                   font: { color: isDark ? '#fff' : '#000' },
-                }))
+                })),
               ),
             }}
             config={{ responsive: true, displaylogo: false }}

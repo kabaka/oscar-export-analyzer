@@ -208,12 +208,12 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                   y: sorted[selected].events.map((_, i) => `Evt ${i + 1}`),
                   x: sorted[selected].events.map((e) => e.durationSec * 1000),
                   base: sorted[selected].events.map((e) =>
-                    e.date.toISOString()
+                    e.date.toISOString(),
                   ),
                   marker: { color: '#ff7f0e' },
                   hovertemplate: sorted[selected].events.map(
                     (e) =>
-                      `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`
+                      `${e.date.toLocaleString()}<br>Duration: ${e.durationSec.toFixed(0)} s<extra></extra>`,
                   ),
                 },
               ]}
@@ -224,7 +224,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                 margin: { l: 80, r: 20, t: 40, b: 40 },
                 height: Math.max(
                   200,
-                  sorted[selected].events.length * 30 + 100
+                  sorted[selected].events.length * 30 + 100,
                 ),
               }}
               config={{ displayModeBar: false }}
