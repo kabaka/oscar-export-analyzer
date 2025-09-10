@@ -71,6 +71,24 @@ describe('partialCorrelation (controls reduce confounding)', () => {
   });
 });
 
+describe('pearson', () => {
+  it('ignores NaN pairs without skewing results', () => {
+    const x = [1, 2, 3, NaN];
+    const y = [1, 2, 3, 4];
+    const fx = [1, 2, 3];
+    const fy = [1, 2, 3];
+    expect(pearson(x, y)).toBeCloseTo(pearson(fx, fy));
+  });
+
+  it('ignores NaNs in either array', () => {
+    const x = [1, 2, 3, 4];
+    const y = [1, 2, NaN, 4];
+    const fx = [1, 2, 4];
+    const fy = [1, 2, 4];
+    expect(pearson(x, y)).toBeCloseTo(pearson(fx, fy));
+  });
+});
+
 describe('loessSmooth and runningQuantileXY', () => {
   it('loess reproduces linear relationship approximately', () => {
     const x = Array.from({ length: 20 }, (_, i) => i);
@@ -150,6 +168,10 @@ describe('quantile', () => {
 
   it('interpolates for even-length array', () => {
     expect(quantile([0, 10], 0.5)).toBe(5);
+  });
+
+  it('returns NaN for empty array', () => {
+    expect(quantile([], 0.5)).toBeNaN();
   });
 });
 

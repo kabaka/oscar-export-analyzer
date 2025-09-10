@@ -45,8 +45,10 @@ export function parseDuration(s, opts = {}) {
   return h * 3600 + m * 60 + sec;
 }
 
-// Compute approximate quantile (q in [0,1]) of numeric array
+// Compute approximate quantile (q in [0,1]) of numeric array.
+// Returns NaN when the input array is empty.
 export function quantile(arr, q) {
+  if (!arr.length) return NaN;
   const sorted = arr.slice().sort((a, b) => a - b);
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);
@@ -533,8 +535,8 @@ export function computeEPAPTrends(data) {
 // Pearson correlation helper
 export function pearson(x, y) {
   const n = Math.min(x.length, y.length);
-  if (n < 2) return NaN;
-  let sx = 0,
+  let count = 0,
+    sx = 0,
     sy = 0,
     sxx = 0,
     syy = 0,
@@ -543,15 +545,17 @@ export function pearson(x, y) {
     const xi = x[i];
     const yi = y[i];
     if (!isFinite(xi) || !isFinite(yi)) continue;
+    count++;
     sx += xi;
     sy += yi;
     sxx += xi * xi;
     syy += yi * yi;
     sxy += xi * yi;
   }
-  const cov = (sxy - (sx * sy) / n) / (n - 1);
-  const vx = (sxx - (sx * sx) / n) / (n - 1);
-  const vy = (syy - (sy * sy) / n) / (n - 1);
+  if (count < 2) return NaN;
+  const cov = (sxy - (sx * sy) / count) / count;
+  const vx = (sxx - (sx * sx) / count) / count;
+  const vy = (syy - (sy * sy) / count) / count;
   const denom = Math.sqrt(vx) * Math.sqrt(vy);
   return denom ? cov / denom : NaN;
 }
