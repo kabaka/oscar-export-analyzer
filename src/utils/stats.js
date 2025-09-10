@@ -45,8 +45,10 @@ export function parseDuration(s, opts = {}) {
   return h * 3600 + m * 60 + sec;
 }
 
-// Compute approximate quantile (q in [0,1]) of numeric array
+// Compute approximate quantile (q in [0,1]) of numeric array.
+// Returns NaN when the input array is empty.
 export function quantile(arr, q) {
+  if (!arr.length) return NaN;
   const sorted = arr.slice().sort((a, b) => a - b);
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);
@@ -81,7 +83,7 @@ export function computeApneaEventStats(details) {
   const countOver30 = durations.filter((v) => v > 30).length;
   const countOver60 = durations.filter((v) => v > 60).length;
   const countOutlierEvents = durations.filter(
-    (v) => v >= p75Dur + 1.5 * iqrDur
+    (v) => v >= p75Dur + 1.5 * iqrDur,
   ).length;
 
   // Compute events per night
@@ -108,10 +110,10 @@ export function computeApneaEventStats(details) {
   const minNight = eventsPerNight.length ? Math.min(...eventsPerNight) : 0;
   const maxNight = eventsPerNight.length ? Math.max(...eventsPerNight) : 0;
   const outlierNightHigh = eventsPerNight.filter(
-    (v) => v >= p75Night + 1.5 * iqrNight
+    (v) => v >= p75Night + 1.5 * iqrNight,
   ).length;
   const outlierNightLow = eventsPerNight.filter(
-    (v) => v <= p25Night - 1.5 * iqrNight
+    (v) => v <= p25Night - 1.5 * iqrNight,
   ).length;
 
   return {
@@ -157,10 +159,10 @@ export function summarizeUsage(data) {
   const p75Hours = quantile(usageHours, 0.75);
   const iqrHours = p75Hours - p25Hours;
   const outlierLowCount = usageHours.filter(
-    (h) => h < p25Hours - 1.5 * iqrHours
+    (h) => h < p25Hours - 1.5 * iqrHours,
   ).length;
   const outlierHighCount = usageHours.filter(
-    (h) => h > p75Hours + 1.5 * iqrHours
+    (h) => h > p75Hours + 1.5 * iqrHours,
   ).length;
   return {
     totalNights,
@@ -236,7 +238,7 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
         // mean CI via normal approx: m ± 1.96 * s/√n
         const variance = Math.max(
           0,
-          (sumsq - (sum * sum) / len) / Math.max(1, len - 1)
+          (sumsq - (sum * sum) / len) / Math.max(1, len - 1),
         );
         const se = Math.sqrt(variance) / Math.sqrt(len);
         const z = 1.96;
@@ -297,7 +299,7 @@ export function detectUsageBreakpoints(
   rolling7,
   rolling30,
   dates,
-  minDelta = 0.75
+  minDelta = 0.75,
 ) {
   const points = [];
   for (let i = 1; i < rolling7.length; i++) {
@@ -443,16 +445,16 @@ export function computeEPAPTrends(data) {
   const cov =
     epapAhiPairs.reduce(
       (sum, [p, a]) => sum + (p - meanEpap) * (a - meanAhi),
-      0
+      0,
     ) /
     (epapAhiPairs.length - 1);
   const stdEp = Math.sqrt(
     epapAhiPairs.reduce((sum, [p]) => sum + (p - meanEpap) ** 2, 0) /
-      (epapAhiPairs.length - 1)
+      (epapAhiPairs.length - 1),
   );
   const stdAh = Math.sqrt(
     epapAhiPairs.reduce((sum, [, a]) => sum + (a - meanAhi) ** 2, 0) /
-      (epapAhiPairs.length - 1)
+      (epapAhiPairs.length - 1),
   );
   const corrEPAPAHI = cov / (stdEp * stdAh);
   const lowGroup = data
@@ -918,7 +920,7 @@ function invertMatrix(A) {
   const n = A.length;
   // Create augmented [A | I]
   const M = A.map((row, i) =>
-    row.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)))
+    row.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))),
   );
   // Gauss-Jordan elimination
   for (let col = 0; col < n; col++) {

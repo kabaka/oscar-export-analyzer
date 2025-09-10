@@ -35,7 +35,7 @@ describe('parseDuration', () => {
 
   it('throws on malformed input when requested', () => {
     expect(() => parseDuration('bad', { throwOnError: true })).toThrow(
-      /invalid duration/i
+      /invalid duration/i,
     );
   });
 });
@@ -150,6 +150,10 @@ describe('quantile', () => {
 
   it('interpolates for even-length array', () => {
     expect(quantile([0, 10], 0.5)).toBe(5);
+  });
+
+  it('returns NaN for empty array', () => {
+    expect(quantile([], 0.5)).toBeNaN();
   });
 });
 
