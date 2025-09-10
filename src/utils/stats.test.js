@@ -35,7 +35,7 @@ describe('parseDuration', () => {
 
   it('throws on malformed input when requested', () => {
     expect(() => parseDuration('bad', { throwOnError: true })).toThrow(
-      /invalid duration/i
+      /invalid duration/i,
     );
   });
 });
@@ -68,6 +68,24 @@ describe('partialCorrelation (controls reduce confounding)', () => {
     const controls = z.map((v) => [v]);
     const pc = partialCorrelation(x, y, controls);
     expect(Math.abs(pc)).toBeLessThan(Math.abs(naive));
+  });
+});
+
+describe('pearson', () => {
+  it('ignores NaN pairs without skewing results', () => {
+    const x = [1, 2, 3, NaN];
+    const y = [1, 2, 3, 4];
+    const fx = [1, 2, 3];
+    const fy = [1, 2, 3];
+    expect(pearson(x, y)).toBeCloseTo(pearson(fx, fy));
+  });
+
+  it('ignores NaNs in either array', () => {
+    const x = [1, 2, 3, 4];
+    const y = [1, 2, NaN, 4];
+    const fx = [1, 2, 4];
+    const fy = [1, 2, 4];
+    expect(pearson(x, y)).toBeCloseTo(pearson(fx, fy));
   });
 });
 
