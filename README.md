@@ -100,6 +100,8 @@ npm test -- --run
 npm run build
 ```
 
+Production builds are deployed to GitHub Pages. Pushes to `main` update the live site, while pull requests receive temporary preview deployments via `.github/workflows/pages.yml`.
+
 See the [Developer Guide](docs/developer/README.md) for testing patterns and architectural notes.
 
 ## License
