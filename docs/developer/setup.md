@@ -66,7 +66,7 @@ Create a production bundle with:
 npm run build
 ```
 
-The output lands in the `dist/` directory. To inspect the production build locally, run:
+The output lands in the `dist/` directory. The build also generates a `stats.html` bundle report in the project root via Vite's visualizer plugin; open it in a browser to inspect module sizes. The file is git-ignored. To inspect the production build locally, run:
 
 ```bash
 npm run preview
