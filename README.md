@@ -53,6 +53,14 @@ The analyzer is implemented as a [Vite](https://vitejs.dev/) + [React](https://r
    ```
 4. Open the URL printed in the terminal (usually <http://localhost:5173>) in a modern browser.
 
+To deploy the app under a custom path, set the `BASE_URL` environment variable before building:
+
+```bash
+BASE_URL=/custom/ npm run build
+```
+
+If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
+
 ## Usage Walkthrough
 
 1. Export `Summary.csv` and optionally `Details.csv` from OSCAR.
