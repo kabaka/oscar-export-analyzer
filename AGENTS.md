@@ -15,6 +15,7 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 
 - `npm run dev`: start Vite dev server with HMR.
 - `npm run build`: create production build to `dist/`.
+- Typical builds take 2+ minutes; let them finish before concluding failure.
 - `npm run preview`: serve the production build locally.
 - `npm test`: run tests in watch mode.
 - `npm test -- --run`: run tests once without watch mode.
@@ -37,12 +38,19 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 - Frameworks: Vitest + @testing-library/react + jsdom.
 - Naming: `ComponentName.test.jsx` or `module.test.js` colocated with code.
 - Expectations: add tests for new logic and bug fixes; prefer user-facing assertions.
+- Do not abandon new tests because they fail—keep fixing until they pass.
 - Run locally: `npm test` (watch mode) or `npm test -- --run` (single run); check coverage via `npm run test:coverage`.
+
+## Documentation Guidelines
+
+- Docs should be helpful and fun; avoid redundant README notes for obvious behavior.
+- Update documentation alongside code changes to keep docs accurate and engaging.
 
 ## Commit & Pull Request Guidelines
 
 - Style: prefer Conventional Commits (e.g., `feat:`, `fix:`, `chore:`) as in history.
 - Pre-commit: Husky runs `npm run lint`, `npm test`, and `npm run build`; ensure all pass and builds have no warnings.
+- Include updates to tests and docs with your code changes; bug fixes should come with regression tests.
 - PRs: include clear description, linked issues, and screenshots/GIFs for UI changes. Ensure CI (lint, build, tests) passes.
 
 ## Security & Configuration Tips
