@@ -24,3 +24,38 @@ if (typeof global.IntersectionObserver === 'undefined') {
   // eslint-disable-next-line no-undef
   global.IntersectionObserver = MockIO;
 }
+
+// Basic Web Worker stub for tests; individual tests can override as needed
+if (typeof global.Worker === 'undefined') {
+  class MockWorker {
+    constructor() {}
+    postMessage({ file } = {}) {
+      if (!file) return;
+      let rows;
+      if ((file.name || '').includes('summary')) {
+        rows = [
+          {
+            Date: '2025-06-01',
+            'Total Time': '08:00:00',
+            AHI: '5',
+            'Median EPAP': '6',
+          },
+        ];
+      } else {
+        rows = [
+          {
+            Event: 'ClearAirway',
+            DateTime: new Date('2025-06-01T00:00:00').getTime(),
+            'Data/Duration': 12,
+          },
+        ];
+      }
+      this.onmessage?.({ data: { type: 'progress', cursor: file.size } });
+      this.onmessage?.({ data: { type: 'rows', rows } });
+      this.onmessage?.({ data: { type: 'complete' } });
+    }
+    terminate() {}
+  }
+  // eslint-disable-next-line no-undef
+  global.Worker = MockWorker;
+}

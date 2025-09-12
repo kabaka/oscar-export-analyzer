@@ -9,8 +9,8 @@ framework abstractions. This section peels back the layers so you can orient you
 1. **Entry Point** – `main.jsx` bootstraps the React app and mounts `<App />` inside a root DOM node. Vite handles module
    loading and hot replacement during development.
 2. **File Upload** – The top portion of `App.jsx` exposes two file inputs for summary and details CSV exports. When a
-   file is chosen, the `useSessionManager` hook spins up a web worker to parse the file with PapaParse. Progress is
-   reported back to the UI through `postMessage` events.
+   file is chosen, a dedicated parser worker filters events, converts timestamps, and streams batches via `postMessage`
+   so the main thread receives only necessary data.
 3. **Context Store** – Parsed rows and application settings live in `DataContext`. Components consume these values via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.

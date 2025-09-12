@@ -7,7 +7,6 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Papa from 'papaparse';
 import React from 'react';
 import App from './App.jsx';
 
@@ -50,25 +49,10 @@ describe('App persistence flow', () => {
     render(<App />);
 
     const summaryInput = screen.getByLabelText(/Summary CSV/i);
-    const parseMock = vi
-      .spyOn(Papa, 'parse')
-      .mockImplementation((file, options) => {
-        const rows = [
-          {
-            Date: '2025-06-01',
-            'Total Time': '08:00:00',
-            AHI: '5',
-            'Median EPAP': '6',
-          },
-        ];
-        options.chunk?.({ data: rows, meta: { cursor: file.size } });
-        options.complete?.({ data: rows });
-      });
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });
     fireEvent.change(summaryInput, { target: { files: [summaryFile] } });
-    parseMock.mockRestore();
     await screen.findAllByText('Median AHI');
 
     const remember = screen.getByLabelText(/remember data locally/i);
@@ -127,25 +111,6 @@ describe('App persistence flow', () => {
       detailsData: [],
     });
 
-    const parseMock = vi
-      .spyOn(Papa, 'parse')
-      .mockImplementation((file, options) => {
-        const rows = [
-          {
-            Date: '2025-06-01',
-            'Total Time': '08:00:00',
-            AHI: '5',
-            'Median EPAP': '6',
-          },
-        ];
-        if (options.chunk) {
-          options.chunk({ data: rows, meta: { cursor: file.size } });
-        }
-        if (options.complete) {
-          options.complete({ data: rows });
-        }
-      });
-
     render(<App />);
 
     const summaryInput = screen.getByLabelText(/Summary CSV/i);
@@ -168,8 +133,6 @@ describe('App persistence flow', () => {
       const updated = screen.getAllByText('Median AHI')[0].closest('.kpi-card');
       expect(within(updated).getByText('1.00')).toBeInTheDocument();
     });
-
-    parseMock.mockRestore();
   });
 
   it('retains saved session on reload before loading files', async () => {
