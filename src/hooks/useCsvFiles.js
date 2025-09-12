@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import Papa from 'papaparse';
-import { FLG_BRIDGE_THRESHOLD } from '../utils/clustering';
 
 // Hook for loading CSV files via file input
 export function useCsvFiles() {
@@ -31,37 +29,27 @@ export function useCsvFiles() {
       setError(null);
       setProgress(0);
       setProgressMax(file.size);
-      const rows = [];
-      Papa.parse(file, {
-        worker: true,
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        chunkSize: 1024 * 1024,
-        chunk: (results) => {
-          setProgress(results.meta.cursor);
-          if (filterEvents) {
-            // retain only apnea annotations and sufficiently high-FLG events
-            const keep = results.data.filter((r) => {
-              const e = r['Event'];
-              if (e === 'FLG')
-                return r['Data/Duration'] >= FLG_BRIDGE_THRESHOLD;
-              return ['ClearAirway', 'Obstructive', 'Mixed'].includes(e);
-            });
-            rows.push(...keep);
-          } else {
-            rows.push(...results.data);
-          }
-        },
-        complete: () => {
-          setter(rows);
+      setter([]);
+      const worker = new Worker(
+        new URL('../workers/csv.worker.js', import.meta.url),
+        { type: 'module' },
+      );
+      worker.onmessage = (ev) => {
+        const { type, rows, cursor, error: msg } = ev.data || {};
+        if (type === 'progress') {
+          setProgress(cursor);
+        } else if (type === 'rows') {
+          setter((prev) => [...prev, ...rows]);
+        } else if (type === 'complete') {
           setLoading(false);
-        },
-        error: (err) => {
+          worker.terminate();
+        } else if (type === 'error') {
           setLoading(false);
-          setError(err?.message || String(err));
-        },
-      });
+          setError(msg);
+          worker.terminate();
+        }
+      };
+      worker.postMessage({ file, filterEvents });
     };
 
   return {

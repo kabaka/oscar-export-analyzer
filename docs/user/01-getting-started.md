@@ -33,14 +33,14 @@ The details export provides higher fidelity information:
 
 1. Open <http://localhost:5173> after starting the development server or the deployed site if using a prebuilt bundle.
 2. Use the **Summary CSV** file input to choose the exported summary file.
-3. Optionally choose the **Details CSV** file. Large files are parsed in a background worker and show progress bars.
+3. Optionally choose the **Details CSV** file. A background worker filters events and streams batches with progress updates so even huge files remain responsive.
 4. Once loaded, the sidebar links become active and charts render automatically.
 
 ![File pickers with summary and details loaded](../images/getting-started-upload.png)
 
 ### Handling Large Files
 
-The parser streams rows so even multi‑year exports load gradually. A counter displays how many rows have been processed and when parsing is complete. If memory becomes an issue, consider trimming your export to a smaller date range.
+The parser streams only the necessary rows and converts timestamps inside the worker. A counter displays how many rows have been processed and when parsing is complete. If memory becomes an issue, consider trimming your export to a smaller date range.
 
 ## 3. Navigating the Interface
 
