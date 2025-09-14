@@ -72,7 +72,7 @@ where $d_i$ is the number of events ending at time $t_i$ and $n_i$ is the number
 
 ## Clustering Parameters
 
-Apnea clusters are sequences of events separated by less than a specified gap (default 90 s). Optionally, flow‑limitation segments can bridge gaps shorter than the **FLG bridge** parameter. The severity score for a cluster is:
+Apnea clusters are sequences of events separated by less than a specified gap (default 90 s). Optionally, flow‑limitation segments can bridge gaps shorter than the **FLG bridge** parameter. The analyzer sorts FLG readings once and scans them linearly to bridge gaps and extend cluster edges. The severity score for a cluster is:
 
 $$
 \text{Severity} = \frac{\text{EventCount}}{\text{Duration}}

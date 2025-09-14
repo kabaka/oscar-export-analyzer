@@ -27,6 +27,23 @@ describe('clusterApneaEvents', () => {
     expect(c.count).toBe(2);
   });
 
+  it('bridges gaps using qualifying FLG readings', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    const events = [
+      { date: base, durationSec: 10 },
+      { date: new Date(base.getTime() + 50000), durationSec: 5 }, // 50s later
+    ];
+    const flg = [{ date: new Date(base.getTime() + 30000), level: 0.2 }]; // FLG between events above threshold
+    const clusters = clusterApneaEvents(
+      events,
+      flg,
+      30, // gapSec smaller than separation
+      0.1,
+      60,
+    );
+    expect(clusters).toHaveLength(1);
+  });
+
   it('applies density filter when minDensityPerMin > 0', () => {
     const base = new Date('2021-01-01T00:00:00Z');
     // events far apart -> low density
