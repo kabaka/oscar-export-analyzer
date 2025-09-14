@@ -35,6 +35,7 @@ import RawDataExplorer from './components/RawDataExplorer';
 import ErrorBoundary from './components/ErrorBoundary';
 import ThemeToggle from './components/ThemeToggle';
 import DocsModal from './components/DocsModal';
+import DataImportModal from './components/DataImportModal';
 import GuideLink from './components/GuideLink';
 import { buildSummaryAggregatesCSV, downloadTextFile } from './utils/export';
 import { DataProvider } from './context/DataContext';
@@ -78,6 +79,7 @@ function App() {
   const [rangeB, setRangeB] = useState({ start: null, end: null });
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideAnchor, setGuideAnchor] = useState('');
+  const [importOpen, setImportOpen] = useState(true);
   const [clusterParams, setClusterParams] = useState({
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
@@ -414,6 +416,22 @@ function App() {
       filteredSummary={filteredSummary}
       filteredDetails={filteredDetails}
     >
+      <DataImportModal
+        isOpen={importOpen && (!summaryData || !detailsData)}
+        onClose={() => setImportOpen(false)}
+        onSummaryFile={onSummaryFile}
+        onDetailsFile={onDetailsFile}
+        onLoadSaved={handleLoadSaved}
+        summaryData={summaryData}
+        detailsData={detailsData}
+        loadingSummary={loadingSummary}
+        loadingDetails={loadingDetails || processingDetails}
+        summaryProgress={summaryProgress}
+        summaryProgressMax={summaryProgressMax}
+        detailsProgress={detailsProgress}
+        detailsProgressMax={detailsProgressMax}
+        error={error}
+      />
       <header className="app-header">
         <div className="inner">
           <div className="title">
@@ -500,28 +518,6 @@ function App() {
           ))}
         </nav>
         <div className="section controls" aria-label="Data and export controls">
-          <label>
-            Summary CSV:{' '}
-            <input type="file" accept=".csv" onChange={onSummaryFile} />
-          </label>
-          {loadingSummary && (
-            <progress value={summaryProgress} max={summaryProgressMax} />
-          )}
-          <label>
-            Details CSV:{' '}
-            <input type="file" accept=".csv" onChange={onDetailsFile} />
-          </label>
-          {(loadingDetails || processingDetails) && (
-            <progress
-              value={loadingDetails ? detailsProgress : undefined}
-              max={loadingDetails ? detailsProgressMax : undefined}
-            />
-          )}
-          {error && (
-            <div role="alert" style={{ color: 'red' }}>
-              {error}
-            </div>
-          )}
           <div
             className="control-group"
             aria-label="Session controls"

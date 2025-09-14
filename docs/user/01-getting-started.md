@@ -32,11 +32,9 @@ The details export provides higher fidelity information:
 ## 2. Loading Files into the Analyzer
 
 1. Open <http://localhost:5173> after starting the development server or the deployed site if using a prebuilt bundle.
-2. Use the **Summary CSV** file input to choose the exported summary file.
-3. Optionally choose the **Details CSV** file. A background worker filters events and streams batches with progress updates so even huge files remain responsive.
+2. A full‑screen import dialog appears on first load. Drag both CSVs into it or click to choose them from disk.
+3. The app inspects the headers to classify files as summary or details and loads them in the proper order. A background worker filters events and streams batches with progress updates so even huge files remain responsive.
 4. Once loaded, the sidebar links become active and charts render automatically.
-
-![File pickers with summary and details loaded](../images/getting-started-upload.png)
 
 ### Handling Large Files
 
@@ -58,7 +56,7 @@ Use the theme toggle in the header to switch between light, dark, or system them
 
 ## 4. Saving and Restoring Sessions
 
-When **Remember data locally** is enabled, files and settings persist to `IndexedDB` so you can close and reopen the browser without reloading data. Uploading a new Summary CSV replaces the previous session. The app only saves after at least one CSV has been loaded, preventing a refresh on an empty page from wiping prior data. The **Save/Load/Clear** controls manage that last session; choosing **Load Saved** replaces whatever files or settings are currently in memory. Disabling **Remember data locally** clears it. Use **Export JSON** to download a portable snapshot that can be imported on another device. The exported JSON includes all loaded rows but excludes any personal notes you may have added.
+When **Remember data locally** is enabled, files and settings persist to `IndexedDB` so you can close and reopen the browser without reloading data. Importing a new Summary CSV replaces the previous session. The app only saves after at least one CSV has been loaded, preventing a refresh on an empty page from wiping prior data. The **Save/Load/Clear** controls manage that last session; choosing **Load Saved** replaces whatever files or settings are currently in memory. Disabling **Remember data locally** clears it. Use **Export JSON** to download a portable snapshot that can be imported on another device. The exported JSON includes all loaded rows but excludes any personal notes you may have added.
 
 ## 5. Example Workflow
 

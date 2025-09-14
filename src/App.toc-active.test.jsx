@@ -56,10 +56,16 @@ describe('TOC active highlighting', () => {
     mockSummaryParse();
     render(<App />);
 
-    const file = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
+    const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });
-    await userEvent.upload(screen.getByLabelText(/Summary CSV/i), file);
+    const detailsFile = new File(
+      ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
+      'details.csv',
+      { type: 'text/csv' },
+    );
+    const input = await screen.findByLabelText(/CSV files/i);
+    await userEvent.upload(input, [summaryFile, detailsFile]);
 
     await waitFor(() => {
       expect(

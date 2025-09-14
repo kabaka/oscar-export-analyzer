@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  within,
-} from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import App from './App.jsx';
@@ -48,11 +42,16 @@ describe('App persistence flow', () => {
     vi.useRealTimers();
     render(<App />);
 
-    const summaryInput = screen.getByLabelText(/Summary CSV/i);
+    const input = await screen.findByLabelText(/CSV files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });
-    fireEvent.change(summaryInput, { target: { files: [summaryFile] } });
+    const detailsFile = new File(
+      ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
+      'details.csv',
+      { type: 'text/csv' },
+    );
+    await userEvent.upload(input, [summaryFile, detailsFile]);
     await screen.findAllByText('Median AHI');
 
     const remember = screen.getByLabelText(/remember data locally/i);
@@ -68,7 +67,7 @@ describe('App persistence flow', () => {
     expect(saveNow).toBeDisabled();
 
     // Enable persistence after loading data; a debounced save should occur
-    fireEvent.click(remember);
+    await userEvent.click(remember);
 
     const { putLastSession, getLastSession, clearLastSession } = await import(
       './utils/db'
@@ -79,20 +78,20 @@ describe('App persistence flow', () => {
     expect(memoryStore.last).toHaveProperty('summaryData');
 
     // Manual save should call put again
-    fireEvent.click(saveNow);
+    await userEvent.click(saveNow);
     await vi.waitFor(() => expect(putLastSession).toHaveBeenCalledTimes(2));
 
     // Load should fetch the saved session
-    fireEvent.click(loadSaved);
-    await vi.waitFor(() => expect(getLastSession).toHaveBeenCalledTimes(1));
+    await userEvent.click(loadSaved);
+    await vi.waitFor(() => expect(getLastSession).toHaveBeenCalled());
 
     // Clear should remove the saved session
-    fireEvent.click(clearSaved);
+    await userEvent.click(clearSaved);
     await vi.waitFor(() => expect(clearLastSession).toHaveBeenCalledTimes(1));
     expect(memoryStore.last).toBeNull();
 
     // Disabling persistence should clear again
-    fireEvent.click(remember);
+    await userEvent.click(remember);
     await vi.waitFor(() => expect(clearLastSession).toHaveBeenCalledTimes(2));
   });
 
@@ -113,11 +112,16 @@ describe('App persistence flow', () => {
 
     render(<App />);
 
-    const summaryInput = screen.getByLabelText(/Summary CSV/i);
+    const input = await screen.findByLabelText(/CSV files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });
-    await userEvent.upload(summaryInput, summaryFile);
+    const detailsFile = new File(
+      ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
+      'details.csv',
+      { type: 'text/csv' },
+    );
+    await userEvent.upload(input, [summaryFile, detailsFile]);
 
     const cards = await screen.findAllByText('Median AHI');
     const cardEl = cards[0].closest('.kpi-card');
@@ -127,7 +131,7 @@ describe('App persistence flow', () => {
     const loadSaved = screen.getByRole('button', {
       name: /load saved session/i,
     });
-    fireEvent.click(loadSaved);
+    await userEvent.click(loadSaved);
 
     await waitFor(() => {
       const updated = screen.getAllByText('Median AHI')[0].closest('.kpi-card');
@@ -146,9 +150,11 @@ describe('App persistence flow', () => {
     } catch {
       /* ignore */
     }
+    vi.useRealTimers();
     render(<App />);
-    vi.advanceTimersByTime(600);
+    await screen.findByRole('button', { name: /Load previous session/i });
     const { putLastSession } = await import('./utils/db');
+    await new Promise((r) => setTimeout(r, 600));
     expect(putLastSession).not.toHaveBeenCalled();
     expect(memoryStore.last.summaryData).toHaveLength(1);
   });
@@ -176,11 +182,12 @@ describe('App persistence flow', () => {
       detailsData: [],
     });
 
+    vi.useRealTimers();
     render(<App />);
-    const loadSaved = screen.getByRole('button', {
-      name: /load saved session/i,
+    const loadSaved = await screen.findByRole('button', {
+      name: /Load previous session/i,
     });
-    fireEvent.click(loadSaved);
+    await userEvent.click(loadSaved);
 
     await vi.waitFor(() => expect(spy).toHaveBeenCalled());
     expect(spy.mock.calls.some((c) => c[0] === 'bad')).toBe(true);
