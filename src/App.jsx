@@ -551,7 +551,7 @@ function App() {
             </button>
           </div>
         </div>
-        {filteredSummary && (
+        {filteredSummary?.length > 0 && (
           <div className="section">
             <Overview
               clusters={apneaClusters}
@@ -559,7 +559,7 @@ function App() {
             />
           </div>
         )}
-        {filteredSummary && (
+        {filteredSummary?.length > 0 && (
           <div className="section">
             <ErrorBoundary>
               <Suspense fallback={<div>Loading...</div>}>
@@ -653,7 +653,7 @@ function App() {
             </div>
           </div>
         )}
-        {filteredDetails && (
+        {filteredDetails?.length > 0 && (
           <>
             <div className="section">
               <ErrorBoundary>
