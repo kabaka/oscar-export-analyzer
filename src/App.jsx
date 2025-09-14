@@ -503,6 +503,48 @@ function App() {
             </button>
           </div>
         </div>
+        {(loadingSummary || loadingDetails || processingDetails) && (
+          <div className="import-progress" aria-live="polite">
+            <span>
+              {loadingSummary &&
+                `Importing summary CSV${
+                  summaryProgressMax
+                    ? ` (${Math.round(
+                        (summaryProgress / summaryProgressMax) * 100,
+                      )}%)`
+                    : ''
+                }`}
+              {loadingDetails && !loadingSummary &&
+                `Importing details CSV${
+                  detailsProgressMax
+                    ? ` (${Math.round(
+                        (detailsProgress / detailsProgressMax) * 100,
+                      )}%)`
+                    : ''
+                }`}
+              {processingDetails &&
+                !loadingSummary &&
+                !loadingDetails &&
+                'Processing events...'}
+            </span>
+            <progress
+              value={
+                loadingSummary
+                  ? summaryProgress
+                  : loadingDetails
+                  ? detailsProgress
+                  : undefined
+              }
+              max={
+                loadingSummary
+                  ? summaryProgressMax
+                  : loadingDetails
+                  ? detailsProgressMax
+                  : undefined
+              }
+            />
+          </div>
+        )}
       </header>
       <div className="container">
         <nav className="toc">

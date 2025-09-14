@@ -163,6 +163,20 @@ h1 {
   gap: 8px;
 }
 
+.app-header .import-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 16px 6px;
+  font-size: 0.75rem;
+}
+
+.app-header .import-progress progress {
+  width: 120px;
+  height: 4px;
+}
+
 /* Theme toggle */
 .theme-toggle {
   display: inline-flex;

@@ -33,7 +33,7 @@ The details export provides higher fidelity information:
 
 1. Open <http://localhost:5173> after starting the development server or the deployed site if using a prebuilt bundle.
 2. A full‑screen import dialog appears on first load. Drag both CSVs into it or click to choose them from disk.
-3. The app inspects the headers to classify files as summary or details and loads them in the proper order. A background worker filters events and streams batches with progress updates so even huge files remain responsive.
+3. The app inspects the headers to classify files as summary or details and loads them in the proper order. A background worker filters events and streams batches with progress updates so even huge files remain responsive. A small status line in the page header shows the current step along with a compact progress bar.
 4. Once loaded, the sidebar links become active and charts render automatically.
 
 ### Handling Large Files
