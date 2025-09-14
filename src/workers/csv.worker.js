@@ -11,6 +11,7 @@ self.onmessage = (e) => {
     dynamicTyping: true,
     skipEmptyLines: true,
     chunkSize: 1024 * 1024,
+    // Runs in a worker: update progress and filter events per chunk to keep the UI responsive
     chunk(results) {
       self.postMessage({ type: 'progress', cursor: results.meta.cursor });
       let rows = results.data;
