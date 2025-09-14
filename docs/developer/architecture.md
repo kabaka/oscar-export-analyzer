@@ -10,7 +10,8 @@ framework abstractions. This section peels back the layers so you can orient you
    loading and hot replacement during development.
 2. **File Upload** – The top portion of `App.jsx` exposes two file inputs for summary and details CSV exports. When a
    file is chosen, a dedicated parser worker filters events, converts timestamps, and streams batches via `postMessage`
-   so the main thread receives only necessary data.
+   so the main thread receives only necessary data. Analysis sections render only after at least one row arrives,
+   preventing charts from initializing with empty data.
 3. **Context Store** – Parsed rows and application settings live in `DataContext`. Components consume these values via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.
