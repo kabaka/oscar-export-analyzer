@@ -40,27 +40,11 @@ export function clusterApneaEvents(
   minDensityPerMin = 0,
 ) {
   if (!events.length) return [];
-  // FLG clusters for bridging annotation gaps (lower threshold)
-  const flgBridgeHigh = flgEvents
-    .filter((f) => f.level >= bridgeThreshold)
-    .sort((a, b) => a.date - b.date);
-  const flgBridgeClusters = [];
-  if (flgBridgeHigh.length) {
-    let vc = [flgBridgeHigh[0]];
-    for (let i = 1; i < flgBridgeHigh.length; i++) {
-      const prev = flgBridgeHigh[i - 1],
-        curr = flgBridgeHigh[i];
-      if ((curr.date - prev.date) / 1000 <= bridgeSec) vc.push(curr);
-      else {
-        flgBridgeClusters.push(vc);
-        vc = [curr];
-      }
-    }
-    flgBridgeClusters.push(vc);
-  }
+  // Sort FLG events once and reuse for bridging and edge detection
+  const flgSorted = flgEvents.slice().sort((a, b) => a.date - b.date);
+
   // FLG clusters for boundary extension (higher threshold, min duration)
   // Hysteresis-based FLG edge segments: start when >= enter, continue while within gap and >= exit
-  const flgSorted = flgEvents.slice().sort((a, b) => a.date - b.date);
   const flgEdgeSegments = [];
   let seg = null;
   for (let i = 0; i < flgSorted.length; i++) {
@@ -85,14 +69,31 @@ export function clusterApneaEvents(
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const rawGroups = [];
   let current = [sorted[0]];
+  // Two-pointer scan through FLG readings; flgIdx advances with events
+  let flgIdx = 0;
   for (let i = 1; i < sorted.length; i++) {
     const evt = sorted[i];
     const prev = current[current.length - 1];
     const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
     const gap = (evt.date - prevEnd) / 1000;
-    const flgBridge =
-      gap <= bridgeSec &&
-      flgBridgeHigh.some((f) => f.date >= prevEnd && f.date <= evt.date);
+
+    // advance pointer to first FLG after prevEnd
+    while (flgIdx < flgSorted.length && flgSorted[flgIdx].date < prevEnd)
+      flgIdx++;
+
+    let flgBridge = false;
+    if (gap <= bridgeSec) {
+      let j = flgIdx;
+      while (j < flgSorted.length && flgSorted[j].date <= evt.date) {
+        if (flgSorted[j].level >= bridgeThreshold) {
+          flgBridge = true;
+          break;
+        }
+        j++;
+      }
+      flgIdx = j; // subsequent iterations start from last checked reading
+    }
+
     if (gap <= gapSec || flgBridge) {
       current.push(evt);
     } else {
