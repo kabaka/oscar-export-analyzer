@@ -143,4 +143,49 @@ describe('useSessionManager', () => {
     expect(clearLastSession).toHaveBeenCalledTimes(1);
     expect(memoryStore.last).toBeNull();
   });
+
+  it('silently discards malformed JSON on import', () => {
+    const setSummaryData = vi.fn();
+    const { result } = renderHook(() =>
+      useSessionManager({
+        summaryData: [],
+        detailsData: [],
+        clusterParams: {},
+        dateFilter: { start: null, end: null },
+        rangeA: { start: null, end: null },
+        rangeB: { start: null, end: null },
+        fnPreset: 'balanced',
+        setClusterParams: vi.fn(),
+        setDateFilter: vi.fn(),
+        setRangeA: vi.fn(),
+        setRangeB: vi.fn(),
+        setSummaryData,
+        setDetailsData: vi.fn(),
+      }),
+    );
+
+    const badFile = new File(['{ not json'], 'bad.json', {
+      type: 'application/json',
+    });
+
+    const mockReader = {
+      onload: null,
+      readAsText: vi.fn(function () {
+        this.result = '{ not json';
+        this.onload();
+      }),
+    };
+
+    const fileReaderSpy = vi
+      .spyOn(window, 'FileReader')
+      .mockImplementation(() => mockReader);
+
+    act(() => {
+      result.current.handleImportJson({ target: { files: [badFile] } });
+    });
+
+    expect(setSummaryData).not.toHaveBeenCalled();
+
+    fileReaderSpy.mockRestore();
+  });
 });

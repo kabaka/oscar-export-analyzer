@@ -139,7 +139,7 @@ export function useSessionManager({
           setDetailsData(patch.detailsData || null);
         }
       } catch {
-        // ignore invalid JSON
+        // silently discard malformed JSON
       }
     };
     reader.readAsText(file);
