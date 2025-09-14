@@ -167,4 +167,64 @@ describe('useSessionManager', () => {
     expect(clearLastSession).not.toHaveBeenCalled();
     expect(memoryStore.last).not.toBeNull();
   });
+
+  it('alerts on malformed JSON imports', () => {
+    const setClusterParams = vi.fn();
+    const setDateFilter = vi.fn();
+    const setRangeA = vi.fn();
+    const setRangeB = vi.fn();
+    const setSummaryData = vi.fn();
+    const setDetailsData = vi.fn();
+
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const consoleErrorMock = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    const { result } = renderHook(() =>
+      useSessionManager({
+        summaryData: [],
+        detailsData: [],
+        clusterParams: {},
+        dateFilter: { start: null, end: null },
+        rangeA: { start: null, end: null },
+        rangeB: { start: null, end: null },
+        fnPreset: 'balanced',
+        setClusterParams,
+        setDateFilter,
+        setRangeA,
+        setRangeB,
+        setSummaryData,
+        setDetailsData,
+      }),
+    );
+
+    const originalFileReader = global.FileReader;
+    class MockFileReader {
+      readAsText() {
+        this.result = '{';
+        this.onload();
+      }
+    }
+    global.FileReader = MockFileReader;
+
+    const file = new Blob(['{'], { type: 'application/json' });
+    act(() => {
+      result.current.handleImportJson({ target: { files: [file] } });
+    });
+
+    expect(alertMock).toHaveBeenCalledTimes(1);
+    expect(alertMock.mock.calls[0][0]).toMatch(/could not import session/i);
+    expect(consoleErrorMock).toHaveBeenCalled();
+    expect(setClusterParams).not.toHaveBeenCalled();
+    expect(setDateFilter).not.toHaveBeenCalled();
+    expect(setRangeA).not.toHaveBeenCalled();
+    expect(setRangeB).not.toHaveBeenCalled();
+    expect(setSummaryData).not.toHaveBeenCalled();
+    expect(setDetailsData).not.toHaveBeenCalled();
+
+    alertMock.mockRestore();
+    consoleErrorMock.mockRestore();
+    global.FileReader = originalFileReader;
+  });
 });

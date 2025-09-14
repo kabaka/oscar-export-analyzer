@@ -139,8 +139,13 @@ export function useSessionManager({
           setSummaryData(patch.summaryData || null);
           setDetailsData(patch.detailsData || null);
         }
-      } catch {
-        // ignore invalid JSON
+      } catch (err) {
+        const message =
+          'Could not import session. The file is not valid JSON or is missing required data. ' +
+          'Make sure you selected a session file exported from this app.\n\nDetails: ' +
+          (err instanceof Error ? err.message : String(err));
+        alert(message);
+        console.error('Session import failed:', err);
       }
     };
     reader.readAsText(file);
