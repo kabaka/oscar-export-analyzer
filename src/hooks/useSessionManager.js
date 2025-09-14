@@ -139,7 +139,7 @@ export function useSessionManager({
           setDetailsData(patch.detailsData || null);
         }
       } catch {
-        // silently discard malformed JSON
+        // Silently discard malformed JSON.
       }
     };
     reader.readAsText(file);

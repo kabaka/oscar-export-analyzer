@@ -89,7 +89,12 @@ describe('useSessionManager', () => {
       summaryData: [{ AHI: '1' }],
       detailsData: [],
     });
+    const setClusterParams = vi.fn();
+    const setDateFilter = vi.fn();
+    const setRangeA = vi.fn();
+    const setRangeB = vi.fn();
     const setSummaryData = vi.fn();
+    const setDetailsData = vi.fn();
     const { result } = renderHook(() =>
       useSessionManager({
         summaryData: [],
@@ -99,12 +104,12 @@ describe('useSessionManager', () => {
         rangeA: { start: null, end: null },
         rangeB: { start: null, end: null },
         fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
+        setClusterParams,
+        setDateFilter,
+        setRangeA,
+        setRangeB,
         setSummaryData,
-        setDetailsData: vi.fn(),
+        setDetailsData,
       }),
     );
     await act(async () => {
@@ -145,7 +150,12 @@ describe('useSessionManager', () => {
   });
 
   it('silently discards malformed JSON on import', () => {
+    const setClusterParams = vi.fn();
+    const setDateFilter = vi.fn();
+    const setRangeA = vi.fn();
+    const setRangeB = vi.fn();
     const setSummaryData = vi.fn();
+    const setDetailsData = vi.fn();
     const { result } = renderHook(() =>
       useSessionManager({
         summaryData: [],
@@ -155,12 +165,12 @@ describe('useSessionManager', () => {
         rangeA: { start: null, end: null },
         rangeB: { start: null, end: null },
         fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
+        setClusterParams,
+        setDateFilter,
+        setRangeA,
+        setRangeB,
         setSummaryData,
-        setDetailsData: vi.fn(),
+        setDetailsData,
       }),
     );
 
@@ -179,13 +189,23 @@ describe('useSessionManager', () => {
     const fileReaderSpy = vi
       .spyOn(window, 'FileReader')
       .mockImplementation(() => mockReader);
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
 
     act(() => {
       result.current.handleImportJson({ target: { files: [badFile] } });
     });
 
+    expect(setClusterParams).not.toHaveBeenCalled();
+    expect(setDateFilter).not.toHaveBeenCalled();
+    expect(setRangeA).not.toHaveBeenCalled();
+    expect(setRangeB).not.toHaveBeenCalled();
     expect(setSummaryData).not.toHaveBeenCalled();
+    expect(setDetailsData).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
 
     fileReaderSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 });
