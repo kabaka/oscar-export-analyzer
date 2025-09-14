@@ -34,6 +34,7 @@ export function useSessionManager({
   }, [persistEnabled]);
 
   const prevPersistRef = useRef(persistEnabled);
+  // Clear stored session only when persistence is turned off to avoid stale data
   useEffect(() => {
     if (!persistEnabled && prevPersistRef.current) {
       clearLastSession().catch(() => {});

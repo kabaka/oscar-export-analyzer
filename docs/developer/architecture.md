@@ -45,8 +45,9 @@ also logged to the console for debugging.
 - Session persistence flags
 
 The `useSessionManager` hook serializes this state to `IndexedDB` using the browser's `idb` wrapper when "Remember data
-locally" is enabled. Sessions can be saved, loaded, or cleared via controls in the header. Exporting a session produces
-JSON that can be imported on another machine; sensitive personal notes are intentionally excluded.
+locally" is enabled. Sessions can be saved, loaded, or cleared via controls in the header. Disabling persistence immediately
+removes the stored session to avoid stale data. Exporting a session produces JSON that can be imported on another machine;
+sensitive personal notes are intentionally excluded.
 
 ### Styling and Themes
 
