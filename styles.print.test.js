@@ -18,4 +18,9 @@ describe('print styles', () => {
       /@media print[\s\S]*(\.guide-link|\.guide-inline)[\s\S]*display:\s*none/,
     );
   });
+  it('renders plotly legends with dark text', () => {
+    expect(css).toMatch(
+      /@media print[\s\S]*\.js-plotly-plot[\s\S]*\.legend[\s\S]*text[\s\S]*fill:\s*#0b1220/i,
+    );
+  });
 });

@@ -574,4 +574,9 @@ select:focus-visible {
   select {
     display: none !important;
   }
+
+  /* Force Plotly legends to print with dark text for contrast */
+  .js-plotly-plot .legend text {
+    fill: #0b1220 !important;
+  }
 }
