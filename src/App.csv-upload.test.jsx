@@ -6,35 +6,66 @@ import App from './App';
 // Tests cross-component behavior triggered by CSV uploads
 
 describe('CSV uploads and cross-component interactions', () => {
-  it('shows overview after summary upload and raw data explorer after details upload', async () => {
+  const OriginalWorker = global.Worker;
+
+  beforeEach(() => {
+    class MockWorker {
+      postMessage({ file, filterEvents }) {
+        const rows = filterEvents
+          ? [
+              {
+                Event: 'ClearAirway',
+                DateTime: '2025-06-01T00:00:00',
+                'Data/Duration': '12',
+              },
+            ]
+          : [
+              {
+                Date: '2025-06-01',
+                'Total Time': '08:00:00',
+                AHI: '5',
+                'Median EPAP': '6',
+              },
+            ];
+        setTimeout(() => {
+          this.onmessage?.({
+            data: { type: 'rows', rows, cursor: file.size },
+          });
+          this.onmessage?.({ data: { type: 'complete' } });
+        }, 0);
+      }
+      terminate() {}
+    }
+    global.Worker = MockWorker;
+  });
+
+  afterEach(() => {
+    global.Worker = OriginalWorker;
+  });
+
+  it('auto-classifies dropped files and closes the modal', async () => {
     render(<App />);
 
-    const summaryInput = screen.getByLabelText(/Summary CSV/i);
+    expect(
+      screen.getByRole('dialog', { name: /Import Data/i }),
+    ).toBeInTheDocument();
+
+    const input = screen.getByLabelText(/CSV files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });
-    await userEvent.upload(summaryInput, summaryFile);
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i }),
-      ).toBeInTheDocument();
-    });
-    expect(
-      screen.queryByRole('heading', { name: /Raw Data Explorer/i }),
-    ).not.toBeInTheDocument();
-
-    const detailsInput = screen.getByLabelText(/Details CSV/i);
     const detailsFile = new File(
       ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
       'details.csv',
       { type: 'text/csv' },
     );
-    await userEvent.upload(detailsInput, detailsFile);
+    await userEvent.upload(input, [summaryFile, detailsFile]);
+
+    await new Promise((r) => setTimeout(r, 0));
 
     await waitFor(() => {
       expect(
-        screen.getByRole('heading', { name: /Raw Data Explorer/i }),
+        screen.getByRole('heading', { name: /Overview Dashboard/i }),
       ).toBeInTheDocument();
     });
 

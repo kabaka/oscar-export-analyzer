@@ -10,12 +10,20 @@ describe('Worker Integration Tests', () => {
     global.Worker = originalWorker;
   });
 
-  it('parses summary CSV via worker and displays summary analysis', async () => {
+  it('parses CSVs via worker and displays summary analysis', async () => {
     render(<App />);
-    const csvContent = 'Night,Data/Duration\n2025-06-01,8';
-    const file = new File([csvContent], 'summary.csv', { type: 'text/csv' });
-    const input = screen.getByLabelText(/Summary CSV/i);
-    await userEvent.upload(input, file);
+    const summary = new File(
+      ['Night,Data/Duration\n2025-06-01,8'],
+      'summary.csv',
+      { type: 'text/csv' },
+    );
+    const details = new File(
+      ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
+      'details.csv',
+      { type: 'text/csv' },
+    );
+    const input = screen.getByLabelText(/CSV files/i);
+    await userEvent.upload(input, [summary, details]);
 
     await waitFor(() => {
       expect(screen.getByText(/Total nights analyzed/i)).toBeInTheDocument();
@@ -38,7 +46,7 @@ describe('Worker Integration Tests', () => {
 
     render(<App />);
     const file = new File(['bad'], 'bad.csv', { type: 'text/csv' });
-    const input = screen.getByLabelText(/Summary CSV/i);
+    const input = screen.getByLabelText(/CSV files/i);
     await userEvent.upload(input, file);
 
     await waitFor(() => {

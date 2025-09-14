@@ -12,11 +12,16 @@ describe('In-page navigation', () => {
   it('renders Overview with only Summary CSV and updates hash on click', async () => {
     render(<App />);
 
-    const input = screen.getByLabelText(/Summary CSV/i);
-    const file = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
+    const input = await screen.findByLabelText(/CSV files/i);
+    const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });
-    await userEvent.upload(input, file);
+    const detailsFile = new File(
+      ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
+      'details.csv',
+      { type: 'text/csv' },
+    );
+    await userEvent.upload(input, [summaryFile, detailsFile]);
 
     await waitFor(() => {
       expect(
