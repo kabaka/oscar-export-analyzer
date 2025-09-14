@@ -60,7 +60,7 @@ Yes. Once the application is loaded, it functions without an internet connection
 
 ### How can I customize clustering thresholds?
 
-Open the “Clustered Apnea Events” panel and expand the settings section. You can adjust gap thresholds, FLG bridging, minimum density, and other parameters. Settings persist with the session.
+Open the “Clustered Apnea Events” panel and expand the settings section. Parameters include gap seconds, flow‑limitation bridge threshold and gap, edge enter and exit limits, minimum event count and total apnea seconds, maximum cluster duration, and minimum density. Settings persist with the session.
 
 ### Can I script analyses instead of using the UI?
 

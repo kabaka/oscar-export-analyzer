@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as ACA from './ApneaClusterAnalysis.jsx';
 
@@ -62,5 +62,36 @@ describe('ApneaClusterAnalysis overlay', () => {
 describe('ApneaClusterAnalysis memoization', () => {
   it('exports a memoized component', () => {
     expect(ApneaClusterAnalysis.type).toBe(ACA.ApneaClusterAnalysis);
+  });
+});
+
+describe('ApneaClusterAnalysis params', () => {
+  it('renders parameter inputs and forwards changes', async () => {
+    const params = {
+      gapSec: 120,
+      bridgeThreshold: 0.1,
+      bridgeSec: 60,
+      edgeEnter: 0.5,
+      edgeExit: 0.35,
+      minCount: 1,
+      minTotalSec: 0,
+      maxClusterSec: 300,
+      minDensity: 0,
+    };
+    const onChange = vi.fn();
+    render(
+      <ApneaClusterAnalysis
+        clusters={[]}
+        params={params}
+        onParamChange={onChange}
+        details={[]}
+      />,
+    );
+    ACA.PARAM_FIELDS.forEach(({ label }) => {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    });
+    const gap = screen.getByLabelText('Gap sec');
+    fireEvent.change(gap, { target: { value: '30' } });
+    expect(onChange).toHaveBeenLastCalledWith({ gapSec: 30 });
   });
 });

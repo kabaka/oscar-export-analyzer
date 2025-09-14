@@ -3,6 +3,51 @@ import { clustersToCsv } from '../utils/clustering';
 import ThemedPlot from './ThemedPlot';
 import GuideLink from './GuideLink';
 import VizHelp from './VizHelp';
+import ParamInput from './ParamInput';
+
+export const PARAM_FIELDS = [
+  { label: 'Gap sec', key: 'gapSec', inputProps: { type: 'number', min: 0 } },
+  {
+    label: 'FLG bridge ≥',
+    key: 'bridgeThreshold',
+    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
+  },
+  {
+    label: 'FLG gap sec',
+    key: 'bridgeSec',
+    inputProps: { type: 'number', min: 0 },
+  },
+  {
+    label: 'Edge enter ≥',
+    key: 'edgeEnter',
+    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
+  },
+  {
+    label: 'Edge exit ≥',
+    key: 'edgeExit',
+    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
+  },
+  {
+    label: 'Min event count',
+    key: 'minCount',
+    inputProps: { type: 'number', min: 1 },
+  },
+  {
+    label: 'Min total apnea sec',
+    key: 'minTotalSec',
+    inputProps: { type: 'number', min: 0 },
+  },
+  {
+    label: 'Max cluster sec',
+    key: 'maxClusterSec',
+    inputProps: { type: 'number', min: 0 },
+  },
+  {
+    label: 'Min density (evt/min)',
+    key: 'minDensity',
+    inputProps: { type: 'number', step: 0.1, min: 0 },
+  },
+];
 
 function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   const [selected, setSelected] = useState(null);
@@ -67,130 +112,15 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
         <span className="control-title" style={{ marginBottom: 6 }}>
           Clustering Params
         </span>
-        <div>
-          <label>
-            Gap sec
-            <input
-              type="number"
-              min={0}
-              value={params.gapSec}
-              onChange={(e) =>
-                onParamChange({ gapSec: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            FLG bridge ≥
-            <input
-              type="number"
-              step="0.05"
-              min={0}
-              max={2}
-              value={params.bridgeThreshold}
-              onChange={(e) =>
-                onParamChange({ bridgeThreshold: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            FLG gap sec
-            <input
-              type="number"
-              min={0}
-              value={params.bridgeSec}
-              onChange={(e) =>
-                onParamChange({ bridgeSec: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Edge enter ≥
-            <input
-              type="number"
-              step="0.05"
-              min={0}
-              max={2}
-              value={params.edgeEnter}
-              onChange={(e) =>
-                onParamChange({ edgeEnter: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Edge exit ≥
-            <input
-              type="number"
-              step="0.05"
-              min={0}
-              max={2}
-              value={params.edgeExit}
-              onChange={(e) =>
-                onParamChange({ edgeExit: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Min event count
-            <input
-              type="number"
-              min={1}
-              value={params.minCount}
-              onChange={(e) =>
-                onParamChange({ minCount: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Min total apnea sec
-            <input
-              type="number"
-              min={0}
-              value={params.minTotalSec}
-              onChange={(e) =>
-                onParamChange({ minTotalSec: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Max cluster sec
-            <input
-              type="number"
-              min={0}
-              value={params.maxClusterSec}
-              onChange={(e) =>
-                onParamChange({ maxClusterSec: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        <div>
-          <label>
-            Min density (evt/min)
-            <input
-              type="number"
-              step="0.1"
-              min={0}
-              value={params.minDensity}
-              onChange={(e) =>
-                onParamChange({ minDensity: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
+        {PARAM_FIELDS.map(({ label, key, inputProps }) => (
+          <ParamInput
+            key={key}
+            label={label}
+            value={params[key]}
+            onChange={(v) => onParamChange({ [key]: v })}
+            inputProps={inputProps}
+          />
+        ))}
         <div>
           <button onClick={handleExport}>Export CSV</button>
         </div>
