@@ -150,6 +150,9 @@ h1 {
 .app-header .date-filter input {
   padding: 2px 4px;
 }
+.app-header .date-filter select {
+  padding: 2px 4px;
+}
 .app-header .date-filter button {
   padding: 2px 6px;
 }
