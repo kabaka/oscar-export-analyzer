@@ -73,6 +73,7 @@ function App() {
   const [falseNegatives, setFalseNegatives] = useState([]);
   const [processingDetails, setProcessingDetails] = useState(false);
   const [dateFilter, setDateFilter] = useState({ start: null, end: null });
+  const [quickRange, setQuickRange] = useState('all');
   const [rangeA, setRangeA] = useState({ start: null, end: null });
   const [rangeB, setRangeB] = useState({ start: null, end: null });
   const [guideOpen, setGuideOpen] = useState(false);
@@ -112,6 +113,17 @@ function App() {
     };
     return presets[fnPreset] || presets.balanced;
   }, [fnPreset]);
+  const latestDate = useMemo(() => {
+    if (!summaryData || !summaryData.length) return new Date();
+    const dateCol = Object.keys(summaryData[0]).find((c) => /date/i.test(c));
+    if (!dateCol) return new Date();
+    return (
+      summaryData.reduce((max, r) => {
+        const d = new Date(r[dateCol]);
+        return !max || d > max ? d : max;
+      }, null) || new Date()
+    );
+  }, [summaryData]);
   const {
     persistEnabled,
     setPersistEnabled,
@@ -368,6 +380,24 @@ function App() {
     return Number.isNaN(d.getTime()) ? null : d;
   };
 
+  const handleQuickRangeChange = useCallback(
+    (val) => {
+      setQuickRange(val);
+      if (val === 'all') {
+        setDateFilter({ start: null, end: null });
+      } else if (val !== 'custom') {
+        const days = parseInt(val, 10);
+        if (!Number.isNaN(days)) {
+          const end = latestDate;
+          const start = new Date(end);
+          start.setDate(start.getDate() - (days - 1));
+          setDateFilter({ start, end });
+        }
+      }
+    },
+    [latestDate],
+  );
+
   const formatDate = (d) =>
     d instanceof Date && !Number.isNaN(d.getTime())
       ? new Date(d.getTime() - d.getTimezoneOffset() * 60000)
@@ -391,33 +421,53 @@ function App() {
             <span className="badge">beta</span>
           </div>
           <div className="date-filter">
+            <select
+              value={quickRange}
+              onChange={(e) => handleQuickRangeChange(e.target.value)}
+              aria-label="Quick range"
+            >
+              <option value="all">All</option>
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="180">Last 180 days</option>
+              <option value="365">Last year</option>
+              <option value="1825">Last 5 years</option>
+              <option value="custom">Custom</option>
+            </select>
             <input
               type="date"
               value={formatDate(dateFilter.start)}
-              onChange={(e) =>
+              onChange={(e) => {
+                setQuickRange('custom');
                 setDateFilter((prev) => ({
                   ...prev,
                   start: parseDate(e.target.value),
-                }))
-              }
+                }));
+              }}
               aria-label="Start date"
             />
             <span>-</span>
             <input
               type="date"
               value={formatDate(dateFilter.end)}
-              onChange={(e) =>
+              onChange={(e) => {
+                setQuickRange('custom');
                 setDateFilter((prev) => ({
                   ...prev,
                   end: parseDate(e.target.value),
-                }))
-              }
+                }));
+              }}
               aria-label="End date"
             />
             {(dateFilter.start || dateFilter.end) && (
               <button
                 className="btn-ghost"
-                onClick={() => setDateFilter({ start: null, end: null })}
+                onClick={() => {
+                  setDateFilter({ start: null, end: null });
+                  setQuickRange('all');
+                }}
                 aria-label="Reset date filter"
               >
                 ×
