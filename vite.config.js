@@ -13,7 +13,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
-    include: ['src/**/*.test.{js,jsx,ts,tsx}'],
+    include: ['src/**/*.test.{js,jsx,ts,tsx}', 'styles.*.test.js'],
   },
   // Treat any Vite/Rollup warnings as errors to enforce clean builds
   build: {
