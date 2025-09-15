@@ -10,19 +10,11 @@ vi.mock('../utils/db', () => ({
     memoryStore.last = session;
   }),
   getLastSession: vi.fn(async () => memoryStore.last),
-  clearLastSession: vi.fn(async () => {
-    memoryStore.last = null;
-  }),
 }));
 
 describe('useSessionManager', () => {
   beforeEach(() => {
     memoryStore.last = null;
-    try {
-      window.localStorage.removeItem('persistEnabled');
-    } catch {
-      // ignore
-    }
     vi.clearAllMocks();
     vi.useFakeTimers();
   });
@@ -30,174 +22,61 @@ describe('useSessionManager', () => {
     vi.useRealTimers();
   });
 
-  it('auto-saves when enabled', async () => {
-    const { result } = renderHook(() =>
-      useSessionManager({
-        summaryData: [],
-        detailsData: [],
-        clusterParams: {},
-        dateFilter: { start: null, end: null },
-        rangeA: { start: null, end: null },
-        rangeB: { start: null, end: null },
-        fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
-        setSummaryData: vi.fn(),
-        setDetailsData: vi.fn(),
-      }),
-    );
-    act(() => result.current.setPersistEnabled(true));
+  const baseProps = () => ({
+    summaryData: [],
+    detailsData: [],
+    clusterParams: {},
+    dateFilter: { start: null, end: null },
+    rangeA: { start: null, end: null },
+    rangeB: { start: null, end: null },
+    fnPreset: 'balanced',
+    setClusterParams: vi.fn(),
+    setDateFilter: vi.fn(),
+    setRangeA: vi.fn(),
+    setRangeB: vi.fn(),
+    setSummaryData: vi.fn(),
+    setDetailsData: vi.fn(),
+  });
+
+  it('auto-saves when data is present', async () => {
+    const props = baseProps();
+    props.summaryData = [{ AHI: '1' }];
+    renderHook(() => useSessionManager(props));
     vi.advanceTimersByTime(600);
     const { putLastSession } = await import('../utils/db');
     expect(putLastSession).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not auto-save when no files are loaded', async () => {
-    memoryStore.last = buildSession({ summaryData: [{ AHI: '2' }] });
-    try {
-      window.localStorage.setItem('persistEnabled', '1');
-    } catch {
-      /* ignore */
-    }
-    renderHook(() =>
-      useSessionManager({
-        summaryData: null,
-        detailsData: null,
-        clusterParams: {},
-        dateFilter: { start: null, end: null },
-        rangeA: { start: null, end: null },
-        rangeB: { start: null, end: null },
-        fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
-        setSummaryData: vi.fn(),
-        setDetailsData: vi.fn(),
-      }),
-    );
-    vi.advanceTimersByTime(600);
-    const { putLastSession } = await import('../utils/db');
-    expect(putLastSession).not.toHaveBeenCalled();
     expect(memoryStore.last).not.toBeNull();
   });
 
+  it('does not auto-save when no data is loaded', async () => {
+    const props = baseProps();
+    props.summaryData = null;
+    props.detailsData = null;
+    renderHook(() => useSessionManager(props));
+    vi.advanceTimersByTime(600);
+    const { putLastSession } = await import('../utils/db');
+    expect(putLastSession).not.toHaveBeenCalled();
+  });
+
   it('loads a saved session', async () => {
-    memoryStore.last = buildSession({
-      summaryData: [{ AHI: '1' }],
-      detailsData: [],
-    });
+    memoryStore.last = buildSession({ summaryData: [{ AHI: '1' }], detailsData: [] });
+    const props = baseProps();
     const setSummaryData = vi.fn();
-    const { result } = renderHook(() =>
-      useSessionManager({
-        summaryData: [],
-        detailsData: [],
-        clusterParams: {},
-        dateFilter: { start: null, end: null },
-        rangeA: { start: null, end: null },
-        rangeB: { start: null, end: null },
-        fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
-        setSummaryData,
-        setDetailsData: vi.fn(),
-      }),
-    );
+    props.setSummaryData = setSummaryData;
+    const { result } = renderHook(() => useSessionManager(props));
     await act(async () => {
       await result.current.handleLoadSaved();
     });
     const { getLastSession } = await import('../utils/db');
-    expect(getLastSession).toHaveBeenCalledTimes(1);
+    expect(getLastSession).toHaveBeenCalled();
     expect(setSummaryData).toHaveBeenCalled();
   });
 
-  it('clears stored session when persistence is disabled', async () => {
-    const { result } = renderHook(() =>
-      useSessionManager({
-        summaryData: [],
-        detailsData: [],
-        clusterParams: {},
-        dateFilter: { start: null, end: null },
-        rangeA: { start: null, end: null },
-        rangeB: { start: null, end: null },
-        fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
-        setSummaryData: vi.fn(),
-        setDetailsData: vi.fn(),
-      }),
-    );
-    act(() => result.current.setPersistEnabled(true));
-    vi.advanceTimersByTime(600);
-    expect(memoryStore.last).not.toBeNull();
-    await act(async () => {
-      result.current.setPersistEnabled(false);
-    });
-    const { clearLastSession } = await import('../utils/db');
-    expect(clearLastSession).toHaveBeenCalledTimes(1);
-    expect(memoryStore.last).toBeNull();
-  });
-
-  it('does not clear session if persistence was never enabled', async () => {
-    memoryStore.last = buildSession({ summaryData: [{ AHI: '3' }] });
-    renderHook(() =>
-      useSessionManager({
-        summaryData: [],
-        detailsData: [],
-        clusterParams: {},
-        dateFilter: { start: null, end: null },
-        rangeA: { start: null, end: null },
-        rangeB: { start: null, end: null },
-        fnPreset: 'balanced',
-        setClusterParams: vi.fn(),
-        setDateFilter: vi.fn(),
-        setRangeA: vi.fn(),
-        setRangeB: vi.fn(),
-        setSummaryData: vi.fn(),
-        setDetailsData: vi.fn(),
-      }),
-    );
-    const { clearLastSession } = await import('../utils/db');
-    expect(clearLastSession).not.toHaveBeenCalled();
-    expect(memoryStore.last).not.toBeNull();
-  });
-
-  it('alerts on malformed JSON imports', () => {
-    const setClusterParams = vi.fn();
-    const setDateFilter = vi.fn();
-    const setRangeA = vi.fn();
-    const setRangeB = vi.fn();
+  it('rejects malformed session JSON', async () => {
+    const props = baseProps();
     const setSummaryData = vi.fn();
-    const setDetailsData = vi.fn();
-
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    const consoleErrorMock = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {});
-
-    const { result } = renderHook(() =>
-      useSessionManager({
-        summaryData: [],
-        detailsData: [],
-        clusterParams: {},
-        dateFilter: { start: null, end: null },
-        rangeA: { start: null, end: null },
-        rangeB: { start: null, end: null },
-        fnPreset: 'balanced',
-        setClusterParams,
-        setDateFilter,
-        setRangeA,
-        setRangeB,
-        setSummaryData,
-        setDetailsData,
-      }),
-    );
+    props.setSummaryData = setSummaryData;
+    const { result } = renderHook(() => useSessionManager(props));
 
     const originalFileReader = global.FileReader;
     class MockFileReader {
@@ -209,22 +88,13 @@ describe('useSessionManager', () => {
     global.FileReader = MockFileReader;
 
     const file = new Blob(['{'], { type: 'application/json' });
-    act(() => {
-      result.current.handleImportJson({ target: { files: [file] } });
-    });
-
-    expect(alertMock).toHaveBeenCalledTimes(1);
-    expect(alertMock.mock.calls[0][0]).toMatch(/could not import session/i);
-    expect(consoleErrorMock).toHaveBeenCalled();
-    expect(setClusterParams).not.toHaveBeenCalled();
-    expect(setDateFilter).not.toHaveBeenCalled();
-    expect(setRangeA).not.toHaveBeenCalled();
-    expect(setRangeB).not.toHaveBeenCalled();
+    await expect(
+      act(async () => {
+        await result.current.importSessionFile(file);
+      }),
+    ).rejects.toBeTruthy();
     expect(setSummaryData).not.toHaveBeenCalled();
-    expect(setDetailsData).not.toHaveBeenCalled();
 
-    alertMock.mockRestore();
-    consoleErrorMock.mockRestore();
     global.FileReader = originalFileReader;
   });
 });

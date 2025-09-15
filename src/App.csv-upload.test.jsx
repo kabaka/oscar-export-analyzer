@@ -50,7 +50,7 @@ describe('CSV uploads and cross-component interactions', () => {
       screen.getByRole('dialog', { name: /Import Data/i }),
     ).toBeInTheDocument();
 
-    const input = screen.getByLabelText(/CSV files/i);
+    const input = screen.getByLabelText(/CSV or session files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });

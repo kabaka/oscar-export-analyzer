@@ -22,7 +22,7 @@ describe('Worker Integration Tests', () => {
       'details.csv',
       { type: 'text/csv' },
     );
-    const input = screen.getByLabelText(/CSV files/i);
+    const input = screen.getByLabelText(/CSV or session files/i);
     await userEvent.upload(input, [summary, details]);
 
     await waitFor(() => {
@@ -46,7 +46,7 @@ describe('Worker Integration Tests', () => {
 
     render(<App />);
     const file = new File(['bad'], 'bad.csv', { type: 'text/csv' });
-    const input = screen.getByLabelText(/CSV files/i);
+    const input = screen.getByLabelText(/CSV or session files/i);
     await userEvent.upload(input, file);
 
     await waitFor(() => {

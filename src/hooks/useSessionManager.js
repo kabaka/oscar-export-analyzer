@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { buildSession, applySession } from '../utils/session';
-import { putLastSession, getLastSession, clearLastSession } from '../utils/db';
+import { putLastSession, getLastSession } from '../utils/db';
 
 export function useSessionManager({
   summaryData,
@@ -17,33 +17,7 @@ export function useSessionManager({
   setSummaryData,
   setDetailsData,
 }) {
-  const [persistEnabled, setPersistEnabled] = useState(() => {
-    try {
-      return localStorage.getItem('persistEnabled') === '1';
-    } catch {
-      return false;
-    }
-  });
-
   useEffect(() => {
-    try {
-      localStorage.setItem('persistEnabled', persistEnabled ? '1' : '0');
-    } catch {
-      // ignore persistence errors
-    }
-  }, [persistEnabled]);
-
-  const prevPersistRef = useRef(persistEnabled);
-  // Clear stored session only when persistence is turned off to avoid stale data
-  useEffect(() => {
-    if (!persistEnabled && prevPersistRef.current) {
-      clearLastSession().catch(() => {});
-    }
-    prevPersistRef.current = persistEnabled;
-  }, [persistEnabled]);
-
-  useEffect(() => {
-    if (!persistEnabled) return;
     if (!summaryData && !detailsData) return;
     const timer = setTimeout(() => {
       const session = buildSession({
@@ -59,7 +33,6 @@ export function useSessionManager({
     }, 500);
     return () => clearTimeout(timer);
   }, [
-    persistEnabled,
     summaryData,
     detailsData,
     clusterParams,
@@ -68,20 +41,6 @@ export function useSessionManager({
     rangeB,
     fnPreset,
   ]);
-
-  const handleSaveNow = async () => {
-    if (!summaryData && !detailsData) return;
-    const session = buildSession({
-      summaryData,
-      detailsData,
-      clusterParams,
-      dateFilter,
-      rangeA,
-      rangeB,
-      fnPreset,
-    });
-    await putLastSession(session).catch(() => {});
-  };
 
   const handleLoadSaved = async () => {
     const sess = await getLastSession().catch(() => null);
@@ -96,10 +55,6 @@ export function useSessionManager({
         setDetailsData(patch.detailsData || null);
       }
     }
-  };
-
-  const handleClearSaved = async () => {
-    await clearLastSession().catch(() => {});
   };
 
   const handleExportJson = () => {
@@ -123,41 +78,36 @@ export function useSessionManager({
     URL.revokeObjectURL(url);
   };
 
-  const handleImportJson = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const sess = JSON.parse(reader.result);
-        const patch = applySession(sess);
-        if (patch) {
-          setClusterParams(patch.clusterParams || clusterParams);
-          setDateFilter(patch.dateFilter || { start: null, end: null });
-          setRangeA(patch.rangeA || { start: null, end: null });
-          setRangeB(patch.rangeB || { start: null, end: null });
-          setSummaryData(patch.summaryData || null);
-          setDetailsData(patch.detailsData || null);
+  const importSessionFile = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = (e) => reject(e);
+      reader.onload = () => {
+        try {
+          const sess = JSON.parse(reader.result);
+          const patch = applySession(sess);
+          if (patch) {
+            setClusterParams(patch.clusterParams || clusterParams);
+            setDateFilter(patch.dateFilter || { start: null, end: null });
+            setRangeA(patch.rangeA || { start: null, end: null });
+            setRangeB(patch.rangeB || { start: null, end: null });
+            setSummaryData(patch.summaryData || null);
+            setDetailsData(patch.detailsData || null);
+            resolve();
+            return;
+          }
+          throw new Error('Session file missing required data');
+        } catch (err) {
+          console.error('Session import failed:', err);
+          reject(err);
         }
-      } catch (err) {
-        const message =
-          'Could not import session. The file is not valid JSON or is missing required data. ' +
-          'Make sure you selected a session file exported from this app.\n\nDetails: ' +
-          (err instanceof Error ? err.message : String(err));
-        alert(message);
-        console.error('Session import failed:', err);
-      }
-    };
-    reader.readAsText(file);
-  };
+      };
+      reader.readAsText(file);
+    });
 
   return {
-    persistEnabled,
-    setPersistEnabled,
-    handleSaveNow,
     handleLoadSaved,
-    handleClearSaved,
     handleExportJson,
-    handleImportJson,
+    importSessionFile,
   };
 }

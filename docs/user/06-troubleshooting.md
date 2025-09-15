@@ -32,8 +32,8 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 
 ### Charts do not render or appear blank
 
-- Clear the session via **Clear saved** and reload the page.
-- Disable browser extensions that inject content scripts, as they can interfere with canvas rendering.
+- Clear stored data from your browser and reload the page.
+  - Disable browser extensions that inject content scripts, as they can interfere with canvas rendering.
 - Verify that WebGL is enabled in your browser; some visualizations fall back to CPU rendering otherwise.
 
 ### Wrong time zone displayed

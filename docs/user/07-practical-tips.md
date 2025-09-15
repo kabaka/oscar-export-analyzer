@@ -36,4 +36,4 @@ Check the project repository periodically for updates. New versions may include 
 
 ## Respect Data Privacy
 
-If using shared computers, disable **Remember data locally** (which clears cached data) and delete any exported session files after use. Sensitive health information should be handled carefully.
+If using shared computers, clear browser storage and delete any exported session files after use. Sensitive health information should be handled carefully.

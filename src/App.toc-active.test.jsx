@@ -64,7 +64,7 @@ describe('TOC active highlighting', () => {
       'details.csv',
       { type: 'text/csv' },
     );
-    const input = await screen.findByLabelText(/CSV files/i);
+    const input = await screen.findByLabelText(/CSV or session files/i);
     await userEvent.upload(input, [summaryFile, detailsFile]);
 
     await waitFor(() => {
