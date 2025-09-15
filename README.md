@@ -69,7 +69,7 @@ If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
 4. Navigate via the sidebar to explore dashboards: **Overview**, **Usage Patterns**, **AHI Trends**, and more.
 5. Use the date range filter in the header to limit which nights are included across all views.
 6. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
-7. Sessions persist automatically to your browser's storage. Drop a saved session JSON on the splash screen or click **Load previous session** there to restore it. Use **Export JSON** to save a portable snapshot.
+7. Sessions persist automatically to your browser's storage. Drop a saved session JSON on the splash screen or click **Load previous session** there to restore it. Use the header menu's **Export JSON** to save a portable snapshot.
 
 ## Feature Tour
 

@@ -45,7 +45,7 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 ### Saved sessions disappear after closing the browser
 
 - Some privacy settings clear `IndexedDB` on exit. Check your browser’s cookie and site‑data retention policies.
-- In private/incognito mode, enable **Export JSON** to manually save a session between visits.
+- In private/incognito mode, use the menu's **Export JSON** to manually save a session between visits.
 
 ### Unable to import a previously exported JSON
 

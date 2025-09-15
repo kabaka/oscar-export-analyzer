@@ -107,9 +107,9 @@ A virtualized table renders the raw Summary and Details CSV contents. Features i
 ## Persistence, Export, and Reporting
 
 - **Session Persistence** – Stores uploaded files and settings in `IndexedDB` when enabled.
-- **JSON Export/Import** – Saves or restores a session snapshot.
-- **Aggregates CSV** – Exports computed nightly metrics for external analysis.
-- **Print Page** – The app's print control triggers your browser's print dialog. The print view omits navigation and buttons while keeping charts and summary tables for saving or sharing.
+- **JSON Export/Import** – Use the header menu's **Export JSON** to save or restore a session snapshot.
+- **Aggregates CSV** – Export computed nightly metrics via the menu for external analysis.
+- **Print Page** – Choose **Print Page** from the menu to trigger your browser's print dialog. The print view omits navigation and buttons while keeping charts and summary tables for saving or sharing.
 
 ## Interpretation Tips
 
