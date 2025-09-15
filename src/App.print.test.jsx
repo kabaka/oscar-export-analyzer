@@ -41,9 +41,13 @@ describe('Print Page control', () => {
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
 
-    const printBtn = await screen.findByRole('button', { name: /Print Page/i });
-    expect(printBtn).toBeEnabled();
-    await userEvent.click(printBtn);
+    const menuBtn = await screen.findByRole('button', { name: /menu/i });
+    await userEvent.click(menuBtn);
+    const printItem = await screen.findByRole('menuitem', {
+      name: /Print Page/i,
+    });
+    expect(printItem).toBeEnabled();
+    await userEvent.click(printItem);
     expect(window.print).toHaveBeenCalled();
 
     expect(

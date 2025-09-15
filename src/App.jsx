@@ -37,7 +37,9 @@ import ThemeToggle from './components/ThemeToggle';
 import DocsModal from './components/DocsModal';
 import DataImportModal from './components/DataImportModal';
 import GuideLink from './components/GuideLink';
+import HeaderMenu from './components/HeaderMenu';
 import { buildSummaryAggregatesCSV, downloadTextFile } from './utils/export';
+import { clearLastSession } from './utils/db';
 import { DataProvider } from './context/DataContext';
 
 function App() {
@@ -132,16 +134,39 @@ function App() {
       detailsData,
       clusterParams,
       dateFilter,
-    rangeA,
-    rangeB,
-    fnPreset,
-    setClusterParams,
-    setDateFilter,
-    setRangeA,
-    setRangeB,
-    setSummaryData,
-    setDetailsData,
-  });
+      rangeA,
+      rangeB,
+      fnPreset,
+      setClusterParams,
+      setDateFilter,
+      setRangeA,
+      setRangeB,
+      setSummaryData,
+      setDetailsData,
+    });
+
+  const exportAggregatesCsv = useCallback(() => {
+    downloadTextFile(
+      'aggregates.csv',
+      buildSummaryAggregatesCSV(summaryData || []),
+      'text/csv',
+    );
+  }, [summaryData]);
+
+  const handleClearSession = useCallback(async () => {
+    if (
+      window.confirm(
+        'This will delete the saved session data from your browser. Continue?',
+      )
+    ) {
+      await clearLastSession();
+      setSummaryData(null);
+      setDetailsData(null);
+    }
+  }, [setSummaryData, setDetailsData]);
+
+  const hasAnyData = !!(summaryData || detailsData);
+  const summaryAvailable = !!summaryData;
 
   const onClusterParamChange = useCallback((patch) => {
     setClusterParams((prev) => ({ ...prev, ...patch }));
@@ -488,13 +513,16 @@ function App() {
           </div>
           <div className="actions">
             <ThemeToggle />
-            <button
-              className="btn-ghost"
-              onClick={openGuideForActive}
-              aria-label="Open Usage Guide"
-            >
-              Guide
-            </button>
+            <HeaderMenu
+              onOpenImport={() => setImportOpen(true)}
+              onExportJson={handleExportJson}
+              onExportCsv={exportAggregatesCsv}
+              onClearSession={handleClearSession}
+              onPrint={() => window.print()}
+              onOpenGuide={openGuideForActive}
+              hasAnyData={hasAnyData}
+              summaryAvailable={summaryAvailable}
+            />
           </div>
         </div>
         {(loadingSummary || loadingDetails || processingDetails) && (
@@ -508,7 +536,8 @@ function App() {
                       )}%)`
                     : ''
                 }`}
-              {loadingDetails && !loadingSummary &&
+              {loadingDetails &&
+                !loadingSummary &&
                 `Importing details CSV${
                   detailsProgressMax
                     ? ` (${Math.round(
@@ -526,15 +555,15 @@ function App() {
                 loadingSummary
                   ? summaryProgress
                   : loadingDetails
-                  ? detailsProgress
-                  : undefined
+                    ? detailsProgress
+                    : undefined
               }
               max={
                 loadingSummary
                   ? summaryProgressMax
                   : loadingDetails
-                  ? detailsProgressMax
-                  : undefined
+                    ? detailsProgressMax
+                    : undefined
               }
             />
           </div>
@@ -553,38 +582,6 @@ function App() {
             </a>
           ))}
         </nav>
-        <div className="section controls" aria-label="Data and export controls">
-          <div className="control-group" aria-label="Export controls">
-            <span className="control-title">Export</span>
-            <button
-              className="btn-primary"
-              onClick={handleExportJson}
-              disabled={!summaryData && !detailsData}
-            >
-              Export JSON
-            </button>
-            <button
-              className="btn-primary"
-              onClick={() =>
-                downloadTextFile(
-                  'aggregates.csv',
-                  buildSummaryAggregatesCSV(summaryData || []),
-                  'text/csv',
-                )
-              }
-              disabled={!summaryData}
-            >
-              Export Aggregates CSV
-            </button>
-            <button
-              className="btn-primary"
-              onClick={() => window.print()}
-              disabled={!summaryData}
-            >
-              Print Page
-            </button>
-          </div>
-        </div>
         {filteredSummary?.length > 0 && (
           <div className="section">
             <Overview

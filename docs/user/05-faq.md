@@ -18,7 +18,7 @@ Sessions are saved automatically to IndexedDB. Uploading a new Summary CSV overw
 
 ### Can I export results for my doctor?
 
-Use the **Print Page** control to generate a PDF or the aggregates CSV for sharing. The print view hides navigation and buttons but preserves charts and summary tables.
+Use the menu's **Print Page** option or aggregates CSV export for sharing. The print view hides navigation and buttons but preserves charts and summary tables.
 
 ### Is my data uploaded anywhere?
 
