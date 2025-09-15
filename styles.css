@@ -183,6 +183,12 @@ h1 {
   width: max-content;
 }
 
+.app-menu .menu-list .menu-section + .menu-section {
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
 .app-menu .menu-list [role='menuitem'] {
   padding: 4px 8px;
   background: none;

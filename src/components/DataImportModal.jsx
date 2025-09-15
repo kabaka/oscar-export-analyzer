@@ -20,6 +20,7 @@ export default function DataImportModal({
 }) {
   const [hasSaved, setHasSaved] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [shouldAutoClose, setShouldAutoClose] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -29,21 +30,30 @@ export default function DataImportModal({
   }, [isOpen]);
 
   useEffect(() => {
+    if (loadingSummary || loadingDetails) {
+      setShouldAutoClose(true);
+    }
+  }, [loadingSummary, loadingDetails]);
+
+  useEffect(() => {
     if (
+      isOpen &&
+      shouldAutoClose &&
       summaryData &&
       detailsData &&
       !loadingSummary &&
-      !loadingDetails &&
-      isOpen
+      !loadingDetails
     ) {
+      setShouldAutoClose(false);
       onClose();
     }
   }, [
+    isOpen,
+    shouldAutoClose,
     summaryData,
     detailsData,
     loadingSummary,
     loadingDetails,
-    isOpen,
     onClose,
   ]);
 

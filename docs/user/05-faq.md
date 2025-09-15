@@ -16,6 +16,10 @@ Ensure the file is exported from OSCAR and uses UTF‑8 encoding. Files edited i
 
 Sessions are saved automatically to IndexedDB. Uploading a new Summary CSV overwrites any prior session and resets Details until a matching file is provided. The app only writes to storage after data has been loaded, so refreshing before uploading files won't wipe the stored session. Use the splash screen's **Load previous session** button or drop a session JSON file to restore that session.
 
+### How do I load new files after already importing data?
+
+Open the header menu and choose **Load Data** to reopen the import dialog. You can replace the current session by selecting new Summary and Details CSVs or a saved session JSON.
+
 ### Can I export results for my doctor?
 
 Use the menu's **Print Page** option or aggregates CSV export for sharing. The print view hides navigation and buttons but preserves charts and summary tables.
