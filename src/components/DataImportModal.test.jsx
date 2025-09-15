@@ -41,4 +41,30 @@ describe('DataImportModal layout', () => {
     const closeBtn = screen.getByRole('button', { name: /close/i });
     expect(closeBtn).toHaveStyle({ alignSelf: 'center' });
   });
+
+  it('remains open when reopened with loaded data', () => {
+    const onClose = vi.fn();
+    render(
+      <DataImportModal
+        isOpen
+        onClose={onClose}
+        onSummaryFile={noop}
+        onDetailsFile={noop}
+        onLoadSaved={noop}
+        onSessionFile={noop}
+        summaryData={[{}]}
+        detailsData={[{}]}
+        loadingSummary={false}
+        loadingDetails={false}
+        summaryProgress={0}
+        summaryProgressMax={0}
+        detailsProgress={0}
+        detailsProgressMax={0}
+      />,
+    );
+    expect(
+      screen.getByRole('dialog', { name: /import data/i }),
+    ).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

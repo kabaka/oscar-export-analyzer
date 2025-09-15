@@ -37,72 +37,78 @@ export default function HeaderMenu({
       </button>
       {open && (
         <div className="menu-list" role="menu">
-          <button
-            role="menuitem"
-            onClick={() => {
-              onOpenImport();
-              close();
-            }}
-          >
-            Load Data
-          </button>
-          <button
-            role="menuitem"
-            onClick={() => {
-              onExportJson();
-              close();
-            }}
-            disabled={!hasAnyData}
-          >
-            Export JSON
-          </button>
-          <button
-            role="menuitem"
-            onClick={() => {
-              onExportCsv();
-              close();
-            }}
-            disabled={!summaryAvailable}
-          >
-            Export Aggregates CSV
-          </button>
-          <button
-            role="menuitem"
-            onClick={() => {
-              onClearSession();
-              close();
-            }}
-          >
-            Delete saved session
-          </button>
-          <button
-            role="menuitem"
-            onClick={() => {
-              onPrint();
-              close();
-            }}
-            disabled={!summaryAvailable}
-          >
-            Print Page
-          </button>
-          <button
-            role="menuitem"
-            onClick={() => {
-              onOpenGuide();
-              close();
-            }}
-          >
-            Guide
-          </button>
-          <a
-            role="menuitem"
-            href="https://github.com/kabaka/oscar-export-analyzer"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={close}
-          >
-            GitHub Project
-          </a>
+          <div className="menu-section" role="group">
+            <button
+              role="menuitem"
+              onClick={() => {
+                onOpenImport();
+                close();
+              }}
+            >
+              Load Data
+            </button>
+            <button
+              role="menuitem"
+              onClick={() => {
+                onExportJson();
+                close();
+              }}
+              disabled={!hasAnyData}
+            >
+              Export JSON
+            </button>
+            <button
+              role="menuitem"
+              onClick={() => {
+                onExportCsv();
+                close();
+              }}
+              disabled={!summaryAvailable}
+            >
+              Export Aggregates CSV
+            </button>
+            <button
+              role="menuitem"
+              onClick={() => {
+                onPrint();
+                close();
+              }}
+              disabled={!summaryAvailable}
+            >
+              Print Page
+            </button>
+          </div>
+          <div className="menu-section" role="group">
+            <button
+              role="menuitem"
+              onClick={() => {
+                onClearSession();
+                close();
+              }}
+            >
+              Delete saved session
+            </button>
+          </div>
+          <div className="menu-section" role="group">
+            <button
+              role="menuitem"
+              onClick={() => {
+                onOpenGuide();
+                close();
+              }}
+            >
+              Guide
+            </button>
+            <a
+              role="menuitem"
+              href="https://github.com/kabaka/oscar-export-analyzer"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={close}
+            >
+              GitHub Project
+            </a>
+          </div>
         </div>
       )}
     </div>

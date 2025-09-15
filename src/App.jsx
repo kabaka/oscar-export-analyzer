@@ -435,7 +435,7 @@ function App() {
       filteredDetails={filteredDetails}
     >
       <DataImportModal
-        isOpen={importOpen && (!summaryData || !detailsData)}
+        isOpen={importOpen}
         onClose={() => setImportOpen(false)}
         onSummaryFile={onSummaryFile}
         onDetailsFile={onDetailsFile}
