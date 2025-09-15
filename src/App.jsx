@@ -441,8 +441,6 @@ function App() {
         onDetailsFile={onDetailsFile}
         onLoadSaved={handleLoadSaved}
         onSessionFile={importSessionFile}
-        summaryData={summaryData}
-        detailsData={detailsData}
         loadingSummary={loadingSummary}
         loadingDetails={loadingDetails || processingDetails}
         summaryProgress={summaryProgress}
@@ -451,6 +449,18 @@ function App() {
         detailsProgressMax={detailsProgressMax}
         error={error}
       />
+      {error && (
+        <div
+          role="alert"
+          style={{
+            margin: '8px 0',
+            color: 'red',
+            textAlign: 'center',
+          }}
+        >
+          {error}
+        </div>
+      )}
       <header className="app-header">
         <div className="inner">
           <div className="title">

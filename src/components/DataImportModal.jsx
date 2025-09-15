@@ -8,8 +8,6 @@ export default function DataImportModal({
   onDetailsFile,
   onLoadSaved,
   onSessionFile,
-  summaryData,
-  detailsData,
   loadingSummary,
   loadingDetails,
   summaryProgress,
@@ -20,42 +18,12 @@ export default function DataImportModal({
 }) {
   const [hasSaved, setHasSaved] = useState(false);
   const [localError, setLocalError] = useState('');
-  const [shouldAutoClose, setShouldAutoClose] = useState(false);
-
   useEffect(() => {
     if (!isOpen) return;
     getLastSession()
       .then((sess) => setHasSaved(!!sess))
       .catch(() => setHasSaved(false));
   }, [isOpen]);
-
-  useEffect(() => {
-    if (loadingSummary || loadingDetails) {
-      setShouldAutoClose(true);
-    }
-  }, [loadingSummary, loadingDetails]);
-
-  useEffect(() => {
-    if (
-      isOpen &&
-      shouldAutoClose &&
-      summaryData &&
-      detailsData &&
-      !loadingSummary &&
-      !loadingDetails
-    ) {
-      setShouldAutoClose(false);
-      onClose();
-    }
-  }, [
-    isOpen,
-    shouldAutoClose,
-    summaryData,
-    detailsData,
-    loadingSummary,
-    loadingDetails,
-    onClose,
-  ]);
 
   const classifyFile = async (file) => {
     if (/json/i.test(file.type) || /\.json$/i.test(file.name)) return 'session';
@@ -78,6 +46,7 @@ export default function DataImportModal({
         try {
           await onSessionFile(session);
           setLocalError('');
+          onClose();
         } catch (err) {
           setLocalError(
             err instanceof Error
@@ -94,8 +63,9 @@ export default function DataImportModal({
         onDetailsFile({ target: { files: [details] } });
       }
       setLocalError('');
+      if (summary || details) onClose();
     },
-    [onSummaryFile, onDetailsFile, onSessionFile],
+    [onSummaryFile, onDetailsFile, onSessionFile, onClose],
   );
 
   const onInputChange = (e) => handleFiles(e.target.files);
@@ -129,7 +99,10 @@ export default function DataImportModal({
         {hasSaved && (
           <button
             className="btn-primary"
-            onClick={onLoadSaved}
+            onClick={() => {
+              onLoadSaved();
+              onClose();
+            }}
             style={{ alignSelf: 'center' }}
           >
             Load previous session

@@ -16,4 +16,10 @@ describe('menu styles', () => {
       /\.app-menu\s+\.menu-list\s+\[role='menuitem'\]\s*{[\s\S]*white-space:\s*nowrap/,
     );
   });
+
+  it('stacks menu items vertically within sections', () => {
+    expect(css).toMatch(
+      /\.app-menu\s+\.menu-list\s+\.menu-section\s*{[\s\S]*flex-direction:\s*column/,
+    );
+  });
 });
