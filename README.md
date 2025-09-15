@@ -69,7 +69,7 @@ If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
 4. Navigate via the sidebar to explore dashboards: **Overview**, **Usage Patterns**, **AHI Trends**, and more.
 5. Use the date range filter in the header to limit which nights are included across all views.
 6. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
-7. Enable **Remember data locally** if you want sessions to persist after closing the tab. Importing a new Summary CSV replaces any previous session, and data is only saved after a file has been loaded so a refresh with no files won't wipe prior data. Use **Export JSON** to save a portable session snapshot.
+7. Sessions persist automatically to your browser's storage. Drop a saved session JSON on the splash screen or click **Load previous session** there to restore it. Use **Export JSON** to save a portable snapshot.
 
 ## Feature Tour
 
@@ -85,7 +85,7 @@ Each view includes contextual help links that open the corresponding page in the
 
 ## Data Privacy
 
-All processing occurs locally in your browser. The application never transmits your CSV files, computed statistics, or exported reports over the network. Disabling **Remember data locally** clears stored information. You may also click **Clear saved**, clear your browser cache, or use a private/incognito window for one‑time analyses.
+All processing occurs locally in your browser. The application never transmits your CSV files, computed statistics, or exported reports over the network. You may clear your browser storage or use a private/incognito window for one‑time analyses.
 
 ## Troubleshooting
 

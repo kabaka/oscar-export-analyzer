@@ -7,6 +7,7 @@ export default function DataImportModal({
   onSummaryFile,
   onDetailsFile,
   onLoadSaved,
+  onSessionFile,
   summaryData,
   detailsData,
   loadingSummary,
@@ -18,6 +19,7 @@ export default function DataImportModal({
   error,
 }) {
   const [hasSaved, setHasSaved] = useState(false);
+  const [localError, setLocalError] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -46,6 +48,7 @@ export default function DataImportModal({
   ]);
 
   const classifyFile = async (file) => {
+    if (/json/i.test(file.type) || /\.json$/i.test(file.name)) return 'session';
     const text = await new Response(file).text();
     const header = text.split(/\r?\n/)[0];
     return /event/i.test(header) ? 'details' : 'summary';
@@ -58,16 +61,31 @@ export default function DataImportModal({
       const classified = await Promise.all(
         files.map(async (f) => ({ type: await classifyFile(f), file: f })),
       );
+      const session = classified.find((c) => c.type === 'session')?.file;
       const summary = classified.find((c) => c.type === 'summary')?.file;
       const details = classified.find((c) => c.type === 'details')?.file;
+      if (session) {
+        try {
+          await onSessionFile(session);
+          setLocalError('');
+        } catch (err) {
+          setLocalError(
+            err instanceof Error
+              ? err.message
+              : 'Could not import session file',
+          );
+        }
+        return;
+      }
       if (summary) {
         onSummaryFile({ target: { files: [summary] } });
       }
       if (details) {
         onDetailsFile({ target: { files: [details] } });
       }
+      setLocalError('');
     },
-    [onSummaryFile, onDetailsFile],
+    [onSummaryFile, onDetailsFile, onSessionFile],
   );
 
   const onInputChange = (e) => handleFiles(e.target.files);
@@ -113,14 +131,15 @@ export default function DataImportModal({
           }}
         >
           <p style={{ margin: 0 }}>
-            Drag and drop Summary and Details CSVs here or choose files
+            Drag and drop Summary & Details CSVs or a session JSON here or
+            choose files
           </p>
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,application/json"
             multiple
             onChange={onInputChange}
-            aria-label="CSV files"
+            aria-label="CSV or session files"
           />
           {loadingSummary && (
             <progress
@@ -136,9 +155,9 @@ export default function DataImportModal({
               style={{ width: '100%' }}
             />
           )}
-          {error && (
+          {(error || localError) && (
             <div role="alert" style={{ color: 'red' }}>
-              {error}
+              {error || localError}
             </div>
           )}
         </div>

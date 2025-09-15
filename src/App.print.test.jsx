@@ -30,7 +30,7 @@ describe('Print Page control', () => {
 
     render(<App />);
 
-    const input = await screen.findByLabelText(/CSV files/i);
+    const input = await screen.findByLabelText(/CSV or session files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
     });

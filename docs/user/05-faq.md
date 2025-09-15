@@ -14,7 +14,7 @@ Ensure the file is exported from OSCAR and uses UTF‑8 encoding. Files edited i
 
 ### How is data stored?
 
-When **Remember data locally** is enabled, files and settings are saved to IndexedDB. Uploading a new Summary CSV overwrites any prior session and resets Details until a matching file is provided. The app only writes to storage after data has been loaded, so refreshing before uploading files won't wipe the stored session. Use **Load saved** to restore that session, replacing whatever data is currently in memory. Disabling the option immediately clears stored copies. You can also manually clear all cached data via the session controls.
+Sessions are saved automatically to IndexedDB. Uploading a new Summary CSV overwrites any prior session and resets Details until a matching file is provided. The app only writes to storage after data has been loaded, so refreshing before uploading files won't wipe the stored session. Use the splash screen's **Load previous session** button or drop a session JSON file to restore that session.
 
 ### Can I export results for my doctor?
 
@@ -46,11 +46,11 @@ Parsing occurs in a Web Worker and should remain responsive, but extremely large
 
 ### The session does not save between visits.
 
-Ensure **Remember data locally** is enabled. Some privacy modes or browser settings (e.g., “Clear cookies on exit”) prevent IndexedDB persistence.
+Some privacy modes or browser settings (e.g., “Clear cookies on exit”) prevent IndexedDB persistence.
 
 ### I accidentally imported the wrong file. How do I reset?
 
-Click **Clear saved** in the session controls or refresh the page with local storage disabled.
+Clear your browser storage or use a private/incognito window for a fresh start.
 
 ### Can I run the analyzer offline?
 

@@ -28,7 +28,7 @@ describe('Header import progress', () => {
 
   it('shows progress text and bar in the header during import', async () => {
     render(<App />);
-    const input = screen.getByLabelText(/CSV files/i);
+    const input = screen.getByLabelText(/CSV or session files/i);
     const file = new File(['Date\n2025-06-01'], 'summary.csv', {
       type: 'text/csv',
     });

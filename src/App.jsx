@@ -126,19 +126,12 @@ function App() {
       }, null) || new Date()
     );
   }, [summaryData]);
-  const {
-    persistEnabled,
-    setPersistEnabled,
-    handleSaveNow,
-    handleLoadSaved,
-    handleClearSaved,
-    handleExportJson,
-    handleImportJson,
-  } = useSessionManager({
-    summaryData,
-    detailsData,
-    clusterParams,
-    dateFilter,
+  const { handleLoadSaved, handleExportJson, importSessionFile } =
+    useSessionManager({
+      summaryData,
+      detailsData,
+      clusterParams,
+      dateFilter,
     rangeA,
     rangeB,
     fnPreset,
@@ -422,6 +415,7 @@ function App() {
         onSummaryFile={onSummaryFile}
         onDetailsFile={onDetailsFile}
         onLoadSaved={handleLoadSaved}
+        onSessionFile={importSessionFile}
         summaryData={summaryData}
         detailsData={detailsData}
         loadingSummary={loadingSummary}
@@ -560,54 +554,6 @@ function App() {
           ))}
         </nav>
         <div className="section controls" aria-label="Data and export controls">
-          <div
-            className="control-group"
-            aria-label="Session controls"
-            style={{ marginTop: 6 }}
-          >
-            <span className="control-title">Session</span>
-            <label title="Enable local session persistence">
-              <input
-                type="checkbox"
-                checked={persistEnabled}
-                onChange={(e) => setPersistEnabled(e.target.checked)}
-              />{' '}
-              Remember data locally
-            </label>
-            <button
-              className="btn-ghost"
-              onClick={handleSaveNow}
-              disabled={!persistEnabled}
-              aria-label="Save session now"
-            >
-              Save now
-            </button>
-            <button
-              className="btn-ghost"
-              onClick={handleLoadSaved}
-              aria-label="Load saved session"
-            >
-              Load saved
-            </button>
-            <button
-              className="btn-ghost"
-              onClick={handleClearSaved}
-              aria-label="Clear saved session"
-            >
-              Clear saved
-            </button>
-            <label
-              style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}
-              title="Import session JSON"
-            >
-              Import JSON
-              <input
-                type="file"
-                accept="application/json"
-                onChange={handleImportJson}
-              />
-            </label>
-          </div>
           <div className="control-group" aria-label="Export controls">
             <span className="control-title">Export</span>
             <button

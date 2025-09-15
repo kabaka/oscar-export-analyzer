@@ -56,7 +56,7 @@ Use the theme toggle in the header to switch between light, dark, or system them
 
 ## 4. Saving and Restoring Sessions
 
-When **Remember data locally** is enabled, files and settings persist to `IndexedDB` so you can close and reopen the browser without reloading data. Importing a new Summary CSV replaces the previous session. The app only saves after at least one CSV has been loaded, preventing a refresh on an empty page from wiping prior data. The **Save/Load/Clear** controls manage that last session; choosing **Load Saved** replaces whatever files or settings are currently in memory. Disabling **Remember data locally** clears it. Use **Export JSON** to download a portable snapshot that can be imported on another device. The exported JSON includes all loaded rows but excludes any personal notes you may have added.
+Sessions persist automatically to `IndexedDB` so you can close and reopen the browser without reloading data. Importing a new Summary CSV replaces the previous session. Use the splash screen's **Load previous session** button or drop a session JSON file there to restore an earlier analysis. The exported JSON includes all loaded rows but excludes any personal notes you may have added.
 
 ## 5. Example Workflow
 
@@ -70,8 +70,6 @@ When **Remember data locally** is enabled, files and settings persist to `Indexe
 
 - `?` – Open the help modal.
 - `t` – Toggle theme.
-- `s` – Save current session.
-- `l` – Load a saved session.
 
 ## 7. Troubleshooting
 
