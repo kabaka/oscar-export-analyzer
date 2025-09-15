@@ -106,11 +106,22 @@ export default function DataImportModal({
     >
       <div
         className="modal"
-        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+        style={{
+          padding: 24,
+          width: 'min(480px, 96vw)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 24,
+          alignItems: 'center',
+        }}
       >
-        <h3 style={{ margin: 0 }}>Load OSCAR CSVs</h3>
+        <h3 style={{ margin: 0, textAlign: 'center' }}>Load OSCAR CSVs</h3>
         {hasSaved && (
-          <button className="btn-primary" onClick={onLoadSaved}>
+          <button
+            className="btn-primary"
+            onClick={onLoadSaved}
+            style={{ alignSelf: 'center' }}
+          >
             Load previous session
           </button>
         )}
@@ -118,6 +129,7 @@ export default function DataImportModal({
           onDrop={onDrop}
           onDragOver={onDragOver}
           style={{
+            width: '100%',
             flex: 1,
             border: '2px dashed var(--color-border)',
             padding: 20,
@@ -161,7 +173,12 @@ export default function DataImportModal({
             </div>
           )}
         </div>
-        <button className="btn-ghost" onClick={onClose} aria-label="Close">
+        <button
+          className="btn-ghost"
+          onClick={onClose}
+          aria-label="Close"
+          style={{ alignSelf: 'center' }}
+        >
           Close
         </button>
       </div>
