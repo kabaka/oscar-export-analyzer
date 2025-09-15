@@ -183,6 +183,11 @@ h1 {
   width: max-content;
 }
 
+.app-menu .menu-list .menu-section {
+  display: flex;
+  flex-direction: column;
+}
+
 .app-menu .menu-list .menu-section + .menu-section {
   border-top: 1px solid var(--color-border);
   margin-top: 4px;
@@ -190,6 +195,7 @@ h1 {
 }
 
 .app-menu .menu-list [role='menuitem'] {
+  display: block;
   padding: 4px 8px;
   background: none;
   border: none;

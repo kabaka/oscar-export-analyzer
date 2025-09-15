@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import DataImportModal from './DataImportModal.jsx';
 
@@ -66,5 +67,67 @@ describe('DataImportModal layout', () => {
       screen.getByRole('dialog', { name: /import data/i }),
     ).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('closes immediately when loading a saved session', async () => {
+    const onClose = vi.fn();
+    const onLoadSaved = vi.fn();
+    render(
+      <DataImportModal
+        isOpen
+        onClose={onClose}
+        onSummaryFile={noop}
+        onDetailsFile={noop}
+        onLoadSaved={onLoadSaved}
+        onSessionFile={noop}
+        summaryData={null}
+        detailsData={null}
+        loadingSummary={false}
+        loadingDetails={false}
+        summaryProgress={0}
+        summaryProgressMax={0}
+        detailsProgress={0}
+        detailsProgressMax={0}
+      />,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /load previous session/i }),
+    );
+
+    expect(onLoadSaved).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('closes immediately after selecting files', async () => {
+    const onClose = vi.fn();
+    render(
+      <DataImportModal
+        isOpen
+        onClose={onClose}
+        onSummaryFile={noop}
+        onDetailsFile={noop}
+        onLoadSaved={noop}
+        onSessionFile={noop}
+        summaryData={null}
+        detailsData={null}
+        loadingSummary={false}
+        loadingDetails={false}
+        summaryProgress={0}
+        summaryProgressMax={0}
+        detailsProgress={0}
+        detailsProgressMax={0}
+      />,
+    );
+
+    const input = screen.getByLabelText(/csv or session files/i);
+    const summary = new File(['Date\n'], 'summary.csv', { type: 'text/csv' });
+    const details = new File(['Event\n'], 'details.csv', { type: 'text/csv' });
+
+    await userEvent.upload(input, [summary, details]);
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled();
+    });
   });
 });
