@@ -908,16 +908,20 @@ export function kmSurvival(durations, z = 1.96) {
     }
     // log(-log S) CI
     if (S > 0 && S < 1) {
-      const se = Math.sqrt(cumGreenwood);
-      const loglog = Math.log(-Math.log(S));
-      const lo = Math.exp(-Math.exp(loglog + z * se));
-      const hi = Math.exp(-Math.exp(loglog - z * se));
-      lower.push(lo);
-      upper.push(hi);
-    } else {
-      lower.push(NaN);
-      upper.push(NaN);
+      const logS = Math.log(S);
+      const absLogS = Math.abs(logS);
+      if (absLogS > 1e-12 && Number.isFinite(absLogS)) {
+        const se = Math.sqrt(cumGreenwood) / absLogS;
+        const loglog = Math.log(-Math.log(S));
+        const lo = Math.exp(-Math.exp(loglog + z * se));
+        const hi = Math.exp(-Math.exp(loglog - z * se));
+        lower.push(lo);
+        upper.push(hi);
+        continue;
+      }
     }
+    lower.push(NaN);
+    upper.push(NaN);
   }
   return { times, survival, lower, upper };
 }

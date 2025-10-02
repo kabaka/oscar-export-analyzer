@@ -54,6 +54,17 @@ describe('kmSurvival (Kaplan–Meier) uncensored', () => {
     expect(lower.length).toBe(times.length);
     expect(upper.length).toBe(times.length);
   });
+
+  it('produces log-log Greenwood CIs matching reference values', () => {
+    const durs = [1, 1, 2, 3];
+    const { lower, upper } = kmSurvival(durs);
+    expect(lower[0]).toBeCloseTo(0.0578428, 5);
+    expect(upper[0]).toBeCloseTo(0.844865, 5);
+    expect(lower[1]).toBeCloseTo(0.00894687, 5);
+    expect(upper[1]).toBeCloseTo(0.665331, 5);
+    expect(lower[2]).toBeNaN();
+    expect(upper[2]).toBeNaN();
+  });
 });
 
 describe('partialCorrelation (controls reduce confounding)', () => {
