@@ -15,6 +15,8 @@ export default function SummaryAnalysis({ clusters = [] }) {
   const usage = summarizeUsage(data || []);
   const ahi = computeAHITrends(data || []);
   const epap = computeEPAPTrends(data || []);
+  const percent = (count, denom) =>
+    denom ? ((count / denom) * 100).toFixed(1) : '—';
   return (
     <div>
       <h2 id="usage-patterns">
@@ -23,9 +25,19 @@ export default function SummaryAnalysis({ clusters = [] }) {
       <table>
         <tbody>
           <tr>
-            <td>Total nights analyzed</td>
+            <td>Total nights provided</td>
             <td>{usage.totalNights}</td>
           </tr>
+          <tr>
+            <td>Valid nights analyzed</td>
+            <td>{usage.validNights}</td>
+          </tr>
+          {usage.invalidNights > 0 && (
+            <tr>
+              <td>Invalid nights excluded</td>
+              <td>{usage.invalidNights}</td>
+            </tr>
+          )}
           <tr>
             <td>Average usage per night</td>
             <td>{usage.avgHours.toFixed(2)} hours</td>
@@ -34,14 +46,14 @@ export default function SummaryAnalysis({ clusters = [] }) {
             <td>Nights ≥ 4 h usage</td>
             <td>
               {usage.nightsLong} (
-              {((usage.nightsLong / usage.totalNights) * 100).toFixed(1)}%)
+              {percent(usage.nightsLong, usage.validNights)}%)
             </td>
           </tr>
           <tr>
             <td>Nights &lt; 4 h usage</td>
             <td>
               {usage.nightsShort} (
-              {((usage.nightsShort / usage.totalNights) * 100).toFixed(1)}%)
+              {percent(usage.nightsShort, usage.validNights)}%)
             </td>
           </tr>
         </tbody>
@@ -113,7 +125,7 @@ export default function SummaryAnalysis({ clusters = [] }) {
             <td>Nights with AHI &gt; 5.0</td>
             <td>
               {ahi.nightsAHIover5} (
-              {((ahi.nightsAHIover5 / usage.totalNights) * 100).toFixed(1)}%)
+              {percent(ahi.nightsAHIover5, usage.validNights)}%)
             </td>
           </tr>
         </tbody>

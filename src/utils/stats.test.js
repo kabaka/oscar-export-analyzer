@@ -224,6 +224,8 @@ describe('summarizeUsage', () => {
     const data = [{ 'Total Time': '1:00:00' }, { 'Total Time': '3:00:00' }];
     const usage = summarizeUsage(data);
     expect(usage.totalNights).toBe(2);
+    expect(usage.validNights).toBe(2);
+    expect(usage.invalidNights).toBe(0);
     expect(usage.avgHours).toBe(2);
     expect(usage.nightsLong).toBe(0);
     expect(usage.nightsShort).toBe(2);
@@ -231,9 +233,26 @@ describe('summarizeUsage', () => {
     expect(usage.iqrHours).toBe(1);
   });
 
+  it('ignores invalid total time values when computing averages', () => {
+    const data = [
+      { 'Total Time': '01:30:00' },
+      { 'Total Time': 'bad' },
+      { 'Total Time': null },
+    ];
+    const usage = summarizeUsage(data);
+    expect(usage.totalNights).toBe(3);
+    expect(usage.validNights).toBe(1);
+    expect(usage.invalidNights).toBe(2);
+    expect(usage.avgHours).toBe(1.5);
+    expect(usage.nightsShort).toBe(1);
+    expect(usage.nightsLong).toBe(0);
+  });
+
   it('handles empty input', () => {
     const usage = summarizeUsage([]);
     expect(usage.totalNights).toBe(0);
+    expect(usage.validNights).toBe(0);
+    expect(usage.invalidNights).toBe(0);
     expect(Number.isNaN(usage.avgHours)).toBe(true);
     expect(Number.isNaN(usage.minHours)).toBe(true);
     expect(Number.isNaN(usage.maxHours)).toBe(true);
