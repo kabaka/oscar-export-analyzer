@@ -642,7 +642,7 @@ function EpapTrendsCharts({ data }) {
           MW U = {isFinite(titration.U) ? titration.U.toFixed(1) : '—'}, p
           {titration.method === 'exact' ? ' (exact)' : ' (normal)'} ≈{' '}
           {isFinite(titration.p) ? titration.p.toExponential(2) : '—'}, effect
-          (rank-biserial) ≈{' '}
+          (rank-biserial, high &gt; low) ≈{' '}
           {isFinite(titration.effect) ? titration.effect.toFixed(2) : '—'}
           {isFinite(titration.effect_ci_low) &&
           isFinite(titration.effect_ci_high)

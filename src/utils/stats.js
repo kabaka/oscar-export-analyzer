@@ -710,14 +710,14 @@ export function mannWhitneyUTest(a, b) {
     z = sigma ? (U - mu) / sigma : 0;
     p = 2 * (1 - normalCdf(Math.abs(z)));
   }
-  // rank-biserial effect and approximate CI via proportion CI of CL = U/(n1*n2)
+  // rank-biserial effect and approximate CI via proportion CI of CL = P(B > A)
   const Npairs = n1 * n2;
-  const CL = U / Npairs; // using smaller U aligns with two-sided p; convert to rank-biserial by 1-2U/N
-  const effect = 1 - (2 * U) / Npairs;
+  const CL = Npairs ? U2 / Npairs : NaN;
+  const effect = isFinite(CL) ? 2 * CL - 1 : NaN;
   const { low: clLow, high: clHigh } = proportionCI(CL, Npairs);
   const effect_ci_low = 2 * clLow - 1;
   const effect_ci_high = 2 * clHigh - 1;
-  return { U, z, p, effect, effect_ci_low, effect_ci_high, method };
+  return { U, U1, U2, z, p, effect, effect_ci_low, effect_ci_high, method };
 }
 
 function binom(n, k) {

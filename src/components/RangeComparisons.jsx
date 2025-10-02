@@ -64,7 +64,7 @@ export default function RangeComparisons({ rangeA, rangeB }) {
             <th>B (mean)</th>
             <th>Delta (B−A)</th>
             <th>MW p</th>
-            <th>Effect</th>
+            <th>Effect (B &gt; A)</th>
           </tr>
         </thead>
         <tbody>
@@ -76,7 +76,7 @@ export default function RangeComparisons({ rangeA, rangeB }) {
             <td>
               {isFinite(kpi.usageMW.p) ? kpi.usageMW.p.toExponential(2) : '—'}
             </td>
-            <td>
+            <td title="Rank-biserial effect; positive means B tends to be larger">
               {isFinite(kpi.usageMW.effect)
                 ? kpi.usageMW.effect.toFixed(2)
                 : '—'}
@@ -90,15 +90,16 @@ export default function RangeComparisons({ rangeA, rangeB }) {
             <td>
               {isFinite(kpi.ahiMW.p) ? kpi.ahiMW.p.toExponential(2) : '—'}
             </td>
-            <td>
+            <td title="Rank-biserial effect; positive means B tends to be larger">
               {isFinite(kpi.ahiMW.effect) ? kpi.ahiMW.effect.toFixed(2) : '—'}
             </td>
           </tr>
         </tbody>
       </table>
       <p style={{ opacity: 0.8 }}>
-        nA={kpi.nA}, nB={kpi.nB}. Mann–Whitney U p-values and rank-biserial
-        effects shown.
+        nA={kpi.nA}, nB={kpi.nB}. Mann–Whitney U p-values and signed
+        rank-biserial effects (positive means range B tends to be larger)
+        shown.
       </p>
     </div>
   );
