@@ -146,7 +146,17 @@ describe('mannWhitneyUTest (exact small-n and ties)', () => {
     expect(res.method).toBe('exact');
     // Exact two-sided p = 2/6 = 0.333...
     expect(res.p).toBeLessThan(0.34);
-    expect(res.effect).toBeGreaterThan(0.9);
+    expect(res.effect).toBeCloseTo(1, 10);
+    expect(res.effect_ci_low).toBeLessThanOrEqual(res.effect_ci_high);
+    expect(res.effect).toBeGreaterThan(0);
+  });
+
+  it('flips sign when group ordering reverses', () => {
+    const a = [3, 4];
+    const b = [1, 2];
+    const res = mannWhitneyUTest(a, b);
+    expect(res.method).toBe('exact');
+    expect(res.effect).toBeCloseTo(-1, 10);
     expect(res.effect_ci_low).toBeLessThanOrEqual(res.effect_ci_high);
   });
 
