@@ -6,18 +6,20 @@ export function buildSummaryAggregatesCSV(summaryData = []) {
   const usage = summarizeUsage(summaryData);
   const ahi = computeAHITrends(summaryData);
   const epap = computeEPAPTrends(summaryData);
+  const pctNightsGe4h = usage.validNights
+    ? (usage.nightsLong / usage.validNights) * 100
+    : NaN;
   const rows = [
     ['total_nights', usage.totalNights],
+    ['valid_nights', usage.validNights],
+    ['invalid_nights', usage.invalidNights],
     ['avg_usage_hours', round(usage.avgHours, 3)],
     ['median_usage_hours', round(usage.medianHours, 3)],
     ['p25_usage_hours', round(usage.p25Hours, 3)],
     ['p75_usage_hours', round(usage.p75Hours, 3)],
     ['min_usage_hours', round(usage.minHours, 3)],
     ['max_usage_hours', round(usage.maxHours, 3)],
-    [
-      'pct_nights_ge_4h',
-      round((usage.nightsLong / usage.totalNights) * 100, 1),
-    ],
+    ['pct_nights_ge_4h', round(pctNightsGe4h, 1)],
     ['avg_AHI', round(ahi.avgAHI, 3)],
     ['median_AHI', round(ahi.medianAHI, 3)],
     ['p25_AHI', round(ahi.p25AHI, 3)],

@@ -144,14 +144,22 @@ export function computeApneaEventStats(details) {
 // Summarize nightly usage statistics from summary data rows
 export function summarizeUsage(data) {
   const totalNights = data.length;
-  const usageHours = data
-    .map((r) => parseDuration(r['Total Time']) / 3600)
-    .filter((h) => !isNaN(h));
+  const usageHours = [];
+  let invalidNights = 0;
+  for (const row of data) {
+    const hours = parseDuration(row['Total Time']) / 3600;
+    if (Number.isFinite(hours)) {
+      usageHours.push(hours);
+    } else {
+      invalidNights += 1;
+    }
+  }
+  const validNights = usageHours.length;
   const sumHours = usageHours.reduce((sum, h) => sum + h, 0);
-  const avgHours = totalNights ? sumHours / totalNights : NaN;
+  const avgHours = validNights ? sumHours / validNights : NaN;
   const nightsLong = usageHours.filter((h) => h >= 4).length;
   const nightsLong6 = usageHours.filter((h) => h >= 6).length;
-  const nightsShort = totalNights - nightsLong;
+  const nightsShort = usageHours.filter((h) => h < 4).length;
   let minHours = NaN,
     maxHours = NaN,
     medianHours = NaN,
@@ -176,6 +184,8 @@ export function summarizeUsage(data) {
   }
   return {
     totalNights,
+    validNights,
+    invalidNights,
     avgHours,
     nightsLong,
     nightsLong6,

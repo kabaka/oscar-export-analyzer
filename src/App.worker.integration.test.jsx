@@ -26,7 +26,7 @@ describe('Worker Integration Tests', () => {
     await userEvent.upload(input, [summary, details]);
 
     await waitFor(() => {
-      expect(screen.getByText(/Total nights analyzed/i)).toBeInTheDocument();
+      expect(screen.getByText(/Valid nights analyzed/i)).toBeInTheDocument();
     });
   });
 
