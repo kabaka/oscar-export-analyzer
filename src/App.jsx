@@ -18,6 +18,7 @@ import {
   FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
   FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
 } from './utils/clustering';
+import { finalizeClusters } from './utils/analytics';
 import Overview from './components/Overview';
 const SummaryAnalysis = lazy(() => import('./components/SummaryAnalysis'));
 const ApneaClusterAnalysis = lazy(
@@ -173,6 +174,112 @@ function App() {
   const onClusterParamChange = useCallback((patch) => {
     setClusterParams((prev) => ({ ...prev, ...patch }));
   }, []);
+
+  // Map in-app sections to guide anchors
+  const guideMap = {
+    overview: 'overview-dashboard',
+    'usage-patterns': 'usage-patterns',
+    'ahi-trends': 'ahi-trends',
+    'pressure-settings': 'pressure-correlation-epap',
+    'apnea-characteristics': 'apnea-event-characteristics-details-csv',
+    'clustered-apnea': 'clustered-apnea-events-details-csv',
+    'false-negatives': 'potential-false-negatives-details-csv',
+    'raw-data-explorer': 'raw-data-explorer',
+    'range-compare': 'range-comparisons-a-vs-b',
+  };
+  const openGuideForActive = () => {
+    const anchor = guideMap[activeId] || '';
+    setGuideAnchor(anchor);
+    setGuideOpen(true);
+  };
+
+  // Global event to open guide from inline links without prop drilling
+  useEffect(() => {
+    const handler = (e) => {
+      const anchor = e?.detail?.anchor || '';
+      setGuideAnchor(anchor);
+      setGuideOpen(true);
+    };
+    window.addEventListener('open-guide', handler);
+    return () => window.removeEventListener('open-guide', handler);
+  }, []);
+
+  useEffect(() => {
+    if (detailsData) {
+      // begin processing phase
+      setProcessingDetails(true);
+      // defer clustering/detection to next tick so UI can update (e.g., hide parse progress)
+      let cancelled = false;
+      let worker;
+      try {
+        // eslint-disable-next-line no-undef
+        worker = new Worker(
+          new URL('./workers/analytics.worker.js', import.meta.url),
+          { type: 'module' },
+        );
+        worker.onmessage = (evt) => {
+          if (cancelled) return;
+          const { ok, data, error } = evt.data || {};
+          if (ok) {
+            const clusters = data.clusters || [];
+            setApneaClusters(clusters);
+            setFalseNegatives(data.falseNegatives || []);
+            setProcessingDetails(false);
+          } else {
+            console.warn('Analytics worker error:', error);
+            fallbackCompute();
+          }
+        };
+        worker.postMessage({
+          action: 'analyzeDetails',
+          payload: { detailsData, params: clusterParams, fnOptions },
+        });
+      } catch (err) {
+        console.warn('Worker unavailable, using fallback', err);
+        fallbackCompute();
+      }
+      function fallbackCompute() {
+        const apneaEvents = detailsData
+          .filter((r) =>
+            ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']),
+          )
+          .map((r) => ({
+            date: new Date(r['DateTime']),
+            durationSec: parseFloat(r['Data/Duration']),
+          }));
+        const flgEvents = detailsData
+          .filter((r) => r['Event'] === 'FLG')
+          .map((r) => ({
+            date: new Date(r['DateTime']),
+            level: parseFloat(r['Data/Duration']),
+          }));
+        const rawClusters = clusterApneaEvents(
+          apneaEvents,
+          flgEvents,
+          clusterParams.gapSec,
+          clusterParams.bridgeThreshold,
+          clusterParams.bridgeSec,
+          clusterParams.edgeEnter,
+          clusterParams.edgeExit,
+          10,
+          clusterParams.minDensity,
+        );
+        const validClusters = finalizeClusters(rawClusters, clusterParams);
+        setApneaClusters(validClusters);
+        setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
+        setProcessingDetails(false);
+      }
+      return () => {
+        cancelled = true;
+        try {
+          worker && worker.terminate && worker.terminate();
+        } catch {
+          // ignore termination errors
+        }
+        setProcessingDetails(false);
+      };
+    }
+  }, [detailsData, clusterParams, fnOptions]);
 
   const filteredSummary = useMemo(() => {
     if (!summaryData) return null;
