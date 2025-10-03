@@ -9,8 +9,6 @@ import React, {
 import { useCsvFiles } from './hooks/useCsvFiles';
 import { useSessionManager } from './hooks/useSessionManager';
 import {
-  clusterApneaEvents,
-  detectFalseNegatives,
   FALSE_NEG_CONFIDENCE_MIN,
   FLG_BRIDGE_THRESHOLD,
   APOEA_CLUSTER_MIN_TOTAL_SEC,
@@ -19,7 +17,6 @@ import {
   FLG_CLUSTER_GAP_DEFAULT,
   FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
   FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
-  computeClusterSeverity,
 } from './utils/clustering';
 import Overview from './components/Overview';
 const SummaryAnalysis = lazy(() => import('./components/SummaryAnalysis'));
@@ -41,6 +38,11 @@ import HeaderMenu from './components/HeaderMenu';
 import { buildSummaryAggregatesCSV, downloadTextFile } from './utils/export';
 import { clearLastSession } from './utils/db';
 import { DataProvider } from './context/DataContext';
+import DateRangeControls from './components/DateRangeControls';
+import { useAnalyticsProcessing } from './hooks/useAnalyticsProcessing';
+import { useDateRangeFilter } from './hooks/useDateRangeFilter';
+import { useGuideControls } from './hooks/useGuideControls';
+import { useModalState } from './hooks/useModalState';
 
 function App() {
   const tocSections = useMemo(
@@ -72,16 +74,18 @@ function App() {
     setDetailsData,
     error,
   } = useCsvFiles();
-  const [apneaClusters, setApneaClusters] = useState([]);
-  const [falseNegatives, setFalseNegatives] = useState([]);
-  const [processingDetails, setProcessingDetails] = useState(false);
-  const [dateFilter, setDateFilter] = useState({ start: null, end: null });
-  const [quickRange, setQuickRange] = useState('all');
+  const {
+    dateFilter,
+    quickRange,
+    handleQuickRangeChange,
+    handleStartChange,
+    handleEndChange,
+    resetDateFilter,
+    formatDate,
+    setDateFilter,
+  } = useDateRangeFilter(summaryData);
   const [rangeA, setRangeA] = useState({ start: null, end: null });
   const [rangeB, setRangeB] = useState({ start: null, end: null });
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [guideAnchor, setGuideAnchor] = useState('');
-  const [importOpen, setImportOpen] = useState(true);
   const [clusterParams, setClusterParams] = useState({
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
@@ -117,17 +121,6 @@ function App() {
     };
     return presets[fnPreset] || presets.balanced;
   }, [fnPreset]);
-  const latestDate = useMemo(() => {
-    if (!summaryData || !summaryData.length) return new Date();
-    const dateCol = Object.keys(summaryData[0]).find((c) => /date/i.test(c));
-    if (!dateCol) return new Date();
-    return (
-      summaryData.reduce((max, r) => {
-        const d = new Date(r[dateCol]);
-        return !max || d > max ? d : max;
-      }, null) || new Date()
-    );
-  }, [summaryData]);
   const { handleLoadSaved, handleExportJson, importSessionFile } =
     useSessionManager({
       summaryData,
@@ -144,6 +137,15 @@ function App() {
       setSummaryData,
       setDetailsData,
     });
+  const { apneaClusters, falseNegatives, processingDetails } =
+    useAnalyticsProcessing(detailsData, clusterParams, fnOptions);
+  const { guideOpen, guideAnchor, openGuideForActive, closeGuide } =
+    useGuideControls(activeId);
+  const {
+    isOpen: importOpen,
+    open: openImportModal,
+    close: closeImportModal,
+  } = useModalState(true);
 
   const exportAggregatesCsv = useCallback(() => {
     downloadTextFile(
@@ -171,129 +173,6 @@ function App() {
   const onClusterParamChange = useCallback((patch) => {
     setClusterParams((prev) => ({ ...prev, ...patch }));
   }, []);
-
-  // Map in-app sections to guide anchors
-  const guideMap = {
-    overview: 'overview-dashboard',
-    'usage-patterns': 'usage-patterns',
-    'ahi-trends': 'ahi-trends',
-    'pressure-settings': 'pressure-correlation-epap',
-    'apnea-characteristics': 'apnea-event-characteristics-details-csv',
-    'clustered-apnea': 'clustered-apnea-events-details-csv',
-    'false-negatives': 'potential-false-negatives-details-csv',
-    'raw-data-explorer': 'raw-data-explorer',
-    'range-compare': 'range-comparisons-a-vs-b',
-  };
-  const openGuideForActive = () => {
-    const anchor = guideMap[activeId] || '';
-    setGuideAnchor(anchor);
-    setGuideOpen(true);
-  };
-
-  // Global event to open guide from inline links without prop drilling
-  useEffect(() => {
-    const handler = (e) => {
-      const anchor = e?.detail?.anchor || '';
-      setGuideAnchor(anchor);
-      setGuideOpen(true);
-    };
-    window.addEventListener('open-guide', handler);
-    return () => window.removeEventListener('open-guide', handler);
-  }, []);
-
-  useEffect(() => {
-    if (detailsData) {
-      // begin processing phase
-      setProcessingDetails(true);
-      // defer clustering/detection to next tick so UI can update (e.g., hide parse progress)
-      let cancelled = false;
-      let worker;
-      try {
-        // eslint-disable-next-line no-undef
-        worker = new Worker(
-          new URL('./workers/analytics.worker.js', import.meta.url),
-          { type: 'module' },
-        );
-        worker.onmessage = (evt) => {
-          if (cancelled) return;
-          const { ok, data, error } = evt.data || {};
-          if (ok) {
-            const rawClusters = data.clusters || [];
-            const validClusters = rawClusters
-              .filter((cl) => cl.count >= clusterParams.minCount)
-              .filter(
-                (cl) =>
-                  cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
-                  clusterParams.minTotalSec,
-              )
-              .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
-              .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
-            setApneaClusters(validClusters);
-            setFalseNegatives(data.falseNegatives || []);
-            setProcessingDetails(false);
-          } else {
-            console.warn('Analytics worker error:', error);
-            fallbackCompute();
-          }
-        };
-        worker.postMessage({
-          action: 'analyzeDetails',
-          payload: { detailsData, params: clusterParams, fnOptions },
-        });
-      } catch (err) {
-        console.warn('Worker unavailable, using fallback', err);
-        fallbackCompute();
-      }
-      function fallbackCompute() {
-        const apneaEvents = detailsData
-          .filter((r) =>
-            ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']),
-          )
-          .map((r) => ({
-            date: new Date(r['DateTime']),
-            durationSec: parseFloat(r['Data/Duration']),
-          }));
-        const flgEvents = detailsData
-          .filter((r) => r['Event'] === 'FLG')
-          .map((r) => ({
-            date: new Date(r['DateTime']),
-            level: parseFloat(r['Data/Duration']),
-          }));
-        const rawClusters = clusterApneaEvents(
-          apneaEvents,
-          flgEvents,
-          clusterParams.gapSec,
-          clusterParams.bridgeThreshold,
-          clusterParams.bridgeSec,
-          clusterParams.edgeEnter,
-          clusterParams.edgeExit,
-          10,
-          clusterParams.minDensity,
-        );
-        const validClusters = rawClusters
-          .filter((cl) => cl.count >= clusterParams.minCount)
-          .filter(
-            (cl) =>
-              cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
-              clusterParams.minTotalSec,
-          )
-          .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
-          .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
-        setApneaClusters(validClusters);
-        setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
-        setProcessingDetails(false);
-      }
-      return () => {
-        cancelled = true;
-        try {
-          worker && worker.terminate && worker.terminate();
-        } catch {
-          // ignore termination errors
-        }
-        setProcessingDetails(false);
-      };
-    }
-  }, [detailsData, clusterParams, fnOptions]);
 
   const filteredSummary = useMemo(() => {
     if (!summaryData) return null;
@@ -394,37 +273,6 @@ function App() {
     // Re-run when data presence changes which may mount/unmount sections
   }, [filteredSummary, filteredDetails, tocSections]);
 
-  const parseDate = (val) => {
-    if (!val) return null;
-    const d = new Date(val);
-    return Number.isNaN(d.getTime()) ? null : d;
-  };
-
-  const handleQuickRangeChange = useCallback(
-    (val) => {
-      setQuickRange(val);
-      if (val === 'all') {
-        setDateFilter({ start: null, end: null });
-      } else if (val !== 'custom') {
-        const days = parseInt(val, 10);
-        if (!Number.isNaN(days)) {
-          const end = latestDate;
-          const start = new Date(end);
-          start.setDate(start.getDate() - (days - 1));
-          setDateFilter({ start, end });
-        }
-      }
-    },
-    [latestDate],
-  );
-
-  const formatDate = (d) =>
-    d instanceof Date && !Number.isNaN(d.getTime())
-      ? new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-          .toISOString()
-          .slice(0, 10)
-      : '';
-
   return (
     <DataProvider
       summaryData={summaryData}
@@ -436,7 +284,7 @@ function App() {
     >
       <DataImportModal
         isOpen={importOpen}
-        onClose={() => setImportOpen(false)}
+        onClose={closeImportModal}
         onSummaryFile={onSummaryFile}
         onDetailsFile={onDetailsFile}
         onLoadSaved={handleLoadSaved}
@@ -467,64 +315,19 @@ function App() {
             <h1>OSCAR Sleep Data Analysis</h1>
             <span className="badge">beta</span>
           </div>
-          <div className="date-filter">
-            <select
-              value={quickRange}
-              onChange={(e) => handleQuickRangeChange(e.target.value)}
-              aria-label="Quick range"
-            >
-              <option value="all">All</option>
-              <option value="7">Last 7 days</option>
-              <option value="14">Last 14 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="180">Last 180 days</option>
-              <option value="365">Last year</option>
-              <option value="1825">Last 5 years</option>
-              <option value="custom">Custom</option>
-            </select>
-            <input
-              type="date"
-              value={formatDate(dateFilter.start)}
-              onChange={(e) => {
-                setQuickRange('custom');
-                setDateFilter((prev) => ({
-                  ...prev,
-                  start: parseDate(e.target.value),
-                }));
-              }}
-              aria-label="Start date"
-            />
-            <span>-</span>
-            <input
-              type="date"
-              value={formatDate(dateFilter.end)}
-              onChange={(e) => {
-                setQuickRange('custom');
-                setDateFilter((prev) => ({
-                  ...prev,
-                  end: parseDate(e.target.value),
-                }));
-              }}
-              aria-label="End date"
-            />
-            {(dateFilter.start || dateFilter.end) && (
-              <button
-                className="btn-ghost"
-                onClick={() => {
-                  setDateFilter({ start: null, end: null });
-                  setQuickRange('all');
-                }}
-                aria-label="Reset date filter"
-              >
-                ×
-              </button>
-            )}
-          </div>
+          <DateRangeControls
+            quickRange={quickRange}
+            onQuickRangeChange={handleQuickRangeChange}
+            startValue={formatDate(dateFilter.start)}
+            endValue={formatDate(dateFilter.end)}
+            onStartChange={handleStartChange}
+            onEndChange={handleEndChange}
+            onReset={resetDateFilter}
+          />
           <div className="actions">
             <ThemeToggle />
             <HeaderMenu
-              onOpenImport={() => setImportOpen(true)}
+              onOpenImport={openImportModal}
               onExportJson={handleExportJson}
               onExportCsv={exportAggregatesCsv}
               onClearSession={handleClearSession}
@@ -728,18 +531,14 @@ function App() {
             </div>
             <div className="section">
               <ErrorBoundary>
-                <RawDataExplorer
-                  onApplyDateFilter={({ start, end }) =>
-                    setDateFilter({ start, end })
-                  }
-                />
+                <RawDataExplorer onApplyDateFilter={setDateFilter} />
               </ErrorBoundary>
             </div>
           </>
         )}
         <DocsModal
           isOpen={guideOpen}
-          onClose={() => setGuideOpen(false)}
+          onClose={closeGuide}
           initialAnchor={guideAnchor}
         />
       </div>
