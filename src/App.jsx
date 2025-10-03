@@ -19,8 +19,8 @@ import {
   FLG_CLUSTER_GAP_DEFAULT,
   FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
   FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
-  computeClusterSeverity,
 } from './utils/clustering';
+import { finalizeClusters } from './utils/analytics';
 import Overview from './components/Overview';
 const SummaryAnalysis = lazy(() => import('./components/SummaryAnalysis'));
 const ApneaClusterAnalysis = lazy(
@@ -218,17 +218,8 @@ function App() {
           if (cancelled) return;
           const { ok, data, error } = evt.data || {};
           if (ok) {
-            const rawClusters = data.clusters || [];
-            const validClusters = rawClusters
-              .filter((cl) => cl.count >= clusterParams.minCount)
-              .filter(
-                (cl) =>
-                  cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
-                  clusterParams.minTotalSec,
-              )
-              .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
-              .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
-            setApneaClusters(validClusters);
+            const clusters = data.clusters || [];
+            setApneaClusters(clusters);
             setFalseNegatives(data.falseNegatives || []);
             setProcessingDetails(false);
           } else {
@@ -270,15 +261,7 @@ function App() {
           10,
           clusterParams.minDensity,
         );
-        const validClusters = rawClusters
-          .filter((cl) => cl.count >= clusterParams.minCount)
-          .filter(
-            (cl) =>
-              cl.events.reduce((sum, e) => sum + e.durationSec, 0) >=
-              clusterParams.minTotalSec,
-          )
-          .filter((cl) => cl.durationSec <= clusterParams.maxClusterSec)
-          .map((cl) => ({ ...cl, severity: computeClusterSeverity(cl) }));
+        const validClusters = finalizeClusters(rawClusters, clusterParams);
         setApneaClusters(validClusters);
         setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
         setProcessingDetails(false);
