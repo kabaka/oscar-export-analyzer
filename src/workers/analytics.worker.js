@@ -4,6 +4,7 @@ import {
   clusterApneaEvents,
   detectFalseNegatives,
 } from '../utils/clustering.js';
+import { finalizeClusters } from '../utils/analytics.js';
 
 self.onmessage = (e) => {
   const { action, payload } = e.data || {};
@@ -38,7 +39,10 @@ self.onmessage = (e) => {
       const fns = detectFalseNegatives(detailsData, fnOptions || {});
       self.postMessage({
         ok: true,
-        data: { clusters: rawClusters, falseNegatives: fns },
+        data: {
+          clusters: finalizeClusters(rawClusters, params),
+          falseNegatives: fns,
+        },
       });
     } catch (err) {
       self.postMessage({

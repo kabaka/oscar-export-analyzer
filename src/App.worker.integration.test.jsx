@@ -1,3 +1,18 @@
+import { vi } from 'vitest';
+
+vi.mock('./utils/analytics', async () => {
+  const actual = await vi.importActual('./utils/analytics');
+  return {
+    ...actual,
+    finalizeClusters: vi.fn(actual.finalizeClusters),
+  };
+});
+
+vi.mock('./components/UsagePatternsCharts', () => ({
+  __esModule: true,
+  default: () => null,
+}));
+
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -13,7 +28,7 @@ describe('Worker Integration Tests', () => {
   it('parses CSVs via worker and displays summary analysis', async () => {
     render(<App />);
     const summary = new File(
-      ['Night,Data/Duration\n2025-06-01,8'],
+      ['Date,Total Time\n2025-06-01,08:00:00'],
       'summary.csv',
       { type: 'text/csv' },
     );
@@ -54,4 +69,5 @@ describe('Worker Integration Tests', () => {
     });
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
+
 });
