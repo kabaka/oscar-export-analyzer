@@ -43,6 +43,7 @@ import { useAnalyticsProcessing } from './hooks/useAnalyticsProcessing';
 import { useDateRangeFilter } from './hooks/useDateRangeFilter';
 import { useGuide } from './hooks/useGuide';
 import { useModal } from './hooks/useModal';
+import { resolvePrehydratedSession } from './utils/prehydration';
 
 function App() {
   const tocSections = useMemo(
@@ -87,7 +88,23 @@ function App() {
   const [rangeA, setRangeA] = useState({ start: null, end: null });
   const [rangeB, setRangeB] = useState({ start: null, end: null });
   const { isOpen: importOpen, open: openImportModal, close: closeImportModal } =
-    useModal(true);
+    useModal(false);
+  const computeInitialPrehydration = () => {
+    if (typeof window === 'undefined') return false;
+    if (window.__OSCAR_PREHYDRATED_SESSION__) return true;
+    const params = new URLSearchParams(window.location?.search || '');
+    if (params.get('session')) return true;
+    const envSession =
+      typeof import.meta !== 'undefined'
+        ? import.meta.env?.VITE_SCREENSHOT_SESSION
+        : undefined;
+    return !!(envSession && String(envSession).trim());
+  };
+  const initialPrehydrating = computeInitialPrehydration();
+  const [prehydrating, setPrehydrating] = useState(initialPrehydrating);
+  const [prehydrationAttempted, setPrehydrationAttempted] = useState(
+    !initialPrehydrating,
+  );
   const [clusterParams, setClusterParams] = useState({
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
@@ -129,7 +146,7 @@ function App() {
     fnOptions,
   );
   const { guideOpen, guideAnchor, openGuideForActive, closeGuide } = useGuide(activeId);
-  const { handleLoadSaved, handleExportJson, importSessionFile } =
+  const { applySessionPatch, handleLoadSaved, handleExportJson, importSessionFile } =
     useSessionManager({
       summaryData,
       detailsData,
@@ -145,6 +162,53 @@ function App() {
       setSummaryData,
       setDetailsData,
     });
+
+  useEffect(() => {
+    let cancelled = false;
+    const hydrate = async () => {
+      try {
+        const session = await resolvePrehydratedSession();
+        if (cancelled) return;
+        if (session) {
+          const applied = applySessionPatch(session);
+          if (!applied) {
+            throw new Error('Prehydrated session is missing required data');
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('Prehydration failed', err);
+        }
+      } finally {
+        if (!cancelled) {
+          setPrehydrating(false);
+          setPrehydrationAttempted(true);
+        }
+      }
+    };
+    hydrate();
+    return () => {
+      cancelled = true;
+    };
+  }, [applySessionPatch]);
+
+  useEffect(() => {
+    if (summaryData || detailsData) {
+      closeImportModal();
+    }
+  }, [summaryData, detailsData, closeImportModal]);
+
+  useEffect(() => {
+    if (!prehydrating && prehydrationAttempted && !summaryData && !detailsData) {
+      openImportModal();
+    }
+  }, [
+    prehydrating,
+    prehydrationAttempted,
+    summaryData,
+    detailsData,
+    openImportModal,
+  ]);
 
   const exportAggregatesCsv = useCallback(() => {
     downloadTextFile(
@@ -282,7 +346,7 @@ function App() {
       filteredDetails={filteredDetails}
     >
       <DataImportModal
-        isOpen={importOpen}
+        isOpen={!prehydrating && importOpen}
         onClose={closeImportModal}
         onSummaryFile={onSummaryFile}
         onDetailsFile={onDetailsFile}

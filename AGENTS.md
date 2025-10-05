@@ -57,3 +57,10 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 
 - Node: use version 20 (see CI). Avoid committing data exports containing sensitive information.
 - Vite config: see `vite.config.js`. For hooks, run `npm run prepare` after install.
+
+## Automated screenshots
+
+- The app supports session prehydration for screenshot automation. Load sanitized datasets by placing fixtures under `public/fixtures/` (see `public/fixtures/screenshot-session.json`).
+- Vite accepts a `VITE_SCREENSHOT_SESSION` environment variable pointing to the desired JSON snapshot (relative paths such as `/fixtures/screenshot-session.json` are resolved against the dev server).
+- Automation can also pass `?session=<url>` in the query string or inject `window.__OSCAR_PREHYDRATED_SESSION__` before React mounts. All options expect the JSON produced by `buildSession`.
+- Never commit fixtures that contain identifying information; scrub dates, names, and any device identifiers before adding new screenshot datasets.

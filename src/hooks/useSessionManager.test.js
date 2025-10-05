@@ -97,4 +97,33 @@ describe('useSessionManager', () => {
 
     global.FileReader = originalFileReader;
   });
+
+  it('exposes applySessionPatch for reuse flows', () => {
+    const props = baseProps();
+    const setSummaryData = vi.fn();
+    const setClusterParams = vi.fn((updater) => updater({}));
+    props.setSummaryData = setSummaryData;
+    props.setClusterParams = setClusterParams;
+
+    const { result } = renderHook(() => useSessionManager(props));
+
+    act(() => {
+      result.current.applySessionPatch(
+        buildSession({
+          summaryData: [
+            { Date: '2025-01-01', 'Total Time': '07:00:00', AHI: '2.5', 'Median EPAP': '7.1' },
+          ],
+          detailsData: [],
+          clusterParams: { gapSec: 30 },
+        }),
+      );
+    });
+
+    expect(setSummaryData).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ Date: '2025-01-01' }),
+      ]),
+    );
+    expect(setClusterParams).toHaveBeenCalled();
+  });
 });
