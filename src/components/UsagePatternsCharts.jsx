@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useId } from 'react';
 import {
   parseDuration,
   quantile,
@@ -7,6 +7,8 @@ import {
   detectUsageBreakpoints,
   detectChangePoints,
   stlDecompose,
+  computeAutocorrelation,
+  computePartialAutocorrelation,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
@@ -127,6 +129,38 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
   const binWidth = 2 * iqr * Math.pow(usageHours.length, -1 / 3);
   const range = Math.max(...usageHours) - Math.min(...usageHours);
   const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
+
+  const [maxLag, setMaxLag] = useState(30);
+  const lagInputId = useId();
+
+  const { acfValues, pacfValues, acfConfidence } = useMemo(() => {
+    const finiteUsage = usageHours.filter((v) => Number.isFinite(v));
+    const sampleSize = finiteUsage.length;
+    if (sampleSize <= 1) {
+      return { acfValues: [], pacfValues: [], acfConfidence: NaN };
+    }
+    const requestedLag = Math.max(1, Math.round(maxLag));
+    const cappedLag = Math.min(
+      requestedLag,
+      sampleSize - 1,
+      Math.max(1, usageHours.length - 1),
+    );
+    const acf = computeAutocorrelation(usageHours, cappedLag).values.filter(
+      (d) => d.lag > 0,
+    );
+    const pacf = computePartialAutocorrelation(usageHours, cappedLag).values;
+    const conf = sampleSize > 0 ? 1.96 / Math.sqrt(sampleSize) : NaN;
+    return { acfValues: acf, pacfValues: pacf, acfConfidence: conf };
+  }, [usageHours, maxLag]);
+
+  const handleLagChange = useCallback((event) => {
+    const raw = Number(event.target.value);
+    if (!Number.isFinite(raw)) {
+      return;
+    }
+    const clamped = Math.max(1, Math.min(Math.round(raw) || 1, 120));
+    setMaxLag(clamped);
+  }, []);
 
   const isDark = useEffectiveDarkMode();
   const { longest_4, longest_6 } = computeAdherenceStreaks(usageHours, [4, 6]);
@@ -299,6 +333,124 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         />
         <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints." />
       </div>
+
+      {usageHours.length > 1 ? (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: '8px',
+            margin: '12px 0 4px',
+          }}
+        >
+          <label htmlFor={lagInputId}>Max lag (nights):</label>
+          <input
+            id={lagInputId}
+            type="number"
+            min={1}
+            max={120}
+            step={1}
+            value={maxLag}
+            onChange={handleLagChange}
+            style={{ width: '80px' }}
+          />
+        </div>
+      ) : null}
+
+      {acfValues.length ? (
+        <div className="chart-with-help">
+          <ThemedPlot
+            data={[
+              {
+                x: acfValues.map((d) => d.lag),
+                y: acfValues.map((d) => d.autocorrelation),
+                type: 'bar',
+                name: 'ACF',
+                marker: { color: COLORS.secondary },
+              },
+              {
+                x: acfValues.map((d) => d.lag),
+                y: acfValues.map(() => -acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0)' },
+                hoverinfo: 'skip',
+                showlegend: false,
+              },
+              {
+                x: acfValues.map((d) => d.lag),
+                y: acfValues.map(() => acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                fill: 'tonexty',
+                hoverinfo: 'skip',
+                showlegend: true,
+              },
+            ]}
+            layout={{
+              title: 'Usage Autocorrelation',
+              barmode: 'overlay',
+              margin: { t: 40, r: 30, b: 40, l: 50 },
+            }}
+            useResizeHandler
+            style={{ width: '100%', height: '260px' }}
+          />
+          <VizHelp
+            text="Autocorrelation reveals whether short nights cluster together. Bars crossing the grey band indicate lags with stronger-than-random persistence."
+          />
+        </div>
+      ) : null}
+
+      {pacfValues.length ? (
+        <div className="chart-with-help">
+          <ThemedPlot
+            data={[
+              {
+                x: pacfValues.map((d) => d.lag),
+                y: pacfValues.map((d) => d.partialAutocorrelation),
+                type: 'bar',
+                name: 'PACF',
+                marker: { color: COLORS.accent },
+              },
+              {
+                x: pacfValues.map((d) => d.lag),
+                y: pacfValues.map(() => -acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0)' },
+                hoverinfo: 'skip',
+                showlegend: false,
+              },
+              {
+                x: pacfValues.map((d) => d.lag),
+                y: pacfValues.map(() => acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                fill: 'tonexty',
+                hoverinfo: 'skip',
+                showlegend: true,
+              },
+            ]}
+            layout={{
+              title: 'Usage Partial Autocorrelation',
+              barmode: 'overlay',
+              margin: { t: 40, r: 30, b: 40, l: 50 },
+            }}
+            useResizeHandler
+            style={{ width: '100%', height: '260px' }}
+          />
+          <VizHelp
+            text="Partial autocorrelation pinpoints direct carryover from previous nights after accounting for intermediate lags. A sharp cutoff suggests a short memory for adherence habits."
+          />
+        </div>
+      ) : null}
 
       {dates.length > 0 && (
         <div className="chart-with-help">

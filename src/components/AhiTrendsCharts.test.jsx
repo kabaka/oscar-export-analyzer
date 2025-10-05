@@ -12,11 +12,15 @@ describe('AhiTrendsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
     const { getAllByTestId } = render(<AhiTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    // 6 charts => at least 6 help tooltips (including STL decomposition)
-    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(6);
+    // Additional autocorrelation charts increase help tooltips count
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(8);
     expect(
       screen.getByText(/Trend\/Seasonal\/Residual view shows the STL decomposition/i),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Autocorrelation shows how strongly tonight's AHI relates/i),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Max lag/i)).toBeInTheDocument();
   });
 
   it('computes severity band counts', () => {

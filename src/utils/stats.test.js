@@ -7,6 +7,8 @@ import {
   computeAHITrends,
   computeEPAPTrends,
   stlDecompose,
+  computeAutocorrelation,
+  computePartialAutocorrelation,
 } from './stats';
 import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
@@ -65,6 +67,52 @@ describe('kmSurvival (Kaplan–Meier) uncensored', () => {
     expect(upper[1]).toBeCloseTo(0.665331, 5);
     expect(lower[2]).toBeNaN();
     expect(upper[2]).toBeNaN();
+  });
+});
+
+describe('computeAutocorrelation', () => {
+  it('matches hand-computed autocorrelation for a simple trend', () => {
+    const series = [1, 2, 3, 4, 5];
+    const { values, sampleSize } = computeAutocorrelation(series, 6);
+    expect(sampleSize).toBe(5);
+    const expected = [1, 0.4, -0.1, -0.4, -0.4];
+    expect(values.map((v) => v.lag)).toEqual([0, 1, 2, 3, 4]);
+    expected.forEach((target, idx) => {
+      expect(values[idx].autocorrelation).toBeCloseTo(target, 6);
+      expect(values[idx].pairs).toBe(series.length - values[idx].lag);
+    });
+  });
+
+  it('ignores NaNs while counting valid pairs', () => {
+    const series = [1, 2, NaN, 3, 4];
+    const { values } = computeAutocorrelation(series, 3);
+    const lag1 = values.find((v) => v.lag === 1);
+    expect(lag1.pairs).toBe(2);
+    expect(lag1.autocorrelation).toBeGreaterThan(0);
+  });
+});
+
+describe('computePartialAutocorrelation', () => {
+  it('agrees with partial correlations computed directly', () => {
+    const series = [0.8, 0.46, 0.11, 0.23, -0.05, 0.02, 0.1, 0.04];
+    const { values, sampleSize } = computePartialAutocorrelation(series, 3);
+    expect(sampleSize).toBe(series.length);
+    values.forEach(({ lag, partialAutocorrelation }) => {
+      const y = series.slice(lag);
+      const x = series.slice(0, series.length - lag);
+      const controls = y.map((_, idx) => {
+        const ctrl = [];
+        for (let j = 1; j < lag; j++) {
+          ctrl.push(series[idx + j]);
+        }
+        return ctrl;
+      });
+      const reference =
+        lag === 1
+          ? pearson(y, x)
+          : partialCorrelation(y, x, controls);
+      expect(partialAutocorrelation).toBeCloseTo(reference, 6);
+    });
   });
 });
 

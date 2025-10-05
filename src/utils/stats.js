@@ -60,6 +60,227 @@ export function quantile(arr, q) {
 }
 
 /**
+ * Compute the sample autocorrelation function (ACF) up to `maxLag`.
+ * Missing values (`NaN`, `undefined`, or non-finite numbers) are ignored
+ * pairwise so each lag uses only nights where both observations exist.
+ *
+ * @param {number[]} series - Numeric time-series values.
+ * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute.
+ * @returns {{ values: Array<{ lag: number, autocorrelation: number, pairs: number }>, sampleSize: number }}
+ */
+export function computeAutocorrelation(series, maxLag = 30) {
+  if (!Array.isArray(series) || !series.length) {
+    return { values: [], sampleSize: 0 };
+  }
+  const values = series.slice();
+  const finiteVals = values.filter((v) => Number.isFinite(v));
+  const sampleSize = finiteVals.length;
+  if (sampleSize === 0) {
+    return { values: [], sampleSize: 0 };
+  }
+
+  const mean = finiteVals.reduce((sum, v) => sum + v, 0) / sampleSize;
+  const denom = finiteVals.reduce((sum, v) => sum + (v - mean) ** 2, 0);
+  const limit = Math.min(
+    Math.max(0, Math.floor(maxLag)),
+    Math.max(0, values.length - 1),
+    Math.max(0, sampleSize - 1),
+  );
+  const results = [];
+  for (let lag = 0; lag <= limit; lag++) {
+    let numerator = 0;
+    let pairs = 0;
+    for (let t = lag; t < values.length; t++) {
+      const current = values[t];
+      const prev = values[t - lag];
+      if (!Number.isFinite(current) || !Number.isFinite(prev)) continue;
+      numerator += (current - mean) * (prev - mean);
+      pairs += 1;
+    }
+    let acf = NaN;
+    if (lag === 0) acf = 1;
+    else if (denom > 0 && pairs > 0) acf = numerator / denom;
+    else if (denom === 0) acf = 0;
+    results.push({ lag, autocorrelation: acf, pairs });
+  }
+  return { values: results, sampleSize };
+}
+
+/**
+ * Compute the partial autocorrelation function (PACF) using the
+ * Durbin–Levinson recursion.
+ *
+ * @param {number[]} series - Numeric time-series values.
+ * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute.
+ * @returns {{ values: Array<{ lag: number, partialAutocorrelation: number }>, sampleSize: number }}
+ */
+export function computePartialAutocorrelation(series, maxLag = 30) {
+  if (!Array.isArray(series) || !series.length) {
+    return { values: [], sampleSize: 0 };
+  }
+  const values = series.slice();
+  const finiteVals = values.filter((v) => Number.isFinite(v));
+  const sampleSize = finiteVals.length;
+  if (sampleSize <= 1) {
+    return { values: [], sampleSize };
+  }
+
+  const limit = Math.min(
+    Math.max(1, Math.floor(maxLag)),
+    Math.max(1, values.length - 1),
+    Math.max(1, sampleSize - 1),
+  );
+
+  const solveLinearSystem = (mat, rhs) => {
+    const n = mat.length;
+    if (!n) return null;
+    const augmented = mat.map((row, i) => row.slice().concat(rhs[i]));
+    for (let i = 0; i < n; i++) {
+      let pivot = i;
+      for (let r = i + 1; r < n; r++) {
+        if (Math.abs(augmented[r][i]) > Math.abs(augmented[pivot][i])) {
+          pivot = r;
+        }
+      }
+      if (Math.abs(augmented[pivot][i]) < 1e-12) {
+        return null;
+      }
+      if (pivot !== i) {
+        const tmp = augmented[i];
+        augmented[i] = augmented[pivot];
+        augmented[pivot] = tmp;
+      }
+      const pivotVal = augmented[i][i];
+      for (let c = i; c <= n; c++) {
+        augmented[i][c] /= pivotVal;
+      }
+      for (let r = 0; r < n; r++) {
+        if (r === i) continue;
+        const factor = augmented[r][i];
+        for (let c = i; c <= n; c++) {
+          augmented[r][c] -= factor * augmented[i][c];
+        }
+      }
+    }
+    return augmented.map((row) => row[n]);
+  };
+
+  const computeResiduals = (targets, controls) => {
+    if (!controls.length || !controls[0]?.length) {
+      const mean = targets.reduce((sum, v) => sum + v, 0) / targets.length;
+      return targets.map((v) => v - mean);
+    }
+    const p = controls[0].length;
+    const colMeans = new Array(p).fill(0);
+    controls.forEach((row) => {
+      row.forEach((val, idx) => {
+        colMeans[idx] += val;
+      });
+    });
+    for (let j = 0; j < p; j++) {
+      colMeans[j] /= controls.length;
+    }
+    const targetMean = targets.reduce((sum, v) => sum + v, 0) / targets.length;
+    const xtx = Array.from({ length: p }, () => new Array(p).fill(0));
+    const xty = new Array(p).fill(0);
+    for (let i = 0; i < controls.length; i++) {
+      const centeredRow = controls[i].map((val, idx) => val - colMeans[idx]);
+      const centeredTarget = targets[i] - targetMean;
+      for (let a = 0; a < p; a++) {
+        xty[a] += centeredRow[a] * centeredTarget;
+        for (let b = 0; b < p; b++) {
+          xtx[a][b] += centeredRow[a] * centeredRow[b];
+        }
+      }
+    }
+    const beta = solveLinearSystem(xtx, xty);
+    if (!beta) {
+      return targets.map(() => NaN);
+    }
+    return controls.map((row, idx) => {
+      const centeredRow = row.map((val, j) => val - colMeans[j]);
+      let pred = targetMean;
+      for (let j = 0; j < p; j++) {
+        pred += beta[j] * centeredRow[j];
+      }
+      return targets[idx] - pred;
+    });
+  };
+
+  const correlation = (x, y) => {
+    const pairs = [];
+    for (let i = 0; i < x.length; i++) {
+      const xv = x[i];
+      const yv = y[i];
+      if (Number.isFinite(xv) && Number.isFinite(yv)) {
+        pairs.push([xv, yv]);
+      }
+    }
+    if (pairs.length <= 1) return NaN;
+    const meanX = pairs.reduce((sum, [v]) => sum + v, 0) / pairs.length;
+    const meanY = pairs.reduce((sum, [, v]) => sum + v, 0) / pairs.length;
+    let num = 0;
+    let denomX = 0;
+    let denomY = 0;
+    for (const [xv, yv] of pairs) {
+      const dx = xv - meanX;
+      const dy = yv - meanY;
+      num += dx * dy;
+      denomX += dx * dx;
+      denomY += dy * dy;
+    }
+    if (denomX <= 0 || denomY <= 0) return NaN;
+    return num / Math.sqrt(denomX * denomY);
+  };
+
+  const results = [];
+  for (let k = 1; k <= limit; k++) {
+    const targets = [];
+    const lagValues = [];
+    const controlRows = [];
+    for (let t = k; t < values.length; t++) {
+      const target = values[t];
+      if (!Number.isFinite(target)) continue;
+      let valid = true;
+      const controls = [];
+      for (let j = 1; j < k; j++) {
+        const lagged = values[t - j];
+        if (!Number.isFinite(lagged)) {
+          valid = false;
+          break;
+        }
+        controls.push(lagged);
+      }
+      const lagKVal = values[t - k];
+      if (!Number.isFinite(lagKVal)) valid = false;
+      if (!valid) continue;
+      targets.push(target);
+      lagValues.push(lagKVal);
+      if (k > 1) controlRows.push(controls);
+    }
+    if (targets.length <= k) {
+      results.push({ lag: k, partialAutocorrelation: NaN });
+      continue;
+    }
+    if (k === 1) {
+      results.push({
+        lag: k,
+        partialAutocorrelation: correlation(targets, lagValues),
+      });
+      continue;
+    }
+    const resY = computeResiduals(targets, controlRows);
+    const resX = computeResiduals(lagValues, controlRows);
+    results.push({
+      lag: k,
+      partialAutocorrelation: correlation(resY, resX),
+    });
+  }
+
+  return { values: results, sampleSize };
+}
+
+/**
  * Simple STL-like decomposition using moving averages for trend estimation
  * and seasonal averaging by position. Designed for nightly data where the
  * seasonal period represents a weekly pattern (default 7 nights).

@@ -47,6 +47,10 @@ Use the shared zoom controls to focus on specific periods; the decomposition res
 
 Interpret flat or declining rolling curves as adherence issues. A cluster of red cells in the heatmap might indicate travel or equipment problems.
 
+### Autocorrelation Diagnostics
+
+Autocorrelation (ACF) and partial autocorrelation (PACF) bar charts quantify how nightly usage depends on prior nights. Bars that stay within the grey 95 % confidence band are statistically indistinguishable from white noise. Significant positive bars imply streaks of short nights or long nights tend to cluster, while significant negatives imply alternating behaviour. The PACF removes the indirect influence of intermediate nights—if it drops to near zero after lag 1 or 2, habits adjust quickly; a slow decay indicates persistent routines that may need deliberate intervention.
+
 ## AHI Trends
 
 This view asks **“How severe is my apnea over time?”**
@@ -55,6 +59,10 @@ This view asks **“How severe is my apnea over time?”**
 - **Trend/Seasonal/Residual Decomposition** – STL smoothing separates the weekly rhythm of AHI into a long-term trend, a repeating 7-night seasonal signature, and residual noise. The seasonal pane uncovers whether certain days of the week consistently run higher, while the residual pane isolates nights that defy both the trend and weekly pattern.
 - **Distribution Plots** – Histogram, violin, and QQ plots reveal whether AHI follows a normal distribution. Long right tails may reflect occasional bad nights.
 - **Severity Bands** – Counts how many nights fall into ranges like `0‑5`, `5‑15`, `15‑30`, `>30` AHI. Counts are computed in a single pass and memoized to avoid unnecessary recalculation. The table of “bad nights” lists dates that exceeded a chosen threshold.
+
+### Autocorrelation Diagnostics
+
+The ACF plot shows whether high AHI nights bunch together. Bars outside the grey 95 % band highlight lags with stronger-than-random correlation; a slowly decaying tail can indicate unresolved physiological or equipment issues that persist for several nights. The PACF chart isolates the direct dependence at each lag—sharp cutoffs suggest AHI reverts quickly once a trigger is addressed, whereas sustained PACF bars hint at longer feedback loops or uncorrected settings.
 
 Aim to keep most nights below 5. Repeated spikes or a high proportion of moderate/severe nights warrant investigation of leaks, pressure settings, or sleep hygiene.
 

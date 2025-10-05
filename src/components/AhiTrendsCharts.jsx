@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useId } from 'react';
 import {
   quantile,
   detectUsageBreakpoints,
@@ -6,6 +6,8 @@ import {
   detectChangePoints,
   normalQuantile,
   stlDecompose,
+  computeAutocorrelation,
+  computePartialAutocorrelation,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import ThemedPlot from './ThemedPlot';
@@ -92,6 +94,38 @@ export default function AhiTrendsCharts({
       decomposition,
     };
   }, [data]);
+
+  const [maxLag, setMaxLag] = useState(30);
+  const lagInputId = useId();
+
+  const { acfValues, pacfValues, acfConfidence } = useMemo(() => {
+    const finiteAhis = ahis.filter((v) => Number.isFinite(v));
+    const sampleSize = finiteAhis.length;
+    if (sampleSize <= 1) {
+      return { acfValues: [], pacfValues: [], acfConfidence: NaN };
+    }
+    const requestedLag = Math.max(1, Math.round(maxLag));
+    const cappedLag = Math.min(
+      requestedLag,
+      sampleSize - 1,
+      Math.max(1, ahis.length - 1),
+    );
+    const acf = computeAutocorrelation(ahis, cappedLag).values.filter(
+      (d) => d.lag > 0,
+    );
+    const pacf = computePartialAutocorrelation(ahis, cappedLag).values;
+    const conf = sampleSize > 0 ? 1.96 / Math.sqrt(sampleSize) : NaN;
+    return { acfValues: acf, pacfValues: pacf, acfConfidence: conf };
+  }, [ahis, maxLag]);
+
+  const handleLagChange = useCallback((event) => {
+    const raw = Number(event.target.value);
+    if (!Number.isFinite(raw)) {
+      return;
+    }
+    const clamped = Math.max(1, Math.min(Math.round(raw) || 1, 120));
+    setMaxLag(clamped);
+  }, []);
 
   // Summary stats and adaptive histogram bins
   const p25 = quantile(ahis, 0.25);
@@ -339,6 +373,124 @@ export default function AhiTrendsCharts({
         />
         <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5; purple lines mark detected change-points; dotted verticals show crossover breakpoints." />
       </div>
+
+      {ahis.length > 1 ? (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: '8px',
+            margin: '12px 0 4px',
+          }}
+        >
+          <label htmlFor={lagInputId}>Max lag (nights):</label>
+          <input
+            id={lagInputId}
+            type="number"
+            min={1}
+            max={120}
+            step={1}
+            value={maxLag}
+            onChange={handleLagChange}
+            style={{ width: '80px' }}
+          />
+        </div>
+      ) : null}
+
+      {acfValues.length ? (
+        <div className="chart-with-help">
+          <ThemedPlot
+            data={[
+              {
+                x: acfValues.map((d) => d.lag),
+                y: acfValues.map((d) => d.autocorrelation),
+                type: 'bar',
+                name: 'ACF',
+                marker: { color: COLORS.secondary },
+              },
+              {
+                x: acfValues.map((d) => d.lag),
+                y: acfValues.map(() => -acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0)' },
+                hoverinfo: 'skip',
+                showlegend: false,
+              },
+              {
+                x: acfValues.map((d) => d.lag),
+                y: acfValues.map(() => acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                fill: 'tonexty',
+                hoverinfo: 'skip',
+                showlegend: true,
+              },
+            ]}
+            layout={{
+              title: 'AHI Autocorrelation',
+              barmode: 'overlay',
+              margin: { t: 40, r: 30, b: 40, l: 50 },
+            }}
+            useResizeHandler
+            style={{ width: '100%', height: '260px' }}
+          />
+          <VizHelp
+            text="Autocorrelation shows how strongly tonight's AHI relates to prior nights. Bars outside the grey band exceed the 95% white-noise expectation; see docs/user/02-visualizations.md#ahi-trends."
+          />
+        </div>
+      ) : null}
+
+      {pacfValues.length ? (
+        <div className="chart-with-help">
+          <ThemedPlot
+            data={[
+              {
+                x: pacfValues.map((d) => d.lag),
+                y: pacfValues.map((d) => d.partialAutocorrelation),
+                type: 'bar',
+                name: 'PACF',
+                marker: { color: COLORS.accent },
+              },
+              {
+                x: pacfValues.map((d) => d.lag),
+                y: pacfValues.map(() => -acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0)' },
+                hoverinfo: 'skip',
+                showlegend: false,
+              },
+              {
+                x: pacfValues.map((d) => d.lag),
+                y: pacfValues.map(() => acfConfidence),
+                type: 'scatter',
+                mode: 'lines',
+                name: '95% CI',
+                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                fill: 'tonexty',
+                hoverinfo: 'skip',
+                showlegend: true,
+              },
+            ]}
+            layout={{
+              title: 'AHI Partial Autocorrelation',
+              barmode: 'overlay',
+              margin: { t: 40, r: 30, b: 40, l: 50 },
+            }}
+            useResizeHandler
+            style={{ width: '100%', height: '260px' }}
+          />
+          <VizHelp
+            text="Partial autocorrelation isolates direct dependencies at each lag. Sudden drops after a few lags suggest short memory, while long tails hint at persistent regimes."
+          />
+        </div>
+      ) : null}
 
       {dates.length > 0 && (
         <div className="chart-with-help">
