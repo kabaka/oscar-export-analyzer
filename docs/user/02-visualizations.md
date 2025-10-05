@@ -29,6 +29,16 @@ $$
 
 where $k$ is 7 or 30 and $T_i$ is nightly usage.
 
+### Trend/Seasonal/Residual Decomposition
+
+Below the main chart a three-panel STL decomposition splits usage into:
+
+- **Trend** – A smoothed moving average showing the long-term adherence trajectory. Rising trend indicates improvement, falling trend signals creeping non-compliance.
+- **Seasonal** – Average deviation by weekday across a 7-night season. Peaks often correspond to weekend sleep-ins, while troughs reveal workday squeeze.
+- **Residual** – What remains after removing trend and seasonal components. Large spikes identify anomalous nights such as travel, illness, or equipment issues.
+
+Use the shared zoom controls to focus on specific periods; the decomposition respects the global date filter and highlights whether the story is driven by gradual change, weekly routine, or one-off outliers.
+
 ### Distribution Views
 
 - **Histogram** – Shows the frequency of usage hours; useful for spotting bimodal patterns.
@@ -42,6 +52,7 @@ Interpret flat or declining rolling curves as adherence issues. A cluster of red
 This view asks **“How severe is my apnea over time?”**
 
 - **AHI Line Chart** – Nightly AHI with 7‑/30‑night averages and change‑points. Optional stacked bars separate obstructive and central components.
+- **Trend/Seasonal/Residual Decomposition** – STL smoothing separates the weekly rhythm of AHI into a long-term trend, a repeating 7-night seasonal signature, and residual noise. The seasonal pane uncovers whether certain days of the week consistently run higher, while the residual pane isolates nights that defy both the trend and weekly pattern.
 - **Distribution Plots** – Histogram, violin, and QQ plots reveal whether AHI follows a normal distribution. Long right tails may reflect occasional bad nights.
 - **Severity Bands** – Counts how many nights fall into ranges like `0‑5`, `5‑15`, `15‑30`, `>30` AHI. Counts are computed in a single pass and memoized to avoid unnecessary recalculation. The table of “bad nights” lists dates that exceeded a chosen threshold.
 

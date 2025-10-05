@@ -74,8 +74,8 @@ If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
 ## Feature Tour
 
 - **Overview Dashboard** – At‑a‑glance KPIs for adherence and AHI with small trend sparklines.
-- **Usage Patterns** – Time‑series, histograms, and calendar heatmaps reveal how consistently therapy is being used. A 7‑night and 30‑night rolling average quantify medium‑ and long‑term trends.
-- **AHI Trends** – Breaks AHI into nightly values with optional obstructive/central stacking. Histogram and QQ plots test whether AHI is normally distributed.
+- **Usage Patterns** – Time‑series, histograms, STL trend/seasonal/residual panes, and calendar heatmaps reveal how consistently therapy is being used. A 7‑night and 30‑night rolling average quantify medium‑ and long‑term trends while the decomposition highlights weekday habits and outlier nights.
+- **AHI Trends** – Breaks AHI into nightly values with optional obstructive/central stacking. Histogram and QQ plots test whether AHI is normally distributed, and a weekly STL decomposition separates the smooth trend from recurring seasonal swings and noisy residuals.
 - **Pressure & Correlation** – Investigates how exhalation pressure (EPAP) relates to AHI. Scatter plots, LOESS curves, and correlation matrices support hypothesis generation.
 - **Range Comparison** – Select two date ranges to compute deltas, `p`‑values, and effect sizes for usage and AHI.
 - **Event Exploration** – Duration distributions, survival curves, and interactive tables for apnea clusters and potential false negatives.

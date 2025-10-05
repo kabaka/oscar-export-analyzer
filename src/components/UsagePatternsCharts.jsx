@@ -6,11 +6,14 @@ import {
   computeAdherenceStreaks,
   detectUsageBreakpoints,
   detectChangePoints,
+  stlDecompose,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import ThemedPlot from './ThemedPlot';
 import VizHelp from './VizHelp';
+
+const STL_SEASON = 7;
 
 /**
  * Render usage and adherence charts for nightly data.
@@ -35,6 +38,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
     breakDates,
     cpDates,
     dowHeatmap,
+    decomposition,
   } = useMemo(() => {
     const pts = data
       .map((r) => ({
@@ -95,6 +99,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         )
       : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
+    const decomposition = stlDecompose(hours, { seasonLength: STL_SEASON });
 
     return {
       dates: datesArr,
@@ -109,6 +114,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       breakDates,
       cpDates,
       dowHeatmap,
+      decomposition,
     };
   }, [data]);
 
@@ -293,6 +299,87 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         />
         <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints." />
       </div>
+
+      {dates.length > 0 && (
+        <div className="chart-with-help">
+          <ThemedPlot
+            useResizeHandler
+            style={{ width: '100%', height: '360px' }}
+            data={[
+              {
+                x: dates,
+                y: decomposition.trend,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Trend',
+                line: { color: COLORS.secondary, width: 2 },
+                hovertemplate:
+                  'Date: %{x|%Y-%m-%d}<br>Trend: %{y:.2f} h<extra></extra>',
+              },
+              {
+                x: dates,
+                y: decomposition.seasonal,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Seasonal',
+                xaxis: 'x2',
+                yaxis: 'y2',
+                line: { color: COLORS.accent, width: 1 },
+                hovertemplate:
+                  'Date: %{x|%Y-%m-%d}<br>Seasonal: %{y:.2f} h<extra></extra>',
+                showlegend: false,
+              },
+              {
+                x: dates,
+                y: decomposition.residual,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Residual',
+                xaxis: 'x3',
+                yaxis: 'y3',
+                line: { color: COLORS.primary, width: 1 },
+                hovertemplate:
+                  'Date: %{x|%Y-%m-%d}<br>Residual: %{y:.2f} h<extra></extra>',
+                showlegend: false,
+              },
+            ]}
+            layout={{
+              title: `Usage STL Decomposition (season=${STL_SEASON})`,
+              grid: {
+                rows: 3,
+                columns: 1,
+                pattern: 'independent',
+                roworder: 'top to bottom',
+              },
+              hovermode: 'x unified',
+              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              xaxis: { title: 'Date', showspikes: true },
+              xaxis2: { matches: 'x', anchor: 'y2', showspikes: true },
+              xaxis3: {
+                matches: 'x',
+                anchor: 'y3',
+                title: 'Date',
+                showspikes: true,
+              },
+              yaxis: { title: 'Trend (hrs)', zeroline: false },
+              yaxis2: { title: 'Seasonal (hrs)', zeroline: false },
+              yaxis3: { title: 'Residual (hrs)', zeroline: false },
+              margin: { t: 40, l: 60, r: 20, b: 50 },
+            }}
+            onRelayout={handleRelayout}
+            config={{
+              responsive: true,
+              displaylogo: false,
+              modeBarButtonsToAdd: ['toImage'],
+              toImageButtonOptions: {
+                format: 'svg',
+                filename: 'usage_stl_decomposition',
+              },
+            }}
+          />
+          <VizHelp text="Trend/Seasonal/Residual view decomposes nightly usage. The trend panel smooths long-term adherence, the seasonal pane surfaces weekday habits, and residual spikes flag nights that buck the pattern." />
+        </div>
+      )}
 
       {/* Histogram and boxplot side-by-side on large screens, stacked on narrow */}
       <div className="usage-charts-grid">
