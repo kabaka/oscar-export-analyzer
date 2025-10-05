@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import * as UPC from './UsagePatternsCharts';
 
 const UsagePatternsCharts = UPC.default;
@@ -14,8 +14,11 @@ describe('UsagePatternsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
     const { getAllByTestId } = render(<UsagePatternsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    // 4 charts => at least 4 help tooltips
-    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(4);
+    // 5 charts => at least 5 help tooltips (including STL decomposition)
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(5);
+    expect(
+      screen.getByText(/Trend\/Seasonal\/Residual view decomposes nightly usage/i),
+    ).toBeInTheDocument();
   });
 });
 

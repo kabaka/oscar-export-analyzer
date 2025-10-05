@@ -60,6 +60,90 @@ export function quantile(arr, q) {
 }
 
 /**
+ * Simple STL-like decomposition using moving averages for trend estimation
+ * and seasonal averaging by position. Designed for nightly data where the
+ * seasonal period represents a weekly pattern (default 7 nights).
+ *
+ * @param {number[]} series - Numeric time-series values.
+ * @param {{ seasonLength?: number }} [opts]
+ * @returns {{ trend: number[], seasonal: number[], residual: number[] }}
+ */
+export function stlDecompose(series, opts = {}) {
+  const values = Array.isArray(series) ? series.slice() : [];
+  const n = values.length;
+  if (n === 0) {
+    return { trend: [], seasonal: [], residual: [] };
+  }
+  const finiteVals = values.filter((v) => Number.isFinite(v));
+  if (!finiteVals.length) {
+    return {
+      trend: Array(n).fill(0),
+      seasonal: Array(n).fill(0),
+      residual: Array(n).fill(0),
+    };
+  }
+  if (n === 1) {
+    const v = Number.isFinite(values[0]) ? values[0] : finiteVals[0];
+    return { trend: [v], seasonal: [0], residual: [0] };
+  }
+
+  const { seasonLength = 7 } = opts;
+  const baseline =
+    finiteVals.reduce((sum, v) => sum + v, 0) / finiteVals.length;
+  const effectiveSeason = Math.max(
+    2,
+    Math.min(Math.round(seasonLength) || 2, n),
+  );
+
+  const trend = new Array(n).fill(baseline);
+  const halfWindow = Math.max(1, Math.floor(effectiveSeason / 2));
+  for (let i = 0; i < n; i++) {
+    let sum = 0;
+    let count = 0;
+    const start = Math.max(0, i - halfWindow);
+    const end = Math.min(n - 1, i + halfWindow);
+    for (let j = start; j <= end; j++) {
+      const val = values[j];
+      if (Number.isFinite(val)) {
+        sum += val;
+        count += 1;
+      }
+    }
+    trend[i] = count ? sum / count : baseline;
+  }
+
+  const seasonalSums = new Array(effectiveSeason).fill(0);
+  const seasonalCounts = new Array(effectiveSeason).fill(0);
+  for (let i = 0; i < n; i++) {
+    const val = values[i];
+    if (!Number.isFinite(val)) continue;
+    const detrended = val - (Number.isFinite(trend[i]) ? trend[i] : baseline);
+    const idx = i % effectiveSeason;
+    seasonalSums[idx] += detrended;
+    seasonalCounts[idx] += 1;
+  }
+
+  const seasonalPattern = seasonalSums.map((sum, idx) =>
+    seasonalCounts[idx] ? sum / seasonalCounts[idx] : 0,
+  );
+  const meanSeasonal =
+    seasonalPattern.reduce((sum, v) => sum + v, 0) / seasonalPattern.length;
+  const normalizedPattern = seasonalPattern.map((v) => v - meanSeasonal);
+
+  const seasonal = new Array(n).fill(0);
+  const residual = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    const trendVal = Number.isFinite(trend[i]) ? trend[i] : baseline;
+    const seasonalVal = normalizedPattern[i % normalizedPattern.length] || 0;
+    seasonal[i] = seasonalVal;
+    const original = Number.isFinite(values[i]) ? values[i] : trendVal;
+    residual[i] = original - trendVal - seasonalVal;
+  }
+
+  return { trend, seasonal, residual };
+}
+
+/**
  * Compute statistics for individual apnea events and their nightly frequency.
  * @param {Array<Object>} details - Filtered details rows containing apnea event records with DateTime and Data/Duration.
  * @returns {Object} Apnea event duration metrics and per-night event count metrics.

@@ -12,8 +12,11 @@ describe('AhiTrendsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
     const { getAllByTestId } = render(<AhiTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
-    // 5 charts => at least 5 help tooltips
-    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(5);
+    // 6 charts => at least 6 help tooltips (including STL decomposition)
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(6);
+    expect(
+      screen.getByText(/Trend\/Seasonal\/Residual view shows the STL decomposition/i),
+    ).toBeInTheDocument();
   });
 
   it('computes severity band counts', () => {

@@ -1,14 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   quantile,
   detectUsageBreakpoints,
   computeUsageRolling,
   detectChangePoints,
   normalQuantile,
+  stlDecompose,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import ThemedPlot from './ThemedPlot';
 import VizHelp from './VizHelp';
+
+const STL_SEASON = 7;
 
 export default function AhiTrendsCharts({
   data,
@@ -29,6 +32,7 @@ export default function AhiTrendsCharts({
     oai,
     cai,
     mai,
+    decomposition,
   } = useMemo(() => {
     const pts = data
       .map((r) => ({ date: new Date(r['Date']), ahi: parseFloat(r['AHI']) }))
@@ -50,6 +54,7 @@ export default function AhiTrendsCharts({
       0.5,
     );
     const cpDates = detectChangePoints(ahisArr, datesArr, 6);
+    const decomposition = stlDecompose(ahisArr, { seasonLength: STL_SEASON });
 
     // Optional decomposition if columns present
     const keys = data.length ? Object.keys(data[0]) : [];
@@ -84,6 +89,7 @@ export default function AhiTrendsCharts({
       r7High,
       r30Low,
       r30High,
+      decomposition,
     };
   }, [data]);
 
@@ -152,6 +158,17 @@ export default function AhiTrendsCharts({
       reasons.push('Long/dense cluster');
     if (reasons.length) badNights.push({ date: d, ahi: ahis[i], reasons });
   });
+
+  const handleRelayout = useCallback(
+    (ev) => {
+      const x0 = ev?.['xaxis.range[0]'];
+      const x1 = ev?.['xaxis.range[1]'];
+      if (x0 && x1 && onRangeSelect) {
+        onRangeSelect({ start: new Date(x0), end: new Date(x1) });
+      }
+    },
+    [onRangeSelect],
+  );
 
   return (
     <div className="usage-charts">
@@ -312,13 +329,7 @@ export default function AhiTrendsCharts({
             yaxis: { title: 'AHI (events/hour)' },
             margin: { t: 40, l: 60, r: 20, b: 50 },
           }}
-          onRelayout={(ev) => {
-            const x0 = ev?.['xaxis.range[0]'];
-            const x1 = ev?.['xaxis.range[1]'];
-            if (x0 && x1 && onRangeSelect) {
-              onRangeSelect({ start: new Date(x0), end: new Date(x1) });
-            }
-          }}
+          onRelayout={handleRelayout}
           config={{
             responsive: true,
             displaylogo: false,
@@ -328,6 +339,87 @@ export default function AhiTrendsCharts({
         />
         <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5; purple lines mark detected change-points; dotted verticals show crossover breakpoints." />
       </div>
+
+      {dates.length > 0 && (
+        <div className="chart-with-help">
+          <ThemedPlot
+            useResizeHandler
+            style={{ width: '100%', height: '360px' }}
+            data={[
+              {
+                x: dates,
+                y: decomposition.trend,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Trend',
+                line: { color: COLORS.secondary, width: 2 },
+                hovertemplate:
+                  'Date: %{x|%Y-%m-%d}<br>Trend: %{y:.2f}<extra></extra>',
+              },
+              {
+                x: dates,
+                y: decomposition.seasonal,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Seasonal',
+                xaxis: 'x2',
+                yaxis: 'y2',
+                line: { color: COLORS.accent, width: 1 },
+                hovertemplate:
+                  'Date: %{x|%Y-%m-%d}<br>Seasonal: %{y:.2f}<extra></extra>',
+                showlegend: false,
+              },
+              {
+                x: dates,
+                y: decomposition.residual,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Residual',
+                xaxis: 'x3',
+                yaxis: 'y3',
+                line: { color: COLORS.primary, width: 1 },
+                hovertemplate:
+                  'Date: %{x|%Y-%m-%d}<br>Residual: %{y:.2f}<extra></extra>',
+                showlegend: false,
+              },
+            ]}
+            layout={{
+              title: `AHI STL Decomposition (season=${STL_SEASON})`,
+              grid: {
+                rows: 3,
+                columns: 1,
+                pattern: 'independent',
+                roworder: 'top to bottom',
+              },
+              hovermode: 'x unified',
+              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              xaxis: { title: 'Date', showspikes: true },
+              xaxis2: { matches: 'x', anchor: 'y2', showspikes: true },
+              xaxis3: {
+                matches: 'x',
+                anchor: 'y3',
+                title: 'Date',
+                showspikes: true,
+              },
+              yaxis: { title: 'Trend', zeroline: false },
+              yaxis2: { title: 'Seasonal', zeroline: false },
+              yaxis3: { title: 'Residual', zeroline: false },
+              margin: { t: 40, l: 60, r: 20, b: 50 },
+            }}
+            onRelayout={handleRelayout}
+            config={{
+              responsive: true,
+              displaylogo: false,
+              modeBarButtonsToAdd: ['toImage'],
+              toImageButtonOptions: {
+                format: 'svg',
+                filename: 'ahi_stl_decomposition',
+              },
+            }}
+          />
+          <VizHelp text="Trend/Seasonal/Residual view shows the STL decomposition. The weekly seasonal pane highlights recurring patterns; residual spikes mark nights that don't fit the weekly rhythm." />
+        </div>
+      )}
 
       <div className="usage-charts-grid">
         <div className="chart-item chart-with-help">

@@ -6,6 +6,7 @@ import {
   summarizeUsage,
   computeAHITrends,
   computeEPAPTrends,
+  stlDecompose,
 } from './stats';
 import { computeUsageRolling } from './stats';
 import { mannWhitneyUTest } from './stats';
@@ -146,6 +147,84 @@ describe('detectChangePoints', () => {
     expect(cps.length).toBeGreaterThanOrEqual(1);
     const idx = cps.findIndex((d) => d instanceof Date);
     expect(idx).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('stlDecompose', () => {
+  it('recovers weekly trend and seasonal structure from a synthetic sine wave', () => {
+    const season = 7;
+    const n = season * 6;
+    const trendTrue = Array.from({ length: n }, (_, i) => 0.2 * i);
+    const seasonalTrue = Array.from({ length: n }, (_, i) =>
+      Math.sin((2 * Math.PI * (i % season)) / season),
+    );
+    const series = trendTrue.map((t, i) => t + seasonalTrue[i]);
+    const { trend, seasonal, residual } = stlDecompose(series, {
+      seasonLength: season,
+    });
+
+    const midStart = season;
+    const midEnd = n - season;
+    const midError =
+      trend.slice(midStart, midEnd).reduce((sum, v, idx) => {
+        const trueVal = trendTrue[midStart + idx];
+        return sum + Math.abs(v - trueVal);
+      }, 0) / Math.max(1, midEnd - midStart);
+    expect(midError).toBeLessThan(0.25);
+
+    const seasonalPattern = Array.from({ length: season }, (_, pos) => {
+      const vals = seasonal.filter((_, idx) => idx % season === pos);
+      const denom = vals.length || 1;
+      return vals.reduce((sum, v) => sum + v, 0) / denom;
+    });
+    const targetPattern = Array.from({ length: season }, (_, pos) =>
+      Math.sin((2 * Math.PI * pos) / season),
+    );
+    const avgDiff =
+      seasonalPattern.reduce(
+        (sum, v, idx) => sum + Math.abs(v - targetPattern[idx]),
+        0,
+      ) / seasonalPattern.length;
+    expect(avgDiff).toBeLessThan(0.3);
+    const avgResidual =
+      residual.reduce((sum, v) => sum + Math.abs(v), 0) / residual.length;
+    expect(avgResidual).toBeLessThan(0.6);
+  });
+
+  it('tracks a structural break in a step series', () => {
+    const season = 7;
+    const first = Array(14).fill(1);
+    const second = Array(14).fill(5);
+    const series = first.concat(second);
+    const { trend, seasonal, residual } = stlDecompose(series, {
+      seasonLength: season,
+    });
+    const firstMean =
+      trend.slice(0, first.length).reduce((sum, v) => sum + v, 0) /
+      first.length;
+    const secondMean =
+      trend
+        .slice(first.length)
+        .reduce((sum, v) => sum + v, 0) / second.length;
+    expect(firstMean).toBeGreaterThan(0.5);
+    expect(firstMean).toBeLessThan(1.5);
+    expect(secondMean).toBeGreaterThan(4);
+    expect(secondMean).toBeLessThan(6);
+    const seasonalAbsMean =
+      seasonal.reduce((sum, v) => sum + Math.abs(v), 0) / seasonal.length;
+    expect(seasonalAbsMean).toBeLessThan(0.6);
+    residual.forEach((v) => {
+      expect(Number.isFinite(v)).toBe(true);
+    });
+  });
+
+  it('handles very short series without NaN output', () => {
+    const { trend, seasonal, residual } = stlDecompose([2], {
+      seasonLength: 7,
+    });
+    expect(trend).toEqual([2]);
+    expect(seasonal).toEqual([0]);
+    expect(residual).toEqual([0]);
   });
 });
 
