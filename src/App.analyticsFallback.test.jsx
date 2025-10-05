@@ -81,13 +81,17 @@ describe('App fallback analytics', () => {
       },
     ];
     analytics.finalizeClusters.mockReturnValueOnce(mockClusters);
+    const workerInstances = [];
 
     class MockWorker {
       constructor(url) {
         this.url = typeof url === 'string' ? url : url?.href || '';
+        this.messages = [];
+        workerInstances.push(this);
       }
 
-      postMessage() {
+      postMessage(message) {
+        this.messages.push(message);
         if (this.url.includes('analytics.worker')) {
           setTimeout(() => {
             this.onmessage?.({ ok: false, data: null, error: 'fail' });
@@ -106,6 +110,10 @@ describe('App fallback analytics', () => {
 
     await waitFor(() => {
       expect(analytics.finalizeClusters).toHaveBeenCalled();
+    });
+    expect(workerInstances.length).toBeGreaterThan(0);
+    expect(workerInstances[0].messages[0]).toMatchObject({
+      action: 'analyzeDetails',
     });
   });
 });
