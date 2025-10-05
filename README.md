@@ -13,6 +13,7 @@ OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produce
 - [Usage Walkthrough](#usage-walkthrough)
 - [Feature Tour](#feature-tour)
 - [Data Privacy](#data-privacy)
+- [Screenshot prehydration](#screenshot-prehydration)
 - [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -86,6 +87,16 @@ Each view includes contextual help links that open the corresponding page in the
 ## Data Privacy
 
 All processing occurs locally in your browser. The application never transmits your CSV files, computed statistics, or exported reports over the network. You may clear your browser storage or use a private/incognito window for one‑time analyses.
+
+## Screenshot prehydration
+
+Automation that captures UI screenshots can load a ready-made session without uploading files. A sanitized dataset that exercises the main dashboards lives at [`public/fixtures/screenshot-session.json`](public/fixtures/screenshot-session.json). Start Vite with that session by pointing the `VITE_SCREENSHOT_SESSION` environment variable at the fixture:
+
+```bash
+VITE_SCREENSHOT_SESSION=/fixtures/screenshot-session.json npm run dev
+```
+
+When the dev server starts, the app fetches that JSON snapshot and renders the dashboards immediately. Screenshot tooling can swap in other datasets without code changes by supplying a different URL via the same environment variable or by adding `?session=<url>` to the page URL. Both options accept absolute or relative paths that serve JSON with the `buildSession` shape.
 
 ## Troubleshooting
 

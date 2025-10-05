@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { buildSession, applySession } from '../utils/session';
 import { putLastSession, getLastSession } from '../utils/db';
 
@@ -17,6 +17,28 @@ export function useSessionManager({
   setSummaryData,
   setDetailsData,
 }) {
+  const applySessionPatch = useCallback(
+    (session) => {
+      const patch = applySession(session);
+      if (!patch) return false;
+      setClusterParams((prev) => patch.clusterParams || prev || {});
+      setDateFilter(patch.dateFilter || { start: null, end: null });
+      setRangeA(patch.rangeA || { start: null, end: null });
+      setRangeB(patch.rangeB || { start: null, end: null });
+      setSummaryData(patch.summaryData || null);
+      setDetailsData(patch.detailsData || null);
+      return true;
+    },
+    [
+      setClusterParams,
+      setDateFilter,
+      setRangeA,
+      setRangeB,
+      setSummaryData,
+      setDetailsData,
+    ],
+  );
+
   useEffect(() => {
     if (!summaryData && !detailsData) return;
     const timer = setTimeout(() => {
@@ -45,15 +67,7 @@ export function useSessionManager({
   const handleLoadSaved = async () => {
     const sess = await getLastSession().catch(() => null);
     if (sess) {
-      const patch = applySession(sess);
-      if (patch) {
-        setClusterParams(patch.clusterParams || clusterParams);
-        setDateFilter(patch.dateFilter || { start: null, end: null });
-        setRangeA(patch.rangeA || { start: null, end: null });
-        setRangeB(patch.rangeB || { start: null, end: null });
-        setSummaryData(patch.summaryData || null);
-        setDetailsData(patch.detailsData || null);
-      }
+      applySessionPatch(sess);
     }
   };
 
@@ -85,14 +99,8 @@ export function useSessionManager({
       reader.onload = () => {
         try {
           const sess = JSON.parse(reader.result);
-          const patch = applySession(sess);
-          if (patch) {
-            setClusterParams(patch.clusterParams || clusterParams);
-            setDateFilter(patch.dateFilter || { start: null, end: null });
-            setRangeA(patch.rangeA || { start: null, end: null });
-            setRangeB(patch.rangeB || { start: null, end: null });
-            setSummaryData(patch.summaryData || null);
-            setDetailsData(patch.detailsData || null);
+          const applied = applySessionPatch(sess);
+          if (applied) {
             resolve();
             return;
           }
@@ -106,6 +114,7 @@ export function useSessionManager({
     });
 
   return {
+    applySessionPatch,
     handleLoadSaved,
     handleExportJson,
     importSessionFile,
