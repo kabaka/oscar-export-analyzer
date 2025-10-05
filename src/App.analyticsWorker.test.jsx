@@ -75,10 +75,12 @@ describe('App analytics worker integration', () => {
       constructor(url) {
         this.url = typeof url === 'string' ? url : url?.href || '';
         this.onmessage = null;
+        this.messages = [];
         workerInstances.push(this);
       }
 
-      postMessage() {
+      postMessage(message) {
+        this.messages.push(message);
         if (this.url.includes('analytics.worker')) {
           setTimeout(() => {
             this.onmessage?.({
@@ -115,5 +117,8 @@ describe('App analytics worker integration', () => {
 
     const analytics = await import('./utils/analytics');
     expect(analytics.finalizeClusters).not.toHaveBeenCalled();
+    expect(workerInstances[0].messages[0]).toMatchObject({
+      action: 'analyzeDetails',
+    });
   });
 });
