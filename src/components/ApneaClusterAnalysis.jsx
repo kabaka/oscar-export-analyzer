@@ -1,32 +1,15 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { clustersToCsv } from '../utils/clustering';
+import {
+  clustersToCsv,
+  CLUSTER_ALGORITHMS,
+  DEFAULT_CLUSTER_ALGORITHM,
+} from '../utils/clustering';
 import ThemedPlot from './ThemedPlot';
 import GuideLink from './GuideLink';
 import VizHelp from './VizHelp';
 import ParamInput from './ParamInput';
 
-export const PARAM_FIELDS = [
-  { label: 'Gap sec', key: 'gapSec', inputProps: { type: 'number', min: 0 } },
-  {
-    label: 'FLG bridge ≥',
-    key: 'bridgeThreshold',
-    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
-  },
-  {
-    label: 'FLG gap sec',
-    key: 'bridgeSec',
-    inputProps: { type: 'number', min: 0 },
-  },
-  {
-    label: 'Edge enter ≥',
-    key: 'edgeEnter',
-    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
-  },
-  {
-    label: 'Edge exit ≥',
-    key: 'edgeExit',
-    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
-  },
+const SHARED_PARAM_FIELDS = [
   {
     label: 'Min event count',
     key: 'minCount',
@@ -49,9 +32,62 @@ export const PARAM_FIELDS = [
   },
 ];
 
+const BRIDGED_PARAM_FIELDS = [
+  { label: 'Gap sec', key: 'gapSec', inputProps: { type: 'number', min: 0 } },
+  {
+    label: 'FLG bridge ≥',
+    key: 'bridgeThreshold',
+    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
+  },
+  {
+    label: 'FLG gap sec',
+    key: 'bridgeSec',
+    inputProps: { type: 'number', min: 0 },
+  },
+  {
+    label: 'Edge enter ≥',
+    key: 'edgeEnter',
+    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
+  },
+  {
+    label: 'Edge exit ≥',
+    key: 'edgeExit',
+    inputProps: { type: 'number', step: 0.05, min: 0, max: 2 },
+  },
+];
+
+const KMEANS_PARAM_FIELDS = [
+  {
+    label: 'Clusters (k)',
+    key: 'k',
+    inputProps: { type: 'number', min: 1, step: 1 },
+  },
+];
+
+const AGGLOMERATIVE_PARAM_FIELDS = [
+  {
+    label: 'Linkage gap sec',
+    key: 'linkageThresholdSec',
+    inputProps: { type: 'number', min: 0 },
+  },
+];
+
+export const PARAM_FIELDS_BY_ALGORITHM = {
+  [CLUSTER_ALGORITHMS.BRIDGED]: [...BRIDGED_PARAM_FIELDS, ...SHARED_PARAM_FIELDS],
+  [CLUSTER_ALGORITHMS.KMEANS]: [...KMEANS_PARAM_FIELDS, ...SHARED_PARAM_FIELDS],
+  [CLUSTER_ALGORITHMS.AGGLOMERATIVE]: [
+    ...AGGLOMERATIVE_PARAM_FIELDS,
+    ...SHARED_PARAM_FIELDS,
+  ],
+};
+
 function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });
+  const algorithm = params.algorithm || DEFAULT_CLUSTER_ALGORITHM;
+  const paramFields =
+    PARAM_FIELDS_BY_ALGORITHM[algorithm] ||
+    PARAM_FIELDS_BY_ALGORITHM[DEFAULT_CLUSTER_ALGORITHM];
   const sorted = [...clusters].sort((a, b) => {
     const dir = sortBy.dir === 'asc' ? 1 : -1;
     const va = a[sortBy.key] ?? 0;
@@ -112,7 +148,24 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
         <span className="control-title" style={{ marginBottom: 6 }}>
           Clustering Params
         </span>
-        {PARAM_FIELDS.map(({ label, key, inputProps }) => (
+        <div>
+          <label>
+            Algorithm
+            <select
+              value={algorithm}
+              onChange={(e) =>
+                onParamChange({ algorithm: e.target.value || DEFAULT_CLUSTER_ALGORITHM })
+              }
+            >
+              <option value={CLUSTER_ALGORITHMS.BRIDGED}>FLG-bridged</option>
+              <option value={CLUSTER_ALGORITHMS.KMEANS}>K-means</option>
+              <option value={CLUSTER_ALGORITHMS.AGGLOMERATIVE}>
+                Single-link
+              </option>
+            </select>
+          </label>
+        </div>
+        {paramFields.map(({ label, key, inputProps }) => (
           <ParamInput
             key={key}
             label={label}

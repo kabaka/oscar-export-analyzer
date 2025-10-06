@@ -18,33 +18,55 @@ const FLG_DURATION_THRESHOLD_SEC = APOEA_CLUSTER_MIN_TOTAL_SEC; // min FLG-only 
 const MAX_FALSE_NEG_FLG_DURATION_SEC = 600; // cap on FLG-only cluster duration (sec)
 export const FALSE_NEG_CONFIDENCE_MIN = 0.95; // min confidence (fraction) for false-negative reporting
 
-/**
- * Cluster apnea annotation events, bridging through moderate FLG readings,
- * then extend boundaries based on sustained, high-level FLG edge clusters.
- * @param {Array<{date: Date, durationSec: number}>} events
- * @param {Array<{date: Date, level: number}>} flgEvents
- * @param {number} gapSec - max gap between annotation events to cluster (seconds)
- * @param {number} bridgeThreshold - FLG level threshold for bridging clusters
- * @param {number} bridgeSec - max gap for FLG-based bridging (seconds)
- * @returns {Array<{start: Date, end: Date, durationSec: number, count: number, events: Array}>}
- */
-export function clusterApneaEvents(
-  events,
-  flgEvents,
-  gapSec = DEFAULT_APNEA_GAP_SEC,
-  bridgeThreshold = DEFAULT_FLG_BRIDGE_THRESHOLD,
-  bridgeSec = DEFAULT_FLG_CLUSTER_GAP_SEC,
-  edgeEnter = EDGE_THRESHOLD,
-  edgeExit = EDGE_THRESHOLD * EDGE_EXIT_FRACTION,
-  edgeMinDurSec = EDGE_MIN_DURATION_SEC,
-  minDensityPerMin = 0,
-) {
+export const CLUSTER_ALGORITHMS = {
+  BRIDGED: 'bridged',
+  KMEANS: 'kmeans',
+  AGGLOMERATIVE: 'agglomerative',
+};
+
+export const DEFAULT_CLUSTER_ALGORITHM = CLUSTER_ALGORITHMS.BRIDGED;
+export const DEFAULT_KMEANS_K = 3;
+export const DEFAULT_SINGLE_LINK_GAP_SEC = DEFAULT_APNEA_GAP_SEC;
+
+function summarizeClusterEvents(events, overrides = {}) {
+  if (!events.length) return null;
+  const start = overrides.start ?? events[0].date;
+  const lastEvt = events[events.length - 1];
+  const naturalEnd = new Date(
+    lastEvt.date.getTime() + (lastEvt.durationSec || 0) * 1000,
+  );
+  const end = overrides.end ?? naturalEnd;
+  const count = events.length;
+  const durationSec = (end - start) / 1000;
+  const density = durationSec > 0 ? count / (durationSec / 60) : 0;
+  return { start, end, durationSec, count, density, events };
+}
+
+function normalizeMinDensity(options = {}) {
+  const { minDensity, minDensityPerMin } = options;
+  return typeof minDensity === 'number' ? minDensity : minDensityPerMin || 0;
+}
+
+function filterByDensity(clusters, minDensity) {
+  if (!minDensity) return clusters;
+  return clusters.filter((cl) => (cl?.density ?? 0) >= minDensity);
+}
+
+export function clusterApneaEventsBridged(options = {}) {
+  const {
+    events = [],
+    flgEvents = [],
+    gapSec = DEFAULT_APNEA_GAP_SEC,
+    bridgeThreshold = DEFAULT_FLG_BRIDGE_THRESHOLD,
+    bridgeSec = DEFAULT_FLG_CLUSTER_GAP_SEC,
+    edgeEnter = EDGE_THRESHOLD,
+    edgeExit = EDGE_THRESHOLD * EDGE_EXIT_FRACTION,
+    edgeMinDurSec = EDGE_MIN_DURATION_SEC,
+  } = options;
+  const minDensity = normalizeMinDensity(options);
   if (!events.length) return [];
-  // Sort FLG events once and reuse for bridging and edge detection
   const flgSorted = flgEvents.slice().sort((a, b) => a.date - b.date);
 
-  // FLG clusters for boundary extension (higher threshold, min duration)
-  // Hysteresis-based FLG edge segments: start when >= enter, continue while within gap and >= exit
   const flgEdgeSegments = [];
   let seg = null;
   for (let i = 0; i < flgSorted.length; i++) {
@@ -65,21 +87,18 @@ export function clusterApneaEvents(
     }
   }
   if (seg && seg.length) flgEdgeSegments.push(seg);
-  // Group annotation events by proximity and FLG bridges
+
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const rawGroups = [];
   let current = [sorted[0]];
-  // Two-pointer scan through FLG readings; flgIdx advances with events
   let flgIdx = 0;
   for (let i = 1; i < sorted.length; i++) {
     const evt = sorted[i];
     const prev = current[current.length - 1];
-    const prevEnd = new Date(prev.date.getTime() + prev.durationSec * 1000);
+    const prevEnd = new Date(prev.date.getTime() + (prev.durationSec || 0) * 1000);
     const gap = (evt.date - prevEnd) / 1000;
 
-    // advance pointer to first FLG after prevEnd
-    while (flgIdx < flgSorted.length && flgSorted[flgIdx].date < prevEnd)
-      flgIdx++;
+    while (flgIdx < flgSorted.length && flgSorted[flgIdx].date < prevEnd) flgIdx++;
 
     let flgBridge = false;
     if (gap <= bridgeSec) {
@@ -91,7 +110,7 @@ export function clusterApneaEvents(
         }
         j++;
       }
-      flgIdx = j; // subsequent iterations start from last checked reading
+      flgIdx = j;
     }
 
     if (gap <= gapSec || flgBridge) {
@@ -102,14 +121,16 @@ export function clusterApneaEvents(
     }
   }
   if (current.length) rawGroups.push(current);
-  // Map to clusters and extend boundaries using sustained FLG edge clusters
+
+  const validEdges = flgEdgeSegments.filter(
+    (cl) => (cl[cl.length - 1].date - cl[0].date) / 1000 >= edgeMinDurSec,
+  );
+
   const clusters = rawGroups.map((group) => {
     let start = group[0].date;
     const lastEvt = group[group.length - 1];
-    let end = new Date(lastEvt.date.getTime() + lastEvt.durationSec * 1000);
-    const count = group.length;
-    const validEdges = flgEdgeSegments.filter(
-      (cl) => (cl[cl.length - 1].date - cl[0].date) / 1000 >= edgeMinDurSec,
+    let end = new Date(
+      lastEvt.date.getTime() + (lastEvt.durationSec || 0) * 1000,
     );
     const before = validEdges.find(
       (cl) =>
@@ -121,14 +142,125 @@ export function clusterApneaEvents(
       (cl) => cl[0].date >= end && (cl[0].date - end) / 1000 <= gapSec,
     );
     if (after) end = after[after.length - 1].date;
-    const durationSec = (end - start) / 1000;
-    const density = durationSec > 0 ? count / (durationSec / 60) : 0;
-    return { start, end, durationSec, count, density, events: group };
+    return summarizeClusterEvents(group, { start, end });
   });
-  // Optional density filter
-  return clusters.filter((cl) =>
-    minDensityPerMin ? cl.density >= minDensityPerMin : true,
+
+  return filterByDensity(clusters, minDensity);
+}
+
+export function clusterApneaEventsKMeans(options = {}) {
+  const { events = [], k: rawK = DEFAULT_KMEANS_K } = options;
+  const minDensity = normalizeMinDensity(options);
+  if (!events.length) return [];
+  const sorted = events.slice().sort((a, b) => a.date - b.date);
+  const times = sorted.map((evt) => evt.date.getTime());
+  const k = Math.max(1, Math.min(sorted.length, Math.round(rawK || 1)));
+  const centroids = Array.from({ length: k }).map((_, idx) => {
+    if (k === 1) return times[0];
+    const pos = Math.floor((idx * (times.length - 1)) / Math.max(1, k - 1));
+    return times[pos];
+  });
+  const assignments = new Array(times.length).fill(0);
+  const maxIterations = 25;
+
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    let changed = false;
+    for (let i = 0; i < times.length; i++) {
+      let bestIdx = 0;
+      let bestDist = Math.abs(times[i] - centroids[0]);
+      for (let c = 1; c < centroids.length; c++) {
+        const dist = Math.abs(times[i] - centroids[c]);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = c;
+        }
+      }
+      if (assignments[i] !== bestIdx) {
+        assignments[i] = bestIdx;
+        changed = true;
+      }
+    }
+
+    const sums = new Array(centroids.length).fill(0);
+    const counts = new Array(centroids.length).fill(0);
+    for (let i = 0; i < times.length; i++) {
+      const clusterIdx = assignments[i];
+      sums[clusterIdx] += times[i];
+      counts[clusterIdx] += 1;
+    }
+    for (let c = 0; c < centroids.length; c++) {
+      if (counts[c] > 0) {
+        const newCentroid = sums[c] / counts[c];
+        if (centroids[c] !== newCentroid) {
+          centroids[c] = newCentroid;
+          changed = true;
+        }
+      }
+    }
+
+    if (!changed) break;
+  }
+
+  const groups = Array.from({ length: k }, () => []);
+  assignments.forEach((clusterIdx, i) => {
+    groups[clusterIdx].push(sorted[i]);
+  });
+
+  const clusters = groups
+    .filter((group) => group.length)
+    .map((group) => summarizeClusterEvents(group));
+
+  return filterByDensity(
+    clusters.sort((a, b) => a.start - b.start),
+    minDensity,
   );
+}
+
+export function clusterApneaEventsAgglomerative(options = {}) {
+  const {
+    events = [],
+    linkageThresholdSec = DEFAULT_SINGLE_LINK_GAP_SEC,
+  } = options;
+  const minDensity = normalizeMinDensity(options);
+  if (!events.length) return [];
+  const threshold =
+    typeof linkageThresholdSec === 'number'
+      ? linkageThresholdSec
+      : DEFAULT_SINGLE_LINK_GAP_SEC;
+
+  const sorted = events.slice().sort((a, b) => a.date - b.date);
+  const rawClusters = [];
+  let current = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const evt = sorted[i];
+    const prev = current[current.length - 1];
+    const prevEnd = new Date(prev.date.getTime() + (prev.durationSec || 0) * 1000);
+    const gap = (evt.date - prevEnd) / 1000;
+    if (gap <= threshold) {
+      current.push(evt);
+    } else {
+      rawClusters.push(current);
+      current = [evt];
+    }
+  }
+  if (current.length) rawClusters.push(current);
+
+  const clusters = rawClusters.map((group) => summarizeClusterEvents(group));
+  return filterByDensity(clusters, minDensity);
+}
+
+export function clusterApneaEvents(options = {}) {
+  const { algorithm = DEFAULT_CLUSTER_ALGORITHM } = options || {};
+  switch (algorithm) {
+    case CLUSTER_ALGORITHMS.KMEANS:
+      return clusterApneaEventsKMeans(options);
+    case CLUSTER_ALGORITHMS.AGGLOMERATIVE:
+      return clusterApneaEventsAgglomerative(options);
+    case CLUSTER_ALGORITHMS.BRIDGED:
+      return clusterApneaEventsBridged(options);
+    default:
+      throw new Error(`Unsupported apnea clustering algorithm: ${algorithm}`);
+  }
 }
 
 /**

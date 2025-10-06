@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as ACA from './ApneaClusterAnalysis.jsx';
+import { CLUSTER_ALGORITHMS } from '../utils/clustering';
 
 const ApneaClusterAnalysis = ACA.default;
 
@@ -33,6 +34,7 @@ describe('ApneaClusterAnalysis overlay', () => {
       },
     ];
     const params = {
+      algorithm: CLUSTER_ALGORITHMS.BRIDGED,
       gapSec: 120,
       bridgeThreshold: 0.1,
       bridgeSec: 60,
@@ -68,6 +70,7 @@ describe('ApneaClusterAnalysis memoization', () => {
 describe('ApneaClusterAnalysis params', () => {
   it('renders parameter inputs and forwards changes', async () => {
     const params = {
+      algorithm: CLUSTER_ALGORITHMS.BRIDGED,
       gapSec: 120,
       bridgeThreshold: 0.1,
       bridgeSec: 60,
@@ -87,11 +90,54 @@ describe('ApneaClusterAnalysis params', () => {
         details={[]}
       />,
     );
-    ACA.PARAM_FIELDS.forEach(({ label }) => {
+    const allLabels = ACA.PARAM_FIELDS_BY_ALGORITHM[CLUSTER_ALGORITHMS.BRIDGED].map(
+      ({ label }) => label,
+    );
+    allLabels.forEach((label) => {
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     });
+    expect(screen.getByLabelText('Algorithm')).toBeInTheDocument();
     const gap = screen.getByLabelText('Gap sec');
     fireEvent.change(gap, { target: { value: '30' } });
     expect(onChange).toHaveBeenLastCalledWith({ gapSec: 30 });
+  });
+
+  it('switches visible parameters when algorithm changes', async () => {
+    const params = {
+      algorithm: CLUSTER_ALGORITHMS.BRIDGED,
+      gapSec: 120,
+      bridgeThreshold: 0.1,
+      bridgeSec: 60,
+      edgeEnter: 0.5,
+      edgeExit: 0.35,
+      minCount: 1,
+      minTotalSec: 0,
+      maxClusterSec: 300,
+      minDensity: 0,
+      k: 3,
+      linkageThresholdSec: 120,
+    };
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <ApneaClusterAnalysis
+        clusters={[]}
+        params={params}
+        onParamChange={onChange}
+        details={[]}
+      />,
+    );
+    expect(screen.getByLabelText('Gap sec')).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText('Algorithm'), 'kmeans');
+    expect(onChange).toHaveBeenCalledWith({ algorithm: 'kmeans' });
+    rerender(
+      <ApneaClusterAnalysis
+        clusters={[]}
+        params={{ ...params, algorithm: CLUSTER_ALGORITHMS.KMEANS }}
+        onParamChange={onChange}
+        details={[]}
+      />,
+    );
+    expect(screen.queryByLabelText('Gap sec')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Clusters (k)')).toBeInTheDocument();
   });
 });

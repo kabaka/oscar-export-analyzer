@@ -78,7 +78,7 @@ If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
 - **AHI Trends** – Breaks AHI into nightly values with optional obstructive/central stacking. Histogram and QQ plots test whether AHI is normally distributed, while weekly STL decomposition and paired autocorrelation plots separate the smooth trend from recurring seasonal swings and noisy residuals.
 - **Pressure & Correlation** – Investigates how exhalation pressure (EPAP) relates to AHI. Scatter plots, LOESS curves, and correlation matrices support hypothesis generation.
 - **Range Comparison** – Select two date ranges to compute deltas, `p`‑values, and effect sizes for usage and AHI.
-- **Event Exploration** – Duration distributions, survival curves, and interactive tables for apnea clusters and potential false negatives.
+- **Event Exploration** – Duration distributions, survival curves, and interactive tables for apnea clusters and potential false negatives. Toggle between FLG-bridged, k-means, or single-link clustering algorithms (with tunable parameters) to experiment with different grouping assumptions.
 - **Raw Data Explorer** – Spreadsheet‑like views with sorting and filtering for the original CSV fields.
 
 Each view includes contextual help links that open the corresponding page in the user guide located in the `docs/user` directory.

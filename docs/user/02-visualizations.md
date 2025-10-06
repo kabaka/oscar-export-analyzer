@@ -111,7 +111,11 @@ When a details file is loaded, the analyzer can inspect individual events.
 
 ## Clustered Apnea Events
 
-Clusters group apnea events that occur in quick succession. The clustering algorithm uses a gap threshold (default 90 s) and optionally bridges flow‑limitation sequences.
+Clusters group apnea events that occur in quick succession. Choose between three algorithms:
+
+- **FLG-bridged** (default) – Uses a gap threshold (default 120 s) and bridges events when a flow-limitation (`FLG`) series remains above a configurable level. Edge FLG activity can extend cluster boundaries.
+- **K-means** – Partitions event timestamps into a fixed number of clusters (`k`, default 3) to explore broader nightly groupings without relying on FLG data.
+- **Single-link** – Performs agglomerative clustering with a linkage-gap threshold (default 120 s), grouping events when the separation between them stays below that window.
 
 Tables list each cluster’s start time, duration, event count, and a severity score derived from event density. Clicking a row opens a timeline visualization that expands the cluster minute by minute.
 

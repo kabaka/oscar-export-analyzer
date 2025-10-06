@@ -17,6 +17,9 @@ import {
   FLG_CLUSTER_GAP_DEFAULT,
   FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
   FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
+  DEFAULT_CLUSTER_ALGORITHM,
+  DEFAULT_KMEANS_K,
+  DEFAULT_SINGLE_LINK_GAP_SEC,
 } from './utils/clustering';
 import Overview from './components/Overview';
 const SummaryAnalysis = lazy(() => import('./components/SummaryAnalysis'));
@@ -89,6 +92,7 @@ function App() {
   const { isOpen: importOpen, open: openImportModal, close: closeImportModal } =
     useModal(true);
   const [clusterParams, setClusterParams] = useState({
+    algorithm: DEFAULT_CLUSTER_ALGORITHM,
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
     bridgeSec: FLG_CLUSTER_GAP_DEFAULT,
@@ -98,6 +102,9 @@ function App() {
     minDensity: 0,
     edgeEnter: FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
     edgeExit: FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
+    edgeMinDurSec: 10,
+    k: DEFAULT_KMEANS_K,
+    linkageThresholdSec: DEFAULT_SINGLE_LINK_GAP_SEC,
   });
   const [fnPreset, setFnPreset] = useState('balanced');
   const fnOptions = useMemo(() => {

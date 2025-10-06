@@ -68,7 +68,7 @@ Open the “Clustered Apnea Events” panel and expand the settings section. Par
 
 ### Can I script analyses instead of using the UI?
 
-The repository includes `analysis.js`, a Node script that mirrors the app's clustering logic. Run `node analysis.js <Details.csv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec]` to analyze a night from the command line.
+The repository includes `analysis.js`, a Node script that mirrors the app's clustering logic. Run `node analysis.js <Details.csv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec] [--algorithm=<bridged|kmeans|agglomerative>] [--k=<clusters>] [--linkage-threshold-sec=<seconds>]` to analyze a night from the command line. Flags default to the same parameters exposed in the UI, so offline batches see identical behavior.
 
 ### Does the analyzer support non‑OSCAR CSVs?
 

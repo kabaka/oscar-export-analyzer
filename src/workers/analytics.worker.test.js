@@ -11,6 +11,7 @@ vi.mock('../utils/analytics.js', () => ({
 vi.mock('../utils/clustering.js', () => ({
   clusterApneaEvents: clusterApneaEventsMock,
   detectFalseNegatives: detectFalseNegativesMock,
+  DEFAULT_CLUSTER_ALGORITHM: 'bridged',
 }));
 
 describe('analytics.worker', () => {
@@ -69,7 +70,14 @@ describe('analytics.worker', () => {
 
     global.self.onmessage({ data: payload });
 
-    expect(clusterApneaEventsMock).toHaveBeenCalled();
+    expect(clusterApneaEventsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        algorithm: 'bridged',
+        events: expect.any(Array),
+        flgEvents: expect.any(Array),
+        gapSec: payload.payload.params.gapSec,
+      }),
+    );
     expect(finalizeClustersMock).toHaveBeenCalledWith(rawClusters, payload.payload.params);
     expect(detectFalseNegativesMock).toHaveBeenCalledWith(payload.payload.detailsData, {
       foo: 'bar',
