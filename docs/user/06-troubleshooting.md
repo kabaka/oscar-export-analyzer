@@ -62,6 +62,6 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 ### Analysis.js fails with "Cannot find module"
 
 - Run `npm install` to ensure dependencies are available.
-- Execute the script with Node 20: `node analysis.js path/to/Details.csv [YYYY-MM-DD]`.
+- Execute the script with Node 20: `node analysis.js path/to/Details.csv [YYYY-MM-DD] [--algorithm=<bridged|kmeans|agglomerative>]`.
 
 If these steps do not resolve your problem, consult the project’s issue tracker and include console logs, browser version, and a description of the steps leading to the error.

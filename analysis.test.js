@@ -42,7 +42,7 @@ describe('analysis CLI clustering', () => {
       },
     ];
     const flgEvents = [{ date: new Date('2021-01-01T00:01:30Z'), level: 0.2 }];
-    const clusters = clusterApneaEvents(events, flgEvents);
+    const clusters = clusterApneaEvents({ events, flgEvents });
     const expected = clusters.filter((c) => {
       const totalEventDur = c.events.reduce((sum, e) => sum + e.durationSec, 0);
       return (

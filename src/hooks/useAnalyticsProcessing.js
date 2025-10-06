@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   clusterApneaEvents,
   detectFalseNegatives,
+  DEFAULT_CLUSTER_ALGORITHM,
 } from '../utils/clustering';
 import { finalizeClusters } from '../utils/analytics';
 
@@ -36,17 +37,20 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
           date: new Date(r['DateTime']),
           level: parseFloat(r['Data/Duration']),
         }));
-      const rawClusters = clusterApneaEvents(
-        apneaEvents,
+      const rawClusters = clusterApneaEvents({
+        algorithm: clusterParams.algorithm || DEFAULT_CLUSTER_ALGORITHM,
+        events: apneaEvents,
         flgEvents,
-        clusterParams.gapSec,
-        clusterParams.bridgeThreshold,
-        clusterParams.bridgeSec,
-        clusterParams.edgeEnter,
-        clusterParams.edgeExit,
-        10,
-        clusterParams.minDensity,
-      );
+        gapSec: clusterParams.gapSec,
+        bridgeThreshold: clusterParams.bridgeThreshold,
+        bridgeSec: clusterParams.bridgeSec,
+        edgeEnter: clusterParams.edgeEnter,
+        edgeExit: clusterParams.edgeExit,
+        edgeMinDurSec: clusterParams.edgeMinDurSec,
+        minDensity: clusterParams.minDensity,
+        k: clusterParams.k,
+        linkageThresholdSec: clusterParams.linkageThresholdSec,
+      });
       const validClusters = finalizeClusters(rawClusters, clusterParams);
       setApneaClusters(validClusters);
       setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));

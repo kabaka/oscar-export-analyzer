@@ -47,7 +47,7 @@ export function useSessionManager({
     if (sess) {
       const patch = applySession(sess);
       if (patch) {
-        setClusterParams(patch.clusterParams || clusterParams);
+        setClusterParams({ ...clusterParams, ...(patch.clusterParams || {}) });
         setDateFilter(patch.dateFilter || { start: null, end: null });
         setRangeA(patch.rangeA || { start: null, end: null });
         setRangeB(patch.rangeB || { start: null, end: null });
@@ -87,7 +87,7 @@ export function useSessionManager({
           const sess = JSON.parse(reader.result);
           const patch = applySession(sess);
           if (patch) {
-            setClusterParams(patch.clusterParams || clusterParams);
+            setClusterParams({ ...clusterParams, ...(patch.clusterParams || {}) });
             setDateFilter(patch.dateFilter || { start: null, end: null });
             setRangeA(patch.rangeA || { start: null, end: null });
             setRangeB(patch.rangeB || { start: null, end: null });

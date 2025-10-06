@@ -3,6 +3,7 @@
 import {
   clusterApneaEvents,
   detectFalseNegatives,
+  DEFAULT_CLUSTER_ALGORITHM,
 } from '../utils/clustering.js';
 import { finalizeClusters } from '../utils/analytics.js';
 
@@ -25,17 +26,20 @@ self.onmessage = (e) => {
           date: new Date(r['DateTime']),
           level: parseFloat(r['Data/Duration']),
         }));
-      const rawClusters = clusterApneaEvents(
-        apneaEvents,
+      const rawClusters = clusterApneaEvents({
+        algorithm: params.algorithm || DEFAULT_CLUSTER_ALGORITHM,
+        events: apneaEvents,
         flgEvents,
-        params.gapSec,
-        params.bridgeThreshold,
-        params.bridgeSec,
-        params.edgeEnter,
-        params.edgeExit,
-        10,
-        params.minDensity,
-      );
+        gapSec: params.gapSec,
+        bridgeThreshold: params.bridgeThreshold,
+        bridgeSec: params.bridgeSec,
+        edgeEnter: params.edgeEnter,
+        edgeExit: params.edgeExit,
+        edgeMinDurSec: params.edgeMinDurSec,
+        minDensity: params.minDensity,
+        k: params.k,
+        linkageThresholdSec: params.linkageThresholdSec,
+      });
       const fns = detectFalseNegatives(detailsData, fnOptions || {});
       self.postMessage({
         ok: true,
