@@ -2,7 +2,8 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Papa from 'papaparse';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 
 describe('Print Page control', () => {
   afterEach(() => {
@@ -28,7 +29,11 @@ describe('Print Page control', () => {
       }
     });
 
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
 
     const input = await screen.findByLabelText(/CSV or session files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {

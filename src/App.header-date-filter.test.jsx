@@ -1,12 +1,17 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 
 describe('Header date filter', () => {
   it('renders date inputs and presets inside the header', () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const presetSelect = screen.getByLabelText(/quick range/i);
     const startInput = screen.getByLabelText(/start date/i);
     const endInput = screen.getByLabelText(/end date/i);
@@ -19,7 +24,11 @@ describe('Header date filter', () => {
   it('applies quick date range presets', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2023-01-10'));
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const presetSelect = screen.getByLabelText(/quick range/i);
     const startInput = screen.getByLabelText(/start date/i);
     const endInput = screen.getByLabelText(/end date/i);
@@ -45,7 +54,9 @@ describe('Header date filter', () => {
   it('ignores invalid dates without crashing', () => {
     render(
       <ErrorBoundary>
-        <App />
+        <AppProviders>
+          <AppShell />
+        </AppProviders>
       </ErrorBoundary>,
     );
     const startInput = screen.getByLabelText(/start date/i);

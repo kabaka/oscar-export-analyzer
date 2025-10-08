@@ -6,30 +6,34 @@ framework abstractions. This section peels back the layers so you can orient you
 
 ### High‑Level Flow
 
-1. **Entry Point** – `main.jsx` bootstraps the React app and mounts `<App />` inside a root DOM node. Vite handles module
-   loading and hot replacement during development.
-2. **File Upload** – The top portion of `App.jsx` exposes two file inputs for summary and details CSV exports. When a
-   file is chosen, a dedicated parser worker filters events, converts timestamps, and streams batches with per-chunk
-   progress updates via `postMessage` so the main thread receives only necessary data and remains responsive. Analysis
-   sections render only after at least one row arrives, preventing charts from initializing with empty data.
-3. **Context Store** – Parsed rows and application settings live in `DataContext`. Components consume these values via
+1. **Entry Point** – `main.jsx` bootstraps the React app and mounts `<AppProviders><AppShell /></AppProviders>` inside a
+   root DOM node. `AppProviders` centralizes shared hooks, modals, and the CSV/session state machine so feature code can
+   assume those contexts already exist. Vite handles module loading and hot replacement during development.
+2. **File Upload** – `useAppState` (in `src/app/useAppState.js`) hosts the CSV upload handlers. When a file is chosen, a
+   dedicated parser worker filters events, converts timestamps, and streams batches with per-chunk progress updates via
+   `postMessage` so the main thread receives only necessary data and remains responsive. Analysis sections render only
+   after at least one row arrives, preventing charts from initializing with empty data.
+3. **Context Store** – `AppProviders` wraps the tree with `DataProvider` to expose parsed rows and filtered subsets via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.
-4. **Visualization Components** – Each analysis view lives under `src/components`. Most render a `ThemedPlot`, a thin
-   wrapper around `react-plotly.js` that applies our light or dark palette and enforces responsive sizing.
+4. **Visualization Components** – Each feature view now lives under `src/features/<feature>/Section.jsx`. Most sections
+   delegate to components in `src/components` that render a `ThemedPlot`, a thin wrapper around `react-plotly.js` that
+   applies our light or dark palette and enforces responsive sizing.
 5. **Workers for Heavy Lifting** – Beyond CSV parsing, dedicated workers perform computationally expensive tasks such as
    k‑means clustering of apnea events and detection of likely false negatives. Offloading work keeps the UI snappy even
    with multi‑year datasets.
 
 ### Component Structure
 
-`App.jsx` functions as a simple router using conditional rendering rather than a formal routing library. Sidebar links
-set an "active view" state, and the corresponding component renders in the main pane. This approach keeps the bundle
-small and avoids the cognitive overhead of a router for what is essentially a tabbed interface.
+`App.jsx` now exports `AppShell`, a lightweight composition layer that wires the header layout, table-of-contents, and
+feature sections together. Sidebar links still set an "active view" state, but the heavy lifting is handled inside the
+feature modules so `AppShell` stays thin. This keeps the bundle small without introducing a routing library for what is
+still a tabbed interface.
 
-Components are largely presentational. They accept data and configuration via props and delegate calculations to helper
-modules in `src/utils`. For example, `AhiTrendsCharts` calls `stats.js` functions to compute rolling averages while the
-component itself focuses on layout and axis labels.
+Feature sections handle their own controls (for example the range comparison date pickers) and pull data from
+`AppProviders` via `useAppContext`. Presentational pieces still live in `src/components`; they accept data and
+configuration via props and delegate calculations to helper modules in `src/utils`. For example, `AhiTrendsCharts` calls
+`stats.js` functions to compute rolling averages while the component itself focuses on layout and axis labels.
 
 An `ErrorBoundary` from `react-error-boundary` wraps most charts. Should a render error occur—perhaps due to malformed
 data or a Plotly regression—the boundary displays a friendly message rather than crashing the entire app. The error is

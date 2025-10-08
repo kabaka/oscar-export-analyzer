@@ -2,7 +2,8 @@ import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Papa from 'papaparse';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 
 // Basic IntersectionObserver mock capturing instances
 class IO {
@@ -54,7 +55,11 @@ describe('TOC active highlighting', () => {
 
   it('sets active class on click and on intersection change', async () => {
     mockSummaryParse();
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
 
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',

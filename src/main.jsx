@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import { AppProviders } from './app/AppProviders.jsx';
+import { AppShell } from './App.jsx';
 
 import '../styles.css';
 import './guide.css';
@@ -12,7 +13,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <AppProviders>
+        <AppShell />
+      </AppProviders>
     </ErrorBoundary>
   </React.StrictMode>,
 );

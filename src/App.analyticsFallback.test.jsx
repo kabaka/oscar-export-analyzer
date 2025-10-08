@@ -104,9 +104,14 @@ describe('App fallback analytics', () => {
 
     global.Worker = MockWorker;
 
-    const { default: App } = await import('./App');
+    const { default: AppShell } = await import('./App');
+    const { AppProviders } = await import('./app/AppProviders');
 
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
 
     await waitFor(() => {
       expect(analytics.finalizeClusters).toHaveBeenCalled();
