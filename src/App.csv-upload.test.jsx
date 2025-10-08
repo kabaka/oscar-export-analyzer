@@ -1,7 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 
 // Tests cross-component behavior triggered by CSV uploads
 
@@ -44,7 +45,11 @@ describe('CSV uploads and cross-component interactions', () => {
   });
 
   it('auto-classifies dropped files and closes the modal', async () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
 
     expect(
       screen.getByRole('dialog', { name: /Import Data/i }),
