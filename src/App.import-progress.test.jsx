@@ -1,7 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 
 describe('Header import progress', () => {
   const OriginalWorker = global.Worker;
@@ -27,7 +28,11 @@ describe('Header import progress', () => {
   });
 
   it('shows progress text and bar in the header during import', async () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const input = screen.getByLabelText(/CSV or session files/i);
     const file = new File(['Date\n2025-06-01'], 'summary.csv', {
       type: 'text/csv',

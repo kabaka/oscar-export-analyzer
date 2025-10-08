@@ -1,7 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 
 describe('In-page navigation', () => {
   afterEach(() => {
@@ -10,7 +11,11 @@ describe('In-page navigation', () => {
   });
 
   it('renders Overview with only Summary CSV and updates hash on click', async () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
 
     const input = await screen.findByLabelText(/CSV or session files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {

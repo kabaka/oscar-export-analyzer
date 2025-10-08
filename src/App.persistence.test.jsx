@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import App from './App.jsx';
+import { AppProviders } from './app/AppProviders.jsx';
+import { AppShell } from './App.jsx';
 
 const memoryStore = { last: null };
 
@@ -21,7 +22,11 @@ describe('App persistence flow', () => {
   });
 
   it('auto-saves after loading CSVs', async () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const input = await screen.findByLabelText(/CSV or session files/i);
     const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
       type: 'text/csv',
@@ -51,7 +56,11 @@ describe('App persistence flow', () => {
       type: 'application/json',
     });
 
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const input = await screen.findByLabelText(/CSV or session files/i);
     await userEvent.upload(input, file);
     const cards = await screen.findAllByText('Median AHI');
@@ -69,7 +78,11 @@ describe('App persistence flow', () => {
       detailsData: [],
     });
 
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const loadBtn = await screen.findByRole('button', {
       name: /Load previous session/i,
     });
@@ -80,7 +93,11 @@ describe('App persistence flow', () => {
   });
 
   it('shows an error for invalid session JSON', async () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const input = await screen.findByLabelText(/CSV or session files/i);
     const badFile = new File(['{'], 'bad.json', { type: 'application/json' });
     await userEvent.upload(input, badFile);
