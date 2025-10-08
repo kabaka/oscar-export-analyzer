@@ -16,7 +16,8 @@ vi.mock('./components/UsagePatternsCharts', () => ({
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import App from './App';
+import { AppProviders } from './app/AppProviders';
+import { AppShell } from './App';
 
 describe('Worker Integration Tests', () => {
   const originalWorker = global.Worker;
@@ -26,7 +27,11 @@ describe('Worker Integration Tests', () => {
   });
 
   it('parses CSVs via worker and displays summary analysis', async () => {
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const summary = new File(
       ['Date,Total Time\n2025-06-01,08:00:00'],
       'summary.csv',
@@ -59,7 +64,11 @@ describe('Worker Integration Tests', () => {
     }
     global.Worker = ErrorWorker;
 
-    render(<App />);
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
     const file = new File(['bad'], 'bad.csv', { type: 'text/csv' });
     const input = screen.getByLabelText(/CSV or session files/i);
     await userEvent.upload(input, file);
