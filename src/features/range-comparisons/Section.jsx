@@ -21,7 +21,7 @@ export default function RangeComparisonsSection() {
     [],
   );
 
-  const useCurrentFilter = useCallback(
+  const applyCurrentFilter = useCallback(
     (setter) => {
       setter(dateFilter ? { ...dateFilter } : { start: null, end: null });
     },
@@ -60,7 +60,7 @@ export default function RangeComparisonsSection() {
             <input type="date" onChange={handleRangeChange(setRangeA, 'end')} />
           </label>
         </div>
-        <button onClick={() => useCurrentFilter(setRangeA)}>
+        <button onClick={() => applyCurrentFilter(setRangeA)}>
           Use current filter as A
         </button>
         <div style={{ width: 12 }} />
@@ -79,7 +79,7 @@ export default function RangeComparisonsSection() {
             <input type="date" onChange={handleRangeChange(setRangeB, 'end')} />
           </label>
         </div>
-        <button onClick={() => useCurrentFilter(setRangeB)}>
+        <button onClick={() => applyCurrentFilter(setRangeB)}>
           Use current filter as B
         </button>
       </div>
