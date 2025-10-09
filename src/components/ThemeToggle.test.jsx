@@ -23,7 +23,8 @@ describe('ThemeToggle', () => {
       .getAllByRole('radio')
       .filter((r) => r.checked);
     expect(active).toHaveLength(1);
-    expect(active[0]).toHaveValue('system');
+    expect(screen.getByRole('radio', { name: /system/i })).toBe(active[0]);
+    expect(active[0]).toBeChecked();
   });
 
   it('switches to dark and persists', async () => {
