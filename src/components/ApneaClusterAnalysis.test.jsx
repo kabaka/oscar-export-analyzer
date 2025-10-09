@@ -90,9 +90,9 @@ describe('ApneaClusterAnalysis params', () => {
         details={[]}
       />,
     );
-    const allLabels = ACA.PARAM_FIELDS_BY_ALGORITHM[CLUSTER_ALGORITHMS.BRIDGED].map(
-      ({ label }) => label,
-    );
+    const allLabels = ACA.PARAM_FIELDS_BY_ALGORITHM[
+      CLUSTER_ALGORITHMS.BRIDGED
+    ].map(({ label }) => label);
     allLabels.forEach((label) => {
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     });

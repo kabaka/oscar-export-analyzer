@@ -2,8 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { useAppContext } from '../../app/AppProviders';
 
-const FalseNegativesAnalysis = lazy(() =>
-  import('../../components/FalseNegativesAnalysis'),
+const FalseNegativesAnalysis = lazy(
+  () => import('../../components/FalseNegativesAnalysis'),
 );
 
 export default function FalseNegativesSection() {

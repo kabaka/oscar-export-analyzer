@@ -6,7 +6,9 @@ export function useDateRangeFilter(summaryData) {
 
   const latestDate = useMemo(() => {
     if (!summaryData || !summaryData.length) return new Date();
-    const dateCol = Object.keys(summaryData[0] || {}).find((c) => /date/i.test(c));
+    const dateCol = Object.keys(summaryData[0] || {}).find((c) =>
+      /date/i.test(c),
+    );
     if (!dateCol) return new Date();
     return (
       summaryData.reduce((max, row) => {

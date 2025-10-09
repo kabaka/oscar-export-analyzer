@@ -17,13 +17,13 @@ describe('ThemeToggle', () => {
         <ThemeToggle />
       </DataProvider>,
     );
-    expect(document.documentElement.getAttribute('data-theme')).toBe(null);
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
     const group = screen.getByRole('group', { name: /theme/i });
     const active = within(group)
       .getAllByRole('radio')
       .filter((r) => r.checked);
     expect(active).toHaveLength(1);
-    expect(active[0]).toHaveAttribute('value', 'system');
+    expect(active[0]).toHaveValue('system');
   });
 
   it('switches to dark and persists', async () => {
@@ -35,7 +35,7 @@ describe('ThemeToggle', () => {
     );
     const dark = screen.getByRole('radio', { name: /dark/i });
     await user.click(dark);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     expect(window.localStorage.getItem('theme')).toBe('dark');
   });
 
@@ -49,9 +49,9 @@ describe('ThemeToggle', () => {
     const light = screen.getByRole('radio', { name: /light/i });
     const system = screen.getByRole('radio', { name: /system/i });
     await user.click(light);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
     await user.click(system);
-    expect(document.documentElement.getAttribute('data-theme')).toBe(null);
+    expect(document.documentElement).not.toHaveAttribute('data-theme');
     expect(window.localStorage.getItem('theme')).toBe(null);
   });
 });

@@ -439,9 +439,7 @@ export default function AhiTrendsCharts({
             useResizeHandler
             style={{ width: '100%', height: '260px' }}
           />
-          <VizHelp
-            text="Autocorrelation shows how strongly tonight's AHI relates to prior nights. Bars outside the grey band exceed the 95% white-noise expectation; see docs/user/02-visualizations.md#ahi-trends."
-          />
+          <VizHelp text="Autocorrelation shows how strongly tonight's AHI relates to prior nights. Bars outside the grey band exceed the 95% white-noise expectation; see docs/user/02-visualizations.md#ahi-trends." />
         </div>
       ) : null}
 
@@ -486,9 +484,7 @@ export default function AhiTrendsCharts({
             useResizeHandler
             style={{ width: '100%', height: '260px' }}
           />
-          <VizHelp
-            text="Partial autocorrelation isolates direct dependencies at each lag. Sudden drops after a few lags suggest short memory, while long tails hint at persistent regimes."
-          />
+          <VizHelp text="Partial autocorrelation isolates direct dependencies at each lag. Sudden drops after a few lags suggest short memory, while long tails hint at persistent regimes." />
         </div>
       ) : null}
 

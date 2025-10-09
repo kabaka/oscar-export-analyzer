@@ -95,10 +95,13 @@ export function clusterApneaEventsBridged(options = {}) {
   for (let i = 1; i < sorted.length; i++) {
     const evt = sorted[i];
     const prev = current[current.length - 1];
-    const prevEnd = new Date(prev.date.getTime() + (prev.durationSec || 0) * 1000);
+    const prevEnd = new Date(
+      prev.date.getTime() + (prev.durationSec || 0) * 1000,
+    );
     const gap = (evt.date - prevEnd) / 1000;
 
-    while (flgIdx < flgSorted.length && flgSorted[flgIdx].date < prevEnd) flgIdx++;
+    while (flgIdx < flgSorted.length && flgSorted[flgIdx].date < prevEnd)
+      flgIdx++;
 
     let flgBridge = false;
     if (gap <= bridgeSec) {
@@ -217,10 +220,8 @@ export function clusterApneaEventsKMeans(options = {}) {
 }
 
 export function clusterApneaEventsAgglomerative(options = {}) {
-  const {
-    events = [],
-    linkageThresholdSec = DEFAULT_SINGLE_LINK_GAP_SEC,
-  } = options;
+  const { events = [], linkageThresholdSec = DEFAULT_SINGLE_LINK_GAP_SEC } =
+    options;
   const minDensity = normalizeMinDensity(options);
   if (!events.length) return [];
   const threshold =
@@ -234,7 +235,9 @@ export function clusterApneaEventsAgglomerative(options = {}) {
   for (let i = 1; i < sorted.length; i++) {
     const evt = sorted[i];
     const prev = current[current.length - 1];
-    const prevEnd = new Date(prev.date.getTime() + (prev.durationSec || 0) * 1000);
+    const prevEnd = new Date(
+      prev.date.getTime() + (prev.durationSec || 0) * 1000,
+    );
     const gap = (evt.date - prevEnd) / 1000;
     if (gap <= threshold) {
       current.push(evt);

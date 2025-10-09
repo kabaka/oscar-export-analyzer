@@ -26,7 +26,9 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
     const fallbackCompute = () => {
       if (cancelled) return;
       const apneaEvents = detailsData
-        .filter((r) => ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']))
+        .filter((r) =>
+          ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']),
+        )
         .map((r) => ({
           date: new Date(r['DateTime']),
           durationSec: parseFloat(r['Data/Duration']),
@@ -59,9 +61,12 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
 
     try {
       // eslint-disable-next-line no-undef
-      worker = new Worker(new URL('../workers/analytics.worker.js', import.meta.url), {
-        type: 'module',
-      });
+      worker = new Worker(
+        new URL('../workers/analytics.worker.js', import.meta.url),
+        {
+          type: 'module',
+        },
+      );
       worker.onmessage = (evt) => {
         if (cancelled) return;
         const { ok, data, error } = evt.data || {};

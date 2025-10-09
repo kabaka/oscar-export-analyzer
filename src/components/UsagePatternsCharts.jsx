@@ -399,9 +399,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             useResizeHandler
             style={{ width: '100%', height: '260px' }}
           />
-          <VizHelp
-            text="Autocorrelation reveals whether short nights cluster together. Bars crossing the grey band indicate lags with stronger-than-random persistence."
-          />
+          <VizHelp text="Autocorrelation reveals whether short nights cluster together. Bars crossing the grey band indicate lags with stronger-than-random persistence." />
         </div>
       ) : null}
 
@@ -446,9 +444,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             useResizeHandler
             style={{ width: '100%', height: '260px' }}
           />
-          <VizHelp
-            text="Partial autocorrelation pinpoints direct carryover from previous nights after accounting for intermediate lags. A sharp cutoff suggests a short memory for adherence habits."
-          />
+          <VizHelp text="Partial autocorrelation pinpoints direct carryover from previous nights after accounting for intermediate lags. A sharp cutoff suggests a short memory for adherence habits." />
         </div>
       ) : null}
 

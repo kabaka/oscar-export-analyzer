@@ -3,11 +3,17 @@ import ErrorBoundary from '../../components/ErrorBoundary';
 import { useAppContext } from '../../app/AppProviders';
 
 const ApneaEventStats = lazy(() => import('../../components/ApneaEventStats'));
-const ApneaClusterAnalysis = lazy(() => import('../../components/ApneaClusterAnalysis'));
+const ApneaClusterAnalysis = lazy(
+  () => import('../../components/ApneaClusterAnalysis'),
+);
 
 export default function ApneaClustersSection() {
-  const { filteredDetails, apneaClusters, clusterParams, onClusterParamChange } =
-    useAppContext();
+  const {
+    filteredDetails,
+    apneaClusters,
+    clusterParams,
+    onClusterParamChange,
+  } = useAppContext();
 
   if (!filteredDetails?.length) {
     return null;

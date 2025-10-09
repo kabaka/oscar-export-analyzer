@@ -34,8 +34,10 @@ check that file for exact numbers.
   support modern ESM syntax.
 - **@testing-library/react** – Encourages tests that resemble how users interact with the app. Queries search for text
   and roles instead of component internals.
-- **ESLint & Prettier** – Maintain consistent code style and catch common mistakes. Config files live in the repo root
-  and are executed via `npm run lint` and `npm run format`.
+- **ESLint & Prettier** – The flat-config `eslint.config.js` composes `@eslint/js` with the React, Testing Library, Jest DOM,
+  and no-unsanitized plugins while extending `eslint-config-prettier`. Run `npm run lint` to execute the shared ruleset and
+  `npm run format` to apply Prettier settings from `.prettierrc`. Formatting enforcement happens via `npm run format:check`,
+  which CI and the Husky pre-commit hook both execute so style drift fails fast.
 
 ### Worker Tooling
 

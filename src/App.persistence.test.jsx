@@ -47,9 +47,7 @@ describe('App persistence flow', () => {
   it('imports a session JSON file from the splash modal', async () => {
     const { buildSession } = await import('./utils/session');
     const session = buildSession({
-      summaryData: [
-        { Date: '2025-06-02', AHI: '3', 'Total Time': '07:00:00' },
-      ],
+      summaryData: [{ Date: '2025-06-02', AHI: '3', 'Total Time': '07:00:00' }],
       detailsData: [],
     });
     const file = new File([JSON.stringify(session)], 'sess.json', {
@@ -72,9 +70,7 @@ describe('App persistence flow', () => {
   it('loads a saved session from the splash screen', async () => {
     const { buildSession } = await import('./utils/session');
     memoryStore.last = buildSession({
-      summaryData: [
-        { Date: '2025-06-03', AHI: '2', 'Total Time': '06:00:00' },
-      ],
+      summaryData: [{ Date: '2025-06-03', AHI: '2', 'Total Time': '06:00:00' }],
       detailsData: [],
     });
 

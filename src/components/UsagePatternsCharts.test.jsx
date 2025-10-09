@@ -12,12 +12,14 @@ const data = [
 
 describe('UsagePatternsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
-    const { getAllByTestId } = render(<UsagePatternsCharts data={data} />);
-    expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
+    render(<UsagePatternsCharts data={data} />);
+    expect(screen.getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
     // Additional autocorrelation charts increase help tooltips count
-    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(7);
+    expect(screen.getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(7);
     expect(
-      screen.getByText(/Trend\/Seasonal\/Residual view decomposes nightly usage/i),
+      screen.getByText(
+        /Trend\/Seasonal\/Residual view decomposes nightly usage/i,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Autocorrelation reveals whether short nights cluster/i),
