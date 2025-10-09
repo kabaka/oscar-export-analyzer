@@ -108,9 +108,7 @@ describe('computePartialAutocorrelation', () => {
         return ctrl;
       });
       const reference =
-        lag === 1
-          ? pearson(y, x)
-          : partialCorrelation(y, x, controls);
+        lag === 1 ? pearson(y, x) : partialCorrelation(y, x, controls);
       expect(partialAutocorrelation).toBeCloseTo(reference, 6);
     });
   });
@@ -251,9 +249,7 @@ describe('stlDecompose', () => {
       trend.slice(0, first.length).reduce((sum, v) => sum + v, 0) /
       first.length;
     const secondMean =
-      trend
-        .slice(first.length)
-        .reduce((sum, v) => sum + v, 0) / second.length;
+      trend.slice(first.length).reduce((sum, v) => sum + v, 0) / second.length;
     expect(firstMean).toBeGreaterThan(0.5);
     expect(firstMean).toBeLessThan(1.5);
     expect(secondMean).toBeGreaterThan(4);

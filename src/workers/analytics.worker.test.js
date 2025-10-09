@@ -78,10 +78,16 @@ describe('analytics.worker', () => {
         gapSec: payload.payload.params.gapSec,
       }),
     );
-    expect(finalizeClustersMock).toHaveBeenCalledWith(rawClusters, payload.payload.params);
-    expect(detectFalseNegativesMock).toHaveBeenCalledWith(payload.payload.detailsData, {
-      foo: 'bar',
-    });
+    expect(finalizeClustersMock).toHaveBeenCalledWith(
+      rawClusters,
+      payload.payload.params,
+    );
+    expect(detectFalseNegativesMock).toHaveBeenCalledWith(
+      payload.payload.detailsData,
+      {
+        foo: 'bar',
+      },
+    );
     expect(postMessage).toHaveBeenCalledWith({
       ok: true,
       data: { clusters: postedClusters, falseNegatives: ['fn'] },

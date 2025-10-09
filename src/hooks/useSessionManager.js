@@ -87,7 +87,10 @@ export function useSessionManager({
           const sess = JSON.parse(reader.result);
           const patch = applySession(sess);
           if (patch) {
-            setClusterParams({ ...clusterParams, ...(patch.clusterParams || {}) });
+            setClusterParams({
+              ...clusterParams,
+              ...(patch.clusterParams || {}),
+            });
             setDateFilter(patch.dateFilter || { start: null, end: null });
             setRangeA(patch.rangeA || { start: null, end: null });
             setRangeB(patch.rangeB || { start: null, end: null });

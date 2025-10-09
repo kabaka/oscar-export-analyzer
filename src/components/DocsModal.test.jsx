@@ -40,7 +40,7 @@ describe('DocsModal', () => {
     );
     await screen.findByRole('heading', { level: 1, name: /hello/i });
     const link = document.querySelector('.doc-content a');
-    expect(link.getAttribute('href')).toBe('');
+    expect(link).toHaveAttribute('href', '');
     expect(document.querySelector('script')).toBeNull();
   });
 
@@ -60,7 +60,7 @@ describe('DocsModal', () => {
     const md = `[Next](02-visualizations.md#rolling-windows)`;
     render(<DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />);
     const link = await screen.findByRole('link', { name: /next/i });
-    expect(link.getAttribute('href')).toBe('#rolling-windows');
+    expect(link).toHaveAttribute('href', '#rolling-windows');
     fireEvent.click(link);
   });
 

@@ -35,9 +35,7 @@ describe('DataContext provider', () => {
         <div>child</div>
       </DataProvider>,
     );
-    expect(document.documentElement.getAttribute('data-theme')).toBe(
-      THEMES.DARK,
-    );
+    expect(document.documentElement).toHaveAttribute('data-theme', THEMES.DARK);
   });
 
   it('shares summary data updates across components', async () => {

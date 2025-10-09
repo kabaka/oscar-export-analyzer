@@ -49,7 +49,11 @@ function DateRangeControls({
         aria-label="End date"
       />
       {(dateFilter.start || dateFilter.end) && (
-        <button className="btn-ghost" onClick={onReset} aria-label="Reset date filter">
+        <button
+          className="btn-ghost"
+          onClick={onReset}
+          aria-label="Reset date filter"
+        >
           ×
         </button>
       )}

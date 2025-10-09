@@ -23,7 +23,7 @@ describe('ApneaEventStats', () => {
         <ApneaEventStats />
       </DataProvider>,
     );
-    expect(container.firstChild).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('renders tables and plots for data with help tooltips', () => {

@@ -98,8 +98,7 @@ export default function RangeComparisons({ rangeA, rangeB }) {
       </table>
       <p style={{ opacity: 0.8 }}>
         nA={kpi.nA}, nB={kpi.nB}. Mann–Whitney U p-values and signed
-        rank-biserial effects (positive means range B tends to be larger)
-        shown.
+        rank-biserial effects (positive means range B tends to be larger) shown.
       </p>
     </div>
   );

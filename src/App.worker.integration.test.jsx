@@ -78,5 +78,4 @@ describe('Worker Integration Tests', () => {
     });
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
-
 });

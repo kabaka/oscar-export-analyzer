@@ -95,7 +95,11 @@ export function useAppState() {
     return presets[fnPreset] || presets.balanced;
   }, [fnPreset]);
 
-  const analytics = useAnalyticsProcessing(detailsData, clusterParams, fnOptions);
+  const analytics = useAnalyticsProcessing(
+    detailsData,
+    clusterParams,
+    fnOptions,
+  );
   const { apneaClusters, falseNegatives, processing } = analytics;
 
   const session = useSessionManager({

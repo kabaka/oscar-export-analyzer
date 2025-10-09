@@ -15,10 +15,14 @@ describe('AhiTrendsCharts', () => {
     // Additional autocorrelation charts increase help tooltips count
     expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(8);
     expect(
-      screen.getByText(/Trend\/Seasonal\/Residual view shows the STL decomposition/i),
+      screen.getByText(
+        /Trend\/Seasonal\/Residual view shows the STL decomposition/i,
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Autocorrelation shows how strongly tonight's AHI relates/i),
+      screen.getByText(
+        /Autocorrelation shows how strongly tonight's AHI relates/i,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/Max lag/i)).toBeInTheDocument();
   });

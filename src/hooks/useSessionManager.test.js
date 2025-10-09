@@ -60,7 +60,10 @@ describe('useSessionManager', () => {
   });
 
   it('loads a saved session', async () => {
-    memoryStore.last = buildSession({ summaryData: [{ AHI: '1' }], detailsData: [] });
+    memoryStore.last = buildSession({
+      summaryData: [{ AHI: '1' }],
+      detailsData: [],
+    });
     const props = baseProps();
     const setSummaryData = vi.fn();
     props.setSummaryData = setSummaryData;
@@ -128,7 +131,9 @@ describe('useCsvFiles worker management', () => {
     const { result } = renderHook(() => useCsvFiles());
 
     act(() => {
-      result.current.onSummaryFile({ target: { files: [createFile('first.csv')] } });
+      result.current.onSummaryFile({
+        target: { files: [createFile('first.csv')] },
+      });
     });
 
     expect(workers).toHaveLength(1);
@@ -143,7 +148,9 @@ describe('useCsvFiles worker management', () => {
     expect(result.current.summaryData).toEqual([{ id: 'first-row' }]);
 
     act(() => {
-      result.current.onSummaryFile({ target: { files: [createFile('second.csv')] } });
+      result.current.onSummaryFile({
+        target: { files: [createFile('second.csv')] },
+      });
     });
 
     expect(firstWorker.terminate).toHaveBeenCalledTimes(1);

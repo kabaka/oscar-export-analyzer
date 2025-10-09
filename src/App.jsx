@@ -217,15 +217,15 @@ export function AppShell() {
             loadingSummary
               ? summaryProgress
               : loadingDetails
-              ? detailsProgress
-              : undefined
+                ? detailsProgress
+                : undefined
           }
           max={
             loadingSummary
               ? summaryProgressMax
               : loadingDetails
-              ? detailsProgressMax
-              : undefined
+                ? detailsProgressMax
+                : undefined
           }
         />
       </div>

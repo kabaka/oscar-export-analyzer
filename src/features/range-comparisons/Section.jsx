@@ -35,7 +35,8 @@ export default function RangeComparisonsSection() {
   return (
     <div className="section">
       <h2 id="range-compare">
-        Range Comparisons <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" />
+        Range Comparisons{' '}
+        <GuideLink anchor="range-comparisons-a-vs-b" label="Guide" />
       </h2>
       <div
         style={{

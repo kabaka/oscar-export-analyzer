@@ -73,7 +73,10 @@ const AGGLOMERATIVE_PARAM_FIELDS = [
 ];
 
 export const PARAM_FIELDS_BY_ALGORITHM = {
-  [CLUSTER_ALGORITHMS.BRIDGED]: [...BRIDGED_PARAM_FIELDS, ...SHARED_PARAM_FIELDS],
+  [CLUSTER_ALGORITHMS.BRIDGED]: [
+    ...BRIDGED_PARAM_FIELDS,
+    ...SHARED_PARAM_FIELDS,
+  ],
   [CLUSTER_ALGORITHMS.KMEANS]: [...KMEANS_PARAM_FIELDS, ...SHARED_PARAM_FIELDS],
   [CLUSTER_ALGORITHMS.AGGLOMERATIVE]: [
     ...AGGLOMERATIVE_PARAM_FIELDS,
@@ -154,7 +157,9 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
             <select
               value={algorithm}
               onChange={(e) =>
-                onParamChange({ algorithm: e.target.value || DEFAULT_CLUSTER_ALGORITHM })
+                onParamChange({
+                  algorithm: e.target.value || DEFAULT_CLUSTER_ALGORITHM,
+                })
               }
             >
               <option value={CLUSTER_ALGORITHMS.BRIDGED}>FLG-bridged</option>

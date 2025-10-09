@@ -45,8 +45,8 @@ export default function SummaryAnalysis({ clusters = [] }) {
           <tr>
             <td>Nights ≥ 4 h usage</td>
             <td>
-              {usage.nightsLong} (
-              {percent(usage.nightsLong, usage.validNights)}%)
+              {usage.nightsLong} ({percent(usage.nightsLong, usage.validNights)}
+              %)
             </td>
           </tr>
           <tr>
