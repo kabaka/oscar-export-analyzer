@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSessionManager } from './useSessionManager';
+import { useCsvFiles } from './useCsvFiles';
 import { buildSession } from '../utils/session';
 
 const memoryStore = { last: null };
@@ -96,5 +97,69 @@ describe('useSessionManager', () => {
     expect(setSummaryData).not.toHaveBeenCalled();
 
     global.FileReader = originalFileReader;
+  });
+});
+
+describe('useCsvFiles worker management', () => {
+  const originalWorker = global.Worker;
+  let workers;
+
+  class MockWorker {
+    constructor() {
+      this.postMessage = vi.fn();
+      this.terminate = vi.fn();
+      this.onmessage = null;
+      workers.push(this);
+    }
+  }
+
+  beforeEach(() => {
+    workers = [];
+    global.Worker = MockWorker;
+  });
+
+  afterEach(() => {
+    global.Worker = originalWorker;
+  });
+
+  const createFile = (name) => ({ name, size: 10, type: 'text/csv' });
+
+  it('terminates the previous worker and replaces rows when a new upload starts', () => {
+    const { result } = renderHook(() => useCsvFiles());
+
+    act(() => {
+      result.current.onSummaryFile({ target: { files: [createFile('first.csv')] } });
+    });
+
+    expect(workers).toHaveLength(1);
+    const firstWorker = workers[0];
+
+    act(() => {
+      firstWorker.onmessage?.({
+        data: { type: 'rows', rows: [{ id: 'first-row' }] },
+      });
+    });
+
+    expect(result.current.summaryData).toEqual([{ id: 'first-row' }]);
+
+    act(() => {
+      result.current.onSummaryFile({ target: { files: [createFile('second.csv')] } });
+    });
+
+    expect(firstWorker.terminate).toHaveBeenCalledTimes(1);
+    expect(workers).toHaveLength(2);
+
+    const secondWorker = workers[1];
+
+    act(() => {
+      firstWorker.onmessage?.({
+        data: { type: 'rows', rows: [{ id: 'stale-row' }] },
+      });
+      secondWorker.onmessage?.({
+        data: { type: 'rows', rows: [{ id: 'second-row' }] },
+      });
+    });
+
+    expect(result.current.summaryData).toEqual([{ id: 'second-row' }]);
   });
 });

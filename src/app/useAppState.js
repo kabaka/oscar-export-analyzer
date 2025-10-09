@@ -36,6 +36,7 @@ export function useAppState() {
     onSummaryFile,
     onDetailsFile,
     error,
+    cancelCurrent,
   } = csvState;
 
   const {
@@ -186,6 +187,7 @@ export function useAppState() {
     onSummaryFile,
     onDetailsFile,
     error,
+    cancelCurrent,
     dateFilter,
     setDateFilter,
     quickRange,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Hook for loading CSV files via file input
 export function useCsvFiles() {
@@ -11,6 +11,40 @@ export function useCsvFiles() {
   const [detailsProgress, setDetailsProgress] = useState(0);
   const [detailsProgressMax, setDetailsProgressMax] = useState(0);
   const [error, setError] = useState(null);
+  const activeTaskRef = useRef({
+    worker: null,
+    setLoading: null,
+    cleanup: null,
+  });
+
+  const resetActiveTask = () => {
+    activeTaskRef.current = { worker: null, setLoading: null, cleanup: null };
+  };
+
+  const cancelCurrent = useCallback(() => {
+    const { worker, setLoading, cleanup } = activeTaskRef.current || {};
+    if (cleanup) {
+      cleanup();
+    }
+    if (worker) {
+      worker.terminate();
+    }
+    if (setLoading) {
+      setLoading(false);
+    }
+    resetActiveTask();
+  }, []);
+
+  useEffect(() => cancelCurrent, [cancelCurrent]);
+
+  const extractFirstFile = (input) => {
+    if (!input) return null;
+    if (typeof File !== 'undefined' && input instanceof File) return input;
+    if (typeof Blob !== 'undefined' && input instanceof Blob) return input;
+    if (input.file) return input.file;
+    const files = input?.target?.files || input?.dataTransfer?.files;
+    return files?.[0] ?? null;
+  };
 
   /**
    * Generic CSV loader with optional event filtering.
@@ -22,19 +56,33 @@ export function useCsvFiles() {
    */
   const handleFile =
     (setter, setLoading, setProgress, setProgressMax, filterEvents = false) =>
-    (e) => {
-      const file = e.target.files[0];
+    (input, options = {}) => {
+      const file = extractFirstFile(input);
       if (!file) return;
+      const { signal } = options || {};
+
+      cancelCurrent();
+
+      if (signal?.aborted) {
+        return;
+      }
       setLoading(true);
       setError(null);
       setProgress(0);
-      setProgressMax(file.size);
+      setProgressMax(file.size || 0);
       setter([]);
       const worker = new Worker(
         new URL('../workers/csv.worker.js', import.meta.url),
         { type: 'module' },
       );
+      const clearTask = () => {
+        if (activeTaskRef.current.worker !== worker) return;
+        const { cleanup } = activeTaskRef.current;
+        if (cleanup) cleanup();
+        resetActiveTask();
+      };
       worker.onmessage = (ev) => {
+        if (activeTaskRef.current.worker !== worker) return;
         const { type, rows, cursor, error: msg } = ev.data || {};
         if (type === 'progress') {
           setProgress(cursor);
@@ -43,12 +91,24 @@ export function useCsvFiles() {
         } else if (type === 'complete') {
           setLoading(false);
           worker.terminate();
+          clearTask();
         } else if (type === 'error') {
           setLoading(false);
           setError(msg);
           worker.terminate();
+          clearTask();
         }
       };
+      activeTaskRef.current = { worker, setLoading, cleanup: null };
+      if (signal) {
+        const onAbort = () => {
+          cancelCurrent();
+        };
+        signal.addEventListener('abort', onAbort, { once: true });
+        activeTaskRef.current.cleanup = () => {
+          signal.removeEventListener('abort', onAbort);
+        };
+      }
       worker.postMessage({ file, filterEvents });
     };
 
@@ -65,14 +125,14 @@ export function useCsvFiles() {
     // Expose setters so App can restore from saved sessions
     setSummaryData,
     setDetailsData,
-    onSummaryFile: (e) => {
+    onSummaryFile: (e, options) => {
       setDetailsData(null);
       handleFile(
         setSummaryData,
         setLoadingSummary,
         setSummaryProgress,
         setSummaryProgressMax,
-      )(e);
+      )(e, options);
     },
     onDetailsFile: handleFile(
       setDetailsData,
@@ -81,5 +141,6 @@ export function useCsvFiles() {
       setDetailsProgressMax,
       true /* filter to only apnea & FLG events */,
     ),
+    cancelCurrent,
   };
 }
