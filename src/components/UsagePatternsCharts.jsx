@@ -13,8 +13,24 @@ import {
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { ThemedPlot, VizHelp } from './ui';
-
-const STL_SEASON = 7;
+import {
+  DEFAULT_MAX_LAG,
+  DEFAULT_ROLLING_WINDOWS,
+  FREEDMAN_DIACONIS_FACTOR,
+  HISTOGRAM_FALLBACK_BINS,
+  MAX_LAG_INPUT,
+  MIN_LAG_INPUT,
+  NORMAL_CONFIDENCE_Z,
+  QUARTILE_LOWER,
+  QUARTILE_MEDIAN,
+  QUARTILE_UPPER,
+  ROLLING_WINDOW_LONG_DAYS,
+  ROLLING_WINDOW_SHORT_DAYS,
+  STL_SEASON_LENGTH,
+  USAGE_CHANGEPOINT_PENALTY,
+  USAGE_COMPLIANCE_THRESHOLD_HOURS,
+  USAGE_STRICT_THRESHOLD_HOURS,
+} from '../constants';
 
 /**
  * Render usage and adherence charts for nightly data.
@@ -49,16 +65,25 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       .sort((a, b) => a.date - b.date);
     const hours = pts.map((p) => p.hours);
     const datesArr = pts.map((p) => p.date);
-    const rolling = computeUsageRolling(datesArr, hours, [7, 30]);
-    const rolling7 = rolling.avg7;
-    const rolling30 = rolling.avg30;
-    const r7Low = rolling['avg7_ci_low'];
-    const r7High = rolling['avg7_ci_high'];
-    const r30Low = rolling['avg30_ci_low'];
-    const r30High = rolling['avg30_ci_high'];
-    const compliance4_30 = rolling['compliance4_30'];
+    const rolling = computeUsageRolling(
+      datesArr,
+      hours,
+      DEFAULT_ROLLING_WINDOWS,
+    );
+    const rolling7 = rolling[`avg${ROLLING_WINDOW_SHORT_DAYS}`];
+    const rolling30 = rolling[`avg${ROLLING_WINDOW_LONG_DAYS}`];
+    const r7Low = rolling[`avg${ROLLING_WINDOW_SHORT_DAYS}_ci_low`];
+    const r7High = rolling[`avg${ROLLING_WINDOW_SHORT_DAYS}_ci_high`];
+    const r30Low = rolling[`avg${ROLLING_WINDOW_LONG_DAYS}_ci_low`];
+    const r30High = rolling[`avg${ROLLING_WINDOW_LONG_DAYS}_ci_high`];
+    const complianceKey = `compliance${USAGE_COMPLIANCE_THRESHOLD_HOURS}_${ROLLING_WINDOW_LONG_DAYS}`;
+    const compliance4_30 = rolling[complianceKey];
     const breakDates = detectUsageBreakpoints(rolling7, rolling30, datesArr);
-    const cpDates = detectChangePoints(hours, datesArr, 8);
+    const cpDates = detectChangePoints(
+      hours,
+      datesArr,
+      USAGE_CHANGEPOINT_PENALTY,
+    );
 
     // Day-of-week weekly heatmap (GitHub-style)
     const toISODate = (d) =>
@@ -100,7 +125,9 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         )
       : yLabels.map(() => []);
     const dowHeatmap = { x: weekStarts, y: yLabels, z };
-    const decomposition = stlDecompose(hours, { seasonLength: STL_SEASON });
+    const decomposition = stlDecompose(hours, {
+      seasonLength: STL_SEASON_LENGTH,
+    });
 
     return {
       dates: datesArr,
@@ -120,16 +147,18 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
   }, [data]);
 
   // Summary stats and adaptive bins for histogram
-  const p25 = quantile(usageHours, 0.25);
-  const median = quantile(usageHours, 0.5);
-  const p75 = quantile(usageHours, 0.75);
+  const p25 = quantile(usageHours, QUARTILE_LOWER);
+  const median = quantile(usageHours, QUARTILE_MEDIAN);
+  const p75 = quantile(usageHours, QUARTILE_UPPER);
   const iqr = p75 - p25;
   const mean = usageHours.reduce((sum, v) => sum + v, 0) / usageHours.length;
-  const binWidth = 2 * iqr * Math.pow(usageHours.length, -1 / 3);
+  const binWidth =
+    FREEDMAN_DIACONIS_FACTOR * iqr * Math.pow(usageHours.length, -1 / 3);
   const range = Math.max(...usageHours) - Math.min(...usageHours);
-  const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
+  const nbins =
+    binWidth > 0 ? Math.ceil(range / binWidth) : HISTOGRAM_FALLBACK_BINS;
 
-  const [maxLag, setMaxLag] = useState(30);
+  const [maxLag, setMaxLag] = useState(DEFAULT_MAX_LAG);
   const lagInputId = useId();
 
   const { acfValues, pacfValues, acfConfidence } = useMemo(() => {
@@ -148,7 +177,8 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       (d) => d.lag > 0,
     );
     const pacf = computePartialAutocorrelation(usageHours, cappedLag).values;
-    const conf = sampleSize > 0 ? 1.96 / Math.sqrt(sampleSize) : NaN;
+    const conf =
+      sampleSize > 0 ? NORMAL_CONFIDENCE_Z / Math.sqrt(sampleSize) : NaN;
     return { acfValues: acf, pacfValues: pacf, acfConfidence: conf };
   }, [usageHours, maxLag]);
 
@@ -157,12 +187,19 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
     if (!Number.isFinite(raw)) {
       return;
     }
-    const clamped = Math.max(1, Math.min(Math.round(raw) || 1, 120));
+    const rounded = Math.round(raw) || MIN_LAG_INPUT;
+    const clamped = Math.max(MIN_LAG_INPUT, Math.min(rounded, MAX_LAG_INPUT));
     setMaxLag(clamped);
   }, []);
 
   const isDark = useEffectiveDarkMode();
-  const { longest_4, longest_6 } = computeAdherenceStreaks(usageHours, [4, 6]);
+  const adherence = computeAdherenceStreaks(usageHours);
+  const longestCompliance =
+    adherence[`longest_${USAGE_COMPLIANCE_THRESHOLD_HOURS}`] ?? 0;
+  const longestStrict =
+    adherence[`longest_${USAGE_STRICT_THRESHOLD_HOURS}`] ?? 0;
+  const shortWindowLabel = `${ROLLING_WINDOW_SHORT_DAYS}-night`;
+  const longWindowLabel = `${ROLLING_WINDOW_LONG_DAYS}-night`;
 
   const handleRelayout = useCallback(
     (ev) => {
@@ -188,31 +225,41 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         }}
       >
         <div>
-          <strong>% nights ≥ 4h:</strong>{' '}
+          <strong>% nights ≥ {USAGE_COMPLIANCE_THRESHOLD_HOURS}h:</strong>{' '}
           {(
-            (usageHours.filter((h) => h >= 4).length / usageHours.length) *
+            (usageHours.filter((h) => h >= USAGE_COMPLIANCE_THRESHOLD_HOURS)
+              .length /
+              usageHours.length) *
             100
           ).toFixed(0)}
           %
         </div>
         <div>
-          <strong>% nights ≥ 6h:</strong>{' '}
+          <strong>% nights ≥ {USAGE_STRICT_THRESHOLD_HOURS}h:</strong>{' '}
           {(
-            (usageHours.filter((h) => h >= 6).length / usageHours.length) *
+            (usageHours.filter((h) => h >= USAGE_STRICT_THRESHOLD_HOURS)
+              .length /
+              usageHours.length) *
             100
           ).toFixed(0)}
           %
         </div>
         <div>
-          <strong>Current 30-night ≥4h:</strong>{' '}
+          <strong>
+            Current {ROLLING_WINDOW_LONG_DAYS}-night ≥
+            {USAGE_COMPLIANCE_THRESHOLD_HOURS}h:
+          </strong>{' '}
           {compliance4_30?.length
             ? compliance4_30[compliance4_30.length - 1].toFixed(0)
             : '—'}
           %
         </div>
         <div>
-          <strong>Longest streak ≥4h/≥6h:</strong> {longest_4 || 0} /{' '}
-          {longest_6 || 0} nights
+          <strong>
+            Longest streak ≥{USAGE_COMPLIANCE_THRESHOLD_HOURS}h/≥
+            {USAGE_STRICT_THRESHOLD_HOURS}h:
+          </strong>{' '}
+          {longestCompliance} / {longestStrict} nights
         </div>
       </div>
       {/* Time-series usage with rolling average, full-width responsive */}
@@ -229,13 +276,13 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               name: 'Usage (hrs)',
               line: { width: 1, color: COLORS.primary },
             },
-            // 7-day CI ribbon (low then high with fill)
+            // Short-window CI ribbon (low then high with fill)
             {
               x: dates,
               y: r7Low,
               type: 'scatter',
               mode: 'lines',
-              name: '7-night Avg CI low',
+              name: `${shortWindowLabel} Avg CI low`,
               line: { width: 0 },
               hoverinfo: 'skip',
               showlegend: false,
@@ -245,7 +292,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               y: r7High,
               type: 'scatter',
               mode: 'lines',
-              name: '7-night Avg CI',
+              name: `${shortWindowLabel} Avg CI`,
               fill: 'tonexty',
               fillcolor: 'rgba(255,127,14,0.15)',
               line: { width: 0 },
@@ -257,16 +304,16 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               y: rolling7,
               type: 'scatter',
               mode: 'lines',
-              name: '7-night Avg',
+              name: `${shortWindowLabel} Avg`,
               line: { dash: 'dash', width: 2, color: COLORS.secondary },
             },
-            // 30-day CI ribbon
+            // Long-window CI ribbon
             {
               x: dates,
               y: r30Low,
               type: 'scatter',
               mode: 'lines',
-              name: '30-night Avg CI low',
+              name: `${longWindowLabel} Avg CI low`,
               line: { width: 0 },
               hoverinfo: 'skip',
               showlegend: false,
@@ -276,7 +323,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               y: r30High,
               type: 'scatter',
               mode: 'lines',
-              name: '30-night Avg CI',
+              name: `${longWindowLabel} Avg CI`,
               fill: 'tonexty',
               fillcolor: 'rgba(44,160,44,0.15)',
               line: { width: 0 },
@@ -288,7 +335,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               y: rolling30,
               type: 'scatter',
               mode: 'lines',
-              name: '30-night Avg',
+              name: `${longWindowLabel} Avg`,
               line: { dash: 'dot', width: 2, color: COLORS.accent },
             },
           ]}
@@ -330,7 +377,9 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             },
           }}
         />
-        <VizHelp text="Nightly CPAP usage hours with 7- and 30-night rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints." />
+        <VizHelp
+          text={`Nightly CPAP usage hours with ${shortWindowLabel} and ${longWindowLabel} rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints.`}
+        />
       </div>
 
       {usageHours.length > 1 ? (
@@ -347,8 +396,8 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
           <input
             id={lagInputId}
             type="number"
-            min={1}
-            max={120}
+            min={MIN_LAG_INPUT}
+            max={MAX_LAG_INPUT}
             step={1}
             value={maxLag}
             onChange={handleLagChange}

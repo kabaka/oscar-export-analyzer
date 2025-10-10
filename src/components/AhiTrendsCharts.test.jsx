@@ -1,11 +1,13 @@
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import AhiTrendsCharts from './AhiTrendsCharts';
+import { AHI_SEVERITY_LIMITS } from '../constants';
+import { buildSummaryRow } from '../test-utils/builders';
 
 const data = [
-  { Date: '2021-01-01', AHI: '1' },
-  { Date: '2021-01-02', AHI: '5' },
-  { Date: '2021-01-03', AHI: '10' },
+  buildSummaryRow({ date: '2021-01-01', ahi: 1 }),
+  buildSummaryRow({ date: '2021-01-02', ahi: 5 }),
+  buildSummaryRow({ date: '2021-01-03', ahi: 10 }),
 ];
 
 describe('AhiTrendsCharts', () => {
@@ -29,19 +31,25 @@ describe('AhiTrendsCharts', () => {
 
   it('computes severity band counts', () => {
     const bandData = [
-      { Date: '2021-01-01', AHI: '2' },
-      { Date: '2021-01-02', AHI: '10' },
-      { Date: '2021-01-03', AHI: '20' },
-      { Date: '2021-01-04', AHI: '40' },
+      buildSummaryRow({ date: '2021-01-01', ahi: 2 }),
+      buildSummaryRow({ date: '2021-01-02', ahi: 10 }),
+      buildSummaryRow({ date: '2021-01-03', ahi: 20 }),
+      buildSummaryRow({ date: '2021-01-04', ahi: 40 }),
     ];
     render(<AhiTrendsCharts data={bandData} />);
+    const severityLabels = {
+      normal: `≤ ${AHI_SEVERITY_LIMITS.normal}`,
+      mild: `${AHI_SEVERITY_LIMITS.normal}–${AHI_SEVERITY_LIMITS.mild}`,
+      moderate: `${AHI_SEVERITY_LIMITS.mild}–${AHI_SEVERITY_LIMITS.moderate}`,
+      severe: `> ${AHI_SEVERITY_LIMITS.moderate}`,
+    };
     const getCount = (label) => {
       const row = screen.getByText(label).closest('tr');
       return within(row).getAllByRole('cell')[1].textContent;
     };
-    expect(getCount('≤ 5')).toBe('1');
-    expect(getCount('5–15')).toBe('1');
-    expect(getCount('15–30')).toBe('1');
-    expect(getCount('> 30')).toBe('1');
+    expect(getCount(severityLabels.normal)).toBe('1');
+    expect(getCount(severityLabels.mild)).toBe('1');
+    expect(getCount(severityLabels.moderate)).toBe('1');
+    expect(getCount(severityLabels.severe)).toBe('1');
   });
 });
