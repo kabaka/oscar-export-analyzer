@@ -6,6 +6,79 @@ import {
 } from '../utils/clustering';
 import { finalizeClusters } from '../utils/analytics';
 
+const toValidDate = (value) => {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value;
+  }
+  if (typeof value === 'number') {
+    const fromNumber = new Date(value);
+    return Number.isNaN(fromNumber.getTime()) ? null : fromNumber;
+  }
+  if (typeof value === 'string' && value) {
+    const fromString = new Date(value);
+    return Number.isNaN(fromString.getTime()) ? null : fromString;
+  }
+  return null;
+};
+
+const normalizeCluster = (cluster) => {
+  if (!cluster) return null;
+  const normalizedEvents = Array.isArray(cluster.events)
+    ? cluster.events
+        .map((evt) => {
+          if (!evt) return null;
+          const date = toValidDate(evt.date);
+          return date ? { ...evt, date } : null;
+        })
+        .filter(Boolean)
+    : cluster.events;
+
+  const start =
+    toValidDate(cluster.start) ||
+    (Array.isArray(normalizedEvents) ? normalizedEvents[0]?.date : null);
+  if (!start) {
+    return null;
+  }
+
+  const end =
+    toValidDate(cluster.end) ||
+    (Array.isArray(normalizedEvents)
+      ? normalizedEvents[normalizedEvents.length - 1]?.date
+      : null) ||
+    start;
+
+  return {
+    ...cluster,
+    start,
+    end,
+    events: Array.isArray(normalizedEvents) ? normalizedEvents : cluster.events,
+  };
+};
+
+const normalizeFalseNegative = (entry) => {
+  if (!entry) return null;
+  const start = toValidDate(entry.start);
+  if (!start) {
+    return null;
+  }
+  const end = toValidDate(entry.end) || start;
+  return {
+    ...entry,
+    start,
+    end,
+  };
+};
+
+const normalizeClusters = (clusters) =>
+  (Array.isArray(clusters) ? clusters : [])
+    .map(normalizeCluster)
+    .filter(Boolean);
+
+const normalizeFalseNegatives = (entries) =>
+  (Array.isArray(entries) ? entries : [])
+    .map(normalizeFalseNegative)
+    .filter(Boolean);
+
 export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
@@ -54,8 +127,10 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
         linkageThresholdSec: clusterParams.linkageThresholdSec,
       });
       const validClusters = finalizeClusters(rawClusters, clusterParams);
-      setApneaClusters(validClusters);
-      setFalseNegatives(detectFalseNegatives(detailsData, fnOptions));
+      setApneaClusters(normalizeClusters(validClusters));
+      setFalseNegatives(
+        normalizeFalseNegatives(detectFalseNegatives(detailsData, fnOptions)),
+      );
       setProcessing(false);
     };
 
@@ -71,8 +146,8 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
         if (cancelled) return;
         const { ok, data, error } = evt.data || {};
         if (ok) {
-          setApneaClusters(data.clusters || []);
-          setFalseNegatives(data.falseNegatives || []);
+          setApneaClusters(normalizeClusters(data.clusters));
+          setFalseNegatives(normalizeFalseNegatives(data.falseNegatives));
           setProcessing(false);
         } else {
           console.warn('Analytics worker error:', error);
