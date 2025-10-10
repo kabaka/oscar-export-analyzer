@@ -50,7 +50,15 @@ export default [
       'react-hooks/exhaustive-deps': 'error',
       'no-unsanitized/method': 'error',
       'no-unsanitized/property': 'error',
-      'no-magic-numbers': 'warn',
+      'no-magic-numbers': [
+        'warn',
+        {
+          ignoreArrayIndexes: true,
+          ignoreDefaultValues: true,
+          ignore: [-1, 0, 1],
+          enforceConst: true,
+        },
+      ],
     },
   },
   {
