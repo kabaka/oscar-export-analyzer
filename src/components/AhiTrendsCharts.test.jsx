@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import AhiTrendsCharts from './AhiTrendsCharts';
 import { AHI_SEVERITY_LIMITS } from '../constants';
+import { DEFAULT_CHART_HEIGHT } from '../constants/charts';
 import { buildSummaryRow } from '../test-utils/builders';
 import { AHI_HELP_TOOLTIP_MIN_COUNT } from '../test-utils/fixtures/chartExpectations.js';
 
@@ -15,6 +16,9 @@ describe('AhiTrendsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
     const { getAllByTestId } = render(<AhiTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
+    expect(getAllByTestId('plotly-chart')[0]).toHaveStyle(
+      `height: ${DEFAULT_CHART_HEIGHT}px`,
+    );
     // Additional autocorrelation charts increase help tooltips count
     expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(
       AHI_HELP_TOOLTIP_MIN_COUNT,

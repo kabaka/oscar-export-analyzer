@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import * as UPC from './UsagePatternsCharts';
+import { DEFAULT_CHART_HEIGHT } from '../constants/charts';
 
 const UsagePatternsCharts = UPC.default;
 
@@ -14,6 +15,9 @@ describe('UsagePatternsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
     render(<UsagePatternsCharts data={data} />);
     expect(screen.getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('plotly-chart')[0]).toHaveStyle(
+      `height: ${DEFAULT_CHART_HEIGHT}px`,
+    );
     // Additional autocorrelation charts increase help tooltips count
     expect(screen.getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(7);
     expect(

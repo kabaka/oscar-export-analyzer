@@ -2,6 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import * as ETC from './EpapTrendsCharts';
 import { EPAP_HELP_TOOLTIP_MIN_COUNT } from '../test-utils/fixtures/chartExpectations.js';
+import { DEFAULT_CHART_HEIGHT } from '../constants/charts';
 
 const EpapTrendsCharts = ETC.default;
 
@@ -14,6 +15,9 @@ describe('EpapTrendsCharts', () => {
   it('renders plotly charts with help tooltips', () => {
     const { getAllByTestId } = render(<EpapTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
+    expect(getAllByTestId('plotly-chart')[0]).toHaveStyle(
+      `height: ${DEFAULT_CHART_HEIGHT}px`,
+    );
     // 5 charts are always present for provided data
     expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(
       EPAP_HELP_TOOLTIP_MIN_COUNT,

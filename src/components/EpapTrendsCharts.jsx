@@ -9,6 +9,7 @@ import {
   runningQuantileXY,
 } from '../utils/stats';
 import { LOESS_SAMPLE_STEPS } from '../constants';
+import { DEFAULT_CHART_HEIGHT } from '../constants/charts';
 
 /**
  * EPAP Analysis Charts: boxplot of nightly median EPAP,
@@ -269,7 +270,7 @@ function EpapTrendsCharts({ data }) {
       <div className="chart-with-help">
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: '300px' }}
+          style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
           data={[
             {
               x: dates,
@@ -317,7 +318,7 @@ function EpapTrendsCharts({ data }) {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 y: epaps,
@@ -345,7 +346,7 @@ function EpapTrendsCharts({ data }) {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: epapAhiPairs.map((p) => p.epap),
@@ -414,7 +415,7 @@ function EpapTrendsCharts({ data }) {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: epapAhiPairs.map((p) => p.epap),
@@ -442,7 +443,7 @@ function EpapTrendsCharts({ data }) {
         >
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 z: corrMatrix.z,
@@ -492,7 +493,7 @@ function EpapTrendsCharts({ data }) {
         >
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 z: corrMatrix.zPartial,
@@ -541,7 +542,7 @@ function EpapTrendsCharts({ data }) {
           <div className="chart-item chart-with-help">
             <ThemedPlot
               useResizeHandler
-              style={{ width: '100%', height: '300px' }}
+              style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
               data={[
                 {
                   x: dates,
@@ -564,7 +565,7 @@ function EpapTrendsCharts({ data }) {
           <div className="chart-item chart-with-help">
             <ThemedPlot
               useResizeHandler
-              style={{ width: '100%', height: '300px' }}
+              style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
               data={[{ x: corrMatrix.leakMed, type: 'histogram', nbinsx: 20 }]}
               layout={{
                 title: 'Leak Median Distribution',
@@ -580,7 +581,7 @@ function EpapTrendsCharts({ data }) {
             <div className="chart-item chart-with-help">
               <ThemedPlot
                 useResizeHandler
-                style={{ width: '100%', height: '300px' }}
+                style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
                 data={[
                   {
                     x: dates,

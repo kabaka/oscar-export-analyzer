@@ -6,6 +6,7 @@ import {
   APNEA_DURATION_HIGH_SEC,
   APNEA_DURATION_THRESHOLD_SEC,
 } from '../../constants';
+import { DEFAULT_CHART_HEIGHT } from '../../constants/charts';
 
 const sampleDetails = [
   {
@@ -40,6 +41,9 @@ describe('ApneaEventStats', () => {
     expect(getByText('Total apnea events')).toBeInTheDocument();
     expect(getByText('Apnea Events per Night')).toBeInTheDocument();
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
+    expect(getAllByTestId('plotly-chart')[0]).toHaveStyle(
+      `height: ${DEFAULT_CHART_HEIGHT}px`,
+    );
     expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(4);
   });
 });

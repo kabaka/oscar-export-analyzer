@@ -1,6 +1,12 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { GuideLink } from './ui';
 import { useData } from '../context/DataContext';
+import {
+  VIRTUAL_TABLE_BUFFER_ROWS,
+  VIRTUAL_TABLE_DEFAULT_HEIGHT,
+  VIRTUAL_TABLE_OVERSCAN_ROWS,
+  VIRTUAL_TABLE_ROW_HEIGHT,
+} from '../constants/charts';
 
 // Lightweight CSV export util for selected rows
 function rowsToCsv(rows, columns) {
@@ -27,13 +33,22 @@ function rowsToCsv(rows, columns) {
 }
 
 // Basic virtualized rows renderer for large datasets (no external deps)
-function VirtualTable({ rows, rowHeight = 28, height = 360, renderRow }) {
+function VirtualTable({
+  rows,
+  rowHeight = VIRTUAL_TABLE_ROW_HEIGHT,
+  height = VIRTUAL_TABLE_DEFAULT_HEIGHT,
+  renderRow,
+}) {
   const containerRef = useRef(null);
   const [scrollTop, setScrollTop] = useState(0);
   const total = rows.length;
   const onScroll = (e) => setScrollTop(e.currentTarget.scrollTop);
-  const visibleCount = Math.ceil(height / rowHeight) + 6; // overscan
-  const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 3);
+  const visibleCount =
+    Math.ceil(height / rowHeight) + VIRTUAL_TABLE_OVERSCAN_ROWS;
+  const start = Math.max(
+    0,
+    Math.floor(scrollTop / rowHeight) - VIRTUAL_TABLE_BUFFER_ROWS,
+  );
   const end = Math.min(total, start + visibleCount);
   const offsetY = start * rowHeight;
   const slice = rows.slice(start, end);
@@ -352,8 +367,8 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
               >
                 <VirtualTable
                   rows={sorted}
-                  rowHeight={28}
-                  height={360}
+                  rowHeight={VIRTUAL_TABLE_ROW_HEIGHT}
+                  height={VIRTUAL_TABLE_DEFAULT_HEIGHT}
                   renderRow={(row, idx) => (
                     <div
                       role="row"
