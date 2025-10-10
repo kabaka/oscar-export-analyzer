@@ -1,11 +1,9 @@
 import React, { Suspense, lazy } from 'react';
-import ErrorBoundary from '../../components/ErrorBoundary';
+import { ErrorBoundary } from '../../components/ui';
 import { useAppContext } from '../../app/AppProviders';
 
-const ApneaEventStats = lazy(() => import('../../components/ApneaEventStats'));
-const ApneaClusterAnalysis = lazy(
-  () => import('../../components/ApneaClusterAnalysis'),
-);
+const ApneaEventStats = lazy(() => import('./ApneaEventStats'));
+const ApneaClusterAnalysis = lazy(() => import('./ApneaClusterAnalysis'));
 
 export default function ApneaClustersSection() {
   const {

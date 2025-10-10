@@ -16,9 +16,11 @@ framework abstractions. This section peels back the layers so you can orient you
 3. **Context Store** – `AppProviders` wraps the tree with `DataProvider` to expose parsed rows and filtered subsets via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.
-4. **Visualization Components** – Each feature view now lives under `src/features/<feature>/Section.jsx`. Most sections
-   delegate to components in `src/components` that render a `ThemedPlot`, a thin wrapper around `react-plotly.js` that
-   applies our light or dark palette and enforces responsive sizing.
+4. **Visualization Components** – Each feature now lives in `src/features/<feature>/`, which bundles the `Section`
+   container, local components, and colocated tests. The directory exposes a public API through `index.js` so the rest of
+   the app imports `import { OverviewSection } from '@features/overview'` style entry points. Sections pull shared
+   primitives (cards, modals, themed charts, etc.) from `src/components/ui`, keeping feature modules focused on
+   domain-specific behavior while UI atoms stay reusable.
 5. **Workers for Heavy Lifting** – Beyond CSV parsing, dedicated workers perform computationally expensive tasks such as
    k‑means clustering of apnea events and detection of likely false negatives. Offloading work keeps the UI snappy even
    with multi‑year datasets.
@@ -30,10 +32,12 @@ feature sections together. Sidebar links still set an "active view" state, but t
 feature modules so `AppShell` stays thin. This keeps the bundle small without introducing a routing library for what is
 still a tabbed interface.
 
-Feature sections handle their own controls (for example the range comparison date pickers) and pull data from
-`AppProviders` via `useAppContext`. Presentational pieces still live in `src/components`; they accept data and
-configuration via props and delegate calculations to helper modules in `src/utils`. For example, `AhiTrendsCharts` calls
-`stats.js` functions to compute rolling averages while the component itself focuses on layout and axis labels.
+Feature directories encapsulate their logic: `src/features/overview/` hosts the dashboard cards and tests, while
+`src/features/apnea-clusters/` contains both the cluster analysis view and the reusable parameter metadata it exports for
+tests. Shared primitives (buttons, cards, modals, themed Plotly wrappers, etc.) now live under `src/components/ui/` with
+an `index.js` barrel so consumers can `import { DocsModal, ThemeToggle } from '@ui'`. Higher-level analytics widgets such
+as `UsagePatternsCharts` remain in `src/components/`, but they depend on UI atoms through that barrel, keeping imports
+consistent across the codebase.
 
 An `ErrorBoundary` from `react-error-boundary` wraps most charts. Should a render error occur—perhaps due to malformed
 data or a Plotly regression—the boundary displays a friendly message rather than crashing the entire app. The error is

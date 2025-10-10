@@ -49,14 +49,23 @@ vi.mock('./components/UsagePatternsCharts', () => ({
   default: () => null,
 }));
 
-vi.mock('./components/DocsModal', () => ({
+vi.mock('./components/ui', () => ({
   __esModule: true,
-  default: () => null,
-}));
-
-vi.mock('./components/DataImportModal', () => ({
-  __esModule: true,
-  default: () => null,
+  DataImportModal: () => null,
+  DocsModal: () => null,
+  ThemeToggle: () => null,
+  GuideLink: () => null,
+  ErrorBoundary: ({ children }) => children,
+  KPICard: ({ children, title, value }) => (
+    <div data-testid="kpi-card">
+      <span>{title}</span>
+      <span>{value}</span>
+      {children}
+    </div>
+  ),
+  ParamInput: () => null,
+  ThemedPlot: () => null,
+  VizHelp: () => null,
 }));
 
 describe('App analytics worker integration', () => {

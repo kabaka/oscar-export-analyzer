@@ -12,8 +12,7 @@ import {
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import ThemedPlot from './ThemedPlot';
-import VizHelp from './VizHelp';
+import { ThemedPlot, VizHelp } from './ui';
 
 const STL_SEASON = 7;
 

@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import DOMPurify from 'dompurify';
 
-const DOCS = import.meta.glob('../../docs/user/*.md', {
+const DOCS = import.meta.glob('../../../docs/user/*.md', {
   query: '?raw',
   import: 'default',
 });

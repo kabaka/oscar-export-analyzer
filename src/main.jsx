@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import ErrorBoundary from './components/ErrorBoundary.jsx';
+import { ErrorBoundary } from './components/ui';
 import { AppProviders } from './app/AppProviders.jsx';
 import { AppShell } from './App.jsx';
 

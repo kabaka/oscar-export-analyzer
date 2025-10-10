@@ -1,15 +1,13 @@
 import React, { useEffect, useMemo } from 'react';
-import ThemeToggle from './components/ThemeToggle';
 import HeaderMenu from './components/HeaderMenu';
 import DateRangeControls from './components/DateRangeControls';
-import DataImportModal from './components/DataImportModal';
-import DocsModal from './components/DocsModal';
+import { DataImportModal, DocsModal, ThemeToggle } from './components/ui';
 import AppLayout from './app/AppLayout';
 import { useAppContext } from './app/AppProviders';
-import OverviewSection from './features/overview/Section';
+import { OverviewSection } from './features/overview';
 import AnalyticsSection from './features/analytics/Section';
-import RangeComparisonsSection from './features/range-comparisons/Section';
-import ApneaClustersSection from './features/apnea-clusters/Section';
+import { RangeComparisonsSection } from './features/range-comparisons';
+import { ApneaClustersSection } from './features/apnea-clusters';
 import FalseNegativesSection from './features/false-negatives/Section';
 import RawExplorerSection from './features/raw-explorer/Section';
 

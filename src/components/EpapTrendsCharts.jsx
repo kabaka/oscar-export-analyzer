@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import VizHelp from './VizHelp';
-import ThemedPlot from './ThemedPlot';
+import { ThemedPlot, VizHelp } from './ui';
 import {
   mannWhitneyUTest,
   pearson,

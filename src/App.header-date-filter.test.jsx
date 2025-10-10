@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { AppProviders } from './app/AppProviders';
 import { AppShell } from './App';
-import ErrorBoundary from './components/ErrorBoundary';
+import { ErrorBoundary } from './components/ui';
 
 describe('Header date filter', () => {
   it('renders date inputs and presets inside the header', () => {

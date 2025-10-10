@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import RangeComparisons from './RangeComparisons';
-import { DataProvider } from '../context/DataContext';
+import { DataProvider } from '../../context/DataContext';
 
 const summary = [
   { Date: '2024-01-01', 'Total Time': '01:00:00', AHI: '2' },

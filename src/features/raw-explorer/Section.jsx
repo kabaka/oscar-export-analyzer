@@ -1,5 +1,5 @@
 import React from 'react';
-import ErrorBoundary from '../../components/ErrorBoundary';
+import { ErrorBoundary } from '../../components/ui';
 import RawDataExplorer from '../../components/RawDataExplorer';
 import { useAppContext } from '../../app/AppProviders';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import ApneaEventStats from './ApneaEventStats';
-import { DataProvider } from '../context/DataContext';
+import { DataProvider } from '../../context/DataContext';
 
 const sampleDetails = [
   {
