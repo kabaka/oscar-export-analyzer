@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as ACA from './ApneaClusterAnalysis.jsx';
-import { CLUSTER_ALGORITHMS } from '../utils/clustering';
+import * as ACA from './ApneaClusterAnalysis';
+import { CLUSTER_ALGORITHMS } from '../../utils/clustering';
 
 const ApneaClusterAnalysis = ACA.default;
 

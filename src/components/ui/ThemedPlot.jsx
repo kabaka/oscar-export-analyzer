@@ -1,7 +1,7 @@
 import React from 'react';
 import Plot from 'react-plotly.js';
-import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
-import { applyChartTheme } from '../utils/chartTheme';
+import { useEffectiveDarkMode } from '../../hooks/useEffectiveDarkMode';
+import { applyChartTheme } from '../../utils/chartTheme';
 
 export default function ThemedPlot({ layout, ...props }) {
   const isDark = useEffectiveDarkMode();

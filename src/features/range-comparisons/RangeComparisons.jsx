@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
-import { parseDuration, mannWhitneyUTest } from '../utils/stats';
-import { useData } from '../context/DataContext';
+import { parseDuration, mannWhitneyUTest } from '../../utils/stats';
+import { useData } from '../../context/DataContext';
 
 /**
  * Compare usage hours and AHI across two date ranges.

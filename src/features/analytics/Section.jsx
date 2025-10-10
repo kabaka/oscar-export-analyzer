@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import ErrorBoundary from '../../components/ErrorBoundary';
+import { ErrorBoundary } from '../../components/ui';
 import { useAppContext } from '../../app/AppProviders';
 
 const SummaryAnalysis = lazy(() => import('../../components/SummaryAnalysis'));

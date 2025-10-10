@@ -3,11 +3,13 @@ import {
   clustersToCsv,
   CLUSTER_ALGORITHMS,
   DEFAULT_CLUSTER_ALGORITHM,
-} from '../utils/clustering';
-import ThemedPlot from './ThemedPlot';
-import GuideLink from './GuideLink';
-import VizHelp from './VizHelp';
-import ParamInput from './ParamInput';
+} from '../../utils/clustering';
+import {
+  GuideLink,
+  ParamInput,
+  ThemedPlot,
+  VizHelp,
+} from '../../components/ui';
 
 const SHARED_PARAM_FIELDS = [
   {

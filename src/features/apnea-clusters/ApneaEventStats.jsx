@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react';
-import { computeApneaEventStats, kmSurvival } from '../utils/stats';
-import { useData } from '../context/DataContext';
-import ThemedPlot from './ThemedPlot';
-import VizHelp from './VizHelp';
-import GuideLink from './GuideLink';
+import { computeApneaEventStats, kmSurvival } from '../../utils/stats';
+import { useData } from '../../context/DataContext';
+import { GuideLink, ThemedPlot, VizHelp } from '../../components/ui';
 
 /**
  * Displays statistics and charts for individual apnea event durations

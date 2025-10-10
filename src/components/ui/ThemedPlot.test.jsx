@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { vi } from 'vitest';
 import Plot from 'react-plotly.js';
-import * as darkHook from '../hooks/useEffectiveDarkMode';
+import * as darkHook from '../../hooks/useEffectiveDarkMode';
 import ThemedPlot from './ThemedPlot';
 
 describe('ThemedPlot', () => {

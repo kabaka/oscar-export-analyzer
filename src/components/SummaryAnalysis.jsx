@@ -2,7 +2,7 @@ import React from 'react';
 import UsagePatternsCharts from './UsagePatternsCharts';
 import AhiTrendsCharts from './AhiTrendsCharts';
 import EpapTrendsCharts from './EpapTrendsCharts';
-import GuideLink from './GuideLink';
+import { GuideLink } from './ui';
 import {
   summarizeUsage,
   computeAHITrends,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { getLastSession } from '../utils/db';
+import { getLastSession } from '../../utils/db';
 
 export default function DataImportModal({
   isOpen,

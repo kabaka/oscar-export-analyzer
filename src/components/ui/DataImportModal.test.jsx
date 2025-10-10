@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import DataImportModal from './DataImportModal.jsx';
 
-vi.mock('../utils/db', () => ({
+vi.mock('../../utils/db', () => ({
   getLastSession: vi.fn(async () => ({})),
 }));
 

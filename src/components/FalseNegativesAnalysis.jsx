@@ -1,8 +1,6 @@
 import React from 'react';
 import { FALSE_NEG_CONFIDENCE_MIN } from '../utils/clustering';
-import GuideLink from './GuideLink';
-import VizHelp from './VizHelp';
-import ThemedPlot from './ThemedPlot';
+import { GuideLink, ThemedPlot, VizHelp } from './ui';
 
 function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import Overview from '../../components/Overview';
+import Overview from './Overview';
 import { useAppContext } from '../../app/AppProviders';
 
 export default function OverviewSection() {

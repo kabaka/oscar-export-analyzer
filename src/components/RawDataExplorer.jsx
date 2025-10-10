@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import GuideLink from './GuideLink';
+import { GuideLink } from './ui';
 import { useData } from '../context/DataContext';
 
 // Lightweight CSV export util for selected rows

@@ -10,8 +10,7 @@ import {
   computePartialAutocorrelation,
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
-import ThemedPlot from './ThemedPlot';
-import VizHelp from './VizHelp';
+import { ThemedPlot, VizHelp } from './ui';
 
 const STL_SEASON = 7;
 

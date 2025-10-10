@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
-import ErrorBoundary from '../../components/ErrorBoundary';
-import RangeComparisons from '../../components/RangeComparisons';
-import GuideLink from '../../components/GuideLink';
+import { ErrorBoundary, GuideLink } from '../../components/ui';
+import RangeComparisons from './RangeComparisons';
 import { useAppContext } from '../../app/AppProviders';
 
 export default function RangeComparisonsSection() {

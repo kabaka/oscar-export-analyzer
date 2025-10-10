@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import ThemeToggle from './ThemeToggle';
-import { DataProvider } from '../context/DataContext';
+import { DataProvider } from '../../context/DataContext';
 
 describe('ThemeToggle', () => {
   beforeEach(() => {

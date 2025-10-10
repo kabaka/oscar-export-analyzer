@@ -3,11 +3,10 @@ import {
   summarizeUsage,
   computeAHITrends,
   computeEPAPTrends,
-} from '../utils/stats';
+} from '../../utils/stats';
+import { GuideLink, KPICard } from '../../components/ui';
 import MetricGrid from './MetricGrid';
-import GuideLink from './GuideLink';
-import KPICard from './KPICard';
-import { useData } from '../context/DataContext';
+import { useData } from '../../context/DataContext';
 
 /**
  * Sparkline chart for a series of numeric data points.
