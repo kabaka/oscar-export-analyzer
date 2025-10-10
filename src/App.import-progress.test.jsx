@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppProviders } from './app/AppProviders';
 import { AppShell } from './App';
+import { HEADER_IMPORT_COMPLETION_DELAY_MS } from './test-utils/fixtures/timings.js';
 
 describe('Header import progress', () => {
   const OriginalWorker = global.Worker;
@@ -16,7 +17,7 @@ describe('Header import progress', () => {
         setTimeout(() => {
           this.onmessage?.({ data: { type: 'rows', rows: [], cursor: 50 } });
           this.onmessage?.({ data: { type: 'complete' } });
-        }, 500);
+        }, HEADER_IMPORT_COMPLETION_DELAY_MS);
       }
       terminate() {}
     }

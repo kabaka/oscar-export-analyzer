@@ -1,0 +1,2 @@
+export const AHI_HELP_TOOLTIP_MIN_COUNT = 8;
+export const EPAP_HELP_TOOLTIP_MIN_COUNT = 5;

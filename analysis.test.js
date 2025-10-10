@@ -7,6 +7,7 @@ import {
   APOEA_CLUSTER_MIN_TOTAL_SEC,
   MAX_CLUSTER_DURATION_SEC,
 } from './src/utils/clustering.js';
+import { MIN_VALID_CLUSTER_EVENT_COUNT } from './src/test-utils/fixtures/clustering.js';
 
 const { run } = analysis;
 
@@ -46,7 +47,7 @@ describe('analysis CLI clustering', () => {
     const expected = clusters.filter((c) => {
       const totalEventDur = c.events.reduce((sum, e) => sum + e.durationSec, 0);
       return (
-        c.count >= 3 &&
+        c.count >= MIN_VALID_CLUSTER_EVENT_COUNT &&
         totalEventDur >= APOEA_CLUSTER_MIN_TOTAL_SEC &&
         c.durationSec <= MAX_CLUSTER_DURATION_SEC
       );

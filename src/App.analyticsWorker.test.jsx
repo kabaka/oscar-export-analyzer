@@ -1,5 +1,10 @@
 import { render, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
+import {
+  buildAnalyticsWorkerMessage,
+  EXPECTED_ANALYTICS_CLUSTER_COUNT,
+  EXPECTED_NORMALIZED_FALSE_NEGATIVE_COUNT,
+} from './test-utils/fixtures/clustering.js';
 
 const summaryData = [{ Date: '2025-06-01', 'Total Time': '08:00:00' }];
 const detailsData = [
@@ -172,60 +177,9 @@ describe('App analytics worker integration', () => {
       postMessage() {
         if (this.url.includes('analytics.worker')) {
           setTimeout(() => {
+            const analyticsWorkerMessage = buildAnalyticsWorkerMessage();
             this.onmessage?.({
-              data: {
-                ok: true,
-                data: {
-                  clusters: [
-                    {
-                      id: 'cluster-2',
-                      count: 1,
-                      severity: 0.2,
-                      start: '2025-06-01T00:00:00Z',
-                      end: 1759353600000,
-                      events: [
-                        {
-                          date: '2025-06-01T00:00:00Z',
-                          durationSec: 45,
-                        },
-                      ],
-                    },
-                    {
-                      id: 'cluster-without-start',
-                      count: 2,
-                      severity: 0.4,
-                      events: [
-                        {
-                          date: '2025-06-02T00:00:00Z',
-                          durationSec: 30,
-                        },
-                        {
-                          date: '2025-06-02T00:05:00Z',
-                          durationSec: 20,
-                        },
-                      ],
-                    },
-                  ],
-                  falseNegatives: [
-                    {
-                      start: '2025-06-03T00:00:00Z',
-                      end: 'invalid',
-                      durationSec: 60,
-                      confidence: 0.5,
-                    },
-                    {
-                      start: 1759436400000,
-                      durationSec: 40,
-                      confidence: 0.6,
-                    },
-                    {
-                      start: null,
-                      durationSec: 10,
-                      confidence: 0.2,
-                    },
-                  ],
-                },
-              },
+              data: analyticsWorkerMessage,
             });
           }, 0);
         }
@@ -246,7 +200,9 @@ describe('App analytics worker integration', () => {
     );
 
     await waitFor(() => {
-      expect(latestClustersProps?.clusters?.length).toBe(2);
+      expect(latestClustersProps?.clusters?.length).toBe(
+        EXPECTED_ANALYTICS_CLUSTER_COUNT,
+      );
     });
 
     const [first, second] = latestClustersProps.clusters;
@@ -258,7 +214,9 @@ describe('App analytics worker integration', () => {
     expect(second.events[0].date).toBeInstanceOf(Date);
 
     await waitFor(() => {
-      expect(latestFalseNegativesProps?.list?.length).toBe(2);
+      expect(latestFalseNegativesProps?.list?.length).toBe(
+        EXPECTED_NORMALIZED_FALSE_NEGATIVE_COUNT,
+      );
     });
 
     for (const entry of latestFalseNegativesProps.list) {

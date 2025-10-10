@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import AhiTrendsCharts from './AhiTrendsCharts';
 import { AHI_SEVERITY_LIMITS } from '../constants';
 import { buildSummaryRow } from '../test-utils/builders';
+import { AHI_HELP_TOOLTIP_MIN_COUNT } from '../test-utils/fixtures/chartExpectations.js';
 
 const data = [
   buildSummaryRow({ date: '2021-01-01', ahi: 1 }),
@@ -15,7 +16,9 @@ describe('AhiTrendsCharts', () => {
     const { getAllByTestId } = render(<AhiTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
     // Additional autocorrelation charts increase help tooltips count
-    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(8);
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(
+      AHI_HELP_TOOLTIP_MIN_COUNT,
+    );
     expect(
       screen.getByText(
         /Trend\/Seasonal\/Residual view shows the STL decomposition/i,
