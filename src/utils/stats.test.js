@@ -1,26 +1,44 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseDuration,
-  quantile,
-  computeApneaEventStats,
-  summarizeUsage,
   computeAHITrends,
-  computeEPAPTrends,
-  stlDecompose,
+  computeApneaEventStats,
   computeAutocorrelation,
+  computeEPAPTrends,
   computePartialAutocorrelation,
-} from './stats';
-import { computeUsageRolling } from './stats';
-import { mannWhitneyUTest } from './stats';
-import { detectChangePoints } from './stats';
-import {
+  computeUsageRolling,
+  detectChangePoints,
+  kmSurvival,
   loessSmooth,
-  runningQuantileXY,
+  mannWhitneyUTest,
+  normalCdf,
+  normalQuantile,
+  parseDuration,
   partialCorrelation,
   pearson,
+  quantile,
+  runningQuantileXY,
+  stlDecompose,
+  summarizeUsage,
 } from './stats';
-import { kmSurvival } from './stats';
-import { normalQuantile, normalCdf } from './stats';
+import {
+  AHI_SEVERITY_LIMITS,
+  APNEA_DURATION_HIGH_SEC,
+  APNEA_DURATION_THRESHOLD_SEC,
+  EPAP_SPLIT_THRESHOLD,
+  IQR_OUTLIER_MULTIPLIER,
+  PERCENTILE_95TH,
+  QUARTILE_LOWER,
+  QUARTILE_MEDIAN,
+  QUARTILE_UPPER,
+  TREND_WINDOW_DAYS,
+  USAGE_COMPLIANCE_THRESHOLD_HOURS,
+  USAGE_STRICT_THRESHOLD_HOURS,
+} from '../constants';
+import {
+  buildApneaDetail,
+  buildSummaryRow,
+  buildTrendWindowSequence,
+} from '../test-utils/builders';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -337,16 +355,12 @@ describe('normalQuantile', () => {
 describe('computeApneaEventStats', () => {
   it('computes duration and night statistics', () => {
     const details = [
-      {
-        Event: 'ClearAirway',
-        'Data/Duration': '30',
-        DateTime: '2021-01-01T00:00:00Z',
-      },
-      {
-        Event: 'Obstructive',
-        'Data/Duration': '60',
-        DateTime: '2021-01-01T00:02:00Z',
-      },
+      buildApneaDetail(),
+      buildApneaDetail({
+        event: 'Obstructive',
+        durationSec: APNEA_DURATION_HIGH_SEC,
+        dateTime: '2021-01-01T00:02:00Z',
+      }),
       {
         Event: 'FLG',
         'Data/Duration': '1.0',
@@ -355,7 +369,10 @@ describe('computeApneaEventStats', () => {
     ];
     const stats = computeApneaEventStats(details);
     expect(stats.totalEvents).toBe(2);
-    expect(stats.durations).toEqual([30, 60]);
+    expect(stats.durations).toEqual([
+      APNEA_DURATION_THRESHOLD_SEC,
+      APNEA_DURATION_HIGH_SEC,
+    ]);
     expect(stats.medianDur).toBe(45);
     expect(stats.iqrDur).toBeCloseTo(15);
     expect(stats.nightDates).toEqual(['2021-01-01']);
@@ -365,7 +382,10 @@ describe('computeApneaEventStats', () => {
 
 describe('summarizeUsage', () => {
   it('summarizes usage hours and outliers', () => {
-    const data = [{ 'Total Time': '1:00:00' }, { 'Total Time': '3:00:00' }];
+    const data = [
+      buildSummaryRow({ totalTime: '1:00:00' }),
+      buildSummaryRow({ totalTime: '3:00:00' }),
+    ];
     const usage = summarizeUsage(data);
     expect(usage.totalNights).toBe(2);
     expect(usage.validNights).toBe(2);
@@ -379,9 +399,9 @@ describe('summarizeUsage', () => {
 
   it('ignores invalid total time values when computing averages', () => {
     const data = [
-      { 'Total Time': '01:30:00' },
-      { 'Total Time': 'bad' },
-      { 'Total Time': null },
+      buildSummaryRow({ totalTime: '01:30:00' }),
+      buildSummaryRow({ totalTime: 'bad' }),
+      buildSummaryRow({ totalTime: null }),
     ];
     const usage = summarizeUsage(data);
     expect(usage.totalNights).toBe(3);
@@ -406,14 +426,17 @@ describe('summarizeUsage', () => {
 describe('computeAHITrends', () => {
   it('calculates AHI statistics and trends', () => {
     const data = [
-      { Date: '2021-01-01', AHI: '1' },
-      { Date: '2021-01-02', AHI: '5' },
-      { Date: '2021-01-03', AHI: '10' },
+      buildSummaryRow({ date: '2021-01-01', ahi: 1 }),
+      buildSummaryRow({ date: '2021-01-02', ahi: AHI_SEVERITY_LIMITS.normal }),
+      buildSummaryRow({ date: '2021-01-03', ahi: 10 }),
     ];
     const ahi = computeAHITrends(data);
     expect(ahi.avgAHI).toBeCloseTo((1 + 5 + 10) / 3);
     expect(ahi.medianAHI).toBe(5);
-    expect(ahi.nightsAHIover5).toBe(1);
+    const expectedOverNormal = data.filter(
+      (row) => Number(row.AHI) > AHI_SEVERITY_LIMITS.normal,
+    ).length;
+    expect(ahi.nightsAHIover5).toBe(expectedOverNormal);
     expect(ahi.first30AvgAHI).toBeCloseTo(ahi.avgAHI);
     expect(ahi.last30AvgAHI).toBeCloseTo(ahi.avgAHI);
   });
@@ -429,16 +452,22 @@ describe('computeAHITrends', () => {
 describe('computeEPAPTrends', () => {
   it('computes EPAP percentiles, correlation with AHI, and group means', () => {
     const data = [
-      { Date: '2021-01-01', 'Median EPAP': '5', AHI: '1' },
-      { Date: '2021-01-02', 'Median EPAP': '9', AHI: '3' },
+      buildSummaryRow({ date: '2021-01-01', medianEPAP: 5, ahi: 1 }),
+      buildSummaryRow({ date: '2021-01-02', medianEPAP: 9, ahi: 3 }),
     ];
     const epap = computeEPAPTrends(data);
     expect(epap.medianEPAP).toBe(7);
     expect(epap.iqrEPAP).toBe(2);
     // correlation of points (5,1) and (9,3) is 1
     expect(epap.corrEPAPAHI).toBeCloseTo(1);
-    expect(epap.countLow).toBe(1);
-    expect(epap.countHigh).toBe(1);
+    const expectedLow = data.filter(
+      (row) => Number(row['Median EPAP']) < EPAP_SPLIT_THRESHOLD,
+    );
+    const expectedHigh = data.filter(
+      (row) => Number(row['Median EPAP']) >= EPAP_SPLIT_THRESHOLD,
+    );
+    expect(epap.countLow).toBe(expectedLow.length);
+    expect(epap.countHigh).toBe(expectedHigh.length);
     expect(epap.avgAHILow).toBe(1);
     expect(epap.avgAHIHigh).toBe(3);
   });

@@ -1,3 +1,28 @@
+import {
+  AHI_SEVERITY_LIMITS,
+  APNEA_DURATION_HIGH_SEC,
+  APNEA_DURATION_THRESHOLD_SEC,
+  BREAKPOINT_MIN_DELTA,
+  CHANGEPOINT_PENALTY,
+  DEFAULT_MAX_LAG,
+  DEFAULT_ROLLING_WINDOWS,
+  EPAP_SPLIT_THRESHOLD,
+  FREEDMAN_DIACONIS_FACTOR,
+  HISTOGRAM_FALLBACK_BINS,
+  HIGH_CENTRAL_APNEA_FRACTION,
+  IQR_OUTLIER_MULTIPLIER,
+  NORMAL_CONFIDENCE_Z,
+  NUMERIC_TOLERANCE,
+  PERCENTILE_95TH,
+  QUARTILE_LOWER,
+  QUARTILE_MEDIAN,
+  QUARTILE_UPPER,
+  STL_SEASON_LENGTH,
+  TREND_WINDOW_DAYS,
+  USAGE_COMPLIANCE_THRESHOLD_HOURS,
+  USAGE_STRICT_THRESHOLD_HOURS,
+} from '../constants';
+
 /**
  * Utility functions for data parsing and statistical summaries.
  */
@@ -68,7 +93,7 @@ export function quantile(arr, q) {
  * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute.
  * @returns {{ values: Array<{ lag: number, autocorrelation: number, pairs: number }>, sampleSize: number }}
  */
-export function computeAutocorrelation(series, maxLag = 30) {
+export function computeAutocorrelation(series, maxLag = DEFAULT_MAX_LAG) {
   if (!Array.isArray(series) || !series.length) {
     return { values: [], sampleSize: 0 };
   }
@@ -114,7 +139,10 @@ export function computeAutocorrelation(series, maxLag = 30) {
  * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute.
  * @returns {{ values: Array<{ lag: number, partialAutocorrelation: number }>, sampleSize: number }}
  */
-export function computePartialAutocorrelation(series, maxLag = 30) {
+export function computePartialAutocorrelation(
+  series,
+  maxLag = DEFAULT_MAX_LAG,
+) {
   if (!Array.isArray(series) || !series.length) {
     return { values: [], sampleSize: 0 };
   }
@@ -142,7 +170,7 @@ export function computePartialAutocorrelation(series, maxLag = 30) {
           pivot = r;
         }
       }
-      if (Math.abs(augmented[pivot][i]) < 1e-12) {
+      if (Math.abs(augmented[pivot][i]) < NUMERIC_TOLERANCE) {
         return null;
       }
       if (pivot !== i) {
@@ -308,7 +336,7 @@ export function stlDecompose(series, opts = {}) {
     return { trend: [v], seasonal: [0], residual: [0] };
   }
 
-  const { seasonLength = 7 } = opts;
+  const { seasonLength = STL_SEASON_LENGTH } = opts;
   const baseline =
     finiteVals.reduce((sum, v) => sum + v, 0) / finiteVals.length;
   const effectiveSeason = Math.max(
@@ -379,16 +407,20 @@ export function computeApneaEventStats(details) {
   if (totalEvents === 0) {
     return { durations, totalEvents };
   }
-  const p25Dur = quantile(durations, 0.25);
-  const medianDur = quantile(durations, 0.5);
-  const p75Dur = quantile(durations, 0.75);
+  const p25Dur = quantile(durations, QUARTILE_LOWER);
+  const medianDur = quantile(durations, QUARTILE_MEDIAN);
+  const p75Dur = quantile(durations, QUARTILE_UPPER);
   const iqrDur = p75Dur - p25Dur;
-  const p95Dur = quantile(durations, 0.95);
+  const p95Dur = quantile(durations, PERCENTILE_95TH);
   const maxDur = Math.max(...durations);
-  const countOver30 = durations.filter((v) => v > 30).length;
-  const countOver60 = durations.filter((v) => v > 60).length;
+  const countOver30 = durations.filter(
+    (v) => v > APNEA_DURATION_THRESHOLD_SEC,
+  ).length;
+  const countOver60 = durations.filter(
+    (v) => v > APNEA_DURATION_HIGH_SEC,
+  ).length;
   const countOutlierEvents = durations.filter(
-    (v) => v >= p75Dur + 1.5 * iqrDur,
+    (v) => v >= p75Dur + IQR_OUTLIER_MULTIPLIER * iqrDur,
   ).length;
 
   // Compute events per night
@@ -407,18 +439,18 @@ export function computeApneaEventStats(details) {
     p75Night = 0,
     iqrNight = 0;
   if (eventsPerNight.length) {
-    p25Night = quantile(eventsPerNight, 0.25);
-    medianNight = quantile(eventsPerNight, 0.5);
-    p75Night = quantile(eventsPerNight, 0.75);
+    p25Night = quantile(eventsPerNight, QUARTILE_LOWER);
+    medianNight = quantile(eventsPerNight, QUARTILE_MEDIAN);
+    p75Night = quantile(eventsPerNight, QUARTILE_UPPER);
     iqrNight = p75Night - p25Night;
   }
   const minNight = eventsPerNight.length ? Math.min(...eventsPerNight) : 0;
   const maxNight = eventsPerNight.length ? Math.max(...eventsPerNight) : 0;
   const outlierNightHigh = eventsPerNight.filter(
-    (v) => v >= p75Night + 1.5 * iqrNight,
+    (v) => v >= p75Night + IQR_OUTLIER_MULTIPLIER * iqrNight,
   ).length;
   const outlierNightLow = eventsPerNight.filter(
-    (v) => v <= p25Night - 1.5 * iqrNight,
+    (v) => v <= p25Night - IQR_OUTLIER_MULTIPLIER * iqrNight,
   ).length;
 
   return {
@@ -462,9 +494,15 @@ export function summarizeUsage(data) {
   const validNights = usageHours.length;
   const sumHours = usageHours.reduce((sum, h) => sum + h, 0);
   const avgHours = validNights ? sumHours / validNights : NaN;
-  const nightsLong = usageHours.filter((h) => h >= 4).length;
-  const nightsLong6 = usageHours.filter((h) => h >= 6).length;
-  const nightsShort = usageHours.filter((h) => h < 4).length;
+  const nightsLong = usageHours.filter(
+    (h) => h >= USAGE_COMPLIANCE_THRESHOLD_HOURS,
+  ).length;
+  const nightsLong6 = usageHours.filter(
+    (h) => h >= USAGE_STRICT_THRESHOLD_HOURS,
+  ).length;
+  const nightsShort = usageHours.filter(
+    (h) => h < USAGE_COMPLIANCE_THRESHOLD_HOURS,
+  ).length;
   let minHours = NaN,
     maxHours = NaN,
     medianHours = NaN,
@@ -476,15 +514,15 @@ export function summarizeUsage(data) {
   if (usageHours.length) {
     minHours = Math.min(...usageHours);
     maxHours = Math.max(...usageHours);
-    medianHours = quantile(usageHours, 0.5);
-    p25Hours = quantile(usageHours, 0.25);
-    p75Hours = quantile(usageHours, 0.75);
+    medianHours = quantile(usageHours, QUARTILE_MEDIAN);
+    p25Hours = quantile(usageHours, QUARTILE_LOWER);
+    p75Hours = quantile(usageHours, QUARTILE_UPPER);
     iqrHours = p75Hours - p25Hours;
     outlierLowCount = usageHours.filter(
-      (h) => h < p25Hours - 1.5 * iqrHours,
+      (h) => h < p25Hours - IQR_OUTLIER_MULTIPLIER * iqrHours,
     ).length;
     outlierHighCount = usageHours.filter(
-      (h) => h > p75Hours + 1.5 * iqrHours,
+      (h) => h > p75Hours + IQR_OUTLIER_MULTIPLIER * iqrHours,
     ).length;
   }
   return {
@@ -508,7 +546,11 @@ export function summarizeUsage(data) {
 }
 
 // Compute rolling averages and compliance metrics for usage hours
-export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
+export function computeUsageRolling(
+  dates,
+  usageHours,
+  windows = DEFAULT_ROLLING_WINDOWS,
+) {
   // Date-aware rolling windows by last w calendar days (inclusive).
   // Also compute normal-approx CI for mean and distribution-free CI for median.
   const n = usageHours.length;
@@ -536,7 +578,7 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
       windowVals.push(val);
       sum += val || 0;
       sumsq += (val || 0) * (val || 0);
-      if (val >= 4) cnt4 += 1;
+      if (val >= USAGE_COMPLIANCE_THRESHOLD_HOURS) cnt4 += 1;
     };
     const remove = (val) => {
       // remove one occurrence from windowVals
@@ -544,7 +586,7 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
       if (idx !== -1) windowVals.splice(idx, 1);
       sum -= val || 0;
       sumsq -= (val || 0) * (val || 0);
-      if (val >= 4) cnt4 -= 1;
+      if (val >= USAGE_COMPLIANCE_THRESHOLD_HOURS) cnt4 -= 1;
     };
 
     for (let i = 0; i < n; i++) {
@@ -560,13 +602,13 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
       if (len > 0) {
         const m = sum / len;
         avg[i] = m;
-        // mean CI via normal approx: m ± 1.96 * s/√n
+        // mean CI via normal approx: m ± z * s/√n
         const variance = Math.max(
           0,
           (sumsq - (sum * sum) / len) / Math.max(1, len - 1),
         );
         const se = Math.sqrt(variance) / Math.sqrt(len);
-        const z = 1.96;
+        const z = NORMAL_CONFIDENCE_Z;
         avg_ci_low[i] = m - z * se;
         avg_ci_high[i] = m + z * se;
         comp4[i] = (cnt4 / len) * 100;
@@ -577,10 +619,16 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
         median[i] =
           len % 2 === 1 ? sorted[mid] : (sorted[mid] + sorted[mid + 1]) / 2;
         // approximate nonparametric CI bounds for median
-        const p = 0.5;
+        const p = QUARTILE_MEDIAN;
         const s = Math.sqrt(len * p * (1 - p));
-        const kLower = Math.max(0, Math.floor(len * p - 1.96 * s));
-        const kUpper = Math.min(len - 1, Math.ceil(len * p + 1.96 * s));
+        const kLower = Math.max(
+          0,
+          Math.floor(len * p - NORMAL_CONFIDENCE_Z * s),
+        );
+        const kUpper = Math.min(
+          len - 1,
+          Math.ceil(len * p + NORMAL_CONFIDENCE_Z * s),
+        );
         med_ci_low[i] = sorted[kLower];
         med_ci_high[i] = sorted[kUpper];
       } else {
@@ -595,13 +643,16 @@ export function computeUsageRolling(dates, usageHours, windows = [7, 30]) {
     result[`median${w}`] = median;
     result[`median${w}_ci_low`] = med_ci_low;
     result[`median${w}_ci_high`] = med_ci_high;
-    result[`compliance4_${w}`] = comp4;
+    result[`compliance${USAGE_COMPLIANCE_THRESHOLD_HOURS}_${w}`] = comp4;
   });
   return result;
 }
 
 // Compute adherence streaks for thresholds (e.g., >=4h and >=6h)
-export function computeAdherenceStreaks(usageHours, thresholds = [4, 6]) {
+export function computeAdherenceStreaks(
+  usageHours,
+  thresholds = [USAGE_COMPLIANCE_THRESHOLD_HOURS, USAGE_STRICT_THRESHOLD_HOURS],
+) {
   const map = {};
   thresholds.forEach((th) => {
     let longest = 0;
@@ -624,7 +675,7 @@ export function detectUsageBreakpoints(
   rolling7,
   rolling30,
   dates,
-  minDelta = 0.75,
+  minDelta = BREAKPOINT_MIN_DELTA,
 ) {
   const points = [];
   for (let i = 1; i < rolling7.length; i++) {
@@ -640,7 +691,11 @@ export function detectUsageBreakpoints(
 
 // Change-point detection via least-squares segmentation (PELT-like DP, O(n^2)).
 // Returns array of Date objects where a change is detected.
-export function detectChangePoints(series, dates, penalty = 10) {
+export function detectChangePoints(
+  series,
+  dates,
+  penalty = CHANGEPOINT_PENALTY,
+) {
   const n = series.length;
   if (!n) return [];
   // Prefix sums for fast SSE cost
@@ -711,21 +766,23 @@ export function computeAHITrends(data) {
   if (ahis.length) {
     minAHI = Math.min(...ahis);
     maxAHI = Math.max(...ahis);
-    medianAHI = quantile(ahis, 0.5);
-    p25AHI = quantile(ahis, 0.25);
-    p75AHI = quantile(ahis, 0.75);
+    medianAHI = quantile(ahis, QUARTILE_MEDIAN);
+    p25AHI = quantile(ahis, QUARTILE_LOWER);
+    p75AHI = quantile(ahis, QUARTILE_UPPER);
     iqrAHI = p75AHI - p25AHI;
   }
-  const nightsAHIover5 = ahis.filter((v) => v > 5).length;
+  const nightsAHIover5 = ahis.filter(
+    (v) => v > AHI_SEVERITY_LIMITS.normal,
+  ).length;
   const sortedByDate = data
     .slice()
     .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
   const first = sortedByDate
-    .slice(0, 30)
+    .slice(0, TREND_WINDOW_DAYS)
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
   const last = sortedByDate
-    .slice(-30)
+    .slice(-TREND_WINDOW_DAYS)
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
   const first30AvgAHI = first.length
@@ -763,20 +820,20 @@ export function computeEPAPTrends(data) {
   if (epaps.length) {
     minEPAP = Math.min(...epaps);
     maxEPAP = Math.max(...epaps);
-    medianEPAP = quantile(epaps, 0.5);
-    p25EPAP = quantile(epaps, 0.25);
-    p75EPAP = quantile(epaps, 0.75);
+    medianEPAP = quantile(epaps, QUARTILE_MEDIAN);
+    p25EPAP = quantile(epaps, QUARTILE_LOWER);
+    p75EPAP = quantile(epaps, QUARTILE_UPPER);
     iqrEPAP = p75EPAP - p25EPAP;
   }
   const sortedByDate = data
     .slice()
     .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
   const first30 = sortedByDate
-    .slice(0, 30)
+    .slice(0, TREND_WINDOW_DAYS)
     .map((r) => parseFloat(r['Median EPAP']))
     .filter((v) => !isNaN(v));
   const last30 = sortedByDate
-    .slice(-30)
+    .slice(-TREND_WINDOW_DAYS)
     .map((r) => parseFloat(r['Median EPAP']))
     .filter((v) => !isNaN(v));
   const avgMedianEPAPFirst30 = first30.length
@@ -811,11 +868,11 @@ export function computeEPAPTrends(data) {
     corrEPAPAHI = stdEp && stdAh ? cov / (stdEp * stdAh) : NaN;
   }
   const lowGroup = data
-    .filter((r) => parseFloat(r['Median EPAP']) < 7)
+    .filter((r) => parseFloat(r['Median EPAP']) < EPAP_SPLIT_THRESHOLD)
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
   const highGroup = data
-    .filter((r) => parseFloat(r['Median EPAP']) >= 7)
+    .filter((r) => parseFloat(r['Median EPAP']) >= EPAP_SPLIT_THRESHOLD)
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
   const countLow = lowGroup.length;
@@ -1187,7 +1244,7 @@ export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
 
 // Kaplan–Meier survival for uncensored durations (all events observed)
 // Returns stepwise survival at unique event times and approximate 95% CIs (log-log Greenwood)
-export function kmSurvival(durations, z = 1.96) {
+export function kmSurvival(durations, z = NORMAL_CONFIDENCE_Z) {
   const vals = (durations || [])
     .map(Number)
     .filter((v) => Number.isFinite(v) && v >= 0)

@@ -11,8 +11,28 @@ import {
 } from '../utils/stats';
 import { COLORS } from '../utils/colors';
 import { ThemedPlot, VizHelp } from './ui';
-
-const STL_SEASON = 7;
+import {
+  AHI_BREAKPOINT_MIN_DELTA,
+  AHI_CHANGEPOINT_PENALTY,
+  AHI_SEVERITY_LIMITS,
+  CLUSTER_COUNT_ALERT,
+  CLUSTER_DURATION_ALERT_SEC,
+  DEFAULT_MAX_LAG,
+  DEFAULT_ROLLING_WINDOWS,
+  FREEDMAN_DIACONIS_FACTOR,
+  HISTOGRAM_FALLBACK_BINS,
+  HIGH_CENTRAL_APNEA_FRACTION,
+  IQR_OUTLIER_MULTIPLIER,
+  MAX_LAG_INPUT,
+  MIN_LAG_INPUT,
+  NORMAL_CONFIDENCE_Z,
+  QUARTILE_LOWER,
+  QUARTILE_MEDIAN,
+  QUARTILE_UPPER,
+  ROLLING_WINDOW_LONG_DAYS,
+  ROLLING_WINDOW_SHORT_DAYS,
+  STL_SEASON_LENGTH,
+} from '../constants';
 
 export default function AhiTrendsCharts({
   data,
@@ -41,7 +61,11 @@ export default function AhiTrendsCharts({
       .sort((a, b) => a.date - b.date);
     const datesArr = pts.map((p) => p.date);
     const ahisArr = pts.map((p) => p.ahi);
-    const rolling = computeUsageRolling(datesArr, ahisArr, [7, 30]);
+    const rolling = computeUsageRolling(
+      datesArr,
+      ahisArr,
+      DEFAULT_ROLLING_WINDOWS,
+    );
     const rolling7 = rolling.avg7;
     const rolling30 = rolling.avg30;
     const r7Low = rolling['avg7_ci_low'];
@@ -52,10 +76,16 @@ export default function AhiTrendsCharts({
       rolling7,
       rolling30,
       datesArr,
-      0.5,
+      AHI_BREAKPOINT_MIN_DELTA,
     );
-    const cpDates = detectChangePoints(ahisArr, datesArr, 6);
-    const decomposition = stlDecompose(ahisArr, { seasonLength: STL_SEASON });
+    const cpDates = detectChangePoints(
+      ahisArr,
+      datesArr,
+      AHI_CHANGEPOINT_PENALTY,
+    );
+    const decomposition = stlDecompose(ahisArr, {
+      seasonLength: STL_SEASON_LENGTH,
+    });
 
     // Optional decomposition if columns present
     const keys = data.length ? Object.keys(data[0]) : [];
@@ -94,8 +124,10 @@ export default function AhiTrendsCharts({
     };
   }, [data]);
 
-  const [maxLag, setMaxLag] = useState(30);
+  const [maxLag, setMaxLag] = useState(DEFAULT_MAX_LAG);
   const lagInputId = useId();
+  const shortWindowLabel = `${ROLLING_WINDOW_SHORT_DAYS}-night`;
+  const longWindowLabel = `${ROLLING_WINDOW_LONG_DAYS}-night`;
 
   const { acfValues, pacfValues, acfConfidence } = useMemo(() => {
     const finiteAhis = ahis.filter((v) => Number.isFinite(v));
@@ -113,7 +145,8 @@ export default function AhiTrendsCharts({
       (d) => d.lag > 0,
     );
     const pacf = computePartialAutocorrelation(ahis, cappedLag).values;
-    const conf = sampleSize > 0 ? 1.96 / Math.sqrt(sampleSize) : NaN;
+    const conf =
+      sampleSize > 0 ? NORMAL_CONFIDENCE_Z / Math.sqrt(sampleSize) : NaN;
     return { acfValues: acf, pacfValues: pacf, acfConfidence: conf };
   }, [ahis, maxLag]);
 
@@ -122,34 +155,47 @@ export default function AhiTrendsCharts({
     if (!Number.isFinite(raw)) {
       return;
     }
-    const clamped = Math.max(1, Math.min(Math.round(raw) || 1, 120));
+    const rounded = Math.round(raw) || MIN_LAG_INPUT;
+    const clamped = Math.max(MIN_LAG_INPUT, Math.min(rounded, MAX_LAG_INPUT));
     setMaxLag(clamped);
   }, []);
 
   // Summary stats and adaptive histogram bins
-  const p25 = quantile(ahis, 0.25);
-  const median = quantile(ahis, 0.5);
-  const p75 = quantile(ahis, 0.75);
+  const p25 = quantile(ahis, QUARTILE_LOWER);
+  const median = quantile(ahis, QUARTILE_MEDIAN);
+  const p75 = quantile(ahis, QUARTILE_UPPER);
   const iqr = p75 - p25;
   const mean = ahis.reduce((sum, v) => sum + v, 0) / ahis.length;
-  const binWidth = 2 * iqr * Math.pow(ahis.length, -1 / 3);
+  const binWidth =
+    FREEDMAN_DIACONIS_FACTOR * iqr * Math.pow(ahis.length, -1 / 3);
   const range = Math.max(...ahis) - Math.min(...ahis);
-  const nbins = binWidth > 0 ? Math.ceil(range / binWidth) : 12;
+  const nbins =
+    binWidth > 0 ? Math.ceil(range / binWidth) : HISTOGRAM_FALLBACK_BINS;
 
   // Severity bands counts
   const bands = useMemo(
     () =>
       ahis.reduce(
         (acc, v) => {
-          if (v <= 5) acc.le5++;
-          else if (v <= 15) acc.b5_15++;
-          else if (v <= 30) acc.b15_30++;
+          if (v <= AHI_SEVERITY_LIMITS.normal) acc.le5++;
+          else if (v <= AHI_SEVERITY_LIMITS.mild) acc.b5_15++;
+          else if (v <= AHI_SEVERITY_LIMITS.moderate) acc.b15_30++;
           else acc.gt30++;
           return acc;
         },
         { le5: 0, b5_15: 0, b15_30: 0, gt30: 0 },
       ),
     [ahis],
+  );
+
+  const severityLabels = useMemo(
+    () => ({
+      le5: `≤ ${AHI_SEVERITY_LIMITS.normal}`,
+      b5_15: `${AHI_SEVERITY_LIMITS.normal}–${AHI_SEVERITY_LIMITS.mild}`,
+      b15_30: `${AHI_SEVERITY_LIMITS.mild}–${AHI_SEVERITY_LIMITS.moderate}`,
+      gt30: `> ${AHI_SEVERITY_LIMITS.moderate}`,
+    }),
+    [],
   );
 
   // QQ-plot against normal
@@ -163,10 +209,10 @@ export default function AhiTrendsCharts({
   const theo = probs.map((p) => mu + sigma * normalQuantile(p));
 
   // Bad-night tagging with explanations
-  const p25b = quantile(ahis, 0.25);
-  const p75b = quantile(ahis, 0.75);
+  const p25b = quantile(ahis, QUARTILE_LOWER);
+  const p75b = quantile(ahis, QUARTILE_UPPER);
   const iqrb = p75b - p25b;
-  const outlierHighCut = p75b + 1.5 * iqrb;
+  const outlierHighCut = p75b + IQR_OUTLIER_MULTIPLIER * iqrb;
   const dateStr = (d) => d.toISOString().slice(0, 10);
   const clusterByNight = new Map();
   clusters.forEach((cl) => {
@@ -180,14 +226,23 @@ export default function AhiTrendsCharts({
   const badNights = [];
   dates.forEach((d, i) => {
     const reasons = [];
-    if (ahis[i] >= 15 || ahis[i] >= outlierHighCut) reasons.push('High AHI');
+    if (ahis[i] >= AHI_SEVERITY_LIMITS.mild || ahis[i] >= outlierHighCut)
+      reasons.push('High AHI');
     if (oai && cai && mai) {
       const total = (oai[i] || 0) + (cai[i] || 0) + (mai[i] || 0);
       const fracCA = total ? cai[i] / total : 0;
-      if (ahis[i] > 5 && fracCA >= 0.6) reasons.push('High CA%');
+      if (
+        ahis[i] > AHI_SEVERITY_LIMITS.normal &&
+        fracCA >= HIGH_CENTRAL_APNEA_FRACTION
+      )
+        reasons.push('High CA%');
     }
     const cl = clusterByNight.get(dateStr(d));
-    if (cl && (cl.maxDur >= 120 || cl.maxCount >= 5))
+    if (
+      cl &&
+      (cl.maxDur >= CLUSTER_DURATION_ALERT_SEC ||
+        cl.maxCount >= CLUSTER_COUNT_ALERT)
+    )
       reasons.push('Long/dense cluster');
     if (reasons.length) badNights.push({ date: d, ahi: ahis[i], reasons });
   });
@@ -218,13 +273,13 @@ export default function AhiTrendsCharts({
               name: 'Nightly AHI',
               line: { width: 1, color: COLORS.primary },
             },
-            // 7-day CI ribbon
+            // Short-window CI ribbon
             {
               x: dates,
               y: r7Low,
               type: 'scatter',
               mode: 'lines',
-              name: '7-night Avg CI low',
+              name: `${shortWindowLabel} Avg CI low`,
               line: { width: 0 },
               hoverinfo: 'skip',
               showlegend: false,
@@ -234,7 +289,7 @@ export default function AhiTrendsCharts({
               y: r7High,
               type: 'scatter',
               mode: 'lines',
-              name: '7-night Avg CI',
+              name: `${shortWindowLabel} Avg CI`,
               fill: 'tonexty',
               fillcolor: 'rgba(255,127,14,0.15)',
               line: { width: 0 },
@@ -246,16 +301,16 @@ export default function AhiTrendsCharts({
               y: rolling7,
               type: 'scatter',
               mode: 'lines',
-              name: '7-night Avg',
+              name: `${shortWindowLabel} Avg`,
               line: { dash: 'dash', width: 2, color: COLORS.secondary },
             },
-            // 30-day CI ribbon
+            // Long-window CI ribbon
             {
               x: dates,
               y: r30Low,
               type: 'scatter',
               mode: 'lines',
-              name: '30-night Avg CI low',
+              name: `${longWindowLabel} Avg CI low`,
               line: { width: 0 },
               hoverinfo: 'skip',
               showlegend: false,
@@ -265,7 +320,7 @@ export default function AhiTrendsCharts({
               y: r30High,
               type: 'scatter',
               mode: 'lines',
-              name: '30-night Avg CI',
+              name: `${longWindowLabel} Avg CI`,
               fill: 'tonexty',
               fillcolor: 'rgba(44,160,44,0.15)',
               line: { width: 0 },
@@ -277,7 +332,7 @@ export default function AhiTrendsCharts({
               y: rolling30,
               type: 'scatter',
               mode: 'lines',
-              name: '30-night Avg',
+              name: `${longWindowLabel} Avg`,
               line: { dash: 'dot', width: 2, color: COLORS.accent },
             },
             ...(oai && cai && mai
@@ -370,7 +425,9 @@ export default function AhiTrendsCharts({
             toImageButtonOptions: { format: 'svg', filename: 'ahi_over_time' },
           }}
         />
-        <VizHelp text="Nightly AHI with 7- and 30-night averages. Dashed horizontal line at AHI=5; purple lines mark detected change-points; dotted verticals show crossover breakpoints." />
+        <VizHelp
+          text={`Nightly AHI with ${shortWindowLabel} and ${longWindowLabel} averages. Dashed horizontal line at AHI=${AHI_SEVERITY_LIMITS.normal}; purple lines mark detected change-points; dotted verticals show crossover breakpoints.`}
+        />
       </div>
 
       {ahis.length > 1 ? (
@@ -387,8 +444,8 @@ export default function AhiTrendsCharts({
           <input
             id={lagInputId}
             type="number"
-            min={1}
-            max={120}
+            min={MIN_LAG_INPUT}
+            max={MAX_LAG_INPUT}
             step={1}
             value={maxLag}
             onChange={handleLagChange}
@@ -531,7 +588,7 @@ export default function AhiTrendsCharts({
               },
             ]}
             layout={{
-              title: `AHI STL Decomposition (season=${STL_SEASON})`,
+              title: `AHI STL Decomposition (season=${STL_SEASON_LENGTH})`,
               grid: {
                 rows: 3,
                 columns: 1,
@@ -729,22 +786,22 @@ export default function AhiTrendsCharts({
           </thead>
           <tbody>
             <tr>
-              <td>≤ 5</td>
+              <td>{severityLabels.le5}</td>
               <td>{bands.le5}</td>
               <td>{((bands.le5 / ahis.length) * 100).toFixed(0)}%</td>
             </tr>
             <tr>
-              <td>5–15</td>
+              <td>{severityLabels.b5_15}</td>
               <td>{bands.b5_15}</td>
               <td>{((bands.b5_15 / ahis.length) * 100).toFixed(0)}%</td>
             </tr>
             <tr>
-              <td>15–30</td>
+              <td>{severityLabels.b15_30}</td>
               <td>{bands.b15_30}</td>
               <td>{((bands.b15_30 / ahis.length) * 100).toFixed(0)}%</td>
             </tr>
             <tr>
-              <td>&gt; 30</td>
+              <td>{severityLabels.gt30}</td>
               <td>{bands.gt30}</td>
               <td>{((bands.gt30 / ahis.length) * 100).toFixed(0)}%</td>
             </tr>
