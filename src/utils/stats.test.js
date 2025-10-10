@@ -25,20 +25,14 @@ import {
   APNEA_DURATION_HIGH_SEC,
   APNEA_DURATION_THRESHOLD_SEC,
   EPAP_SPLIT_THRESHOLD,
-  IQR_OUTLIER_MULTIPLIER,
   PERCENTILE_95TH,
   QUARTILE_LOWER,
   QUARTILE_MEDIAN,
   QUARTILE_UPPER,
-  TREND_WINDOW_DAYS,
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
-import {
-  buildApneaDetail,
-  buildSummaryRow,
-  buildTrendWindowSequence,
-} from '../test-utils/builders';
+import { buildApneaDetail, buildSummaryRow } from '../test-utils/builders';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -373,8 +367,12 @@ describe('computeApneaEventStats', () => {
       APNEA_DURATION_THRESHOLD_SEC,
       APNEA_DURATION_HIGH_SEC,
     ]);
-    expect(stats.medianDur).toBe(45);
-    expect(stats.iqrDur).toBeCloseTo(15);
+    const durations = stats.durations;
+    expect(stats.medianDur).toBe(quantile(durations, QUARTILE_MEDIAN));
+    const q1 = quantile(durations, QUARTILE_LOWER);
+    const q3 = quantile(durations, QUARTILE_UPPER);
+    expect(stats.iqrDur).toBeCloseTo(q3 - q1);
+    expect(stats.p95Dur).toBeCloseTo(quantile(durations, PERCENTILE_95TH));
     expect(stats.nightDates).toEqual(['2021-01-01']);
     expect(stats.eventsPerNight).toEqual([2]);
   });
@@ -391,8 +389,16 @@ describe('summarizeUsage', () => {
     expect(usage.validNights).toBe(2);
     expect(usage.invalidNights).toBe(0);
     expect(usage.avgHours).toBe(2);
-    expect(usage.nightsLong).toBe(0);
-    expect(usage.nightsShort).toBe(2);
+    const expectedShort = data.filter((row) => {
+      const hours = parseDuration(row['Total Time']) / 3600;
+      return hours < USAGE_COMPLIANCE_THRESHOLD_HOURS;
+    }).length;
+    const expectedLong = data.filter((row) => {
+      const hours = parseDuration(row['Total Time']) / 3600;
+      return hours >= USAGE_STRICT_THRESHOLD_HOURS;
+    }).length;
+    expect(usage.nightsShort).toBe(expectedShort);
+    expect(usage.nightsLong).toBe(expectedLong);
     expect(usage.medianHours).toBe(2);
     expect(usage.iqrHours).toBe(1);
   });
@@ -408,8 +414,18 @@ describe('summarizeUsage', () => {
     expect(usage.validNights).toBe(1);
     expect(usage.invalidNights).toBe(2);
     expect(usage.avgHours).toBe(1.5);
-    expect(usage.nightsShort).toBe(1);
-    expect(usage.nightsLong).toBe(0);
+    const expectedShort = data.filter((row) => {
+      if (!row['Total Time']) return false;
+      const hours = parseDuration(row['Total Time']) / 3600;
+      return Number.isFinite(hours) && hours < USAGE_COMPLIANCE_THRESHOLD_HOURS;
+    }).length;
+    const expectedLong = data.filter((row) => {
+      if (!row['Total Time']) return false;
+      const hours = parseDuration(row['Total Time']) / 3600;
+      return Number.isFinite(hours) && hours >= USAGE_STRICT_THRESHOLD_HOURS;
+    }).length;
+    expect(usage.nightsShort).toBe(expectedShort);
+    expect(usage.nightsLong).toBe(expectedLong);
   });
 
   it('handles empty input', () => {

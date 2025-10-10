@@ -540,7 +540,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               },
             ]}
             layout={{
-              title: `Usage STL Decomposition (season=${STL_SEASON})`,
+              title: `Usage STL Decomposition (season=${STL_SEASON_LENGTH})`,
               grid: {
                 rows: 3,
                 columns: 1,
