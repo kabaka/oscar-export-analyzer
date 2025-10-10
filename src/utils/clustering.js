@@ -2,21 +2,40 @@
 
 import { EVENT_WINDOW_MS } from '../constants';
 
-// Default parameters for apnea clustering
-const DEFAULT_APNEA_GAP_SEC = 120; // max gap (sec) between annotation events to cluster
-const DEFAULT_FLG_BRIDGE_THRESHOLD = 0.1; // FLG level to bridge annotation events (low threshold)
-const DEFAULT_FLG_CLUSTER_GAP_SEC = 60; // max gap (sec) to group FLG readings into clusters
+export const CLUSTERING_DEFAULTS = Object.freeze({
+  MIN_CLUSTER_DURATION_SEC: 60,
+  APNEA_GAP_SEC: 120,
+  FLG_BRIDGE_THRESHOLD: 0.1,
+  FLG_CLUSTER_GAP_SEC: 60,
+  EDGE_ENTER_THRESHOLD: 0.5,
+  EDGE_EXIT_FRACTION: 0.7,
+  EDGE_MIN_DURATION_SEC: 10,
+  KMEANS_K: 3,
+  KMEANS_MAX_ITERATIONS: 25,
+  MIN_DENSITY_CUTOFF: 0,
+  MAX_FALSE_NEG_FLG_DURATION_SEC: 600,
+  FALSE_NEG_CONFIDENCE_MIN: 0.95,
+  MAX_CLUSTER_DURATION_SEC: 230,
+});
+
+const DEFAULT_APNEA_GAP_SEC = CLUSTERING_DEFAULTS.APNEA_GAP_SEC; // max gap (sec) between annotation events to cluster
+const DEFAULT_FLG_BRIDGE_THRESHOLD = CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD; // FLG level to bridge annotation events (low threshold)
+const DEFAULT_FLG_CLUSTER_GAP_SEC = CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC; // max gap (sec) to group FLG readings into clusters
 
 // Parameters for boundary extension via FLG edge clusters
-const EDGE_THRESHOLD = 0.5; // default enter threshold
-const EDGE_MIN_DURATION_SEC = 10; // min duration (sec) for FLG edge segment to extend boundaries
-const EDGE_EXIT_FRACTION = 0.7; // exit hysteresis as fraction of enter threshold
+const EDGE_THRESHOLD = CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD; // default enter threshold
+const EDGE_MIN_DURATION_SEC = CLUSTERING_DEFAULTS.EDGE_MIN_DURATION_SEC; // min duration (sec) for FLG edge segment to extend boundaries
+const EDGE_EXIT_FRACTION = CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION; // exit hysteresis as fraction of enter threshold
+const DEFAULT_EDGE_EXIT_THRESHOLD = EDGE_THRESHOLD * EDGE_EXIT_FRACTION;
 
 // Parameters for false-negative detection
-export const APOEA_CLUSTER_MIN_TOTAL_SEC = 60; // min total apnea-event duration (sec) for valid cluster
-const FLG_DURATION_THRESHOLD_SEC = APOEA_CLUSTER_MIN_TOTAL_SEC; // min FLG-only cluster duration for false-negatives
-const MAX_FALSE_NEG_FLG_DURATION_SEC = 600; // cap on FLG-only cluster duration (sec)
-export const FALSE_NEG_CONFIDENCE_MIN = 0.95; // min confidence (fraction) for false-negative reporting
+export const APOEA_CLUSTER_MIN_TOTAL_SEC =
+  CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC; // min total apnea-event duration (sec) for valid cluster
+const FLG_DURATION_THRESHOLD_SEC = CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC; // min FLG-only cluster duration for false-negatives
+const MAX_FALSE_NEG_FLG_DURATION_SEC =
+  CLUSTERING_DEFAULTS.MAX_FALSE_NEG_FLG_DURATION_SEC; // cap on FLG-only cluster duration (sec)
+export const FALSE_NEG_CONFIDENCE_MIN =
+  CLUSTERING_DEFAULTS.FALSE_NEG_CONFIDENCE_MIN; // min confidence (fraction) for false-negative reporting
 
 export const CLUSTER_ALGORITHMS = {
   BRIDGED: 'bridged',
@@ -25,7 +44,7 @@ export const CLUSTER_ALGORITHMS = {
 };
 
 export const DEFAULT_CLUSTER_ALGORITHM = CLUSTER_ALGORITHMS.BRIDGED;
-export const DEFAULT_KMEANS_K = 3;
+export const DEFAULT_KMEANS_K = CLUSTERING_DEFAULTS.KMEANS_K;
 export const DEFAULT_SINGLE_LINK_GAP_SEC = DEFAULT_APNEA_GAP_SEC;
 
 function summarizeClusterEvents(events, overrides = {}) {
@@ -44,7 +63,9 @@ function summarizeClusterEvents(events, overrides = {}) {
 
 function normalizeMinDensity(options = {}) {
   const { minDensity, minDensityPerMin } = options;
-  return typeof minDensity === 'number' ? minDensity : minDensityPerMin || 0;
+  return typeof minDensity === 'number'
+    ? minDensity
+    : minDensityPerMin || CLUSTERING_DEFAULTS.MIN_DENSITY_CUTOFF;
 }
 
 function filterByDensity(clusters, minDensity) {
@@ -60,7 +81,7 @@ export function clusterApneaEventsBridged(options = {}) {
     bridgeThreshold = DEFAULT_FLG_BRIDGE_THRESHOLD,
     bridgeSec = DEFAULT_FLG_CLUSTER_GAP_SEC,
     edgeEnter = EDGE_THRESHOLD,
-    edgeExit = EDGE_THRESHOLD * EDGE_EXIT_FRACTION,
+    edgeExit = DEFAULT_EDGE_EXIT_THRESHOLD,
     edgeMinDurSec = EDGE_MIN_DURATION_SEC,
   } = options;
   const minDensity = normalizeMinDensity(options);
@@ -164,7 +185,7 @@ export function clusterApneaEventsKMeans(options = {}) {
     return times[pos];
   });
   const assignments = new Array(times.length).fill(0);
-  const maxIterations = 25;
+  const maxIterations = CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS;
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     let changed = false;
@@ -331,7 +352,8 @@ export function detectFalseNegatives(details, opts = {}) {
 // Expose default bridge threshold for use in filtering and parsing logic
 export const FLG_BRIDGE_THRESHOLD = DEFAULT_FLG_BRIDGE_THRESHOLD;
 // Cap on apnea cluster window duration
-export const MAX_CLUSTER_DURATION_SEC = 230; // sanity cap on cluster window (sec)
+export const MAX_CLUSTER_DURATION_SEC =
+  CLUSTERING_DEFAULTS.MAX_CLUSTER_DURATION_SEC; // sanity cap on cluster window (sec)
 
 // Additional exported defaults for UI parameter panels
 export const APNEA_GAP_DEFAULT = DEFAULT_APNEA_GAP_SEC;
