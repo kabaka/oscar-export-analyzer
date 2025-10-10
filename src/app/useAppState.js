@@ -17,6 +17,7 @@ import {
   DEFAULT_KMEANS_K,
   DEFAULT_SINGLE_LINK_GAP_SEC,
 } from '../utils/clustering';
+import { APNEA_CLUSTER_MIN_EVENTS } from '../constants';
 import { buildSummaryAggregatesCSV, downloadTextFile } from '../utils/export';
 import { clearLastSession } from '../utils/db';
 
@@ -59,7 +60,7 @@ export function useAppState() {
     gapSec: APNEA_GAP_DEFAULT,
     bridgeThreshold: FLG_BRIDGE_THRESHOLD,
     bridgeSec: FLG_CLUSTER_GAP_DEFAULT,
-    minCount: 3,
+    minCount: APNEA_CLUSTER_MIN_EVENTS,
     minTotalSec: APOEA_CLUSTER_MIN_TOTAL_SEC,
     maxClusterSec: MAX_CLUSTER_DURATION_SEC,
     minDensity: 0,

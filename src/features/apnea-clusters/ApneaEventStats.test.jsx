@@ -2,16 +2,20 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import ApneaEventStats from './ApneaEventStats';
 import { DataProvider } from '../../context/DataContext';
+import {
+  APNEA_DURATION_HIGH_SEC,
+  APNEA_DURATION_THRESHOLD_SEC,
+} from '../../constants';
 
 const sampleDetails = [
   {
     Event: 'Obstructive',
-    'Data/Duration': '30',
+    'Data/Duration': String(APNEA_DURATION_THRESHOLD_SEC),
     DateTime: '2021-01-01T00:00:00Z',
   },
   {
     Event: 'ClearAirway',
-    'Data/Duration': '60',
+    'Data/Duration': String(APNEA_DURATION_HIGH_SEC),
     DateTime: '2021-01-01T00:02:00Z',
   },
 ];

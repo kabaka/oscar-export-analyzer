@@ -2,7 +2,11 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as ACA from './ApneaClusterAnalysis';
-import { CLUSTER_ALGORITHMS } from '../../utils/clustering';
+import {
+  CLUSTER_ALGORITHMS,
+  CLUSTERING_DEFAULTS,
+} from '../../utils/clustering';
+import { APNEA_CLUSTER_MIN_EVENTS, SECONDS_PER_MINUTE } from '../../constants';
 
 const ApneaClusterAnalysis = ACA.default;
 
@@ -10,13 +14,16 @@ describe('ApneaClusterAnalysis overlay', () => {
   it('shows leak/pressure chart when selecting a cluster', async () => {
     const base = new Date('2021-01-01T00:00:00Z');
     const cluster = {
-      start: new Date(base.getTime() + 60000),
-      end: new Date(base.getTime() + 120000),
-      durationSec: 60,
-      count: 3,
+      start: new Date(base.getTime() + SECONDS_PER_MINUTE * 1000),
+      end: new Date(base.getTime() + 2 * SECONDS_PER_MINUTE * 1000),
+      durationSec: CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC,
+      count: APNEA_CLUSTER_MIN_EVENTS,
       severity: 1,
       events: [
-        { date: new Date(base.getTime() + 60000), durationSec: 10 },
+        {
+          date: new Date(base.getTime() + SECONDS_PER_MINUTE * 1000),
+          durationSec: 10,
+        },
         { date: new Date(base.getTime() + 80000), durationSec: 10 },
         { date: new Date(base.getTime() + 100000), durationSec: 10 },
       ],
@@ -37,7 +44,7 @@ describe('ApneaClusterAnalysis overlay', () => {
       algorithm: CLUSTER_ALGORITHMS.BRIDGED,
       gapSec: 120,
       bridgeThreshold: 0.1,
-      bridgeSec: 60,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
       edgeEnter: 0.5,
       edgeExit: 0.35,
       minCount: 1,
@@ -73,7 +80,7 @@ describe('ApneaClusterAnalysis params', () => {
       algorithm: CLUSTER_ALGORITHMS.BRIDGED,
       gapSec: 120,
       bridgeThreshold: 0.1,
-      bridgeSec: 60,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
       edgeEnter: 0.5,
       edgeExit: 0.35,
       minCount: 1,
@@ -107,7 +114,7 @@ describe('ApneaClusterAnalysis params', () => {
       algorithm: CLUSTER_ALGORITHMS.BRIDGED,
       gapSec: 120,
       bridgeThreshold: 0.1,
-      bridgeSec: 60,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
       edgeEnter: 0.5,
       edgeExit: 0.35,
       minCount: 1,

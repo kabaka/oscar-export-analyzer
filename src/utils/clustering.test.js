@@ -10,7 +10,11 @@ import {
   CLUSTER_ALGORITHMS,
   CLUSTERING_DEFAULTS,
 } from './clustering';
-import { EVENT_WINDOW_MS } from '../constants';
+import {
+  APNEA_CLUSTER_MIN_EVENTS,
+  EVENT_WINDOW_MS,
+  SECONDS_PER_MINUTE,
+} from '../constants';
 
 describe('clusterApneaEvents', () => {
   it('returns empty array when no events', () => {
@@ -76,7 +80,10 @@ describe('clusterApneaEvents', () => {
   it('extends boundaries using FLG hysteresis enter/exit', () => {
     const base = new Date('2021-01-01T00:00:00Z');
     const events = [
-      { date: new Date(base.getTime() + 60000), durationSec: 10 },
+      {
+        date: new Date(base.getTime() + SECONDS_PER_MINUTE * 1000),
+        durationSec: 10,
+      },
     ]; // event at t=60s
     // FLG just before event: starts above enter (0.5), then decays above exit (0.35)
     const flg = [
@@ -189,7 +196,9 @@ describe('detectFalseNegatives', () => {
     const fns = detectFalseNegatives(details);
     // One FLG cluster of ~60s before ClearAirway occurs next day
     expect(fns).toHaveLength(1);
-    expect(fns[0].durationSec).toBeGreaterThanOrEqual(60);
+    expect(fns[0].durationSec).toBeGreaterThanOrEqual(
+      CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC,
+    );
     expect(fns[0].confidence).toBe(1);
   });
 
@@ -255,7 +264,7 @@ describe('computeClusterSeverity', () => {
         [30, 10],
       ],
       0,
-      60,
+      SECONDS_PER_MINUTE,
     ); // extension -> higher
     expect(s2).toBeGreaterThan(s1);
     expect(s3).toBeGreaterThan(s1);
@@ -268,9 +277,9 @@ describe('clustersToCsv', () => {
     const base = new Date('2021-01-01T00:00:00Z');
     const cl = {
       start: base,
-      end: new Date(base.getTime() + 60000),
-      durationSec: 60,
-      count: 3,
+      end: new Date(base.getTime() + SECONDS_PER_MINUTE * 1000),
+      durationSec: CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC,
+      count: APNEA_CLUSTER_MIN_EVENTS,
       severity: 1.2345,
       events: [
         { date: base, durationSec: 10 },
@@ -282,7 +291,9 @@ describe('clustersToCsv', () => {
     const lines = csv.split('\n');
     expect(lines[0]).toContain('index,start,end,durationSec,count,severity');
     expect(lines).toHaveLength(2);
-    expect(lines[1]).toContain(',60,3,');
+    expect(lines[1]).toContain(
+      `,${CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC},${APNEA_CLUSTER_MIN_EVENTS},`,
+    );
     const cols = lines[1].split(',');
     const sev = Number(cols[5]);
     expect(sev).toBeGreaterThan(1.23);

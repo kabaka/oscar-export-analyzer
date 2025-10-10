@@ -21,6 +21,7 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
     DEFAULT_KMEANS_K,
     DEFAULT_SINGLE_LINK_GAP_SEC,
   } = await import('./src/utils/clustering.js');
+  const { APNEA_CLUSTER_MIN_EVENTS } = await import('./src/constants.js');
   const {
     gapSec = APNEA_GAP_DEFAULT,
     bridgeThreshold = FLG_BRIDGE_THRESHOLD,
@@ -102,14 +103,14 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
   const valid = clusters.filter((c) => {
     const totalEventDur = c.events.reduce((sum, e) => sum + e.durationSec, 0);
     return (
-      c.count >= 3 &&
+      c.count >= APNEA_CLUSTER_MIN_EVENTS &&
       totalEventDur >= APOEA_CLUSTER_MIN_TOTAL_SEC &&
       c.durationSec <= MAX_CLUSTER_DURATION_SEC
     );
   });
   if (!valid.length) {
     console.log(
-      `No apnea clusters (≥3 events and ≥${APOEA_CLUSTER_MIN_TOTAL_SEC}s total) found for`,
+      `No apnea clusters (≥${APNEA_CLUSTER_MIN_EVENTS} events and ≥${APOEA_CLUSTER_MIN_TOTAL_SEC}s total) found for`,
       targetDateStr,
     );
     return [];

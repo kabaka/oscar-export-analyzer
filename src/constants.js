@@ -9,6 +9,11 @@
  */
 export const EVENT_WINDOW_MS = 5000;
 
+/** Time conversion helpers */
+export const SECONDS_PER_MINUTE = 60;
+export const MINUTES_PER_HOUR = 60;
+export const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+
 /**
  * Number of evenly spaced sample points used when generating LOESS trend
  * lines in charts. Unitless count.
@@ -48,6 +53,9 @@ export const USAGE_STRICT_THRESHOLD_HOURS = 6;
 /** Apnea event duration thresholds (seconds) */
 export const APNEA_DURATION_THRESHOLD_SEC = 30;
 export const APNEA_DURATION_HIGH_SEC = 60;
+
+/** Minimum number of events required for a valid apnea cluster */
+export const APNEA_CLUSTER_MIN_EVENTS = 3;
 
 /** Cluster severity heuristics */
 export const CLUSTER_DURATION_ALERT_SEC = 120;

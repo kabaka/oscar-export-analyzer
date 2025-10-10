@@ -1,4 +1,6 @@
-export const MIN_VALID_CLUSTER_EVENT_COUNT = 3;
+import { APNEA_CLUSTER_MIN_EVENTS } from '../../constants';
+
+export const MIN_VALID_CLUSTER_EVENT_COUNT = APNEA_CLUSTER_MIN_EVENTS;
 export const FLG_LEVEL_BELOW_THRESHOLD_DELTA = 0.01;
 
 const ANALYTICS_WORKER_CLUSTERS = Object.freeze([
