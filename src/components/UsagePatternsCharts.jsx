@@ -31,6 +31,11 @@ import {
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
+import {
+  AUTOCORRELATION_CONFIDENCE_LABEL,
+  DEFAULT_CHART_HEIGHT,
+  MAX_CALENDAR_WEEKS,
+} from '../constants/charts';
 
 /**
  * Render usage and adherence charts for nightly data.
@@ -103,7 +108,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       : null;
     const weekStarts = [];
     if (start && end && start <= end) {
-      const maxWeeks = 600; // ~11.5 years safety cap
+      const maxWeeks = MAX_CALENDAR_WEEKS;
       let iter = 0;
       for (
         let w = new Date(start);
@@ -266,7 +271,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       <div className="chart-with-help">
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: '300px' }}
+          style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
           data={[
             {
               x: dates,
@@ -422,7 +427,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 y: acfValues.map(() => -acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0)' },
                 hoverinfo: 'skip',
                 showlegend: false,
@@ -432,7 +437,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 y: acfValues.map(() => acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0.6)', width: 1 },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
@@ -467,7 +472,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 y: pacfValues.map(() => -acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0)' },
                 hoverinfo: 'skip',
                 showlegend: false,
@@ -477,7 +482,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 y: pacfValues.map(() => acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0.6)', width: 1 },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
@@ -582,7 +587,10 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{
+              width: '100%',
+              height: `${DEFAULT_CHART_HEIGHT}px`,
+            }}
             data={[
               {
                 x: usageHours,
@@ -652,7 +660,10 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{
+              width: '100%',
+              height: `${DEFAULT_CHART_HEIGHT}px`,
+            }}
             data={[
               {
                 y: usageHours,

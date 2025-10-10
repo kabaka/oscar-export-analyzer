@@ -33,6 +33,10 @@ import {
   ROLLING_WINDOW_SHORT_DAYS,
   STL_SEASON_LENGTH,
 } from '../constants';
+import {
+  AUTOCORRELATION_CONFIDENCE_LABEL,
+  DEFAULT_CHART_HEIGHT,
+} from '../constants/charts';
 
 export default function AhiTrendsCharts({
   data,
@@ -263,7 +267,7 @@ export default function AhiTrendsCharts({
       <div className="chart-with-help">
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: '300px' }}
+          style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
           data={[
             {
               x: dates,
@@ -470,7 +474,7 @@ export default function AhiTrendsCharts({
                 y: acfValues.map(() => -acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0)' },
                 hoverinfo: 'skip',
                 showlegend: false,
@@ -480,7 +484,7 @@ export default function AhiTrendsCharts({
                 y: acfValues.map(() => acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0.6)', width: 1 },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
@@ -515,7 +519,7 @@ export default function AhiTrendsCharts({
                 y: pacfValues.map(() => -acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0)' },
                 hoverinfo: 'skip',
                 showlegend: false,
@@ -525,7 +529,7 @@ export default function AhiTrendsCharts({
                 y: pacfValues.map(() => acfConfidence),
                 type: 'scatter',
                 mode: 'lines',
-                name: '95% CI',
+                name: AUTOCORRELATION_CONFIDENCE_LABEL,
                 line: { color: 'rgba(150,150,150,0.6)', width: 1 },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
@@ -629,7 +633,7 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: ahis,
@@ -699,7 +703,7 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 y: ahis,
@@ -722,7 +726,7 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 y: ahis,
@@ -743,7 +747,7 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: theo,

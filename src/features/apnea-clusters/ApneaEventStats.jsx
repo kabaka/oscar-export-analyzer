@@ -6,6 +6,7 @@ import {
   APNEA_DURATION_HIGH_SEC,
   APNEA_DURATION_THRESHOLD_SEC,
 } from '../../constants';
+import { DEFAULT_CHART_HEIGHT } from '../../constants/charts';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -79,7 +80,7 @@ export default function ApneaEventStats() {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: stats.durations,
@@ -100,7 +101,7 @@ export default function ApneaEventStats() {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 y: stats.durations,
@@ -123,7 +124,7 @@ export default function ApneaEventStats() {
       <div className="chart-item chart-with-help">
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: '300px' }}
+          style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
           data={[
             // CI ribbon
             {
@@ -202,7 +203,7 @@ export default function ApneaEventStats() {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: stats.nightDates,
@@ -225,7 +226,7 @@ export default function ApneaEventStats() {
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '300px' }}
+            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: stats.eventsPerNight,
