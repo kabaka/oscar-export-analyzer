@@ -2,6 +2,10 @@ import React, { useMemo } from 'react';
 import { computeApneaEventStats, kmSurvival } from '../../utils/stats';
 import { useData } from '../../context/DataContext';
 import { GuideLink, ThemedPlot, VizHelp } from '../../components/ui';
+import {
+  APNEA_DURATION_HIGH_SEC,
+  APNEA_DURATION_THRESHOLD_SEC,
+} from '../../constants';
 
 /**
  * Displays statistics and charts for individual apnea event durations
@@ -52,14 +56,14 @@ export default function ApneaEventStats() {
             <td>{stats.maxDur.toFixed(0)} s</td>
           </tr>
           <tr>
-            <td>Events &gt; 30 s</td>
+            <td>Events &gt; {APNEA_DURATION_THRESHOLD_SEC} s</td>
             <td>
               {stats.countOver30} (
               {((stats.countOver30 / stats.totalEvents) * 100).toFixed(1)}%)
             </td>
           </tr>
           <tr>
-            <td>Events &gt; 60 s</td>
+            <td>Events &gt; {APNEA_DURATION_HIGH_SEC} s</td>
             <td>
               {stats.countOver60} (
               {((stats.countOver60 / stats.totalEvents) * 100).toFixed(1)}%)

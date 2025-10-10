@@ -29,6 +29,8 @@ import {
   QUARTILE_LOWER,
   QUARTILE_MEDIAN,
   QUARTILE_UPPER,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
@@ -36,11 +38,13 @@ import { buildApneaDetail, buildSummaryRow } from '../test-utils/builders';
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
-    expect(parseDuration('1:02:03')).toBe(3723);
+    expect(parseDuration('1:02:03')).toBe(
+      SECONDS_PER_HOUR + 2 * SECONDS_PER_MINUTE + 3,
+    );
   });
 
   it('handles MM:SS format', () => {
-    expect(parseDuration('2:03')).toBe(123);
+    expect(parseDuration('2:03')).toBe(2 * SECONDS_PER_MINUTE + 3);
   });
 
   it('returns NaN for malformed strings', () => {
@@ -390,11 +394,11 @@ describe('summarizeUsage', () => {
     expect(usage.invalidNights).toBe(0);
     expect(usage.avgHours).toBe(2);
     const expectedShort = data.filter((row) => {
-      const hours = parseDuration(row['Total Time']) / 3600;
+      const hours = parseDuration(row['Total Time']) / SECONDS_PER_HOUR;
       return hours < USAGE_COMPLIANCE_THRESHOLD_HOURS;
     }).length;
     const expectedLong = data.filter((row) => {
-      const hours = parseDuration(row['Total Time']) / 3600;
+      const hours = parseDuration(row['Total Time']) / SECONDS_PER_HOUR;
       return hours >= USAGE_STRICT_THRESHOLD_HOURS;
     }).length;
     expect(usage.nightsShort).toBe(expectedShort);
@@ -416,12 +420,12 @@ describe('summarizeUsage', () => {
     expect(usage.avgHours).toBe(1.5);
     const expectedShort = data.filter((row) => {
       if (!row['Total Time']) return false;
-      const hours = parseDuration(row['Total Time']) / 3600;
+      const hours = parseDuration(row['Total Time']) / SECONDS_PER_HOUR;
       return Number.isFinite(hours) && hours < USAGE_COMPLIANCE_THRESHOLD_HOURS;
     }).length;
     const expectedLong = data.filter((row) => {
       if (!row['Total Time']) return false;
-      const hours = parseDuration(row['Total Time']) / 3600;
+      const hours = parseDuration(row['Total Time']) / SECONDS_PER_HOUR;
       return Number.isFinite(hours) && hours >= USAGE_STRICT_THRESHOLD_HOURS;
     }).length;
     expect(usage.nightsShort).toBe(expectedShort);

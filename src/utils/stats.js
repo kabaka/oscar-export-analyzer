@@ -14,6 +14,8 @@ import {
   QUARTILE_LOWER,
   QUARTILE_MEDIAN,
   QUARTILE_UPPER,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
   STL_SEASON_LENGTH,
   TREND_WINDOW_DAYS,
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
@@ -64,7 +66,7 @@ export function parseDuration(s, opts = {}) {
   } else if (nums.length === 1) {
     [sec] = nums;
   }
-  return h * 3600 + m * 60 + sec;
+  return h * SECONDS_PER_HOUR + m * SECONDS_PER_MINUTE + sec;
 }
 
 // Compute approximate quantile (q in [0,1]) of numeric array.
@@ -481,7 +483,7 @@ export function summarizeUsage(data) {
   const usageHours = [];
   let invalidNights = 0;
   for (const row of data) {
-    const hours = parseDuration(row['Total Time']) / 3600;
+    const hours = parseDuration(row['Total Time']) / SECONDS_PER_HOUR;
     if (Number.isFinite(hours)) {
       usageHours.push(hours);
     } else {
@@ -552,7 +554,8 @@ export function computeUsageRolling(
   // Also compute normal-approx CI for mean and distribution-free CI for median.
   const n = usageHours.length;
   const result = {};
-  const toDay = (d) => Math.floor(new Date(d).getTime() / (24 * 3600 * 1000));
+  const toDay = (d) =>
+    Math.floor(new Date(d).getTime() / (24 * SECONDS_PER_HOUR * 1000));
   const days = dates.map(toDay);
   windows.forEach((w) => {
     const avg = new Array(n).fill(0);

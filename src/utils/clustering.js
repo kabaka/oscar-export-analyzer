@@ -1,19 +1,19 @@
 // Utility functions for clustering apnea annotation events and detecting false negatives.
 
-import { EVENT_WINDOW_MS } from '../constants';
+import { EVENT_WINDOW_MS, SECONDS_PER_MINUTE } from '../constants';
 
 export const CLUSTERING_DEFAULTS = Object.freeze({
-  MIN_CLUSTER_DURATION_SEC: 60,
+  MIN_CLUSTER_DURATION_SEC: SECONDS_PER_MINUTE,
   APNEA_GAP_SEC: 120,
   FLG_BRIDGE_THRESHOLD: 0.1,
-  FLG_CLUSTER_GAP_SEC: 60,
+  FLG_CLUSTER_GAP_SEC: SECONDS_PER_MINUTE,
   EDGE_ENTER_THRESHOLD: 0.5,
   EDGE_EXIT_FRACTION: 0.7,
   EDGE_MIN_DURATION_SEC: 10,
   KMEANS_K: 3,
   KMEANS_MAX_ITERATIONS: 25,
   MIN_DENSITY_CUTOFF: 0,
-  MAX_FALSE_NEG_FLG_DURATION_SEC: 600,
+  MAX_FALSE_NEG_FLG_DURATION_SEC: 10 * SECONDS_PER_MINUTE,
   FALSE_NEG_CONFIDENCE_MIN: 0.95,
   MAX_CLUSTER_DURATION_SEC: 230,
 });
@@ -57,7 +57,8 @@ function summarizeClusterEvents(events, overrides = {}) {
   const end = overrides.end ?? naturalEnd;
   const count = events.length;
   const durationSec = (end - start) / 1000;
-  const density = durationSec > 0 ? count / (durationSec / 60) : 0;
+  const density =
+    durationSec > 0 ? count / (durationSec / SECONDS_PER_MINUTE) : 0;
   return { start, end, durationSec, count, density, events };
 }
 
@@ -382,12 +383,15 @@ export function computeClusterSeverity(cluster) {
     lastEvt.date.getTime() + (lastEvt.durationSec || 0) * 1000,
   );
   const rawSpanSec = Math.max(1, (lastEnd - firstStart) / 1000);
-  const windowMin = Math.max(1 / 60, cluster.durationSec / 60);
+  const windowMin = Math.max(
+    1 / SECONDS_PER_MINUTE,
+    cluster.durationSec / SECONDS_PER_MINUTE,
+  );
   const density = cluster.count / windowMin; // events per minute over the final window
   const edgeExtensionSec = Math.max(0, cluster.durationSec - rawSpanSec);
   // Weighted combination; weights chosen for stable, interpretable ordering
   const score =
-    (totalEvtDuration / 60) * 1.5 +
+    (totalEvtDuration / SECONDS_PER_MINUTE) * 1.5 +
     density * 0.5 +
     (edgeExtensionSec / 30) * 1.0;
   return Number.isFinite(score) ? score : 0;
