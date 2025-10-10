@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import * as ETC from './EpapTrendsCharts';
+import { EPAP_HELP_TOOLTIP_MIN_COUNT } from '../test-utils/fixtures/chartExpectations.js';
 
 const EpapTrendsCharts = ETC.default;
 
@@ -14,7 +15,9 @@ describe('EpapTrendsCharts', () => {
     const { getAllByTestId } = render(<EpapTrendsCharts data={data} />);
     expect(getAllByTestId('plotly-chart').length).toBeGreaterThan(0);
     // 5 charts are always present for provided data
-    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(5);
+    expect(getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(
+      EPAP_HELP_TOOLTIP_MIN_COUNT,
+    );
   });
 });
 

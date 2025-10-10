@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { FLG_BRIDGE_THRESHOLD } from '../utils/clustering.js';
+import { FLG_LEVEL_BELOW_THRESHOLD_DELTA } from '../test-utils/fixtures/clustering.js';
 import './csv.worker.js';
 
 describe('csv.worker chunk handler', () => {
@@ -16,7 +17,8 @@ describe('csv.worker chunk handler', () => {
         data: [
           {
             Event: 'FLG',
-            'Data/Duration': FLG_BRIDGE_THRESHOLD - 0.01,
+            'Data/Duration':
+              FLG_BRIDGE_THRESHOLD - FLG_LEVEL_BELOW_THRESHOLD_DELTA,
             DateTime: '2025-01-01T00:00:00',
           },
           {
@@ -42,11 +44,14 @@ describe('csv.worker chunk handler', () => {
 
     self.onmessage({ data: { file: 'file', filterEvents: true } });
 
-    expect(self.postMessage).toHaveBeenNthCalledWith(1, {
+    const [[progressPayload], [rowsPayload], [completePayload]] =
+      self.postMessage.mock.calls;
+
+    expect(progressPayload).toEqual({
       type: 'progress',
       cursor: 321,
     });
-    expect(self.postMessage).toHaveBeenNthCalledWith(2, {
+    expect(rowsPayload).toEqual({
       type: 'rows',
       rows: [
         {
@@ -61,7 +66,7 @@ describe('csv.worker chunk handler', () => {
         },
       ],
     });
-    expect(self.postMessage).toHaveBeenNthCalledWith(3, { type: 'complete' });
+    expect(completePayload).toEqual({ type: 'complete' });
 
     self.postMessage = originalPost;
   });

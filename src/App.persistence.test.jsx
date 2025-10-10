@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { AppProviders } from './app/AppProviders.jsx';
 import { AppShell } from './App.jsx';
+import { AUTO_SAVE_FLUSH_DELAY_MS } from './test-utils/fixtures/timings.js';
 
 const memoryStore = { last: null };
 
@@ -38,7 +39,7 @@ describe('App persistence flow', () => {
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
     await screen.findAllByText('Median AHI');
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, AUTO_SAVE_FLUSH_DELAY_MS));
     const { putLastSession } = await import('./utils/db');
     expect(putLastSession).toHaveBeenCalled();
     expect(memoryStore.last).not.toBeNull();
