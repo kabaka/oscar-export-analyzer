@@ -8,6 +8,7 @@ import {
   computeClusterSeverity,
   clustersToCsv,
   CLUSTER_ALGORITHMS,
+  CLUSTERING_DEFAULTS,
 } from './clustering';
 import { EVENT_WINDOW_MS } from '../constants';
 
@@ -41,9 +42,9 @@ describe('clusterApneaEvents', () => {
     const clusters = clusterApneaEvents({
       events,
       flgEvents: flg,
-      gapSec: 30,
-      bridgeThreshold: 0.1,
-      bridgeSec: 60,
+      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC / 2,
+      bridgeThreshold: CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
     });
     expect(clusters).toHaveLength(1);
   });
@@ -58,12 +59,14 @@ describe('clusterApneaEvents', () => {
     const clusters = clusterApneaEvents({
       events,
       flgEvents: [],
-      gapSec: 300,
-      bridgeThreshold: 0.1,
-      bridgeSec: 60,
-      edgeEnter: 0.5,
-      edgeExit: 0.35,
-      edgeMinDurSec: 10,
+      gapSec: CLUSTERING_DEFAULTS.APNEA_GAP_SEC * 2.5,
+      bridgeThreshold: CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
+      edgeEnter: CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD,
+      edgeExit:
+        CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD *
+        CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION,
+      edgeMinDurSec: CLUSTERING_DEFAULTS.EDGE_MIN_DURATION_SEC,
       minDensity: 1.5,
     });
     // density = 2 events over ~3+ minutes -> < 1.5 ev/min, so filtered out
@@ -84,11 +87,13 @@ describe('clusterApneaEvents', () => {
     const clusters = clusterApneaEvents({
       events,
       flgEvents: flg,
-      gapSec: 120,
-      bridgeThreshold: 0.1,
-      bridgeSec: 60,
-      edgeEnter: 0.5,
-      edgeExit: 0.35,
+      gapSec: CLUSTERING_DEFAULTS.APNEA_GAP_SEC,
+      bridgeThreshold: CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
+      edgeEnter: CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD,
+      edgeExit:
+        CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD *
+        CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION,
       edgeMinDurSec: 5,
     });
     expect(clusters.length).toBe(1);
@@ -121,7 +126,7 @@ describe('clusterApneaEvents', () => {
     const clusters = clusterApneaEvents({
       algorithm: CLUSTER_ALGORITHMS.AGGLOMERATIVE,
       events,
-      linkageThresholdSec: 30,
+      linkageThresholdSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC / 2,
     });
     expect(clusters).toHaveLength(2);
     expect(clusters[0].count).toBe(2);
@@ -142,8 +147,8 @@ describe('dedicated apnea clustering implementations', () => {
     const clusters = clusterApneaEventsBridged({
       events,
       flgEvents,
-      gapSec: 30,
-      bridgeSec: 90,
+      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC / 2,
+      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC * 1.5,
       bridgeThreshold: 0.15,
     });
     expect(clusters).toHaveLength(1);
@@ -163,7 +168,7 @@ describe('dedicated apnea clustering implementations', () => {
     const events = [mkEvent(0), mkEvent(50), mkEvent(500)];
     const clusters = clusterApneaEventsAgglomerative({
       events,
-      linkageThresholdSec: 60,
+      linkageThresholdSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
     });
     expect(clusters).toHaveLength(2);
     expect(clusters.map((cl) => cl.count)).toEqual([2, 1]);
@@ -195,14 +200,14 @@ describe('detectFalseNegatives', () => {
     ];
     const strict = detectFalseNegatives(details, {
       flThreshold: 0.9,
-      confidenceMin: 0.95,
-      gapSec: 60,
+      confidenceMin: CLUSTERING_DEFAULTS.FALSE_NEG_CONFIDENCE_MIN,
+      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
       minDurationSec: 30,
     });
     const lenient = detectFalseNegatives(details, {
       flThreshold: 0.7,
       confidenceMin: 0.7,
-      gapSec: 60,
+      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
       minDurationSec: 30,
     });
     expect(strict.length).toBe(0);
