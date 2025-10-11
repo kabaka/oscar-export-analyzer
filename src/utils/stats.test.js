@@ -40,12 +40,18 @@ import {
   DEFAULT_KAPLAN_MEIER_DATA,
   LINEAR_SERIES,
   LOESS_BANDWIDTH,
+  LOESS_SAMPLE_POINTS,
+  RUNNING_QUANTILE_HIGH,
+  RUNNING_QUANTILE_MEDIAN,
+  RUNNING_QUANTILE_SAMPLE_POINTS,
+  RUNNING_QUANTILE_SERIES_LENGTH,
   RUNNING_QUANTILE_WINDOW,
   SMALL_SAMPLE_SIZE,
   STL_RESIDUAL_MEAN_ABS_LIMIT,
   STL_SEASONAL_PATTERN_DIFF_LIMIT,
   STL_TREND_MEAN_ABS_ERROR_LIMIT,
   STRICT_LINEAR_TOLERANCE,
+  STL_SEASON_LENGTH,
 } from '../test-utils/testConstants';
 
 const AUTOCORRELATION_SERIES = [1, 2, 3, 4, 5];
@@ -55,17 +61,12 @@ const PARTIAL_AUTOCORRELATION_SERIES = [
 ];
 const GREENWOOD_LOWER_BOUNDS = [0.0578428, 0.00894687, Number.NaN];
 const GREENWOOD_UPPER_BOUNDS = [0.844865, 0.665331, Number.NaN];
-const LOESS_SAMPLE_POINTS = [0, 5, 10, 15, 19];
 const LOESS_SLOPE = 2;
 const LOESS_INTERCEPT = 1;
-const RUNNING_QUANTILE_SAMPLE_POINTS = [0, 10, 20, 29];
-const RUNNING_QUANTILE_MEDIAN = 0.5;
-const RUNNING_QUANTILE_HIGH = 0.9;
 const PARTIAL_CORRELATION_NOISE_SCALE = 0.1;
 const PARTIAL_CORRELATION_SIN_FREQ = 10;
 const PARTIAL_CORRELATION_COS_FREQ = 8;
 const CHANGE_POINT_FIRST_SEGMENT = 30;
-const STL_SEASON_LENGTH = 7;
 const STL_WEEK_MULTIPLIER = 6;
 const GREENWOOD_PRECISION = 5;
 const AUTOCORRELATION_MAX_LAG = 6;
@@ -249,7 +250,10 @@ describe('loessSmooth and runningQuantileXY', () => {
   });
 
   it('runningQuantileXY returns plausible quantiles', () => {
-    const x = Array.from({ length: 30 }, (_, i) => i);
+    const x = Array.from(
+      { length: RUNNING_QUANTILE_SERIES_LENGTH },
+      (_, i) => i,
+    );
     const y = x.map((v) => v); // identity
     const q50 = runningQuantileXY(
       x,
@@ -265,7 +269,7 @@ describe('loessSmooth and runningQuantileXY', () => {
     }
     q50.forEach((v) => {
       expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThanOrEqual(29);
+      expect(v).toBeLessThanOrEqual(RUNNING_QUANTILE_SERIES_LENGTH - 1);
     });
     const q90 = runningQuantileXY(
       x,
