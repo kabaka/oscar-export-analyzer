@@ -1,0 +1,22 @@
+export const CLUSTER_ALGORITHMS = Object.freeze({
+  BRIDGED: 'bridged',
+  KMEANS: 'kmeans',
+  AGGLOMERATIVE: 'agglomerative',
+});
+
+export const DEFAULT_CLUSTER_ALGORITHM = CLUSTER_ALGORITHMS.BRIDGED;
+
+export const DEFAULT_APNEA_CLUSTER_GAP_SEC = 120;
+export const DEFAULT_FLG_BRIDGE_THRESHOLD = 0.1;
+export const DEFAULT_FLG_CLUSTER_GAP_SEC = 60;
+export const DEFAULT_KMEANS_K = 3;
+export const DEFAULT_SINGLE_LINK_GAP_SEC = DEFAULT_APNEA_CLUSTER_GAP_SEC;
+
+export const CLI_DEFAULTS = Object.freeze({
+  gapSec: DEFAULT_APNEA_CLUSTER_GAP_SEC,
+  bridgeThreshold: DEFAULT_FLG_BRIDGE_THRESHOLD,
+  bridgeSec: DEFAULT_FLG_CLUSTER_GAP_SEC,
+  algorithm: DEFAULT_CLUSTER_ALGORITHM,
+  k: DEFAULT_KMEANS_K,
+  linkageThresholdSec: DEFAULT_SINGLE_LINK_GAP_SEC,
+});

@@ -13,19 +13,23 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
     clusterApneaEvents,
     APOEA_CLUSTER_MIN_TOTAL_SEC,
     MAX_CLUSTER_DURATION_SEC,
-    APNEA_GAP_DEFAULT,
-    FLG_BRIDGE_THRESHOLD,
-    FLG_CLUSTER_GAP_DEFAULT,
-    DEFAULT_CLUSTER_ALGORITHM,
+  } = await import('./src/utils/clustering.js');
+  const {
+    APNEA_CLUSTER_MIN_EVENTS,
+    CLI_DEFAULTS,
     CLUSTER_ALGORITHMS,
+    DEFAULT_APNEA_CLUSTER_GAP_SEC,
+    DEFAULT_CLUSTER_ALGORITHM,
+    DEFAULT_FLG_BRIDGE_THRESHOLD,
+    DEFAULT_FLG_CLUSTER_GAP_SEC,
     DEFAULT_KMEANS_K,
     DEFAULT_SINGLE_LINK_GAP_SEC,
-  } = await import('./src/utils/clustering.js');
-  const { APNEA_CLUSTER_MIN_EVENTS } = await import('./src/constants.js');
+  } = await import('./src/constants.js');
+  const mergedOpts = { ...CLI_DEFAULTS, ...opts };
   const {
-    gapSec = APNEA_GAP_DEFAULT,
-    bridgeThreshold = FLG_BRIDGE_THRESHOLD,
-    bridgeSec = FLG_CLUSTER_GAP_DEFAULT,
+    gapSec = DEFAULT_APNEA_CLUSTER_GAP_SEC,
+    bridgeThreshold = DEFAULT_FLG_BRIDGE_THRESHOLD,
+    bridgeSec = DEFAULT_FLG_CLUSTER_GAP_SEC,
     edgeEnter,
     edgeExit,
     edgeMinDurSec,
@@ -33,7 +37,7 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
     algorithm = DEFAULT_CLUSTER_ALGORITHM,
     k = DEFAULT_KMEANS_K,
     linkageThresholdSec = DEFAULT_SINGLE_LINK_GAP_SEC,
-  } = opts;
+  } = mergedOpts;
   console.error(`Reading details from ${detailFilePath}`);
   const detailStream = fs.createReadStream(detailFilePath);
   const rl = readline.createInterface({
@@ -154,56 +158,76 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
 
 module.exports = { run };
 
-// Entry point
-const args = process.argv.slice(2);
-const positionals = [];
-const flags = {};
-for (const arg of args) {
-  if (arg.startsWith('--')) {
-    const [rawKey, rawVal] = arg.slice(2).split('=');
-    const key = rawKey.trim();
-    const value = rawVal === undefined ? true : rawVal.trim();
-    flags[key] = value;
-  } else {
-    positionals.push(arg);
+async function main() {
+  const args = process.argv.slice(2);
+  const positionals = [];
+  const flags = {};
+  for (const arg of args) {
+    if (arg.startsWith('--')) {
+      const [rawKey, rawVal] = arg.slice(2).split('=');
+      const key = rawKey.trim();
+      const value = rawVal === undefined ? true : rawVal.trim();
+      flags[key] = value;
+    } else {
+      positionals.push(arg);
+    }
+  }
+
+  if (positionals.length < 1) {
+    const {
+      CLUSTER_ALGORITHMS,
+      DEFAULT_APNEA_CLUSTER_GAP_SEC,
+      DEFAULT_CLUSTER_ALGORITHM,
+      DEFAULT_FLG_BRIDGE_THRESHOLD,
+      DEFAULT_FLG_CLUSTER_GAP_SEC,
+      DEFAULT_KMEANS_K,
+      DEFAULT_SINGLE_LINK_GAP_SEC,
+    } = await import('./src/constants.js');
+    const availableAlgorithms = Object.values(CLUSTER_ALGORITHMS).join('|');
+    console.error(
+      `Usage: node analysis.js <detailsCsv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec] [--algorithm=<${availableAlgorithms}>] [--k=<clusters>] [--linkage-threshold-sec=<seconds>]`,
+    );
+    console.error(
+      `Defaults: algorithm=${DEFAULT_CLUSTER_ALGORITHM}, gapSec=${DEFAULT_APNEA_CLUSTER_GAP_SEC}, flgBridgeThreshold=${DEFAULT_FLG_BRIDGE_THRESHOLD}, flgClusterGapSec=${DEFAULT_FLG_CLUSTER_GAP_SEC}, k=${DEFAULT_KMEANS_K}, linkage-threshold-sec=${DEFAULT_SINGLE_LINK_GAP_SEC}`,
+    );
+    process.exit(1);
+  }
+
+  const [detailsCsv, dateStr, gapArg, flgArg, bridgeArg] = positionals;
+  const cliOpts = {};
+  if (gapArg) {
+    const parsed = parseInt(gapArg, 10);
+    if (!Number.isNaN(parsed)) cliOpts.gapSec = parsed;
+  }
+  if (flgArg) {
+    const parsed = parseFloat(flgArg);
+    if (!Number.isNaN(parsed)) cliOpts.bridgeThreshold = parsed;
+  }
+  if (bridgeArg) {
+    const parsed = parseInt(bridgeArg, 10);
+    if (!Number.isNaN(parsed)) cliOpts.bridgeSec = parsed;
+  }
+
+  if (flags.algorithm)
+    cliOpts.algorithm = String(flags.algorithm).toLowerCase();
+  if (flags.k) {
+    const parsed = parseInt(flags.k, 10);
+    if (!Number.isNaN(parsed)) cliOpts.k = parsed;
+  }
+  if (flags['linkage-threshold-sec']) {
+    const parsed = parseInt(flags['linkage-threshold-sec'], 10);
+    if (!Number.isNaN(parsed)) cliOpts.linkageThresholdSec = parsed;
+  }
+
+  try {
+    await run(detailsCsv, dateStr || '2025-06-15', cliOpts);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
   }
 }
 
-if (positionals.length < 1) {
-  console.error(
-    'Usage: node analysis.js <detailsCsv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec] [--algorithm=<bridged|kmeans|agglomerative>] [--k=<clusters>] [--linkage-threshold-sec=<seconds>]',
-  );
-  console.error(
-    'Defaults: algorithm=bridged, gapSec=120, flgBridgeThreshold=0.1, flgClusterGapSec=60, k=3, linkage-threshold-sec=120',
-  );
-  process.exit(1);
-}
-const [detailsCsv, dateStr, gapArg, flgArg, bridgeArg] = positionals;
-const cliOpts = {};
-if (gapArg) {
-  const parsed = parseInt(gapArg, 10);
-  if (!Number.isNaN(parsed)) cliOpts.gapSec = parsed;
-}
-if (flgArg) {
-  const parsed = parseFloat(flgArg);
-  if (!Number.isNaN(parsed)) cliOpts.bridgeThreshold = parsed;
-}
-if (bridgeArg) {
-  const parsed = parseInt(bridgeArg, 10);
-  if (!Number.isNaN(parsed)) cliOpts.bridgeSec = parsed;
-}
-
-if (flags.algorithm) cliOpts.algorithm = String(flags.algorithm).toLowerCase();
-if (flags.k) {
-  const parsed = parseInt(flags.k, 10);
-  if (!Number.isNaN(parsed)) cliOpts.k = parsed;
-}
-if (flags['linkage-threshold-sec']) {
-  const parsed = parseInt(flags['linkage-threshold-sec'], 10);
-  if (!Number.isNaN(parsed)) cliOpts.linkageThresholdSec = parsed;
-}
-
-run(detailsCsv, dateStr || '2025-06-15', cliOpts).catch((err) => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

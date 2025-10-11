@@ -10,6 +10,12 @@ import { RangeComparisonsSection } from './features/range-comparisons';
 import { ApneaClustersSection } from './features/apnea-clusters';
 import FalseNegativesSection from './features/false-negatives/Section';
 import RawExplorerSection from './features/raw-explorer/Section';
+import {
+  DEFAULT_HEADER_OFFSET_PX,
+  OBSERVER_THRESHOLDS,
+  buildObserverRootMargin,
+  computeTopMargin,
+} from './constants';
 
 export function AppShell() {
   const {
@@ -68,10 +74,13 @@ export function AppShell() {
     const cssVar = getComputedStyle(root)
       .getPropertyValue('--header-offset')
       .trim();
-    const headerOffset = cssVar.endsWith('px')
+    const parsedOffset = cssVar.endsWith('px')
       ? parseFloat(cssVar)
-      : Number(cssVar) || 58;
-    const topMargin = headerOffset + 8;
+      : Number(cssVar);
+    const headerOffset = Number.isFinite(parsedOffset)
+      ? parsedOffset
+      : DEFAULT_HEADER_OFFSET_PX;
+    const topMargin = computeTopMargin(headerOffset);
 
     const pickActive = () => {
       const ids = tocSections.map((section) => section.id);
@@ -93,8 +102,8 @@ export function AppShell() {
       },
       {
         root: null,
-        rootMargin: `-${topMargin}px 0px -70% 0px`,
-        threshold: [0, 0.25, 0.5, 0.75, 1],
+        rootMargin: buildObserverRootMargin(topMargin),
+        threshold: OBSERVER_THRESHOLDS,
       },
     );
 
