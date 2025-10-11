@@ -1,0 +1,960 @@
+{
+  "generatedAt": "2025-10-11T02:23:12.205Z",
+  "rule": "no-magic-numbers: ['error', {ignoreArrayIndexes:true, ignoreDefaultValues:true, ignore:[-1,0,1], enforceConst:true}]",
+  "totals": {
+    "files": 31,
+    "violations": 465
+  },
+  "files": [
+    {
+      "filePath": "src/utils/stats.test.js",
+      "total": 128,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 36
+        },
+        {
+          "literal": "3",
+          "count": 23
+        },
+        {
+          "literal": "4",
+          "count": 15
+        },
+        {
+          "literal": "5",
+          "count": 7
+        },
+        {
+          "literal": "10",
+          "count": 6
+        },
+        {
+          "literal": "0.5",
+          "count": 5
+        },
+        {
+          "literal": "6",
+          "count": 4
+        },
+        {
+          "literal": "-0.4",
+          "count": 2
+        },
+        {
+          "literal": "14",
+          "count": 2
+        },
+        {
+          "literal": "29",
+          "count": 2
+        },
+        {
+          "literal": "-0.05",
+          "count": 1
+        },
+        {
+          "literal": "-0.1",
+          "count": 1
+        },
+        {
+          "literal": "0.00894687",
+          "count": 1
+        },
+        {
+          "literal": "0.02",
+          "count": 1
+        },
+        {
+          "literal": "0.025",
+          "count": 1
+        },
+        {
+          "literal": "0.04",
+          "count": 1
+        },
+        {
+          "literal": "0.0578428",
+          "count": 1
+        },
+        {
+          "literal": "0.1",
+          "count": 1
+        },
+        {
+          "literal": "0.11",
+          "count": 1
+        },
+        {
+          "literal": "0.158655254",
+          "count": 1
+        },
+        {
+          "literal": "0.23",
+          "count": 1
+        },
+        {
+          "literal": "0.25",
+          "count": 1
+        },
+        {
+          "literal": "0.34",
+          "count": 1
+        },
+        {
+          "literal": "0.4",
+          "count": 1
+        },
+        {
+          "literal": "0.46",
+          "count": 1
+        },
+        {
+          "literal": "0.665331",
+          "count": 1
+        },
+        {
+          "literal": "0.8",
+          "count": 1
+        },
+        {
+          "literal": "0.841344746",
+          "count": 1
+        },
+        {
+          "literal": "0.844865",
+          "count": 1
+        },
+        {
+          "literal": "0.975",
+          "count": 1
+        },
+        {
+          "literal": "1.5",
+          "count": 1
+        },
+        {
+          "literal": "15",
+          "count": 1
+        },
+        {
+          "literal": "19",
+          "count": 1
+        },
+        {
+          "literal": "20",
+          "count": 1
+        },
+        {
+          "literal": "2021",
+          "count": 1
+        },
+        {
+          "literal": "7",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/utils/stats.js",
+      "total": 71,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 31
+        },
+        {
+          "literal": "3",
+          "count": 6
+        },
+        {
+          "literal": "1e-12",
+          "count": 2
+        },
+        {
+          "literal": "-0.3565638",
+          "count": 1
+        },
+        {
+          "literal": "-1.821256",
+          "count": 1
+        },
+        {
+          "literal": "-18.61500062529",
+          "count": 1
+        },
+        {
+          "literal": "-21.06224101826",
+          "count": 1
+        },
+        {
+          "literal": "-25.44106049637",
+          "count": 1
+        },
+        {
+          "literal": "-8.4735109309",
+          "count": 1
+        },
+        {
+          "literal": "0.0000002888167364",
+          "count": 1
+        },
+        {
+          "literal": "0.0000003960315187",
+          "count": 1
+        },
+        {
+          "literal": "0.0000321767881768",
+          "count": 1
+        },
+        {
+          "literal": "0.0003951896511919",
+          "count": 1
+        },
+        {
+          "literal": "0.0038405729373609",
+          "count": 1
+        },
+        {
+          "literal": "0.0276438810333863",
+          "count": 1
+        },
+        {
+          "literal": "0.1607979714918209",
+          "count": 1
+        },
+        {
+          "literal": "0.2316419",
+          "count": 1
+        },
+        {
+          "literal": "0.3193815",
+          "count": 1
+        },
+        {
+          "literal": "0.3374754822726147",
+          "count": 1
+        },
+        {
+          "literal": "0.3989423",
+          "count": 1
+        },
+        {
+          "literal": "0.42",
+          "count": 1
+        },
+        {
+          "literal": "0.5",
+          "count": 1
+        },
+        {
+          "literal": "0.9761690190917186",
+          "count": 1
+        },
+        {
+          "literal": "1.330274",
+          "count": 1
+        },
+        {
+          "literal": "1.781478",
+          "count": 1
+        },
+        {
+          "literal": "10",
+          "count": 1
+        },
+        {
+          "literal": "100",
+          "count": 1
+        },
+        {
+          "literal": "1000",
+          "count": 1
+        },
+        {
+          "literal": "12",
+          "count": 1
+        },
+        {
+          "literal": "2.50662823884",
+          "count": 1
+        },
+        {
+          "literal": "23.08336743743",
+          "count": 1
+        },
+        {
+          "literal": "24",
+          "count": 1
+        },
+        {
+          "literal": "3.13082909833",
+          "count": 1
+        },
+        {
+          "literal": "4",
+          "count": 1
+        },
+        {
+          "literal": "41.39119773534",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/utils/clustering.test.js",
+      "total": 54,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 11
+        },
+        {
+          "literal": "10",
+          "count": 8
+        },
+        {
+          "literal": "1000",
+          "count": 7
+        },
+        {
+          "literal": "50000",
+          "count": 4
+        },
+        {
+          "literal": "20",
+          "count": 3
+        },
+        {
+          "literal": "30",
+          "count": 3
+        },
+        {
+          "literal": "30000",
+          "count": 3
+        },
+        {
+          "literal": "40000",
+          "count": 2
+        },
+        {
+          "literal": "180000",
+          "count": 1
+        },
+        {
+          "literal": "2.5",
+          "count": 1
+        },
+        {
+          "literal": "20_000",
+          "count": 1
+        },
+        {
+          "literal": "20000",
+          "count": 1
+        },
+        {
+          "literal": "3",
+          "count": 1
+        },
+        {
+          "literal": "40",
+          "count": 1
+        },
+        {
+          "literal": "5",
+          "count": 1
+        },
+        {
+          "literal": "50",
+          "count": 1
+        },
+        {
+          "literal": "500",
+          "count": 1
+        },
+        {
+          "literal": "6",
+          "count": 1
+        },
+        {
+          "literal": "60_000",
+          "count": 1
+        },
+        {
+          "literal": "600_000",
+          "count": 1
+        },
+        {
+          "literal": "70",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/EpapTrendsCharts.jsx",
+      "total": 33,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 14
+        },
+        {
+          "literal": "0.5",
+          "count": 3
+        },
+        {
+          "literal": "0.25",
+          "count": 2
+        },
+        {
+          "literal": "0.75",
+          "count": 2
+        },
+        {
+          "literal": "25",
+          "count": 2
+        },
+        {
+          "literal": "3600",
+          "count": 2
+        },
+        {
+          "literal": "7",
+          "count": 2
+        },
+        {
+          "literal": "-30",
+          "count": 1
+        },
+        {
+          "literal": "0.3",
+          "count": 1
+        },
+        {
+          "literal": "0.9",
+          "count": 1
+        },
+        {
+          "literal": "1e-12",
+          "count": 1
+        },
+        {
+          "literal": "30",
+          "count": 1
+        },
+        {
+          "literal": "60",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/SummaryAnalysis.jsx",
+      "total": 26,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 24
+        },
+        {
+          "literal": "1.5",
+          "count": 1
+        },
+        {
+          "literal": "100",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/utils/analytics.test.js",
+      "total": 20,
+      "categories": [
+        {
+          "literal": "10",
+          "count": 4
+        },
+        {
+          "literal": "1000",
+          "count": 4
+        },
+        {
+          "literal": "200",
+          "count": 2
+        },
+        {
+          "literal": "20",
+          "count": 1
+        },
+        {
+          "literal": "25",
+          "count": 1
+        },
+        {
+          "literal": "30",
+          "count": 1
+        },
+        {
+          "literal": "35",
+          "count": 1
+        },
+        {
+          "literal": "380",
+          "count": 1
+        },
+        {
+          "literal": "40",
+          "count": 1
+        },
+        {
+          "literal": "400",
+          "count": 1
+        },
+        {
+          "literal": "5",
+          "count": 1
+        },
+        {
+          "literal": "50",
+          "count": 1
+        },
+        {
+          "literal": "80",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/utils/clustering.js",
+      "total": 20,
+      "categories": [
+        {
+          "literal": "1000",
+          "count": 15
+        },
+        {
+          "literal": "0.5",
+          "count": 1
+        },
+        {
+          "literal": "1.5",
+          "count": 1
+        },
+        {
+          "literal": "10",
+          "count": 1
+        },
+        {
+          "literal": "3",
+          "count": 1
+        },
+        {
+          "literal": "30",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/utils/export.js",
+      "total": 16,
+      "categories": [
+        {
+          "literal": "3",
+          "count": 15
+        },
+        {
+          "literal": "100",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/UsagePatternsCharts.jsx",
+      "total": 14,
+      "categories": [
+        {
+          "literal": "100",
+          "count": 2
+        },
+        {
+          "literal": "2",
+          "count": 2
+        },
+        {
+          "literal": "7",
+          "count": 2
+        },
+        {
+          "literal": "0.2",
+          "count": 1
+        },
+        {
+          "literal": "0.4",
+          "count": 1
+        },
+        {
+          "literal": "0.6",
+          "count": 1
+        },
+        {
+          "literal": "0.8",
+          "count": 1
+        },
+        {
+          "literal": "10",
+          "count": 1
+        },
+        {
+          "literal": "3",
+          "count": 1
+        },
+        {
+          "literal": "3600",
+          "count": 1
+        },
+        {
+          "literal": "6",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/AhiTrendsCharts.jsx",
+      "total": 12,
+      "categories": [
+        {
+          "literal": "100",
+          "count": 4
+        },
+        {
+          "literal": "2",
+          "count": 4
+        },
+        {
+          "literal": "10",
+          "count": 3
+        },
+        {
+          "literal": "3",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/features/range-comparisons/RangeComparisons.jsx",
+      "total": 11,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 10
+        },
+        {
+          "literal": "3600",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/FalseNegativesAnalysis.jsx",
+      "total": 9,
+      "categories": [
+        {
+          "literal": "100",
+          "count": 6
+        },
+        {
+          "literal": "20",
+          "count": 1
+        },
+        {
+          "literal": "5",
+          "count": 1
+        },
+        {
+          "literal": "6",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/features/apnea-clusters/ApneaClusterAnalysis.test.jsx",
+      "total": 8,
+      "categories": [
+        {
+          "literal": "1000",
+          "count": 3
+        },
+        {
+          "literal": "100000",
+          "count": 1
+        },
+        {
+          "literal": "2",
+          "count": 1
+        },
+        {
+          "literal": "55000",
+          "count": 1
+        },
+        {
+          "literal": "70000",
+          "count": 1
+        },
+        {
+          "literal": "80000",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/App.jsx",
+      "total": 7,
+      "categories": [
+        {
+          "literal": "100",
+          "count": 2
+        },
+        {
+          "literal": "0.25",
+          "count": 1
+        },
+        {
+          "literal": "0.5",
+          "count": 1
+        },
+        {
+          "literal": "0.75",
+          "count": 1
+        },
+        {
+          "literal": "58",
+          "count": 1
+        },
+        {
+          "literal": "8",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/features/apnea-clusters/ApneaClusterAnalysis.jsx",
+      "total": 5,
+      "categories": [
+        {
+          "literal": "100",
+          "count": 1
+        },
+        {
+          "literal": "1000",
+          "count": 1
+        },
+        {
+          "literal": "2",
+          "count": 1
+        },
+        {
+          "literal": "200",
+          "count": 1
+        },
+        {
+          "literal": "30",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/features/overview/Overview.jsx",
+      "total": 4,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "filePath": "analysis.js",
+      "total": 3,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 2
+        },
+        {
+          "literal": "4",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/app/useAppState.js",
+      "total": 3,
+      "categories": [
+        {
+          "literal": "0.5",
+          "count": 1
+        },
+        {
+          "literal": "0.8",
+          "count": 1
+        },
+        {
+          "literal": "0.9",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/hooks/useSessionManager.test.js",
+      "total": 3,
+      "categories": [
+        {
+          "literal": "600",
+          "count": 2
+        },
+        {
+          "literal": "2",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/ui/DocsModal.jsx",
+      "total": 2,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 1
+        },
+        {
+          "literal": "6",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/features/apnea-clusters/ApneaEventStats.jsx",
+      "total": 2,
+      "categories": [
+        {
+          "literal": "100",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "filePath": "src/hooks/useDateRangeFilter.js",
+      "total": 2,
+      "categories": [
+        {
+          "literal": "10",
+          "count": 1
+        },
+        {
+          "literal": "60000",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/hooks/useSessionManager.js",
+      "total": 2,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 1
+        },
+        {
+          "literal": "500",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/test-utils/testConstants.js",
+      "total": 2,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 1
+        },
+        {
+          "literal": "3",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/workers/csv.worker.js",
+      "total": 2,
+      "categories": [
+        {
+          "literal": "1024",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/RawDataExplorer.jsx",
+      "total": 1,
+      "categories": [
+        {
+          "literal": "2",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/ui/ParamInput.test.jsx",
+      "total": 1,
+      "categories": [
+        {
+          "literal": "30",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/components/UsagePatternsCharts.test.jsx",
+      "total": 1,
+      "categories": [
+        {
+          "literal": "7",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/features/apnea-clusters/ApneaEventStats.test.jsx",
+      "total": 1,
+      "categories": [
+        {
+          "literal": "4",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/test-utils/builders.js",
+      "total": 1,
+      "categories": [
+        {
+          "literal": "10",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "filePath": "src/utils/chartTheme.js",
+      "total": 1,
+      "categories": [
+        {
+          "literal": "8",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
