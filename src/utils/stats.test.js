@@ -51,14 +51,7 @@ import {
 const AUTOCORRELATION_SERIES = [1, 2, 3, 4, 5];
 const AUTOCORRELATION_EXPECTED = [1, 0.4, -0.1, -0.4, -0.4];
 const PARTIAL_AUTOCORRELATION_SERIES = [
-  0.8,
-  0.46,
-  0.11,
-  0.23,
-  -0.05,
-  0.02,
-  0.1,
-  0.04,
+  0.8, 0.46, 0.11, 0.23, -0.05, 0.02, 0.1, 0.04,
 ];
 const GREENWOOD_LOWER_BOUNDS = [0.0578428, 0.00894687, Number.NaN];
 const GREENWOOD_UPPER_BOUNDS = [0.844865, 0.665331, Number.NaN];
@@ -239,7 +232,12 @@ describe('loessSmooth and runningQuantileXY', () => {
     const y = LINEAR_SERIES.map(
       (value) => LOESS_SLOPE * value + LOESS_INTERCEPT,
     );
-    const sm = loessSmooth(LINEAR_SERIES, y, LOESS_SAMPLE_POINTS, LOESS_BANDWIDTH);
+    const sm = loessSmooth(
+      LINEAR_SERIES,
+      y,
+      LOESS_SAMPLE_POINTS,
+      LOESS_BANDWIDTH,
+    );
     expect(sm).toHaveLength(LOESS_SAMPLE_POINTS.length);
     // Expect close to true line
     sm.forEach((yv, i) => {
@@ -288,11 +286,7 @@ describe('detectChangePoints', () => {
     const n2 = CHANGE_POINT_FIRST_SEGMENT;
     const series = Array(n1).fill(1).concat(Array(n2).fill(5));
     const dates = series.map((_, i) => new Date(2021, 0, i + 1));
-    const cps = detectChangePoints(
-      series,
-      dates,
-      DEFAULT_CHANGE_POINT_WINDOW,
-    );
+    const cps = detectChangePoints(series, dates, DEFAULT_CHANGE_POINT_WINDOW);
     // expect one change near index 30
     expect(cps.length).toBeGreaterThanOrEqual(1);
     const idx = cps.findIndex((d) => d instanceof Date);
@@ -304,8 +298,9 @@ describe('stlDecompose', () => {
   it('recovers weekly trend and seasonal structure from a synthetic sine wave', () => {
     const season = STL_SEASON_LENGTH;
     const n = season * STL_WEEK_MULTIPLIER;
-    const trendTrue = Array.from({ length: n }, (_, index) =>
-      STL_TREND_SLOPE * index,
+    const trendTrue = Array.from(
+      { length: n },
+      (_, index) => STL_TREND_SLOPE * index,
     );
     const seasonalTrue = Array.from({ length: n }, (_, index) =>
       Math.sin((2 * Math.PI * (index % season)) / season),
