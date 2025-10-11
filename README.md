@@ -10,6 +10,7 @@ OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produce
 - [Project Goals](#project-goals)
 - [Architecture Overview](#architecture-overview)
 - [Installation](#installation)
+- [Development](#development)
 - [Usage Walkthrough](#usage-walkthrough)
 - [Feature Tour](#feature-tour)
 - [Data Privacy](#data-privacy)
@@ -60,6 +61,14 @@ BASE_URL=/custom/ npm run build
 ```
 
 If `BASE_URL` is unset, the build defaults to `/oscar-export-analyzer/`.
+
+## Development
+
+Common workflows for contributors:
+
+- `npm run lint` – Check code style with the shared ESLint configuration.
+- `npm test -- --run` – Execute the Vitest suite once without watch mode.
+- `npm run lint:magic` – Generate `reports/magic-numbers.json` by running the focused `no-magic-numbers` audit script.
 
 ## Usage Walkthrough
 
