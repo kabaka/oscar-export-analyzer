@@ -1,4 +1,5 @@
 import { vi, beforeEach, afterEach, describe, it, expect } from 'vitest';
+import { DEFAULT_APNEA_CLUSTER_GAP_SEC } from '../test-utils/testConstants';
 
 const finalizeClustersMock = vi.fn();
 const clusterApneaEventsMock = vi.fn();
@@ -41,6 +42,12 @@ describe('analytics.worker', () => {
 
     expect(typeof global.self.onmessage).toBe('function');
 
+    const gapSec = DEFAULT_APNEA_CLUSTER_GAP_SEC;
+    const bridgeThreshold = 0.5;
+    const bridgeSec = 30;
+    const edgeEnter = 1;
+    const edgeExit = 0.3;
+    const minDensity = 0.2;
     const payload = {
       action: 'analyzeDetails',
       payload: {
@@ -57,12 +64,12 @@ describe('analytics.worker', () => {
           },
         ],
         params: {
-          gapSec: 120,
-          bridgeThreshold: 0.5,
-          bridgeSec: 30,
-          edgeEnter: 1,
-          edgeExit: 0.3,
-          minDensity: 0.2,
+          gapSec,
+          bridgeThreshold,
+          bridgeSec,
+          edgeEnter,
+          edgeExit,
+          minDensity,
         },
         fnOptions: { foo: 'bar' },
       },

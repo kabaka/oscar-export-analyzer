@@ -15,6 +15,26 @@ import {
   EVENT_WINDOW_MS,
   SECONDS_PER_MINUTE,
 } from '../constants';
+import { DEFAULT_APNEA_CLUSTER_GAP_SEC } from '../test-utils/testConstants';
+
+const EDGE_ENTER_THRESHOLD = CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD;
+const EDGE_EXIT_THRESHOLD =
+  CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD *
+  CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION;
+const BRIDGE_THRESHOLD = CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD;
+const BRIDGED_GAP_SECONDS = CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC;
+const MIN_DENSITY_THRESHOLD = 1.5;
+const STRICT_FL_THRESHOLD = 0.9;
+const LENIENT_FL_THRESHOLD = 0.7;
+const MIN_DURATION_THRESHOLD = 30;
+const CUSTOM_BRIDGE_THRESHOLD = 0.15;
+const FLG_LEVEL_STRONG = 0.2;
+const FLG_LEVEL_TRANSITION = 0.45;
+const FLG_LEVEL_DECAY = 0.38;
+const FLG_LEVEL_ENTER = 0.6;
+const EDGE_MIN_DURATION = 5;
+const LENIENT_CONFIDENCE = 0.7;
+const BRIDGE_DURATION_MULTIPLIER = 1.5;
 
 describe('clusterApneaEvents', () => {
   it('returns empty array when no events', () => {
@@ -42,13 +62,15 @@ describe('clusterApneaEvents', () => {
       { date: base, durationSec: 10 },
       { date: new Date(base.getTime() + 50000), durationSec: 5 }, // 50s later
     ];
-    const flg = [{ date: new Date(base.getTime() + 30000), level: 0.2 }]; // FLG between events above threshold
+    const flg = [
+      { date: new Date(base.getTime() + 30000), level: FLG_LEVEL_STRONG },
+    ]; // FLG between events above threshold
     const clusters = clusterApneaEvents({
       events,
       flgEvents: flg,
-      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC / 2,
-      bridgeThreshold: CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
-      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
+      gapSec: BRIDGED_GAP_SECONDS / 2,
+      bridgeThreshold: BRIDGE_THRESHOLD,
+      bridgeSec: BRIDGED_GAP_SECONDS,
     });
     expect(clusters).toHaveLength(1);
   });
@@ -63,17 +85,15 @@ describe('clusterApneaEvents', () => {
     const clusters = clusterApneaEvents({
       events,
       flgEvents: [],
-      gapSec: CLUSTERING_DEFAULTS.APNEA_GAP_SEC * 2.5,
-      bridgeThreshold: CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
-      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      edgeEnter: CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD,
-      edgeExit:
-        CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD *
-        CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION,
+      gapSec: DEFAULT_APNEA_CLUSTER_GAP_SEC * 2.5,
+      bridgeThreshold: BRIDGE_THRESHOLD,
+      bridgeSec: BRIDGED_GAP_SECONDS,
+      edgeEnter: EDGE_ENTER_THRESHOLD,
+      edgeExit: EDGE_EXIT_THRESHOLD,
       edgeMinDurSec: CLUSTERING_DEFAULTS.EDGE_MIN_DURATION_SEC,
-      minDensity: 1.5,
+      minDensity: MIN_DENSITY_THRESHOLD,
     });
-    // density = 2 events over ~3+ minutes -> < 1.5 ev/min, so filtered out
+    // density = 2 events over ~3+ minutes -> < MIN_DENSITY_THRESHOLD ev/min, so filtered out
     expect(clusters.length).toBe(0);
   });
 
@@ -87,21 +107,19 @@ describe('clusterApneaEvents', () => {
     ]; // event at t=60s
     // FLG just before event: starts above enter (0.5), then decays above exit (0.35)
     const flg = [
-      { date: new Date(base.getTime() + 30000), level: 0.6 },
-      { date: new Date(base.getTime() + 40000), level: 0.45 },
-      { date: new Date(base.getTime() + 50000), level: 0.38 },
+      { date: new Date(base.getTime() + 30000), level: FLG_LEVEL_ENTER },
+      { date: new Date(base.getTime() + 40000), level: FLG_LEVEL_TRANSITION },
+      { date: new Date(base.getTime() + 50000), level: FLG_LEVEL_DECAY },
     ];
     const clusters = clusterApneaEvents({
       events,
       flgEvents: flg,
       gapSec: CLUSTERING_DEFAULTS.APNEA_GAP_SEC,
-      bridgeThreshold: CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
-      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      edgeEnter: CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD,
-      edgeExit:
-        CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD *
-        CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION,
-      edgeMinDurSec: 5,
+      bridgeThreshold: BRIDGE_THRESHOLD,
+      bridgeSec: BRIDGED_GAP_SECONDS,
+      edgeEnter: EDGE_ENTER_THRESHOLD,
+      edgeExit: EDGE_EXIT_THRESHOLD,
+      edgeMinDurSec: EDGE_MIN_DURATION,
     });
     expect(clusters.length).toBe(1);
     // start should be extended back to first FLG in edge segment (30s)
@@ -150,13 +168,13 @@ describe('dedicated apnea clustering implementations', () => {
 
   it('bridged variant merges events that share FLG support', () => {
     const events = [mkEvent(0), mkEvent(70)];
-    const flgEvents = [{ date: mkEvent(40).date, level: 0.2 }];
+    const flgEvents = [{ date: mkEvent(40).date, level: FLG_LEVEL_STRONG }];
     const clusters = clusterApneaEventsBridged({
       events,
       flgEvents,
-      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC / 2,
-      bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC * 1.5,
-      bridgeThreshold: 0.15,
+      gapSec: BRIDGED_GAP_SECONDS / 2,
+      bridgeSec: BRIDGED_GAP_SECONDS * BRIDGE_DURATION_MULTIPLIER,
+      bridgeThreshold: CUSTOM_BRIDGE_THRESHOLD,
     });
     expect(clusters).toHaveLength(1);
     expect(clusters[0].count).toBe(2);
@@ -164,7 +182,7 @@ describe('dedicated apnea clustering implementations', () => {
 
   it('k-means variant obeys cluster count', () => {
     const events = Array.from({ length: 5 }).map((_, idx) =>
-      mkEvent(idx * 120),
+      mkEvent(idx * DEFAULT_APNEA_CLUSTER_GAP_SEC),
     );
     const clusters = clusterApneaEventsKMeans({ events, k: 3 });
     expect(clusters).toHaveLength(3);
@@ -208,16 +226,16 @@ describe('detectFalseNegatives', () => {
       { Event: 'FLG', 'Data/Duration': 0.8, DateTime: '2021-01-01T00:00:40Z' },
     ];
     const strict = detectFalseNegatives(details, {
-      flThreshold: 0.9,
+      flThreshold: STRICT_FL_THRESHOLD,
       confidenceMin: CLUSTERING_DEFAULTS.FALSE_NEG_CONFIDENCE_MIN,
-      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      minDurationSec: 30,
+      gapSec: BRIDGED_GAP_SECONDS,
+      minDurationSec: MIN_DURATION_THRESHOLD,
     });
     const lenient = detectFalseNegatives(details, {
-      flThreshold: 0.7,
-      confidenceMin: 0.7,
-      gapSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      minDurationSec: 30,
+      flThreshold: LENIENT_FL_THRESHOLD,
+      confidenceMin: LENIENT_CONFIDENCE,
+      gapSec: BRIDGED_GAP_SECONDS,
+      minDurationSec: MIN_DURATION_THRESHOLD,
     });
     expect(strict.length).toBe(0);
     expect(lenient.length).toBe(1);
@@ -275,12 +293,15 @@ describe('computeClusterSeverity', () => {
 describe('clustersToCsv', () => {
   it('produces CSV header and rows', () => {
     const base = new Date('2021-01-01T00:00:00Z');
+    const severity = 1.2345;
+    const severityLowerBound = 1.23;
+    const severityUpperBound = 1.24;
     const cl = {
       start: base,
       end: new Date(base.getTime() + SECONDS_PER_MINUTE * 1000),
       durationSec: CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC,
       count: APNEA_CLUSTER_MIN_EVENTS,
-      severity: 1.2345,
+      severity,
       events: [
         { date: base, durationSec: 10 },
         { date: new Date(base.getTime() + 20000), durationSec: 10 },
@@ -296,7 +317,7 @@ describe('clustersToCsv', () => {
     );
     const cols = lines[1].split(',');
     const sev = Number(cols[5]);
-    expect(sev).toBeGreaterThan(1.23);
-    expect(sev).toBeLessThan(1.24);
+    expect(sev).toBeGreaterThan(severityLowerBound);
+    expect(sev).toBeLessThan(severityUpperBound);
   });
 });

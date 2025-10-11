@@ -35,6 +35,51 @@ import {
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
 import { buildApneaDetail, buildSummaryRow } from '../test-utils/builders';
+import {
+  DEFAULT_CHANGE_POINT_WINDOW,
+  DEFAULT_KAPLAN_MEIER_DATA,
+  LINEAR_SERIES,
+  LOESS_BANDWIDTH,
+  RUNNING_QUANTILE_WINDOW,
+  SMALL_SAMPLE_SIZE,
+  STL_RESIDUAL_MEAN_ABS_LIMIT,
+  STL_SEASONAL_PATTERN_DIFF_LIMIT,
+  STL_TREND_MEAN_ABS_ERROR_LIMIT,
+  STRICT_LINEAR_TOLERANCE,
+} from '../test-utils/testConstants';
+
+const AUTOCORRELATION_SERIES = [1, 2, 3, 4, 5];
+const AUTOCORRELATION_EXPECTED = [1, 0.4, -0.1, -0.4, -0.4];
+const PARTIAL_AUTOCORRELATION_SERIES = [
+  0.8,
+  0.46,
+  0.11,
+  0.23,
+  -0.05,
+  0.02,
+  0.1,
+  0.04,
+];
+const GREENWOOD_LOWER_BOUNDS = [0.0578428, 0.00894687, Number.NaN];
+const GREENWOOD_UPPER_BOUNDS = [0.844865, 0.665331, Number.NaN];
+const LOESS_SAMPLE_POINTS = [0, 5, 10, 15, 19];
+const LOESS_SLOPE = 2;
+const LOESS_INTERCEPT = 1;
+const RUNNING_QUANTILE_SAMPLE_POINTS = [0, 10, 20, 29];
+const RUNNING_QUANTILE_MEDIAN = 0.5;
+const RUNNING_QUANTILE_HIGH = 0.9;
+const PARTIAL_CORRELATION_NOISE_SCALE = 0.1;
+const PARTIAL_CORRELATION_SIN_FREQ = 10;
+const PARTIAL_CORRELATION_COS_FREQ = 8;
+const CHANGE_POINT_FIRST_SEGMENT = 30;
+const STL_SEASON_LENGTH = 7;
+const STL_WEEK_MULTIPLIER = 6;
+const GREENWOOD_PRECISION = 5;
+const AUTOCORRELATION_MAX_LAG = 6;
+const PARTIAL_CORRELATION_SLOPE = 0.8;
+const STL_TREND_SLOPE = 0.2;
+const STEP_FIRST_MEAN_RANGE = { min: 0.5, max: 1.5 };
+const STEP_SECOND_MEAN_RANGE = { min: 4, max: 6 };
 
 describe('parseDuration', () => {
   it('parses HH:MM:SS format', () => {
@@ -61,8 +106,9 @@ describe('parseDuration', () => {
 
 describe('kmSurvival (Kaplan–Meier) uncensored', () => {
   it('computes stepwise survival for simple data', () => {
-    const durs = [1, 1, 2, 3];
-    const { times, survival, lower, upper } = kmSurvival(durs);
+    const { times, survival, lower, upper } = kmSurvival(
+      DEFAULT_KAPLAN_MEIER_DATA,
+    );
     expect(times).toEqual([1, 2, 3]);
     expect(survival[0]).toBeCloseTo(0.5);
     expect(survival[1]).toBeCloseTo(0.25);
@@ -75,27 +121,37 @@ describe('kmSurvival (Kaplan–Meier) uncensored', () => {
   });
 
   it('produces log-log Greenwood CIs matching reference values', () => {
-    const durs = [1, 1, 2, 3];
-    const { lower, upper } = kmSurvival(durs);
-    expect(lower[0]).toBeCloseTo(0.0578428, 5);
-    expect(upper[0]).toBeCloseTo(0.844865, 5);
-    expect(lower[1]).toBeCloseTo(0.00894687, 5);
-    expect(upper[1]).toBeCloseTo(0.665331, 5);
-    expect(lower[2]).toBeNaN();
-    expect(upper[2]).toBeNaN();
+    const { lower, upper } = kmSurvival(DEFAULT_KAPLAN_MEIER_DATA);
+    GREENWOOD_LOWER_BOUNDS.forEach((bound, index) => {
+      if (Number.isNaN(bound)) {
+        expect(lower[index]).toBeNaN();
+      } else {
+        expect(lower[index]).toBeCloseTo(bound, GREENWOOD_PRECISION);
+      }
+    });
+    GREENWOOD_UPPER_BOUNDS.forEach((bound, index) => {
+      if (Number.isNaN(bound)) {
+        expect(upper[index]).toBeNaN();
+      } else {
+        expect(upper[index]).toBeCloseTo(bound, GREENWOOD_PRECISION);
+      }
+    });
   });
 });
 
 describe('computeAutocorrelation', () => {
   it('matches hand-computed autocorrelation for a simple trend', () => {
-    const series = [1, 2, 3, 4, 5];
-    const { values, sampleSize } = computeAutocorrelation(series, 6);
-    expect(sampleSize).toBe(5);
-    const expected = [1, 0.4, -0.1, -0.4, -0.4];
+    const { values, sampleSize } = computeAutocorrelation(
+      AUTOCORRELATION_SERIES,
+      AUTOCORRELATION_MAX_LAG,
+    );
+    expect(sampleSize).toBe(AUTOCORRELATION_SERIES.length);
     expect(values.map((v) => v.lag)).toEqual([0, 1, 2, 3, 4]);
-    expected.forEach((target, idx) => {
+    AUTOCORRELATION_EXPECTED.forEach((target, idx) => {
       expect(values[idx].autocorrelation).toBeCloseTo(target, 6);
-      expect(values[idx].pairs).toBe(series.length - values[idx].lag);
+      expect(values[idx].pairs).toBe(
+        AUTOCORRELATION_SERIES.length - values[idx].lag,
+      );
     });
   });
 
@@ -110,16 +166,21 @@ describe('computeAutocorrelation', () => {
 
 describe('computePartialAutocorrelation', () => {
   it('agrees with partial correlations computed directly', () => {
-    const series = [0.8, 0.46, 0.11, 0.23, -0.05, 0.02, 0.1, 0.04];
-    const { values, sampleSize } = computePartialAutocorrelation(series, 3);
-    expect(sampleSize).toBe(series.length);
+    const { values, sampleSize } = computePartialAutocorrelation(
+      PARTIAL_AUTOCORRELATION_SERIES,
+      3,
+    );
+    expect(sampleSize).toBe(PARTIAL_AUTOCORRELATION_SERIES.length);
     values.forEach(({ lag, partialAutocorrelation }) => {
-      const y = series.slice(lag);
-      const x = series.slice(0, series.length - lag);
+      const y = PARTIAL_AUTOCORRELATION_SERIES.slice(lag);
+      const x = PARTIAL_AUTOCORRELATION_SERIES.slice(
+        0,
+        PARTIAL_AUTOCORRELATION_SERIES.length - lag,
+      );
       const controls = y.map((_, idx) => {
         const ctrl = [];
         for (let j = 1; j < lag; j++) {
-          ctrl.push(series[idx + j]);
+          ctrl.push(PARTIAL_AUTOCORRELATION_SERIES[idx + j]);
         }
         return ctrl;
       });
@@ -132,10 +193,20 @@ describe('computePartialAutocorrelation', () => {
 
 describe('partialCorrelation (controls reduce confounding)', () => {
   it('shrinks correlation when controlling for confounder', () => {
-    const n = 120;
-    const z = Array.from({ length: n }, (_, i) => i / n);
-    const x = z.map((v) => v + 0.1 * Math.sin(10 * v));
-    const y = z.map((v) => 0.8 * v + 0.1 * Math.cos(8 * v));
+    const n = SMALL_SAMPLE_SIZE;
+    const z = Array.from({ length: n }, (_, index) => index / n);
+    const x = z.map(
+      (value) =>
+        value +
+        PARTIAL_CORRELATION_NOISE_SCALE *
+          Math.sin(PARTIAL_CORRELATION_SIN_FREQ * value),
+    );
+    const y = z.map(
+      (value) =>
+        PARTIAL_CORRELATION_SLOPE * value +
+        PARTIAL_CORRELATION_NOISE_SCALE *
+          Math.cos(PARTIAL_CORRELATION_COS_FREQ * value),
+    );
     const r = (a, b) => pearson(a, b);
     const naive = r(x, y);
     // controls matrix: one column z
@@ -165,24 +236,31 @@ describe('pearson', () => {
 
 describe('loessSmooth and runningQuantileXY', () => {
   it('loess reproduces linear relationship approximately', () => {
-    const x = Array.from({ length: 20 }, (_, i) => i);
-    const y = x.map((v) => 2 * v + 1);
-    const xs = [0, 5, 10, 15, 19];
-    const sm = loessSmooth(x, y, xs, 0.4);
-    expect(sm).toHaveLength(xs.length);
+    const y = LINEAR_SERIES.map(
+      (value) => LOESS_SLOPE * value + LOESS_INTERCEPT,
+    );
+    const sm = loessSmooth(LINEAR_SERIES, y, LOESS_SAMPLE_POINTS, LOESS_BANDWIDTH);
+    expect(sm).toHaveLength(LOESS_SAMPLE_POINTS.length);
     // Expect close to true line
     sm.forEach((yv, i) => {
-      const xv = xs[i];
-      expect(Math.abs(yv - (2 * xv + 1))).toBeLessThan(1e-6);
+      const xv = LOESS_SAMPLE_POINTS[i];
+      expect(Math.abs(yv - (LOESS_SLOPE * xv + LOESS_INTERCEPT))).toBeLessThan(
+        STRICT_LINEAR_TOLERANCE,
+      );
     });
   });
 
   it('runningQuantileXY returns plausible quantiles', () => {
     const x = Array.from({ length: 30 }, (_, i) => i);
     const y = x.map((v) => v); // identity
-    const xs = [0, 10, 20, 29];
-    const q50 = runningQuantileXY(x, y, xs, 0.5, 11);
-    expect(q50).toHaveLength(xs.length);
+    const q50 = runningQuantileXY(
+      x,
+      y,
+      RUNNING_QUANTILE_SAMPLE_POINTS,
+      RUNNING_QUANTILE_MEDIAN,
+      RUNNING_QUANTILE_WINDOW,
+    );
+    expect(q50).toHaveLength(RUNNING_QUANTILE_SAMPLE_POINTS.length);
     // p50 should be non-decreasing and within overall range
     for (let i = 1; i < q50.length; i++) {
       expect(q50[i]).toBeGreaterThanOrEqual(q50[i - 1]);
@@ -191,7 +269,13 @@ describe('loessSmooth and runningQuantileXY', () => {
       expect(v).toBeGreaterThanOrEqual(0);
       expect(v).toBeLessThanOrEqual(29);
     });
-    const q90 = runningQuantileXY(x, y, xs, 0.9, 11);
+    const q90 = runningQuantileXY(
+      x,
+      y,
+      RUNNING_QUANTILE_SAMPLE_POINTS,
+      RUNNING_QUANTILE_HIGH,
+      RUNNING_QUANTILE_WINDOW,
+    );
     q90.forEach((v, i) => {
       expect(v).toBeGreaterThanOrEqual(q50[i]);
     });
@@ -200,11 +284,15 @@ describe('loessSmooth and runningQuantileXY', () => {
 
 describe('detectChangePoints', () => {
   it('detects a single change around a step', () => {
-    const n1 = 30,
-      n2 = 30;
+    const n1 = CHANGE_POINT_FIRST_SEGMENT;
+    const n2 = CHANGE_POINT_FIRST_SEGMENT;
     const series = Array(n1).fill(1).concat(Array(n2).fill(5));
     const dates = series.map((_, i) => new Date(2021, 0, i + 1));
-    const cps = detectChangePoints(series, dates, 8);
+    const cps = detectChangePoints(
+      series,
+      dates,
+      DEFAULT_CHANGE_POINT_WINDOW,
+    );
     // expect one change near index 30
     expect(cps.length).toBeGreaterThanOrEqual(1);
     const idx = cps.findIndex((d) => d instanceof Date);
@@ -214,11 +302,13 @@ describe('detectChangePoints', () => {
 
 describe('stlDecompose', () => {
   it('recovers weekly trend and seasonal structure from a synthetic sine wave', () => {
-    const season = 7;
-    const n = season * 6;
-    const trendTrue = Array.from({ length: n }, (_, i) => 0.2 * i);
-    const seasonalTrue = Array.from({ length: n }, (_, i) =>
-      Math.sin((2 * Math.PI * (i % season)) / season),
+    const season = STL_SEASON_LENGTH;
+    const n = season * STL_WEEK_MULTIPLIER;
+    const trendTrue = Array.from({ length: n }, (_, index) =>
+      STL_TREND_SLOPE * index,
+    );
+    const seasonalTrue = Array.from({ length: n }, (_, index) =>
+      Math.sin((2 * Math.PI * (index % season)) / season),
     );
     const series = trendTrue.map((t, i) => t + seasonalTrue[i]);
     const { trend, seasonal, residual } = stlDecompose(series, {
@@ -232,7 +322,7 @@ describe('stlDecompose', () => {
         const trueVal = trendTrue[midStart + idx];
         return sum + Math.abs(v - trueVal);
       }, 0) / Math.max(1, midEnd - midStart);
-    expect(midError).toBeLessThan(0.25);
+    expect(midError).toBeLessThan(STL_TREND_MEAN_ABS_ERROR_LIMIT);
 
     const seasonalPattern = Array.from({ length: season }, (_, pos) => {
       const vals = seasonal.filter((_, idx) => idx % season === pos);
@@ -244,17 +334,18 @@ describe('stlDecompose', () => {
     );
     const avgDiff =
       seasonalPattern.reduce(
-        (sum, v, idx) => sum + Math.abs(v - targetPattern[idx]),
+        (sum, value, index) => sum + Math.abs(value - targetPattern[index]),
         0,
       ) / seasonalPattern.length;
-    expect(avgDiff).toBeLessThan(0.3);
+    expect(avgDiff).toBeLessThan(STL_SEASONAL_PATTERN_DIFF_LIMIT);
     const avgResidual =
-      residual.reduce((sum, v) => sum + Math.abs(v), 0) / residual.length;
-    expect(avgResidual).toBeLessThan(0.6);
+      residual.reduce((sum, value) => sum + Math.abs(value), 0) /
+      residual.length;
+    expect(avgResidual).toBeLessThan(STL_RESIDUAL_MEAN_ABS_LIMIT);
   });
 
   it('tracks a structural break in a step series', () => {
-    const season = 7;
+    const season = STL_SEASON_LENGTH;
     const first = Array(14).fill(1);
     const second = Array(14).fill(5);
     const series = first.concat(second);
@@ -266,15 +357,16 @@ describe('stlDecompose', () => {
       first.length;
     const secondMean =
       trend.slice(first.length).reduce((sum, v) => sum + v, 0) / second.length;
-    expect(firstMean).toBeGreaterThan(0.5);
-    expect(firstMean).toBeLessThan(1.5);
-    expect(secondMean).toBeGreaterThan(4);
-    expect(secondMean).toBeLessThan(6);
+    expect(firstMean).toBeGreaterThan(STEP_FIRST_MEAN_RANGE.min);
+    expect(firstMean).toBeLessThan(STEP_FIRST_MEAN_RANGE.max);
+    expect(secondMean).toBeGreaterThan(STEP_SECOND_MEAN_RANGE.min);
+    expect(secondMean).toBeLessThan(STEP_SECOND_MEAN_RANGE.max);
     const seasonalAbsMean =
-      seasonal.reduce((sum, v) => sum + Math.abs(v), 0) / seasonal.length;
-    expect(seasonalAbsMean).toBeLessThan(0.6);
-    residual.forEach((v) => {
-      expect(Number.isFinite(v)).toBe(true);
+      seasonal.reduce((sum, value) => sum + Math.abs(value), 0) /
+      seasonal.length;
+    expect(seasonalAbsMean).toBeLessThan(STL_RESIDUAL_MEAN_ABS_LIMIT);
+    residual.forEach((value) => {
+      expect(Number.isFinite(value)).toBe(true);
     });
   });
 
@@ -511,18 +603,23 @@ describe('computeUsageRolling (date-aware)', () => {
       new Date('2021-01-05'), // gap of 2 days
     ];
     const hours = [2, 4, 6];
-    const r = computeUsageRolling(dates, hours, [3]); // 3-day window
+    const windowDays = 3;
+    const avgKey = `avg${windowDays}`;
+    const avgLowKey = `${avgKey}_ci_low`;
+    const avgHighKey = `${avgKey}_ci_high`;
+    const medianKey = `median${windowDays}`;
+    const r = computeUsageRolling(dates, hours, [windowDays]);
     // At index 1 (2021-01-02), window covers 2020-12-31..2021-01-02 => indices 0..1
-    expect(r.avg3[1]).toBeCloseTo((2 + 4) / 2);
+    expect(r[avgKey][1]).toBeCloseTo((2 + 4) / 2);
     // At index 2 (2021-01-05), window covers 2021-01-03..2021-01-05 => only index 2
-    expect(r.avg3[2]).toBeCloseTo(6);
+    expect(r[avgKey][2]).toBeCloseTo(6);
     // CIs are present and same length
-    expect(r.avg3_ci_low).toHaveLength(3);
-    expect(r.avg3_ci_high).toHaveLength(3);
-    expect(Number.isFinite(r.avg3_ci_low[2])).toBe(true);
-    expect(Number.isFinite(r.avg3_ci_high[2])).toBe(true);
+    expect(r[avgLowKey]).toHaveLength(3);
+    expect(r[avgHighKey]).toHaveLength(3);
+    expect(Number.isFinite(r[avgLowKey][2])).toBe(true);
+    expect(Number.isFinite(r[avgHighKey][2])).toBe(true);
     // Median arrays present
-    expect(r.median3).toHaveLength(3);
-    expect(Number.isFinite(r.median3[2])).toBe(true);
+    expect(r[medianKey]).toHaveLength(3);
+    expect(Number.isFinite(r[medianKey][2])).toBe(true);
   });
 });
