@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildSession, applySession } from './session';
+import { DEFAULT_APNEA_CLUSTER_GAP_SEC } from '../test-utils/testConstants';
 
 describe('session utils', () => {
   it('round-trips basic state', () => {
@@ -12,7 +13,7 @@ describe('session utils', () => {
           DateTime: '2024-01-01T01:00:00Z',
         },
       ],
-      clusterParams: { gapSec: 120 },
+      clusterParams: { gapSec: DEFAULT_APNEA_CLUSTER_GAP_SEC },
       dateFilter: {
         start: new Date('2024-01-01'),
         end: new Date('2024-01-31'),
@@ -27,6 +28,6 @@ describe('session utils', () => {
     expect(patch.summaryData.length).toBe(1);
     expect(patch.dateFilter.start).toBeInstanceOf(Date);
     expect(patch.rangeB.end).toBeInstanceOf(Date);
-    expect(patch.clusterParams.gapSec).toBe(120);
+    expect(patch.clusterParams.gapSec).toBe(DEFAULT_APNEA_CLUSTER_GAP_SEC);
   });
 });

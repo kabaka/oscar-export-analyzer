@@ -7,6 +7,13 @@ import {
   CLUSTERING_DEFAULTS,
 } from '../../utils/clustering';
 import { APNEA_CLUSTER_MIN_EVENTS, SECONDS_PER_MINUTE } from '../../constants';
+import { DEFAULT_APNEA_CLUSTER_GAP_SEC } from '../../test-utils/testConstants';
+
+const EDGE_ENTER_THRESHOLD = CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD;
+const EDGE_EXIT_THRESHOLD =
+  EDGE_ENTER_THRESHOLD * CLUSTERING_DEFAULTS.EDGE_EXIT_FRACTION;
+const BRIDGE_THRESHOLD = CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD;
+const MAX_CLUSTER_DURATION = 300;
 
 const ApneaClusterAnalysis = ACA.default;
 
@@ -42,14 +49,14 @@ describe('ApneaClusterAnalysis overlay', () => {
     ];
     const params = {
       algorithm: CLUSTER_ALGORITHMS.BRIDGED,
-      gapSec: 120,
-      bridgeThreshold: 0.1,
+      gapSec: DEFAULT_APNEA_CLUSTER_GAP_SEC,
+      bridgeThreshold: BRIDGE_THRESHOLD,
       bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      edgeEnter: 0.5,
-      edgeExit: 0.35,
+      edgeEnter: EDGE_ENTER_THRESHOLD,
+      edgeExit: EDGE_EXIT_THRESHOLD,
       minCount: 1,
       minTotalSec: 0,
-      maxClusterSec: 300,
+      maxClusterSec: MAX_CLUSTER_DURATION,
       minDensity: 0,
     };
     render(
@@ -78,14 +85,14 @@ describe('ApneaClusterAnalysis params', () => {
   it('renders parameter inputs and forwards changes', async () => {
     const params = {
       algorithm: CLUSTER_ALGORITHMS.BRIDGED,
-      gapSec: 120,
-      bridgeThreshold: 0.1,
+      gapSec: DEFAULT_APNEA_CLUSTER_GAP_SEC,
+      bridgeThreshold: BRIDGE_THRESHOLD,
       bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      edgeEnter: 0.5,
-      edgeExit: 0.35,
+      edgeEnter: EDGE_ENTER_THRESHOLD,
+      edgeExit: EDGE_EXIT_THRESHOLD,
       minCount: 1,
       minTotalSec: 0,
-      maxClusterSec: 300,
+      maxClusterSec: MAX_CLUSTER_DURATION,
       minDensity: 0,
     };
     const onChange = vi.fn();
@@ -112,17 +119,17 @@ describe('ApneaClusterAnalysis params', () => {
   it('switches visible parameters when algorithm changes', async () => {
     const params = {
       algorithm: CLUSTER_ALGORITHMS.BRIDGED,
-      gapSec: 120,
-      bridgeThreshold: 0.1,
+      gapSec: DEFAULT_APNEA_CLUSTER_GAP_SEC,
+      bridgeThreshold: BRIDGE_THRESHOLD,
       bridgeSec: CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
-      edgeEnter: 0.5,
-      edgeExit: 0.35,
+      edgeEnter: EDGE_ENTER_THRESHOLD,
+      edgeExit: EDGE_EXIT_THRESHOLD,
       minCount: 1,
       minTotalSec: 0,
-      maxClusterSec: 300,
+      maxClusterSec: MAX_CLUSTER_DURATION,
       minDensity: 0,
       k: 3,
-      linkageThresholdSec: 120,
+      linkageThresholdSec: DEFAULT_APNEA_CLUSTER_GAP_SEC,
     };
     const onChange = vi.fn();
     const { rerender } = render(
