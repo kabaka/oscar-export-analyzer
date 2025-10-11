@@ -28,10 +28,6 @@ export const CLUSTERING_DEFAULTS = Object.freeze({
   MAX_CLUSTER_DURATION_SEC: 230,
 });
 
-const DEFAULT_APNEA_GAP_SEC = CLUSTERING_DEFAULTS.APNEA_GAP_SEC; // max gap (sec) between annotation events to cluster
-const DEFAULT_FLG_BRIDGE_THRESHOLD = CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD; // FLG level to bridge annotation events (low threshold)
-const DEFAULT_FLG_CLUSTER_GAP_SEC = CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC; // max gap (sec) to group FLG readings into clusters
-
 // Parameters for boundary extension via FLG edge clusters
 const EDGE_THRESHOLD = CLUSTERING_DEFAULTS.EDGE_ENTER_THRESHOLD; // default enter threshold
 const EDGE_MIN_DURATION_SEC = CLUSTERING_DEFAULTS.EDGE_MIN_DURATION_SEC; // min duration (sec) for FLG edge segment to extend boundaries
@@ -85,9 +81,9 @@ export function clusterApneaEventsBridged(options = {}) {
   const {
     events = [],
     flgEvents = [],
-    gapSec = DEFAULT_APNEA_GAP_SEC,
-    bridgeThreshold = DEFAULT_FLG_BRIDGE_THRESHOLD,
-    bridgeSec = DEFAULT_FLG_CLUSTER_GAP_SEC,
+    gapSec = CLUSTERING_DEFAULTS.APNEA_GAP_SEC,
+    bridgeThreshold = CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD,
+    bridgeSec = CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC,
     edgeEnter = EDGE_THRESHOLD,
     edgeExit = DEFAULT_EDGE_EXIT_THRESHOLD,
     edgeMinDurSec = EDGE_MIN_DURATION_SEC,
@@ -358,14 +354,14 @@ export function detectFalseNegatives(details, opts = {}) {
 }
 
 // Expose default bridge threshold for use in filtering and parsing logic
-export const FLG_BRIDGE_THRESHOLD = DEFAULT_FLG_BRIDGE_THRESHOLD;
+export const FLG_BRIDGE_THRESHOLD = CLUSTERING_DEFAULTS.FLG_BRIDGE_THRESHOLD;
 // Cap on apnea cluster window duration
 export const MAX_CLUSTER_DURATION_SEC =
   CLUSTERING_DEFAULTS.MAX_CLUSTER_DURATION_SEC; // sanity cap on cluster window (sec)
 
 // Additional exported defaults for UI parameter panels
-export const APNEA_GAP_DEFAULT = DEFAULT_APNEA_GAP_SEC;
-export const FLG_CLUSTER_GAP_DEFAULT = DEFAULT_FLG_CLUSTER_GAP_SEC;
+export const APNEA_GAP_DEFAULT = CLUSTERING_DEFAULTS.APNEA_GAP_SEC;
+export const FLG_CLUSTER_GAP_DEFAULT = CLUSTERING_DEFAULTS.FLG_CLUSTER_GAP_SEC;
 export const FLG_EDGE_THRESHOLD_DEFAULT = EDGE_THRESHOLD;
 export const FLG_EDGE_ENTER_THRESHOLD_DEFAULT = EDGE_THRESHOLD;
 export const FLG_EDGE_EXIT_THRESHOLD_DEFAULT =
