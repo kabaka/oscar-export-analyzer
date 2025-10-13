@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import * as UPC from './UsagePatternsCharts';
 import { DEFAULT_CHART_HEIGHT } from '../constants/charts';
+import { USAGE_HELP_TOOLTIP_MIN_COUNT } from './UsagePatternsCharts';
 
 const UsagePatternsCharts = UPC.default;
 
@@ -19,7 +20,9 @@ describe('UsagePatternsCharts', () => {
       `height: ${DEFAULT_CHART_HEIGHT}px`,
     );
     // Additional autocorrelation charts increase help tooltips count
-    expect(screen.getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(7);
+    expect(screen.getAllByTestId('viz-help').length).toBeGreaterThanOrEqual(
+      USAGE_HELP_TOOLTIP_MIN_COUNT,
+    );
     expect(
       screen.getByText(
         /Trend\/Seasonal\/Residual view decomposes nightly usage/i,

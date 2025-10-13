@@ -14,28 +14,87 @@ import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { ThemedPlot, VizHelp } from './ui';
 import {
+  DAYS_PER_WEEK,
   DEFAULT_MAX_LAG,
   DEFAULT_ROLLING_WINDOWS,
   FREEDMAN_DIACONIS_FACTOR,
+  FREEDMAN_DIACONIS_EXPONENT,
+  HEADER_SCROLL_MARGIN_PX,
   HISTOGRAM_FALLBACK_BINS,
   MAX_LAG_INPUT,
   MIN_LAG_INPUT,
   NORMAL_CONFIDENCE_Z,
+  PERCENT_SCALE,
   QUARTILE_LOWER,
   QUARTILE_MEDIAN,
   QUARTILE_UPPER,
   ROLLING_WINDOW_LONG_DAYS,
   ROLLING_WINDOW_SHORT_DAYS,
+  SECONDS_PER_HOUR,
   STL_SEASON_LENGTH,
   USAGE_CHANGEPOINT_PENALTY,
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
 import {
+  AUTOCORRELATION_CHART_HEIGHT,
+  AUTOCORRELATION_CHART_MARGIN,
   AUTOCORRELATION_CONFIDENCE_LABEL,
+  CALENDAR_HEATMAP_HEIGHT,
+  CHART_EXPORT_FORMAT,
   DEFAULT_CHART_HEIGHT,
+  DEFAULT_PLOT_MARGIN,
+  DECOMPOSITION_CHART_HEIGHT,
+  HORIZONTAL_CENTER_LEGEND,
+  LINE_WIDTH_BOLD,
+  LINE_WIDTH_FINE,
+  MEAN_ANNOTATION_OFFSET,
+  MEDIAN_ANNOTATION_OFFSET,
+  SUMMARY_DECIMAL_PLACES,
   MAX_CALENDAR_WEEKS,
 } from '../constants/charts';
+
+const KPI_GRID_COLUMN_COUNT = 4;
+const KPI_CARD_MIN_WIDTH_PX = 120;
+const KPI_GRID_GAP_PX = 12;
+const KPI_GRID_MARGIN_BOTTOM_PX = HEADER_SCROLL_MARGIN_PX;
+const KPI_GRID_TEMPLATE = `repeat(${KPI_GRID_COLUMN_COUNT}, minmax(${KPI_CARD_MIN_WIDTH_PX}px, 1fr))`;
+const LAG_CONTROL_GAP_PX = HEADER_SCROLL_MARGIN_PX;
+const LAG_CONTROL_MARGIN_TOP_PX = 12;
+const LAG_CONTROL_MARGIN_BOTTOM_PX = 4;
+const LAG_CONTROL_MARGIN = `${LAG_CONTROL_MARGIN_TOP_PX}px 0 ${LAG_CONTROL_MARGIN_BOTTOM_PX}px`;
+const LAG_INPUT_WIDTH_PX = 80;
+const LAG_INPUT_STEP = 1;
+const HEATMAP_MARGIN_TOP_PX = 16;
+const LAG_LABEL = 'Max lag (nights):';
+const DOW_LABELS = Object.freeze([
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+]);
+const MONDAY_INDEX_OFFSET = 6;
+const ISO_DATE_LENGTH = 10;
+export const USAGE_HELP_TOOLTIP_MIN_COUNT = 7;
+const PRIMARY_LINE_WIDTH = LINE_WIDTH_FINE;
+const EMPHASIS_LINE_WIDTH = LINE_WIDTH_BOLD;
+const HEATMAP_STOPS_PER_RANGE = 5;
+const HEATMAP_STOP_INCREMENT = 1 / HEATMAP_STOPS_PER_RANGE;
+const HEATMAP_STOP_SECOND = HEATMAP_STOP_INCREMENT;
+const HEATMAP_STOP_THIRD = HEATMAP_STOP_SECOND + HEATMAP_STOP_INCREMENT;
+const HEATMAP_STOP_FOURTH = HEATMAP_STOP_THIRD + HEATMAP_STOP_INCREMENT;
+const HEATMAP_STOP_FIFTH = HEATMAP_STOP_FOURTH + HEATMAP_STOP_INCREMENT;
+const DARK_MODE_HEATMAP_SCALE = Object.freeze([
+  [0, '#121821'],
+  [HEATMAP_STOP_SECOND, '#1b2b3b'],
+  [HEATMAP_STOP_THIRD, '#23445a'],
+  [HEATMAP_STOP_FOURTH, '#2b5c7a'],
+  [HEATMAP_STOP_FIFTH, '#3c7db0'],
+  [1, '#58a6ff'],
+]);
 
 /**
  * Render usage and adherence charts for nightly data.
@@ -65,7 +124,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
     const pts = data
       .map((r) => ({
         date: new Date(r['Date']),
-        hours: parseDuration(r['Total Time']) / 3600,
+        hours: parseDuration(r['Total Time']) / SECONDS_PER_HOUR,
       }))
       .sort((a, b) => a.date - b.date);
     const hours = pts.map((p) => p.hours);
@@ -95,11 +154,11 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     const getWeekStart = (d) => {
       const nd = new Date(d);
-      const day = (nd.getDay() + 6) % 7; // Mon=0..Sun=6
+      const day = (nd.getDay() + MONDAY_INDEX_OFFSET) % DAYS_PER_WEEK; // Mon=0..Sun=6
       nd.setDate(nd.getDate() - day);
       return toISODate(nd);
     };
-    const dateToStr = (d) => d.toISOString().slice(0, 10);
+    const dateToStr = (d) => d.toISOString().slice(0, ISO_DATE_LENGTH);
     const byDate = new Map();
     datesArr.forEach((d, i) => byDate.set(dateToStr(toISODate(d)), hours[i]));
     const start = datesArr.length ? getWeekStart(datesArr[0]) : null;
@@ -113,14 +172,13 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
       for (
         let w = new Date(start);
         w <= end && iter < maxWeeks;
-        w.setDate(w.getDate() + 7), iter++
+        w.setDate(w.getDate() + DAYS_PER_WEEK), iter++
       ) {
         weekStarts.push(new Date(w));
       }
     }
-    const yLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const z = weekStarts.length
-      ? yLabels.map((_, dowIdx) =>
+      ? DOW_LABELS.map((_, dowIdx) =>
           weekStarts.map((ws) => {
             const d = new Date(ws);
             d.setDate(d.getDate() + dowIdx);
@@ -128,8 +186,8 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             return byDate.has(key) ? byDate.get(key) : null;
           }),
         )
-      : yLabels.map(() => []);
-    const dowHeatmap = { x: weekStarts, y: yLabels, z };
+      : DOW_LABELS.map(() => []);
+    const dowHeatmap = { x: weekStarts, y: DOW_LABELS, z };
     const decomposition = stlDecompose(hours, {
       seasonLength: STL_SEASON_LENGTH,
     });
@@ -158,7 +216,9 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
   const iqr = p75 - p25;
   const mean = usageHours.reduce((sum, v) => sum + v, 0) / usageHours.length;
   const binWidth =
-    FREEDMAN_DIACONIS_FACTOR * iqr * Math.pow(usageHours.length, -1 / 3);
+    FREEDMAN_DIACONIS_FACTOR *
+    iqr *
+    Math.pow(usageHours.length, FREEDMAN_DIACONIS_EXPONENT);
   const range = Math.max(...usageHours) - Math.min(...usageHours);
   const nbins =
     binWidth > 0 ? Math.ceil(range / binWidth) : HISTOGRAM_FALLBACK_BINS;
@@ -224,9 +284,9 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         className="kpi-row"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))',
-          gap: '12px',
-          marginBottom: '8px',
+          gridTemplateColumns: KPI_GRID_TEMPLATE,
+          gap: `${KPI_GRID_GAP_PX}px`,
+          marginBottom: `${KPI_GRID_MARGIN_BOTTOM_PX}px`,
         }}
       >
         <div>
@@ -235,7 +295,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             (usageHours.filter((h) => h >= USAGE_COMPLIANCE_THRESHOLD_HOURS)
               .length /
               usageHours.length) *
-            100
+            PERCENT_SCALE
           ).toFixed(0)}
           %
         </div>
@@ -245,7 +305,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             (usageHours.filter((h) => h >= USAGE_STRICT_THRESHOLD_HOURS)
               .length /
               usageHours.length) *
-            100
+            PERCENT_SCALE
           ).toFixed(0)}
           %
         </div>
@@ -279,7 +339,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               type: 'scatter',
               mode: 'lines',
               name: 'Usage (hrs)',
-              line: { width: 1, color: COLORS.primary },
+              line: { width: PRIMARY_LINE_WIDTH, color: COLORS.primary },
             },
             // Short-window CI ribbon (low then high with fill)
             {
@@ -310,7 +370,11 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               type: 'scatter',
               mode: 'lines',
               name: `${shortWindowLabel} Avg`,
-              line: { dash: 'dash', width: 2, color: COLORS.secondary },
+              line: {
+                dash: 'dash',
+                width: EMPHASIS_LINE_WIDTH,
+                color: COLORS.secondary,
+              },
             },
             // Long-window CI ribbon
             {
@@ -341,15 +405,19 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               type: 'scatter',
               mode: 'lines',
               name: `${longWindowLabel} Avg`,
-              line: { dash: 'dot', width: 2, color: COLORS.accent },
+              line: {
+                dash: 'dot',
+                width: EMPHASIS_LINE_WIDTH,
+                color: COLORS.accent,
+              },
             },
           ]}
           layout={{
             title: 'Nightly Usage Hours Over Time',
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+            legend: { ...HORIZONTAL_CENTER_LEGEND },
             xaxis: { title: 'Date' },
             yaxis: { title: 'Hours of Use' },
-            margin: { t: 40, l: 60, r: 20, b: 50 },
+            margin: { ...DEFAULT_PLOT_MARGIN },
             shapes: [
               ...(breakDates?.map((d) => ({
                 type: 'line',
@@ -358,7 +426,11 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 yref: 'paper',
                 y0: 0,
                 y1: 1,
-                line: { color: '#aa3377', width: 1, dash: 'dot' },
+                line: {
+                  color: '#aa3377',
+                  width: PRIMARY_LINE_WIDTH,
+                  dash: 'dot',
+                },
               })) || []),
               ...(cpDates?.map((d) => ({
                 type: 'line',
@@ -367,7 +439,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 yref: 'paper',
                 y0: 0,
                 y1: 1,
-                line: { color: '#6a3d9a', width: 2 },
+                line: { color: '#6a3d9a', width: EMPHASIS_LINE_WIDTH },
               })) || []),
             ],
           }}
@@ -377,7 +449,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             displaylogo: false,
             modeBarButtonsToAdd: ['toImage'],
             toImageButtonOptions: {
-              format: 'svg',
+              format: CHART_EXPORT_FORMAT,
               filename: 'usage_hours_over_time',
             },
           }}
@@ -393,20 +465,20 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
-            gap: '8px',
-            margin: '12px 0 4px',
+            gap: `${LAG_CONTROL_GAP_PX}px`,
+            margin: LAG_CONTROL_MARGIN,
           }}
         >
-          <label htmlFor={lagInputId}>Max lag (nights):</label>
+          <label htmlFor={lagInputId}>{LAG_LABEL}</label>
           <input
             id={lagInputId}
             type="number"
             min={MIN_LAG_INPUT}
             max={MAX_LAG_INPUT}
-            step={1}
+            step={LAG_INPUT_STEP}
             value={maxLag}
             onChange={handleLagChange}
-            style={{ width: '80px' }}
+            style={{ width: `${LAG_INPUT_WIDTH_PX}px` }}
           />
         </div>
       ) : null}
@@ -438,7 +510,10 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 type: 'scatter',
                 mode: 'lines',
                 name: AUTOCORRELATION_CONFIDENCE_LABEL,
-                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                line: {
+                  color: 'rgba(150,150,150,0.6)',
+                  width: PRIMARY_LINE_WIDTH,
+                },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
                 showlegend: true,
@@ -447,10 +522,13 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             layout={{
               title: 'Usage Autocorrelation',
               barmode: 'overlay',
-              margin: { t: 40, r: 30, b: 40, l: 50 },
+              margin: { ...AUTOCORRELATION_CHART_MARGIN },
             }}
             useResizeHandler
-            style={{ width: '100%', height: '260px' }}
+            style={{
+              width: '100%',
+              height: `${AUTOCORRELATION_CHART_HEIGHT}px`,
+            }}
           />
           <VizHelp text="Autocorrelation reveals whether short nights cluster together. Bars crossing the grey band indicate lags with stronger-than-random persistence." />
         </div>
@@ -483,7 +561,10 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 type: 'scatter',
                 mode: 'lines',
                 name: AUTOCORRELATION_CONFIDENCE_LABEL,
-                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                line: {
+                  color: 'rgba(150,150,150,0.6)',
+                  width: PRIMARY_LINE_WIDTH,
+                },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
                 showlegend: true,
@@ -492,10 +573,13 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             layout={{
               title: 'Usage Partial Autocorrelation',
               barmode: 'overlay',
-              margin: { t: 40, r: 30, b: 40, l: 50 },
+              margin: { ...AUTOCORRELATION_CHART_MARGIN },
             }}
             useResizeHandler
-            style={{ width: '100%', height: '260px' }}
+            style={{
+              width: '100%',
+              height: `${AUTOCORRELATION_CHART_HEIGHT}px`,
+            }}
           />
           <VizHelp text="Partial autocorrelation pinpoints direct carryover from previous nights after accounting for intermediate lags. A sharp cutoff suggests a short memory for adherence habits." />
         </div>
@@ -505,7 +589,10 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         <div className="chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '360px' }}
+            style={{
+              width: '100%',
+              height: `${DECOMPOSITION_CHART_HEIGHT}px`,
+            }}
             data={[
               {
                 x: dates,
@@ -513,7 +600,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 type: 'scatter',
                 mode: 'lines',
                 name: 'Trend',
-                line: { color: COLORS.secondary, width: 2 },
+                line: { color: COLORS.secondary, width: EMPHASIS_LINE_WIDTH },
                 hovertemplate:
                   'Date: %{x|%Y-%m-%d}<br>Trend: %{y:.2f} h<extra></extra>',
               },
@@ -525,7 +612,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 name: 'Seasonal',
                 xaxis: 'x2',
                 yaxis: 'y2',
-                line: { color: COLORS.accent, width: 1 },
+                line: { color: COLORS.accent, width: PRIMARY_LINE_WIDTH },
                 hovertemplate:
                   'Date: %{x|%Y-%m-%d}<br>Seasonal: %{y:.2f} h<extra></extra>',
                 showlegend: false,
@@ -538,7 +625,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 name: 'Residual',
                 xaxis: 'x3',
                 yaxis: 'y3',
-                line: { color: COLORS.primary, width: 1 },
+                line: { color: COLORS.primary, width: PRIMARY_LINE_WIDTH },
                 hovertemplate:
                   'Date: %{x|%Y-%m-%d}<br>Residual: %{y:.2f} h<extra></extra>',
                 showlegend: false,
@@ -553,7 +640,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 roworder: 'top to bottom',
               },
               hovermode: 'x unified',
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               xaxis: { title: 'Date', showspikes: true },
               xaxis2: { matches: 'x', anchor: 'y2', showspikes: true },
               xaxis3: {
@@ -565,7 +652,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               yaxis: { title: 'Trend (hrs)', zeroline: false },
               yaxis2: { title: 'Seasonal (hrs)', zeroline: false },
               yaxis3: { title: 'Residual (hrs)', zeroline: false },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             onRelayout={handleRelayout}
             config={{
@@ -573,7 +660,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
               toImageButtonOptions: {
-                format: 'svg',
+                format: CHART_EXPORT_FORMAT,
                 filename: 'usage_stl_decomposition',
               },
             }}
@@ -602,7 +689,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             ]}
             layout={{
               title: 'Distribution of Nightly Usage',
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               xaxis: { title: 'Hours' },
               yaxis: { title: 'Count' },
               shapes: [
@@ -629,28 +716,28 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
                 {
                   x: median,
                   yref: 'paper',
-                  y: 1.05,
-                  text: `Median: ${median.toFixed(2)}`,
+                  y: MEDIAN_ANNOTATION_OFFSET,
+                  text: `Median: ${median.toFixed(SUMMARY_DECIMAL_PLACES)}`,
                   showarrow: false,
                   font: { color: COLORS.secondary },
                 },
                 {
                   x: mean,
                   yref: 'paper',
-                  y: 1.1,
-                  text: `Mean: ${mean.toFixed(2)}`,
+                  y: MEAN_ANNOTATION_OFFSET,
+                  text: `Mean: ${mean.toFixed(SUMMARY_DECIMAL_PLACES)}`,
                   showarrow: false,
                   font: { color: COLORS.accent },
                 },
               ],
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             config={{
               responsive: true,
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
               toImageButtonOptions: {
-                format: 'svg',
+                format: CHART_EXPORT_FORMAT,
                 filename: 'usage_distribution',
               },
             }}
@@ -675,16 +762,16 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             ]}
             layout={{
               title: 'Boxplot of Nightly Usage',
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               yaxis: { title: 'Hours of Use', zeroline: false },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             config={{
               responsive: true,
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
               toImageButtonOptions: {
-                format: 'svg',
+                format: CHART_EXPORT_FORMAT,
                 filename: 'usage_boxplot',
               },
             }}
@@ -693,26 +780,23 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
         </div>
       </div>
       {/* Weekly calendar heatmap (Mon–Sun by columns of weeks) */}
-      <div className="chart-item chart-with-help" style={{ marginTop: '16px' }}>
+      <div
+        className="chart-item chart-with-help"
+        style={{ marginTop: `${HEATMAP_MARGIN_TOP_PX}px` }}
+      >
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: '220px' }}
+          style={{
+            width: '100%',
+            height: `${CALENDAR_HEATMAP_HEIGHT}px`,
+          }}
           data={[
             {
               z: dowHeatmap.z,
               x: dowHeatmap.x,
               y: dowHeatmap.y,
               type: 'heatmap',
-              colorscale: isDark
-                ? [
-                    [0, '#121821'],
-                    [0.2, '#1b2b3b'],
-                    [0.4, '#23445a'],
-                    [0.6, '#2b5c7a'],
-                    [0.8, '#3c7db0'],
-                    [1, '#58a6ff'],
-                  ]
-                : 'Blues',
+              colorscale: isDark ? DARK_MODE_HEATMAP_SCALE : 'Blues',
               hovertemplate:
                 '%{y} %{x|%Y-%m-%d}<br>Hours: %{z:.2f}<extra></extra>',
             },
@@ -721,7 +805,7 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
             title: 'Calendar Heatmap of Usage (hours)',
             xaxis: { title: 'Week', type: 'date', tickformat: '%Y-%m-%d' },
             yaxis: { title: 'Day of Week', autorange: 'reversed' },
-            margin: { t: 40, l: 60, r: 20, b: 50 },
+            margin: { ...DEFAULT_PLOT_MARGIN },
           }}
           config={{ responsive: true, displaylogo: false }}
         />

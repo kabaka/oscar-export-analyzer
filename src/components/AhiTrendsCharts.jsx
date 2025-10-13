@@ -20,12 +20,15 @@ import {
   DEFAULT_MAX_LAG,
   DEFAULT_ROLLING_WINDOWS,
   FREEDMAN_DIACONIS_FACTOR,
+  FREEDMAN_DIACONIS_EXPONENT,
+  HEADER_SCROLL_MARGIN_PX,
   HISTOGRAM_FALLBACK_BINS,
   HIGH_CENTRAL_APNEA_FRACTION,
   IQR_OUTLIER_MULTIPLIER,
   MAX_LAG_INPUT,
   MIN_LAG_INPUT,
   NORMAL_CONFIDENCE_Z,
+  PERCENT_SCALE,
   QUARTILE_LOWER,
   QUARTILE_MEDIAN,
   QUARTILE_UPPER,
@@ -34,9 +37,35 @@ import {
   STL_SEASON_LENGTH,
 } from '../constants';
 import {
+  AUTOCORRELATION_CHART_HEIGHT,
+  AUTOCORRELATION_CHART_MARGIN,
   AUTOCORRELATION_CONFIDENCE_LABEL,
+  CHART_EXPORT_FORMAT,
   DEFAULT_CHART_HEIGHT,
+  DEFAULT_PLOT_MARGIN,
+  DECOMPOSITION_CHART_HEIGHT,
+  HORIZONTAL_CENTER_LEGEND,
+  LINE_WIDTH_BOLD,
+  LINE_WIDTH_FINE,
+  MEAN_ANNOTATION_OFFSET,
+  MEDIAN_ANNOTATION_OFFSET,
+  SUMMARY_DECIMAL_PLACES,
 } from '../constants/charts';
+
+const LAG_CONTROL_GAP_PX = HEADER_SCROLL_MARGIN_PX;
+const LAG_CONTROL_MARGIN_TOP_PX = 12;
+const LAG_CONTROL_MARGIN_BOTTOM_PX = 4;
+const LAG_CONTROL_MARGIN = `${LAG_CONTROL_MARGIN_TOP_PX}px 0 ${LAG_CONTROL_MARGIN_BOTTOM_PX}px`;
+const LAG_INPUT_WIDTH_PX = 80;
+const LAG_INPUT_STEP = 1;
+const LAG_LABEL = 'Max lag (nights):';
+const BAD_NIGHT_LIMIT = 10;
+const MEDIAN_ANNOTATION_Y = MEDIAN_ANNOTATION_OFFSET;
+const MEAN_ANNOTATION_Y = MEAN_ANNOTATION_OFFSET;
+const ISO_DATE_LENGTH = 10;
+const SQUARE_EXPONENT = 2;
+const PRIMARY_LINE_WIDTH = LINE_WIDTH_FINE;
+const EMPHASIS_LINE_WIDTH = LINE_WIDTH_BOLD;
 
 export default function AhiTrendsCharts({
   data,
@@ -171,7 +200,9 @@ export default function AhiTrendsCharts({
   const iqr = p75 - p25;
   const mean = ahis.reduce((sum, v) => sum + v, 0) / ahis.length;
   const binWidth =
-    FREEDMAN_DIACONIS_FACTOR * iqr * Math.pow(ahis.length, -1 / 3);
+    FREEDMAN_DIACONIS_FACTOR *
+    iqr *
+    Math.pow(ahis.length, FREEDMAN_DIACONIS_EXPONENT);
   const range = Math.max(...ahis) - Math.min(...ahis);
   const nbins =
     binWidth > 0 ? Math.ceil(range / binWidth) : HISTOGRAM_FALLBACK_BINS;
@@ -207,7 +238,8 @@ export default function AhiTrendsCharts({
   const sorted = ahis.slice().sort((a, b) => a - b);
   const mu = sorted.reduce((s, v) => s + v, 0) / n;
   const sigma = Math.sqrt(
-    sorted.reduce((s, v) => s + (v - mu) ** 2, 0) / Math.max(1, n - 1),
+    sorted.reduce((s, v) => s + (v - mu) ** SQUARE_EXPONENT, 0) /
+      Math.max(1, n - 1),
   );
   const probs = sorted.map((_, i) => (i + 1) / (n + 1));
   const theo = probs.map((p) => mu + sigma * normalQuantile(p));
@@ -217,7 +249,7 @@ export default function AhiTrendsCharts({
   const p75b = quantile(ahis, QUARTILE_UPPER);
   const iqrb = p75b - p25b;
   const outlierHighCut = p75b + IQR_OUTLIER_MULTIPLIER * iqrb;
-  const dateStr = (d) => d.toISOString().slice(0, 10);
+  const dateStr = (d) => d.toISOString().slice(0, ISO_DATE_LENGTH);
   const clusterByNight = new Map();
   clusters.forEach((cl) => {
     const k = dateStr(cl.start);
@@ -275,7 +307,7 @@ export default function AhiTrendsCharts({
               type: 'scatter',
               mode: 'lines',
               name: 'Nightly AHI',
-              line: { width: 1, color: COLORS.primary },
+              line: { width: PRIMARY_LINE_WIDTH, color: COLORS.primary },
             },
             // Short-window CI ribbon
             {
@@ -306,7 +338,11 @@ export default function AhiTrendsCharts({
               type: 'scatter',
               mode: 'lines',
               name: `${shortWindowLabel} Avg`,
-              line: { dash: 'dash', width: 2, color: COLORS.secondary },
+              line: {
+                dash: 'dash',
+                width: EMPHASIS_LINE_WIDTH,
+                color: COLORS.secondary,
+              },
             },
             // Long-window CI ribbon
             {
@@ -337,7 +373,11 @@ export default function AhiTrendsCharts({
               type: 'scatter',
               mode: 'lines',
               name: `${longWindowLabel} Avg`,
-              line: { dash: 'dot', width: 2, color: COLORS.accent },
+              line: {
+                dash: 'dot',
+                width: EMPHASIS_LINE_WIDTH,
+                color: COLORS.accent,
+              },
             },
             ...(oai && cai && mai
               ? [
@@ -376,15 +416,15 @@ export default function AhiTrendsCharts({
           ]}
           layout={{
             title: 'Nightly AHI Over Time',
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+            legend: { ...HORIZONTAL_CENTER_LEGEND },
             shapes: [
               {
                 type: 'line',
                 xref: 'paper',
                 x0: 0,
                 x1: 1,
-                y0: 5,
-                y1: 5,
+                y0: AHI_SEVERITY_LIMITS.normal,
+                y1: AHI_SEVERITY_LIMITS.normal,
                 line: { color: COLORS.threshold, dash: 'dashdot' },
               },
               ...(breakDates || []).map((d) => ({
@@ -394,7 +434,11 @@ export default function AhiTrendsCharts({
                 yref: 'paper',
                 y0: 0,
                 y1: 1,
-                line: { color: '#aa3377', width: 1, dash: 'dot' },
+                line: {
+                  color: '#aa3377',
+                  width: PRIMARY_LINE_WIDTH,
+                  dash: 'dot',
+                },
               })),
               ...(cpDates || []).map((d) => ({
                 type: 'line',
@@ -403,30 +447,33 @@ export default function AhiTrendsCharts({
                 yref: 'paper',
                 y0: 0,
                 y1: 1,
-                line: { color: '#6a3d9a', width: 2 },
+                line: { color: '#6a3d9a', width: EMPHASIS_LINE_WIDTH },
               })),
             ],
             annotations: [
               {
                 xref: 'paper',
                 x: 1,
-                y: 5,
+                y: AHI_SEVERITY_LIMITS.normal,
                 xanchor: 'left',
-                text: 'AHI threshold (5)',
+                text: `AHI threshold (${AHI_SEVERITY_LIMITS.normal})`,
                 showarrow: false,
                 font: { color: COLORS.threshold },
               },
             ],
             xaxis: { title: 'Date' },
             yaxis: { title: 'AHI (events/hour)' },
-            margin: { t: 40, l: 60, r: 20, b: 50 },
+            margin: { ...DEFAULT_PLOT_MARGIN },
           }}
           onRelayout={handleRelayout}
           config={{
             responsive: true,
             displaylogo: false,
             modeBarButtonsToAdd: ['toImage'],
-            toImageButtonOptions: { format: 'svg', filename: 'ahi_over_time' },
+            toImageButtonOptions: {
+              format: CHART_EXPORT_FORMAT,
+              filename: 'ahi_over_time',
+            },
           }}
         />
         <VizHelp
@@ -440,20 +487,20 @@ export default function AhiTrendsCharts({
             display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
-            gap: '8px',
-            margin: '12px 0 4px',
+            gap: `${LAG_CONTROL_GAP_PX}px`,
+            margin: LAG_CONTROL_MARGIN,
           }}
         >
-          <label htmlFor={lagInputId}>Max lag (nights):</label>
+          <label htmlFor={lagInputId}>{LAG_LABEL}</label>
           <input
             id={lagInputId}
             type="number"
             min={MIN_LAG_INPUT}
             max={MAX_LAG_INPUT}
-            step={1}
+            step={LAG_INPUT_STEP}
             value={maxLag}
             onChange={handleLagChange}
-            style={{ width: '80px' }}
+            style={{ width: `${LAG_INPUT_WIDTH_PX}px` }}
           />
         </div>
       ) : null}
@@ -485,7 +532,10 @@ export default function AhiTrendsCharts({
                 type: 'scatter',
                 mode: 'lines',
                 name: AUTOCORRELATION_CONFIDENCE_LABEL,
-                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                line: {
+                  color: 'rgba(150,150,150,0.6)',
+                  width: PRIMARY_LINE_WIDTH,
+                },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
                 showlegend: true,
@@ -494,10 +544,13 @@ export default function AhiTrendsCharts({
             layout={{
               title: 'AHI Autocorrelation',
               barmode: 'overlay',
-              margin: { t: 40, r: 30, b: 40, l: 50 },
+              margin: { ...AUTOCORRELATION_CHART_MARGIN },
             }}
             useResizeHandler
-            style={{ width: '100%', height: '260px' }}
+            style={{
+              width: '100%',
+              height: `${AUTOCORRELATION_CHART_HEIGHT}px`,
+            }}
           />
           <VizHelp text="Autocorrelation shows how strongly tonight's AHI relates to prior nights. Bars outside the grey band exceed the 95% white-noise expectation; see docs/user/02-visualizations.md#ahi-trends." />
         </div>
@@ -530,7 +583,10 @@ export default function AhiTrendsCharts({
                 type: 'scatter',
                 mode: 'lines',
                 name: AUTOCORRELATION_CONFIDENCE_LABEL,
-                line: { color: 'rgba(150,150,150,0.6)', width: 1 },
+                line: {
+                  color: 'rgba(150,150,150,0.6)',
+                  width: PRIMARY_LINE_WIDTH,
+                },
                 fill: 'tonexty',
                 hoverinfo: 'skip',
                 showlegend: true,
@@ -539,10 +595,13 @@ export default function AhiTrendsCharts({
             layout={{
               title: 'AHI Partial Autocorrelation',
               barmode: 'overlay',
-              margin: { t: 40, r: 30, b: 40, l: 50 },
+              margin: { ...AUTOCORRELATION_CHART_MARGIN },
             }}
             useResizeHandler
-            style={{ width: '100%', height: '260px' }}
+            style={{
+              width: '100%',
+              height: `${AUTOCORRELATION_CHART_HEIGHT}px`,
+            }}
           />
           <VizHelp text="Partial autocorrelation isolates direct dependencies at each lag. Sudden drops after a few lags suggest short memory, while long tails hint at persistent regimes." />
         </div>
@@ -552,7 +611,10 @@ export default function AhiTrendsCharts({
         <div className="chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '360px' }}
+            style={{
+              width: '100%',
+              height: `${DECOMPOSITION_CHART_HEIGHT}px`,
+            }}
             data={[
               {
                 x: dates,
@@ -560,7 +622,7 @@ export default function AhiTrendsCharts({
                 type: 'scatter',
                 mode: 'lines',
                 name: 'Trend',
-                line: { color: COLORS.secondary, width: 2 },
+                line: { color: COLORS.secondary, width: EMPHASIS_LINE_WIDTH },
                 hovertemplate:
                   'Date: %{x|%Y-%m-%d}<br>Trend: %{y:.2f}<extra></extra>',
               },
@@ -572,7 +634,7 @@ export default function AhiTrendsCharts({
                 name: 'Seasonal',
                 xaxis: 'x2',
                 yaxis: 'y2',
-                line: { color: COLORS.accent, width: 1 },
+                line: { color: COLORS.accent, width: PRIMARY_LINE_WIDTH },
                 hovertemplate:
                   'Date: %{x|%Y-%m-%d}<br>Seasonal: %{y:.2f}<extra></extra>',
                 showlegend: false,
@@ -585,7 +647,7 @@ export default function AhiTrendsCharts({
                 name: 'Residual',
                 xaxis: 'x3',
                 yaxis: 'y3',
-                line: { color: COLORS.primary, width: 1 },
+                line: { color: COLORS.primary, width: PRIMARY_LINE_WIDTH },
                 hovertemplate:
                   'Date: %{x|%Y-%m-%d}<br>Residual: %{y:.2f}<extra></extra>',
                 showlegend: false,
@@ -600,7 +662,7 @@ export default function AhiTrendsCharts({
                 roworder: 'top to bottom',
               },
               hovermode: 'x unified',
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               xaxis: { title: 'Date', showspikes: true },
               xaxis2: { matches: 'x', anchor: 'y2', showspikes: true },
               xaxis3: {
@@ -612,7 +674,7 @@ export default function AhiTrendsCharts({
               yaxis: { title: 'Trend', zeroline: false },
               yaxis2: { title: 'Seasonal', zeroline: false },
               yaxis3: { title: 'Residual', zeroline: false },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             onRelayout={handleRelayout}
             config={{
@@ -620,7 +682,7 @@ export default function AhiTrendsCharts({
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
               toImageButtonOptions: {
-                format: 'svg',
+                format: CHART_EXPORT_FORMAT,
                 filename: 'ahi_stl_decomposition',
               },
             }}
@@ -645,7 +707,7 @@ export default function AhiTrendsCharts({
             ]}
             layout={{
               title: 'Distribution of Nightly AHI',
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               shapes: [
                 {
                   type: 'line',
@@ -670,30 +732,30 @@ export default function AhiTrendsCharts({
                 {
                   x: median,
                   yref: 'paper',
-                  y: 1.05,
-                  text: `Median: ${median.toFixed(2)}`,
+                  y: MEDIAN_ANNOTATION_Y,
+                  text: `Median: ${median.toFixed(SUMMARY_DECIMAL_PLACES)}`,
                   showarrow: false,
                   font: { color: COLORS.secondary },
                 },
                 {
                   x: mean,
                   yref: 'paper',
-                  y: 1.1,
-                  text: `Mean: ${mean.toFixed(2)}`,
+                  y: MEAN_ANNOTATION_Y,
+                  text: `Mean: ${mean.toFixed(SUMMARY_DECIMAL_PLACES)}`,
                   showarrow: false,
                   font: { color: COLORS.accent },
                 },
               ],
               xaxis: { title: 'AHI (events/hour)' },
               yaxis: { title: 'Count' },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             config={{
               responsive: true,
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
               toImageButtonOptions: {
-                format: 'svg',
+                format: CHART_EXPORT_FORMAT,
                 filename: 'ahi_distribution',
               },
             }}
@@ -716,7 +778,7 @@ export default function AhiTrendsCharts({
             layout={{
               title: 'Boxplot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)', zeroline: false },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
           />
           <VizHelp text="Boxplot of nightly AHI; box shows the interquartile range (IQR) and points indicate outliers." />
@@ -739,7 +801,7 @@ export default function AhiTrendsCharts({
             layout={{
               title: 'Violin Plot of Nightly AHI',
               yaxis: { title: 'AHI (events/hour)' },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
           />
           <VizHelp text="Violin plot of nightly AHI; width shows density of values. Inner box shows quartiles and median." />
@@ -770,7 +832,7 @@ export default function AhiTrendsCharts({
               title: 'QQ Plot vs Normal',
               xaxis: { title: 'Theoretical Quantiles' },
               yaxis: { title: 'Observed AHI Quantiles' },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
           />
           <VizHelp text="QQ plot comparing observed AHI quantiles to a theoretical normal distribution. Deviations from the dashed y=x line indicate non-normality." />
@@ -792,22 +854,28 @@ export default function AhiTrendsCharts({
             <tr>
               <td>{severityLabels.le5}</td>
               <td>{bands.le5}</td>
-              <td>{((bands.le5 / ahis.length) * 100).toFixed(0)}%</td>
+              <td>{((bands.le5 / ahis.length) * PERCENT_SCALE).toFixed(0)}%</td>
             </tr>
             <tr>
               <td>{severityLabels.b5_15}</td>
               <td>{bands.b5_15}</td>
-              <td>{((bands.b5_15 / ahis.length) * 100).toFixed(0)}%</td>
+              <td>
+                {((bands.b5_15 / ahis.length) * PERCENT_SCALE).toFixed(0)}%
+              </td>
             </tr>
             <tr>
               <td>{severityLabels.b15_30}</td>
               <td>{bands.b15_30}</td>
-              <td>{((bands.b15_30 / ahis.length) * 100).toFixed(0)}%</td>
+              <td>
+                {((bands.b15_30 / ahis.length) * PERCENT_SCALE).toFixed(0)}%
+              </td>
             </tr>
             <tr>
               <td>{severityLabels.gt30}</td>
               <td>{bands.gt30}</td>
-              <td>{((bands.gt30 / ahis.length) * 100).toFixed(0)}%</td>
+              <td>
+                {((bands.gt30 / ahis.length) * PERCENT_SCALE).toFixed(0)}%
+              </td>
             </tr>
           </tbody>
         </table>
@@ -815,7 +883,7 @@ export default function AhiTrendsCharts({
 
       {badNights.length ? (
         <div className="section" style={{ marginTop: '8px' }}>
-          <h4>Bad Nights (top 10)</h4>
+          <h4>Bad Nights (top {BAD_NIGHT_LIMIT})</h4>
           <table>
             <thead>
               <tr>
@@ -825,10 +893,10 @@ export default function AhiTrendsCharts({
               </tr>
             </thead>
             <tbody>
-              {badNights.slice(0, 10).map((b) => (
+              {badNights.slice(0, BAD_NIGHT_LIMIT).map((b) => (
                 <tr key={b.date.getTime()}>
-                  <td>{b.date.toISOString().slice(0, 10)}</td>
-                  <td>{b.ahi.toFixed(2)}</td>
+                  <td>{b.date.toISOString().slice(0, ISO_DATE_LENGTH)}</td>
+                  <td>{b.ahi.toFixed(SUMMARY_DECIMAL_PLACES)}</td>
                   <td>{b.reasons.join(', ')}</td>
                 </tr>
               ))}

@@ -8,8 +8,58 @@ import {
   loessSmooth,
   runningQuantileXY,
 } from '../utils/stats';
-import { LOESS_SAMPLE_STEPS } from '../constants';
-import { DEFAULT_CHART_HEIGHT } from '../constants/charts';
+import {
+  EPAP_SPLIT_THRESHOLD,
+  LOESS_SAMPLE_STEPS,
+  NUMERIC_TOLERANCE,
+  QUARTILE_LOWER,
+  QUARTILE_MEDIAN,
+  QUARTILE_UPPER,
+  ROLLING_WINDOW_LONG_DAYS,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
+} from '../constants';
+import {
+  CHART_EXPORT_FORMAT,
+  DEFAULT_CHART_HEIGHT,
+  DEFAULT_PLOT_MARGIN,
+  HORIZONTAL_CENTER_LEGEND,
+  LINE_WIDTH_BOLD,
+  LINE_WIDTH_FINE,
+  LINE_WIDTH_MEDIUM,
+} from '../constants/charts';
+
+const LOESS_BANDWIDTH = 0.3;
+const RUNNING_MEDIAN_QUANTILE = 0.5;
+const RUNNING_HIGH_QUANTILE = 0.9;
+const RUNNING_QUANTILE_WINDOW = 25;
+const SCATTER_MARKER_SIZE = 6;
+const SCATTER_MARKER_OPACITY = 0.7;
+const SQUARE_EXPONENT = 2;
+const MATRIX_AUGMENT_FACTOR = 2;
+const MIN_CORRELATION_VARS = 2;
+const PRIMARY_LINE_WIDTH = LINE_WIDTH_FINE;
+const FIT_LINE_WIDTH = LINE_WIDTH_BOLD;
+const LOESS_LINE_WIDTH = LINE_WIDTH_BOLD;
+const QUANTILE_LINE_WIDTH = LINE_WIDTH_MEDIUM;
+const CORRELATION_DECIMALS = 2;
+const MANN_WHITNEY_DECIMALS = 1;
+const EFFECT_DECIMALS = 2;
+const P_VALUE_DIGITS = 2;
+const LEAK_SECTION_MARGIN_TOP_PX = 16;
+const PARTIAL_CORR_MARGIN_TOP_PX = 12;
+const TITRATION_SECTION_MARGIN_TOP_PX = 8;
+const LEAK_HISTOGRAM_BINS = 20;
+const DURATION_COMPONENT_SECONDS = [SECONDS_PER_HOUR, SECONDS_PER_MINUTE, 1];
+const CORR_MATRIX_MARGIN_TOP_PX = 16;
+const DARK_HEATMAP_COLORSCALE = Object.freeze([
+  [0, '#9e2f2f'],
+  [QUARTILE_LOWER, '#d04a4a'],
+  [QUARTILE_MEDIAN, '#1a2330'],
+  [QUARTILE_UPPER, '#4a7bd0'],
+  [1, '#2f5aa6'],
+]);
+const CORR_HEATMAP_MARGIN = Object.freeze({ t: 40, l: 80, r: 20, b: 80 });
 
 /**
  * EPAP Analysis Charts: boxplot of nightly median EPAP,
@@ -41,8 +91,8 @@ function EpapTrendsCharts({ data }) {
     const datesArr = pts.map((p) => p.date);
     const epapsArr = pts.map((p) => p.epap);
     const ahisArr = pts.map((p) => p.ahi);
-    const first30 = pts.slice(0, 30);
-    const last30 = pts.slice(-30);
+    const first30 = pts.slice(0, ROLLING_WINDOW_LONG_DAYS);
+    const last30 = pts.slice(-ROLLING_WINDOW_LONG_DAYS);
     const epapAhiPairsArr = pts;
     const n = epapAhiPairsArr.length;
     const meanE = epapAhiPairsArr.reduce((sum, p) => sum + p.epap, 0) / n;
@@ -54,11 +104,17 @@ function EpapTrendsCharts({ data }) {
       ) /
       (n - 1);
     const varE =
-      epapAhiPairsArr.reduce((sum, p) => sum + (p.epap - meanE) ** 2, 0) /
+      epapAhiPairsArr.reduce(
+        (sum, p) => sum + (p.epap - meanE) ** SQUARE_EXPONENT,
+        0,
+      ) /
       (n - 1);
     const stdE = Math.sqrt(varE);
     const stdA = Math.sqrt(
-      epapAhiPairsArr.reduce((sum, p) => sum + (p.ahi - meanA) ** 2, 0) /
+      epapAhiPairsArr.reduce(
+        (sum, p) => sum + (p.ahi - meanA) ** SQUARE_EXPONENT,
+        0,
+      ) /
         (n - 1),
     );
     const corrVal = cov / (stdE * stdA);
@@ -93,15 +149,29 @@ function EpapTrendsCharts({ data }) {
     return arr;
   }, [epaps]);
   const loess = useMemo(
-    () => loessSmooth(epaps, ahis, xs, 0.3),
+    () => loessSmooth(epaps, ahis, xs, LOESS_BANDWIDTH),
     [epaps, ahis, xs],
   );
   const q50 = useMemo(
-    () => runningQuantileXY(epaps, ahis, xs, 0.5, 25),
+    () =>
+      runningQuantileXY(
+        epaps,
+        ahis,
+        xs,
+        RUNNING_MEDIAN_QUANTILE,
+        RUNNING_QUANTILE_WINDOW,
+      ),
     [epaps, ahis, xs],
   );
   const q90 = useMemo(
-    () => runningQuantileXY(epaps, ahis, xs, 0.9, 25),
+    () =>
+      runningQuantileXY(
+        epaps,
+        ahis,
+        xs,
+        RUNNING_HIGH_QUANTILE,
+        RUNNING_QUANTILE_WINDOW,
+      ),
     [epaps, ahis, xs],
   );
 
@@ -119,8 +189,11 @@ function EpapTrendsCharts({ data }) {
         typeof v === 'string' && v.includes(':')
           ? v
               .split(':')
-              .reduce((a, b, i) => a + parseFloat(b) * [3600, 60, 1][i], 0) /
-            3600
+              .reduce(
+                (a, b, i) =>
+                  a + parseFloat(b) * (DURATION_COMPONENT_SECONDS[i] || 0),
+                0,
+              ) / SECONDS_PER_HOUR
           : parseFloat(v),
       )
       .filter((v) => !isNaN(v));
@@ -219,17 +292,18 @@ function EpapTrendsCharts({ data }) {
         for (let i = col + 1; i < nn; i++)
           if (Math.abs(M[i][col]) > Math.abs(M[pivot][col])) pivot = i;
         const pv = M[pivot][col];
-        if (Math.abs(pv) < 1e-12) return null;
+        if (Math.abs(pv) < NUMERIC_TOLERANCE) return null;
         if (pivot !== col) {
           const tmp = M[pivot];
           M[pivot] = M[col];
           M[col] = tmp;
         }
-        for (let j = 0; j < 2 * nn; j++) M[col][j] /= pv;
+        for (let j = 0; j < MATRIX_AUGMENT_FACTOR * nn; j++) M[col][j] /= pv;
         for (let i = 0; i < nn; i++) {
           if (i === col) continue;
           const f = M[i][col];
-          for (let j = 0; j < 2 * nn; j++) M[i][j] -= f * M[col][j];
+          for (let j = 0; j < MATRIX_AUGMENT_FACTOR * nn; j++)
+            M[i][j] -= f * M[col][j];
         }
       }
       const invA = Array.from({ length: nn }, () => new Array(nn).fill(0));
@@ -254,11 +328,11 @@ function EpapTrendsCharts({ data }) {
   // Mann–Whitney titration helper for EPAP <7 vs ≥7 bins
   const titration = useMemo(() => {
     const low = data
-      .filter((r) => parseFloat(r['Median EPAP']) < 7)
+      .filter((r) => parseFloat(r['Median EPAP']) < EPAP_SPLIT_THRESHOLD)
       .map((r) => parseFloat(r['AHI']))
       .filter((v) => !isNaN(v));
     const high = data
-      .filter((r) => parseFloat(r['Median EPAP']) >= 7)
+      .filter((r) => parseFloat(r['Median EPAP']) >= EPAP_SPLIT_THRESHOLD)
       .map((r) => parseFloat(r['AHI']))
       .filter((v) => !isNaN(v));
     const res = mannWhitneyUTest(low, high);
@@ -278,7 +352,7 @@ function EpapTrendsCharts({ data }) {
               type: 'scatter',
               mode: 'lines',
               name: 'Nightly EPAP',
-              line: { width: 1, color: COLORS.primary },
+              line: { width: PRIMARY_LINE_WIDTH, color: COLORS.primary },
             },
             {
               x: first30Dates,
@@ -286,7 +360,7 @@ function EpapTrendsCharts({ data }) {
               type: 'scatter',
               mode: 'markers',
               name: 'First 30 Nights',
-              marker: { color: COLORS.accent, size: 6 },
+              marker: { color: COLORS.accent, size: SCATTER_MARKER_SIZE },
             },
             {
               x: last30Dates,
@@ -294,21 +368,24 @@ function EpapTrendsCharts({ data }) {
               type: 'scatter',
               mode: 'markers',
               name: 'Last 30 Nights',
-              marker: { color: COLORS.secondary, size: 6 },
+              marker: { color: COLORS.secondary, size: SCATTER_MARKER_SIZE },
             },
           ]}
           layout={{
             title: 'Nightly Median EPAP Over Time',
-            legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+            legend: { ...HORIZONTAL_CENTER_LEGEND },
             xaxis: { title: 'Date' },
             yaxis: { title: 'EPAP (cmH₂O)' },
-            margin: { t: 40, l: 60, r: 20, b: 50 },
+            margin: { ...DEFAULT_PLOT_MARGIN },
           }}
           config={{
             responsive: true,
             displaylogo: false,
             modeBarButtonsToAdd: ['toImage'],
-            toImageButtonOptions: { format: 'svg', filename: 'epap_over_time' },
+            toImageButtonOptions: {
+              format: CHART_EXPORT_FORMAT,
+              filename: 'epap_over_time',
+            },
           }}
         />
         <VizHelp text="Nightly median EPAP over time. Dots highlight the first and last 30 nights for quick comparison." />
@@ -330,15 +407,18 @@ function EpapTrendsCharts({ data }) {
             ]}
             layout={{
               title: 'Boxplot of Nightly Median EPAP',
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               yaxis: { title: 'EPAP (cmH₂O)', zeroline: false },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             config={{
               responsive: true,
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
-              toImageButtonOptions: { format: 'svg', filename: 'epap_boxplot' },
+              toImageButtonOptions: {
+                format: CHART_EXPORT_FORMAT,
+                filename: 'epap_boxplot',
+              },
             }}
           />
           <VizHelp text="Boxplot of nightly median EPAP; box shows IQR and points indicate outliers." />
@@ -354,7 +434,11 @@ function EpapTrendsCharts({ data }) {
                 type: 'scatter',
                 mode: 'markers',
                 name: 'Data',
-                marker: { size: 6, opacity: 0.7, color: COLORS.primary },
+                marker: {
+                  size: SCATTER_MARKER_SIZE,
+                  opacity: SCATTER_MARKER_OPACITY,
+                  color: COLORS.primary,
+                },
               },
               {
                 x: [boxMin, boxMax],
@@ -362,7 +446,11 @@ function EpapTrendsCharts({ data }) {
                 type: 'scatter',
                 mode: 'lines',
                 name: 'Fit',
-                line: { dash: 'dash', width: 2, color: COLORS.secondary },
+                line: {
+                  dash: 'dash',
+                  width: FIT_LINE_WIDTH,
+                  color: COLORS.secondary,
+                },
               },
               ...(xs.length
                 ? [
@@ -372,7 +460,7 @@ function EpapTrendsCharts({ data }) {
                       type: 'scatter',
                       mode: 'lines',
                       name: 'LOESS',
-                      line: { width: 2, color: '#6a3d9a' },
+                      line: { width: LOESS_LINE_WIDTH, color: '#6a3d9a' },
                     },
                     {
                       x: xs,
@@ -380,7 +468,7 @@ function EpapTrendsCharts({ data }) {
                       type: 'scatter',
                       mode: 'lines',
                       name: 'p50',
-                      line: { width: 1.5, color: '#2ca02c' },
+                      line: { width: QUANTILE_LINE_WIDTH, color: '#2ca02c' },
                     },
                     {
                       x: xs,
@@ -388,24 +476,24 @@ function EpapTrendsCharts({ data }) {
                       type: 'scatter',
                       mode: 'lines',
                       name: 'p90',
-                      line: { width: 1.5, color: '#d62728' },
+                      line: { width: QUANTILE_LINE_WIDTH, color: '#d62728' },
                     },
                   ]
                 : []),
             ]}
             layout={{
-              title: `EPAP vs AHI Scatter (r = ${corr.toFixed(2)})`,
-              legend: { orientation: 'h', x: 0.5, xanchor: 'center' },
+              title: `EPAP vs AHI Scatter (r = ${corr.toFixed(CORRELATION_DECIMALS)})`,
+              legend: { ...HORIZONTAL_CENTER_LEGEND },
               xaxis: { title: 'Median EPAP (cmH₂O)' },
               yaxis: { title: 'AHI (events/hour)' },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             config={{
               responsive: true,
               displaylogo: false,
               modeBarButtonsToAdd: ['toImage'],
               toImageButtonOptions: {
-                format: 'svg',
+                format: CHART_EXPORT_FORMAT,
                 filename: 'epap_vs_ahi_scatter',
               },
             }}
@@ -428,7 +516,7 @@ function EpapTrendsCharts({ data }) {
               title: 'EPAP vs AHI Density (2D Histogram)',
               xaxis: { title: 'Median EPAP (cmH₂O)' },
               yaxis: { title: 'AHI (events/hour)' },
-              margin: { t: 40, l: 60, r: 20, b: 50 },
+              margin: { ...DEFAULT_PLOT_MARGIN },
             }}
             config={{ responsive: true, displaylogo: false }}
           />
@@ -436,10 +524,10 @@ function EpapTrendsCharts({ data }) {
         </div>
       </div>
 
-      {corrMatrix.labels.length >= 2 && (
+      {corrMatrix.labels.length >= MIN_CORRELATION_VARS && (
         <div
           className="chart-item chart-with-help"
-          style={{ marginTop: '16px' }}
+          style={{ marginTop: `${CORR_MATRIX_MARGIN_TOP_PX}px` }}
         >
           <ThemedPlot
             useResizeHandler
@@ -450,15 +538,7 @@ function EpapTrendsCharts({ data }) {
                 x: corrMatrix.labels,
                 y: corrMatrix.labels,
                 type: 'heatmap',
-                colorscale: isDark
-                  ? [
-                      [0.0, '#9e2f2f'],
-                      [0.25, '#d04a4a'],
-                      [0.5, '#1a2330'],
-                      [0.75, '#4a7bd0'],
-                      [1.0, '#2f5aa6'],
-                    ]
-                  : 'RdBu',
+                colorscale: isDark ? DARK_HEATMAP_COLORSCALE : 'RdBu',
                 zmin: -1,
                 zmax: 1,
                 reversescale: !isDark,
@@ -469,12 +549,12 @@ function EpapTrendsCharts({ data }) {
               autosize: true,
               xaxis: { title: 'Variable' },
               yaxis: { title: 'Variable' },
-              margin: { t: 40, l: 80, r: 20, b: 80 },
+              margin: { ...CORR_HEATMAP_MARGIN },
               annotations: corrMatrix.z.flatMap((row, i) =>
                 row.map((v, j) => ({
                   x: corrMatrix.labels[j],
                   y: corrMatrix.labels[i],
-                  text: isFinite(v) ? v.toFixed(2) : '—',
+                  text: isFinite(v) ? v.toFixed(CORRELATION_DECIMALS) : '—',
                   showarrow: false,
                   font: { color: isDark ? '#fff' : '#000' },
                 })),
@@ -489,7 +569,7 @@ function EpapTrendsCharts({ data }) {
       {corrMatrix.zPartial && (
         <div
           className="chart-item chart-with-help"
-          style={{ marginTop: '12px' }}
+          style={{ marginTop: `${PARTIAL_CORR_MARGIN_TOP_PX}px` }}
         >
           <ThemedPlot
             useResizeHandler
@@ -500,15 +580,7 @@ function EpapTrendsCharts({ data }) {
                 x: corrMatrix.labels,
                 y: corrMatrix.labels,
                 type: 'heatmap',
-                colorscale: isDark
-                  ? [
-                      [0.0, '#9e2f2f'],
-                      [0.25, '#d04a4a'],
-                      [0.5, '#1a2330'],
-                      [0.75, '#4a7bd0'],
-                      [1.0, '#2f5aa6'],
-                    ]
-                  : 'RdBu',
+                colorscale: isDark ? DARK_HEATMAP_COLORSCALE : 'RdBu',
                 zmin: -1,
                 zmax: 1,
                 reversescale: !isDark,
@@ -519,12 +591,12 @@ function EpapTrendsCharts({ data }) {
               autosize: true,
               xaxis: { title: 'Variable' },
               yaxis: { title: 'Variable' },
-              margin: { t: 40, l: 80, r: 20, b: 80 },
+              margin: { ...CORR_HEATMAP_MARGIN },
               annotations: corrMatrix.zPartial.flatMap((row, i) =>
                 row.map((v, j) => ({
                   x: corrMatrix.labels[j],
                   y: corrMatrix.labels[i],
-                  text: isFinite(v) ? v.toFixed(2) : '—',
+                  text: isFinite(v) ? v.toFixed(CORRELATION_DECIMALS) : '—',
                   showarrow: false,
                   font: { color: isDark ? '#fff' : '#000' },
                 })),
@@ -538,7 +610,10 @@ function EpapTrendsCharts({ data }) {
 
       {/* Leak charts if available */}
       {corrMatrix.leakMed && corrMatrix.leakMed.length ? (
-        <div className="usage-charts-grid" style={{ marginTop: '16px' }}>
+        <div
+          className="usage-charts-grid"
+          style={{ marginTop: `${LEAK_SECTION_MARGIN_TOP_PX}px` }}
+        >
           <div className="chart-item chart-with-help">
             <ThemedPlot
               useResizeHandler
@@ -556,7 +631,7 @@ function EpapTrendsCharts({ data }) {
                 title: 'Leak Median Over Time',
                 xaxis: { title: 'Date' },
                 yaxis: { title: 'Leak (median)' },
-                margin: { t: 40, l: 60, r: 20, b: 50 },
+                margin: { ...DEFAULT_PLOT_MARGIN },
               }}
               config={{ responsive: true, displaylogo: false }}
             />
@@ -566,12 +641,18 @@ function EpapTrendsCharts({ data }) {
             <ThemedPlot
               useResizeHandler
               style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
-              data={[{ x: corrMatrix.leakMed, type: 'histogram', nbinsx: 20 }]}
+              data={[
+                {
+                  x: corrMatrix.leakMed,
+                  type: 'histogram',
+                  nbinsx: LEAK_HISTOGRAM_BINS,
+                },
+              ]}
               layout={{
                 title: 'Leak Median Distribution',
                 xaxis: { title: 'Leak (median)' },
                 yaxis: { title: 'Count' },
-                margin: { t: 40, l: 60, r: 20, b: 50 },
+                margin: { ...DEFAULT_PLOT_MARGIN },
               }}
               config={{ responsive: true, displaylogo: false }}
             />
@@ -595,7 +676,7 @@ function EpapTrendsCharts({ data }) {
                   title: 'Time Above Leak Threshold (%)',
                   xaxis: { title: 'Date' },
                   yaxis: { title: 'Percent of night (%)' },
-                  margin: { t: 40, l: 60, r: 20, b: 50 },
+                  margin: { ...DEFAULT_PLOT_MARGIN },
                 }}
                 config={{ responsive: true, displaylogo: false }}
               />
@@ -605,7 +686,10 @@ function EpapTrendsCharts({ data }) {
         </div>
       ) : null}
 
-      <div className="section" style={{ marginTop: '8px' }}>
+      <div
+        className="section"
+        style={{ marginTop: `${TITRATION_SECTION_MARGIN_TOP_PX}px` }}
+      >
         <h4>EPAP Titration (AHI by EPAP bins)</h4>
         <table>
           <thead>
@@ -617,36 +701,43 @@ function EpapTrendsCharts({ data }) {
           </thead>
           <tbody>
             <tr>
-              <td>EPAP &lt; 7</td>
+              <td>EPAP &lt; {EPAP_SPLIT_THRESHOLD}</td>
               <td>{titration.low.length}</td>
               <td>
                 {(
                   titration.low.reduce((a, b) => a + b, 0) /
                   (titration.low.length || 1)
-                ).toFixed(2)}
+                ).toFixed(EFFECT_DECIMALS)}
               </td>
             </tr>
             <tr>
-              <td>EPAP ≥ 7</td>
+              <td>EPAP ≥ {EPAP_SPLIT_THRESHOLD}</td>
               <td>{titration.high.length}</td>
               <td>
                 {(
                   titration.high.reduce((a, b) => a + b, 0) /
                   (titration.high.length || 1)
-                ).toFixed(2)}
+                ).toFixed(EFFECT_DECIMALS)}
               </td>
             </tr>
           </tbody>
         </table>
         <p>
-          MW U = {isFinite(titration.U) ? titration.U.toFixed(1) : '—'}, p
-          {titration.method === 'exact' ? ' (exact)' : ' (normal)'} ≈{' '}
-          {isFinite(titration.p) ? titration.p.toExponential(2) : '—'}, effect
-          (rank-biserial, high &gt; low) ≈{' '}
-          {isFinite(titration.effect) ? titration.effect.toFixed(2) : '—'}
+          MW U ={' '}
+          {isFinite(titration.U)
+            ? titration.U.toFixed(MANN_WHITNEY_DECIMALS)
+            : '—'}
+          , p{titration.method === 'exact' ? ' (exact)' : ' (normal)'} ≈{' '}
+          {isFinite(titration.p)
+            ? titration.p.toExponential(P_VALUE_DIGITS)
+            : '—'}
+          , effect (rank-biserial, high &gt; low) ≈{' '}
+          {isFinite(titration.effect)
+            ? titration.effect.toFixed(EFFECT_DECIMALS)
+            : '—'}
           {isFinite(titration.effect_ci_low) &&
           isFinite(titration.effect_ci_high)
-            ? ` [${titration.effect_ci_low.toFixed(2)}, ${titration.effect_ci_high.toFixed(2)}]`
+            ? ` [${titration.effect_ci_low.toFixed(EFFECT_DECIMALS)}, ${titration.effect_ci_high.toFixed(EFFECT_DECIMALS)}]`
             : ''}
         </p>
       </div>

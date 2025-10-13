@@ -1,6 +1,18 @@
 import React from 'react';
 import { FALSE_NEG_CONFIDENCE_MIN } from '../utils/clustering';
 import { GuideLink, ThemedPlot, VizHelp } from './ui';
+import { HEADER_SCROLL_MARGIN_PX, PERCENT_SCALE } from '../constants';
+import {
+  FALSE_NEG_MARKER_DURATION_SCALE,
+  FALSE_NEG_MARKER_MAX_SIZE,
+  FALSE_NEG_MARKER_MIN_SIZE,
+  FALSE_NEG_SCATTER_HEIGHT,
+  FALSE_NEG_SCATTER_MARGIN,
+} from '../constants/charts';
+
+const PRESET_GAP_PX = 12;
+const PRESET_MARGIN_BOTTOM_PX = HEADER_SCROLL_MARGIN_PX;
+const PRESET_DESCRIPTION_OPACITY = 0.8;
 
 function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   return (
@@ -15,9 +27,9 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
       <div
         style={{
           display: 'flex',
-          gap: 12,
+          gap: `${PRESET_GAP_PX}px`,
           alignItems: 'center',
-          marginBottom: 8,
+          marginBottom: `${PRESET_MARGIN_BOTTOM_PX}px`,
         }}
       >
         <label>
@@ -31,7 +43,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
             <option value="lenient">Lenient</option>
           </select>
         </label>
-        <span style={{ opacity: 0.8 }}>
+        <span style={{ opacity: PRESET_DESCRIPTION_OPACITY }}>
           Thresholds tuned for sensitivity/specificity
         </span>
       </div>
@@ -40,25 +52,35 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
         <div className="chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: '400px' }}
+            style={{
+              width: '100%',
+              height: `${FALSE_NEG_SCATTER_HEIGHT}px`,
+            }}
             data={[
               {
                 type: 'scatter',
                 mode: 'markers',
                 x: list.map((cl) => cl.start),
-                y: list.map((cl) => cl.confidence * 100),
+                y: list.map((cl) => cl.confidence * PERCENT_SCALE),
                 marker: {
                   size: list.map((cl) =>
-                    Math.max(6, Math.min(20, Math.sqrt(cl.durationSec) * 5)),
+                    Math.max(
+                      FALSE_NEG_MARKER_MIN_SIZE,
+                      Math.min(
+                        FALSE_NEG_MARKER_MAX_SIZE,
+                        Math.sqrt(cl.durationSec) *
+                          FALSE_NEG_MARKER_DURATION_SCALE,
+                      ),
+                    ),
                   ),
-                  color: list.map((cl) => cl.confidence * 100),
+                  color: list.map((cl) => cl.confidence * PERCENT_SCALE),
                   colorscale: 'Viridis',
                   showscale: true,
                   colorbar: { title: 'Confidence (%)' },
                 },
                 text: list.map(
                   (cl) =>
-                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * 100).toFixed(0)}%`,
+                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * PERCENT_SCALE).toFixed(0)}%`,
                 ),
                 hovertemplate: '%{text}<extra></extra>',
               },
@@ -68,10 +90,13 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
               xaxis: { type: 'date', title: 'Cluster Start Time' },
               yaxis: {
                 title: 'Confidence (%)',
-                range: [FALSE_NEG_CONFIDENCE_MIN * 100, 100],
+                range: [
+                  FALSE_NEG_CONFIDENCE_MIN * PERCENT_SCALE,
+                  PERCENT_SCALE,
+                ],
               },
-              margin: { l: 80, r: 20, t: 40, b: 40 },
-              height: 400,
+              margin: { ...FALSE_NEG_SCATTER_MARGIN },
+              height: FALSE_NEG_SCATTER_HEIGHT,
             }}
             config={{ responsive: true, displaylogo: false }}
           />
@@ -94,7 +119,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                 <td>{i + 1}</td>
                 <td>{cl.start.toLocaleString()}</td>
                 <td>{cl.durationSec.toFixed(0)}</td>
-                <td>{(cl.confidence * 100).toFixed(0)}%</td>
+                <td>{(cl.confidence * PERCENT_SCALE).toFixed(0)}%</td>
               </tr>
             ))}
           </tbody>
