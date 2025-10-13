@@ -23,7 +23,7 @@
     "dompurify": "^3.2.7",
     "katex": "^0.16.24",
     "papaparse": "^5.3.2",
-    "plotly.js-basic-dist": "^3.1.0",
+    "plotly.js-basic-dist": "^3.1.1",
     "react": "^19.1.1",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.0.0",
