@@ -12,7 +12,9 @@ import FalseNegativesSection from './features/false-negatives/Section';
 import RawExplorerSection from './features/raw-explorer/Section';
 import {
   DEFAULT_HEADER_OFFSET_PX,
+  HEADER_SCROLL_MARGIN_PX,
   OBSERVER_THRESHOLDS,
+  PERCENT_SCALE,
   buildObserverRootMargin,
   computeTopMargin,
 } from './constants';
@@ -133,6 +135,8 @@ export function AppShell() {
     };
   }, [filteredSummary, filteredDetails, tocSections, setActiveSectionId]);
 
+  const ERROR_MARGIN_STYLE = `${HEADER_SCROLL_MARGIN_PX}px 0`;
+
   const beforeHeader = (
     <>
       <DataImportModal
@@ -154,7 +158,7 @@ export function AppShell() {
         <div
           role="alert"
           style={{
-            margin: '8px 0',
+            margin: ERROR_MARGIN_STYLE,
             color: 'red',
             textAlign: 'center',
           }}
@@ -204,14 +208,18 @@ export function AppShell() {
           {loadingSummary &&
             `Importing summary CSV${
               summaryProgressMax
-                ? ` (${Math.round((summaryProgress / summaryProgressMax) * 100)}%)`
+                ? ` (${Math.round(
+                    (summaryProgress / summaryProgressMax) * PERCENT_SCALE,
+                  )}%)`
                 : ''
             }`}
           {loadingDetails &&
             !loadingSummary &&
             `Importing details CSV${
               detailsProgressMax
-                ? ` (${Math.round((detailsProgress / detailsProgressMax) * 100)}%)`
+                ? ` (${Math.round(
+                    (detailsProgress / detailsProgressMax) * PERCENT_SCALE,
+                  )}%)`
                 : ''
             }`}
           {processing &&

@@ -16,8 +16,19 @@ import {
   DEFAULT_CLUSTER_ALGORITHM,
   DEFAULT_KMEANS_K,
   DEFAULT_SINGLE_LINK_GAP_SEC,
+  CLUSTERING_DEFAULTS,
 } from '../utils/clustering';
-import { APNEA_CLUSTER_MIN_EVENTS } from '../constants';
+import {
+  APNEA_CLUSTER_MIN_EVENTS,
+  FALSE_NEG_BALANCED_MIN_DURATION_SEC,
+  FALSE_NEG_LENIENT_BASE_FL_THRESHOLD,
+  FALSE_NEG_LENIENT_BRIDGE_SCALE,
+  FALSE_NEG_LENIENT_MIN_CONFIDENCE,
+  FALSE_NEG_LENIENT_MIN_DURATION_SEC,
+  FALSE_NEG_STRICT_FALLBACK_FL_THRESHOLD,
+  FALSE_NEG_STRICT_MIN_CONFIDENCE,
+  FALSE_NEG_STRICT_MIN_DURATION_SEC,
+} from '../constants';
 import { buildSummaryAggregatesCSV, downloadTextFile } from '../utils/export';
 import { clearLastSession } from '../utils/db';
 
@@ -63,10 +74,10 @@ export function useAppState() {
     minCount: APNEA_CLUSTER_MIN_EVENTS,
     minTotalSec: APOEA_CLUSTER_MIN_TOTAL_SEC,
     maxClusterSec: MAX_CLUSTER_DURATION_SEC,
-    minDensity: 0,
+    minDensity: CLUSTERING_DEFAULTS.MIN_DENSITY_CUTOFF,
     edgeEnter: FLG_EDGE_ENTER_THRESHOLD_DEFAULT,
     edgeExit: FLG_EDGE_EXIT_THRESHOLD_DEFAULT,
-    edgeMinDurSec: 10,
+    edgeMinDurSec: CLUSTERING_DEFAULTS.EDGE_MIN_DURATION_SEC,
     k: DEFAULT_KMEANS_K,
     linkageThresholdSec: DEFAULT_SINGLE_LINK_GAP_SEC,
   });
@@ -75,22 +86,28 @@ export function useAppState() {
   const fnOptions = useMemo(() => {
     const presets = {
       strict: {
-        flThreshold: Math.max(0.9, FLG_BRIDGE_THRESHOLD),
-        confidenceMin: 0.98,
+        flThreshold: Math.max(
+          FALSE_NEG_STRICT_FALLBACK_FL_THRESHOLD,
+          FLG_BRIDGE_THRESHOLD,
+        ),
+        confidenceMin: FALSE_NEG_STRICT_MIN_CONFIDENCE,
         gapSec: FLG_CLUSTER_GAP_DEFAULT,
-        minDurationSec: 120,
+        minDurationSec: FALSE_NEG_STRICT_MIN_DURATION_SEC,
       },
       balanced: {
         flThreshold: FLG_BRIDGE_THRESHOLD,
         confidenceMin: FALSE_NEG_CONFIDENCE_MIN,
         gapSec: FLG_CLUSTER_GAP_DEFAULT,
-        minDurationSec: 60,
+        minDurationSec: FALSE_NEG_BALANCED_MIN_DURATION_SEC,
       },
       lenient: {
-        flThreshold: Math.max(0.5, FLG_BRIDGE_THRESHOLD * 0.8),
-        confidenceMin: 0.85,
+        flThreshold: Math.max(
+          FALSE_NEG_LENIENT_BASE_FL_THRESHOLD,
+          FLG_BRIDGE_THRESHOLD * FALSE_NEG_LENIENT_BRIDGE_SCALE,
+        ),
+        confidenceMin: FALSE_NEG_LENIENT_MIN_CONFIDENCE,
         gapSec: FLG_CLUSTER_GAP_DEFAULT,
-        minDurationSec: 45,
+        minDurationSec: FALSE_NEG_LENIENT_MIN_DURATION_SEC,
       },
     };
     return presets[fnPreset] || presets.balanced;

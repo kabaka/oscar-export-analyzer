@@ -1,4 +1,37 @@
 import React from 'react';
+import {
+  DAYS_PER_FIVE_YEARS,
+  DAYS_PER_FORTNIGHT,
+  DAYS_PER_HALF_YEAR,
+  DAYS_PER_MONTH_APPROX,
+  DAYS_PER_QUARTER_APPROX,
+  DAYS_PER_WEEK,
+  DAYS_PER_YEAR,
+} from '../constants';
+
+const QUICK_RANGE_OPTIONS = Object.freeze([
+  { value: 'all', label: 'All' },
+  { value: String(DAYS_PER_WEEK), label: `Last ${DAYS_PER_WEEK} days` },
+  {
+    value: String(DAYS_PER_FORTNIGHT),
+    label: `Last ${DAYS_PER_FORTNIGHT} days`,
+  },
+  {
+    value: String(DAYS_PER_MONTH_APPROX),
+    label: `Last ${DAYS_PER_MONTH_APPROX} days`,
+  },
+  {
+    value: String(DAYS_PER_QUARTER_APPROX),
+    label: `Last ${DAYS_PER_QUARTER_APPROX} days`,
+  },
+  {
+    value: String(DAYS_PER_HALF_YEAR),
+    label: `Last ${DAYS_PER_HALF_YEAR} days`,
+  },
+  { value: String(DAYS_PER_YEAR), label: 'Last year' },
+  { value: String(DAYS_PER_FIVE_YEARS), label: 'Last 5 years' },
+  { value: 'custom', label: 'Custom' },
+]);
 
 function DateRangeControls({
   quickRange,
@@ -17,15 +50,11 @@ function DateRangeControls({
         onChange={(e) => onQuickRangeChange(e.target.value)}
         aria-label="Quick range"
       >
-        <option value="all">All</option>
-        <option value="7">Last 7 days</option>
-        <option value="14">Last 14 days</option>
-        <option value="30">Last 30 days</option>
-        <option value="90">Last 90 days</option>
-        <option value="180">Last 180 days</option>
-        <option value="365">Last year</option>
-        <option value="1825">Last 5 years</option>
-        <option value="custom">Custom</option>
+        {QUICK_RANGE_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
       </select>
       <input
         type="date"

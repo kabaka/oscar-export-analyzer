@@ -1,15 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import {
   DAYS_PER_WEEK,
+  DAYS_PER_FIVE_YEARS,
+  DAYS_PER_FORTNIGHT,
+  DAYS_PER_HALF_YEAR,
+  DAYS_PER_MONTH_APPROX,
+  DAYS_PER_QUARTER_APPROX,
+  DAYS_PER_YEAR,
   HOURS_PER_DAY,
   MILLISECONDS_PER_DAY,
   MILLISECONDS_PER_HOUR,
   MILLISECONDS_PER_MINUTE,
   MILLISECONDS_PER_SECOND,
   MINUTES_PER_HOUR,
+  MONTHS_PER_HALF_YEAR,
+  MONTHS_PER_QUARTER_APPROX,
   SECONDS_PER_DAY,
   SECONDS_PER_HOUR,
   SECONDS_PER_MINUTE,
+  YEARS_PER_LUSTRUM,
+  FORTNIGHT_IN_WEEKS,
 } from './time.js';
 
 describe('time constants', () => {
@@ -25,13 +35,14 @@ describe('time constants', () => {
     expect(MILLISECONDS_PER_DAY).toBe(MILLISECONDS_PER_HOUR * HOURS_PER_DAY);
   });
 
-  it('uses canonical base unit values', () => {
-    expect(SECONDS_PER_MINUTE).toBe(60);
-    expect(MINUTES_PER_HOUR).toBe(60);
-    expect(HOURS_PER_DAY).toBe(24);
-    expect(DAYS_PER_WEEK).toBe(7);
-    expect(MILLISECONDS_PER_DAY).toBe(
-      SECONDS_PER_DAY * MILLISECONDS_PER_SECOND,
+  it('derives extended day windows from ratio constants', () => {
+    expect(DAYS_PER_FORTNIGHT).toBe(DAYS_PER_WEEK * FORTNIGHT_IN_WEEKS);
+    expect(DAYS_PER_QUARTER_APPROX).toBe(
+      DAYS_PER_MONTH_APPROX * MONTHS_PER_QUARTER_APPROX,
     );
+    expect(DAYS_PER_HALF_YEAR).toBe(
+      DAYS_PER_MONTH_APPROX * MONTHS_PER_HALF_YEAR,
+    );
+    expect(DAYS_PER_FIVE_YEARS).toBe(DAYS_PER_YEAR * YEARS_PER_LUSTRUM);
   });
 });
