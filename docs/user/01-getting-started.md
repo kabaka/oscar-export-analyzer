@@ -38,7 +38,16 @@ The details export provides higher fidelity information:
 
 ### Handling Large Files
 
-The parser streams only the necessary rows and converts timestamps inside the worker. A counter displays how many rows have been processed and when parsing is complete. If memory becomes an issue, consider trimming your export to a smaller date range.
+The parser streams only the necessary rows and converts timestamps inside the worker. A counter displays how many rows have been processed and when parsing is complete.
+
+**File Size Limits**:
+
+- Files **under 100 MB** load without warnings.
+- Files **100 MB to 150 MB** trigger a warning about parsing time (~5 seconds) and memory usage (~1 GB), but upload is allowed. Keep other browser tabs lightweight during processing.
+- Files **over 150 MB** are blocked. If you have exports larger than 150 MB, split them into smaller date ranges using OSCAR's export options.
+- **Best practice**: Keep files under 120 MB for optimal performance.
+
+All data processing happens locally in your browser—no data leaves your device.
 
 ## 3. Navigating the Interface
 

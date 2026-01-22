@@ -204,14 +204,20 @@ worker.postMessage({ file, filterEvents });
 
 **Recommendation**:
 
-1. **Size Validation**: Reject files larger than reasonable limit (e.g., 50–100 MB)
+1. **Size Validation**: ✅ **IMPLEMENTED** — Files over 150 MB are blocked; files 100-150 MB show performance warning
 2. **User Feedback**: Show error message if file exceeds limit
 3. **Suggested Approach**:
    ```javascript
-   const MAX_FILE_SIZE_MB = 50;
+   const MAX_FILE_SIZE_MB = 150; // Hard cap
+   const WARN_FILE_SIZE_MB = 100; // Soft warning
    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
      setError(`File exceeds ${MAX_FILE_SIZE_MB}MB limit`);
      return;
+   }
+   if (file.size > WARN_FILE_SIZE_MB * 1024 * 1024) {
+     setWarning(
+       `Large file detected. Parsing may take ~5 s and use ~1 GB memory.`,
+     );
    }
    ```
 
@@ -697,7 +703,7 @@ a.download = 'oscar_session.json';
 ### Priority 1 — High Impact, Low Effort
 
 1. ✅ **Add File Size Validation** (CRITICAL) — **COMPLETED**
-   - Implement 50–100 MB file size limit
+   - ✅ Implemented: 150 MB hard cap, 100 MB soft warning threshold, best practice guidance under 120 MB
    - **Effort**: 15 minutes
    - **Impact**: Prevent DoS via massive CSV files
    - **Implementation**: Added MAX_FILE_SIZE_MB check in [src/hooks/useCsvFiles.js](../../../src/hooks/useCsvFiles.js#L86-L91) with user-friendly error message

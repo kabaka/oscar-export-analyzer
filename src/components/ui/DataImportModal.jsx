@@ -15,6 +15,7 @@ export default function DataImportModal({
   detailsProgress,
   detailsProgressMax,
   error,
+  warning,
 }) {
   const [hasSaved, setHasSaved] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -153,6 +154,11 @@ export default function DataImportModal({
           {(error || localError) && (
             <div role="alert" style={{ color: 'red' }}>
               {error || localError}
+            </div>
+          )}
+          {warning && !error && !localError && (
+            <div role="status" style={{ color: 'orange' }}>
+              {warning}
             </div>
           )}
         </div>

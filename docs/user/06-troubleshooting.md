@@ -12,9 +12,9 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 
 ### Progress bar freezes midway
 
-- Very large files may take several minutes; keep the tab active.
+- Files over 100 MB show a warning about parsing time and memory usage. Keep the tab active and avoid intensive tasks in other tabs during processing.
+- Files over 150 MB are blocked—split your export into smaller date ranges in OSCAR.
 - Inspect the browser console for parse errors. Rows with malformed timestamps or non‑numeric values are skipped but counted.
-- If memory usage spikes, try trimming the export to fewer nights.
 
 ### Charts show no data
 

@@ -45,6 +45,7 @@ export function AppShell() {
     hasAnyData,
     summaryAvailable,
     error,
+    warning,
     quickRange,
     handleQuickRangeChange,
     dateFilter,
@@ -176,6 +177,7 @@ export function AppShell() {
         detailsProgress={detailsProgress}
         detailsProgressMax={detailsProgressMax}
         error={error}
+        warning={warning}
       />
       {error && (
         <div
@@ -187,6 +189,18 @@ export function AppShell() {
           }}
         >
           {error}
+        </div>
+      )}
+      {warning && !error && (
+        <div
+          role="status"
+          style={{
+            margin: ERROR_MARGIN_STYLE,
+            color: 'orange',
+            textAlign: 'center',
+          }}
+        >
+          {warning}
         </div>
       )}
     </>

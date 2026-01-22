@@ -11,6 +11,7 @@ export function useCsvFiles() {
   const [detailsProgress, setDetailsProgress] = useState(0);
   const [detailsProgressMax, setDetailsProgressMax] = useState(0);
   const [error, setError] = useState(null);
+  const [warning, setWarning] = useState(null);
   const activeTaskRef = useRef({
     worker: null,
     workerId: null,
@@ -83,16 +84,26 @@ export function useCsvFiles() {
         return;
       }
 
-      const MAX_FILE_SIZE_MB = 50;
+      const MAX_FILE_SIZE_MB = 150;
+      const SOFT_WARNING_SIZE_MB = 100;
       const BYTES_PER_KB = 1024;
       const KB_PER_MB = 1024;
       const BYTES_PER_MB = BYTES_PER_KB * KB_PER_MB;
+
       if (file.size > MAX_FILE_SIZE_MB * BYTES_PER_MB) {
         setError(
           `File exceeds ${MAX_FILE_SIZE_MB}MB limit. Please contact support if you need to analyze larger datasets.`,
         );
         setLoading(false);
         return;
+      }
+
+      if (file.size >= SOFT_WARNING_SIZE_MB * BYTES_PER_MB) {
+        setWarning(
+          'Large file detected (over 100 MB). Parsing may take ~5 s and use ~1 GB memory. Please keep other tabs light.',
+        );
+      } else {
+        setWarning(null);
       }
 
       setLoading(true);
@@ -163,6 +174,7 @@ export function useCsvFiles() {
     detailsProgress,
     detailsProgressMax,
     error,
+    warning,
     // Expose setters so App can restore from saved sessions
     setSummaryData,
     setDetailsData,

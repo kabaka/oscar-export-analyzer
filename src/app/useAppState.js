@@ -48,6 +48,7 @@ export function useAppState() {
     onSummaryFile,
     onDetailsFile,
     error,
+    warning,
     cancelCurrent,
   } = csvState;
 
@@ -210,6 +211,7 @@ export function useAppState() {
     onSummaryFile,
     onDetailsFile,
     error,
+    warning,
     cancelCurrent,
     dateFilter,
     setDateFilter,
