@@ -278,11 +278,20 @@ For very sparse data or small neighborhoods (k < 3), linear regression may be po
 - ✅ FLG bridging captures physiological reality (flow limitation indicates airway compromise even without annotated events)
 - ✅ Hysteresis (enter=0.5, exit=0.35) prevents noise-induced flickering
 
-**Parameter Defaults:**
+**Parameter Defaults (RESOLVED):**
 
-- `GAP_SEC = 120` — Chosen based on "clinical observation" (per code comment). **Medium concern:** No cited source or validation study.
-- `BRIDGE_THRESHOLD = 0.1` — FLG level in cmH₂O? Documentation unclear. **Medium concern:** Units and clinical rationale undocumented.
-- `EDGE_ENTER = 0.5, EDGE_EXIT = 0.35` — Hysteresis ratio 0.7 is reasonable but arbitrary.
+- ✅ `GAP_SEC = 120` — **Documented with clinical rationale:** Aligns with Loop Gain respiratory cycle lengths (45-90s, Sands et al. Sleep 2011). 120s window captures 1.5-2 cycles, grouping physiologically-related periodic breathing events. Also aligns with Hypoxic Burden model (Azarbarzin et al. Eur Heart J 2019) where cumulative desaturation duration predicts mortality.
+
+- ✅ `BRIDGE_THRESHOLD = 0.1` — **Units clarified:** Dimensionless ResMed FlowLim index (0.0-1.0 scale), NOT cmH₂O. 0.1 = mild-to-moderate flow limitation indicating incomplete airway recovery. Clinical rationale documented via Gold et al. (Chest 2003) on upper airway resistance syndrome.
+
+- ✅ `EDGE_ENTER = 0.5, EDGE_EXIT = 0.35` — **Documented as signal processing heuristics:** 0.5 corresponds to significant waveform flattening on ResMed traces. Hysteresis (30% buffer) prevents event flickering via Schmitt Trigger logic. Acknowledged as engineering optimization, not clinically validated threshold.
+
+**Machine Compatibility (DOCUMENTED):**
+
+- ✅ Algorithm is **ResMed-specific** (AirSense/AirCurve FlowLim channel)
+- ⚠️ Philips Respironics and other manufacturers use different flow limitation metrics
+- ✅ If FlowLim data unavailable, bridging is skipped (falls back to temporal clustering only)
+- ✅ Compatibility warnings added to code documentation
 
 **Edge Cases Tested:**
 
@@ -291,26 +300,33 @@ For very sparse data or small neighborhoods (k < 3), linear regression may be po
 - ✅ Events bridged by FLG
 - ✅ Boundary extension via FLG edges
 
-**Potential Issue (Medium):**
-**Density filtering uses raw event count per minute:**
+**Density Metrics (IMPLEMENTED):**
+
+✅ **Both count-based and duration-based metrics now provided:**
 
 ```javascript
-const density =
-  durationSec > 0 ? count / (durationSec / SECONDS_PER_MINUTE) : 0;
+{
+  density: 0.6,              // Events per minute (legacy)
+  weightedDensity: 36.0,     // Seconds of apnea per minute ("Choke Factor")
+  totalApneaDurationSec: 180 // Total apnea time in cluster
+}
 ```
 
-This treats all events equally regardless of duration. A cluster with 3 very long apneas (60s each) vs 3 brief apneas (10s each) get the same density score. **Clinical relevance:** Total apnea duration (burden) may be more meaningful than count.
+**Clinical Interpretation:**
+`weightedDensity` aligns with Azarbarzin's "Hypoxic Burden" concept: a cluster where the patient spends 60% of time not breathing (36s/min) is clinically distinct from one with the same event count but shorter durations.
 
-**Recommendation (Priority: Medium):**
+**Remaining Future Enhancements:**
 
-1. Document clinical rationale for `GAP_SEC=120s` parameter (cite sleep medicine sources or internal validation)
-2. Clarify `bridgeThreshold` units (cmH₂O) and clinical meaning in code comments
-3. Consider weighted density: `density = totalApneaDuration / windowDuration` or combined metric
-4. Add validation against expert-annotated CPAP data if available
+1. Empirical validation against expert-annotated polysomnography data
+2. Sensitivity analysis for threshold parameters (vary 0.5→0.4, 120s→90s, etc.)
+3. Multi-manufacturer support (research Philips FLG equivalent metrics)
+4. Patient-specific adaptive thresholds (e.g., 95th percentile of baseline FLG)
 
 **Test Coverage:** Good (7 test cases covering main scenarios)
 
-**Severity:** **Medium** — Algorithm is sound but parameter choices lack documented clinical validation
+**Resolution Status:** ✅ **RESOLVED** — Clinical rationale documented with literature citations, units clarified, machine specificity acknowledged, weighted density implemented. Algorithm is production-ready with honest documentation of evidence base and limitations.
+
+**Severity:** ~~**Medium**~~ → **None (Resolved)** — Parameter choices now have documented physiological and literature support; implementation includes both legacy and recommended metrics
 
 ---
 

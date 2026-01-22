@@ -12,6 +12,36 @@ import {
   SECONDS_PER_MINUTE,
 } from '../constants';
 
+/**
+ * HYSTERESIS CONFIGURATION (FLG Edge Detection)
+ * ============================================================================
+ * EDGE_ENTER_THRESHOLD: 0.5 (default enter threshold)
+ * EDGE_EXIT_FRACTION: 0.7 (exit threshold as fraction of enter threshold)
+ *
+ * RATIONALE (Signal Processing / Heuristic):
+ * These values are empirical heuristics based on ResMed "FlowLim" signal
+ * characteristics, designed to prevent event fragmentation and flickering.
+ *
+ * - 0.5 (ENTER): Corresponds to significant waveform flattening ("chair-shaping"
+ *   on ResMed flow traces). Acts as a conservative gatekeeper to prevent
+ *   extending clusters during periods of only mild resistance/snoring (0.1-0.3).
+ *
+ * - 0.35 (EXIT = 0.5 × 0.7): Provides a hysteresis buffer (Schmitt Trigger logic).
+ *   Ensures the cluster boundary does not "flicker" if data hovers near 0.5.
+ *   Requires the airway to recover to "Mild" flow limitation levels (<0.35)
+ *   before releasing the cluster lock.
+ *
+ * HYSTERESIS BENEFIT:
+ * Without separate enter/exit thresholds, patients whose FLG readings oscillate
+ * around the threshold would trigger hundreds of micro-events, destroying data
+ * readability. The 30% hysteresis buffer (0.5→0.35) acts as a low-pass filter.
+ *
+ * STATUS: Engineering optimization for signal stability. Not a clinical standard.
+ *         Standard practice in biomedical signal processing (similar to R-wave
+ *         detection in ECG, arousal detection in EEG).
+ * ============================================================================
+ */
+
 export const CLUSTERING_DEFAULTS = Object.freeze({
   MIN_CLUSTER_DURATION_SEC: SECONDS_PER_MINUTE,
   APNEA_GAP_SEC: DEFAULT_APNEA_CLUSTER_GAP_SEC,
@@ -50,6 +80,27 @@ export {
   DEFAULT_SINGLE_LINK_GAP_SEC,
 };
 
+/**
+ * Summarize a cluster of apnea events with both count-based and duration-based density metrics.
+ *
+ * DENSITY METRICS:
+ * - density: Events per minute (count-based, legacy metric)
+ * - weightedDensity: Seconds of apnea per minute (duration-based, "Choke Factor")
+ * - totalApneaDurationSec: Total time spent in apnea within cluster
+ *
+ * CLINICAL INTERPRETATION:
+ * The weightedDensity metric aligns with the "Hypoxic Burden" concept
+ * (Azarbarzin et al., Eur Heart J 2019), where cumulative apnea duration
+ * is a stronger predictor of cardiovascular outcomes than event count alone.
+ *
+ * Example: 3 events (60s each) in a 5-minute cluster:
+ * - density = 3/5 = 0.6 events/min
+ * - weightedDensity = 180s/5min = 36 seconds/min (60% of time not breathing)
+ *
+ * @param {Array} events - Array of apnea event objects with {date, durationSec}
+ * @param {Object} overrides - Optional {start, end} to override cluster boundaries
+ * @returns {Object} Cluster summary with multiple density metrics
+ */
 function summarizeClusterEvents(events, overrides = {}) {
   if (!events.length) return null;
   const start = overrides.start ?? events[0].date;
@@ -78,9 +129,9 @@ function summarizeClusterEvents(events, overrides = {}) {
     end,
     durationSec,
     count,
-    density,
-    weightedDensity,
-    totalApneaDurationSec,
+    density, // Events per minute (legacy count-based metric)
+    weightedDensity, // Seconds of apnea per minute (recommended: duration-based "burden")
+    totalApneaDurationSec, // Total apnea time in cluster (seconds)
     events,
   };
 }

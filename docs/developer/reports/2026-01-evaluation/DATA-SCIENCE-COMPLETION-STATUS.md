@@ -14,6 +14,7 @@
 **Commit:** `b1b91cb`
 
 **Changes:**
+
 - Renamed `confidenceMin` parameter → `maxFLGLevelMin` throughout clustering logic
 - Updated UI component `FalseNegativesAnalysis.jsx`:
   - Chart title: "...by Confidence Over Time" → "...by Peak FLG Level..."
@@ -34,6 +35,7 @@
 **Commit:** `b1b91cb`
 
 **Changes:**
+
 - Added `APNEA_DIAGNOSTIC_THRESHOLD_SEC = 10` constant in `constants.js`
   - Citation: AASM Task Force (2012) - The AASM Manual for the Scoring of Sleep and Associated Events, Version 2.0
   - Explains this is the diagnostic threshold per AASM standards
@@ -55,6 +57,7 @@
 **Commit:** `b1b91cb`
 
 **Changes:**
+
 - Enhanced `clusterApneaEventsBridged()` function in `clustering.js`
   - Added `totalApneaDurationSec` calculation (sum of all event durations in cluster)
   - Added `weightedDensity` calculation: total apnea duration / window duration (apnea burden per minute)
@@ -73,6 +76,7 @@
 **Why:** Event count density treats a single 60-second apnea the same as sixty 1-second apneas. Duration-weighted density (apnea burden) provides more clinically relevant severity assessment.
 
 **Clinical Impact:** Providers can now use two complementary metrics:
+
 - `density`: identifies clusters with frequent events
 - `weightedDensity`: identifies clusters with significant apnea burden (time spent in apnea)
 
@@ -84,6 +88,7 @@
 **Commit:** `b1b91cb`
 
 **Changes:**
+
 - Added comprehensive module-level documentation to `stats.js` (~40 lines):
   - Explains missing data handling: MAR assumption, pairwise deletion, global variance approach
   - Documents normality assumptions and when nonparametric methods are preferred
@@ -101,6 +106,7 @@
 **Why:** Code had sophisticated algorithms but insufficient documentation of statistical assumptions, making it hard for maintainers to understand when methods are reliable and what preconditions they require.
 
 **Impact:** Future developers can confidently use or modify algorithms with clear understanding of:
+
 - When methods apply (data type, sample size, distribution assumptions)
 - What edge cases to watch for (numerical instability, insufficient samples)
 - When to use alternatives (parametric vs nonparametric)
@@ -109,14 +115,15 @@
 
 ## Summary
 
-| Task | Status | Commit | Files Modified |
-|------|--------|--------|-----------------|
-| peakFLGLevel renaming | ✅ | b1b91cb | clustering.js, FalseNegativesAnalysis.jsx, useAppState.js, clustering.test.js |
-| AASM threshold docs | ✅ | b1b91cb | constants.js, stats.js |
-| Weighted density metric | ✅ | b1b91cb | clustering.js, clustering.test.js |
-| Statistical assumptions | ✅ | b1b91cb | stats.js |
+| Task                    | Status | Commit  | Files Modified                                                                |
+| ----------------------- | ------ | ------- | ----------------------------------------------------------------------------- |
+| peakFLGLevel renaming   | ✅     | b1b91cb | clustering.js, FalseNegativesAnalysis.jsx, useAppState.js, clustering.test.js |
+| AASM threshold docs     | ✅     | b1b91cb | constants.js, stats.js                                                        |
+| Weighted density metric | ✅     | b1b91cb | clustering.js, clustering.test.js                                             |
+| Statistical assumptions | ✅     | b1b91cb | stats.js                                                                      |
 
 **Total Changes:**
+
 - 6 files modified
 - 228 insertions(+)
 - 42 deletions(-)
@@ -141,6 +148,7 @@
 All 4 items from Section 3 (False Negatives), Section 2.1 (Clustering), Section 6.3 (Apnea Duration), and Section 9 (Statistical Assumptions) of the data science evaluation have been successfully addressed and committed to main branch.
 
 Related evaluation items remain open for future enhancement:
+
 - Section 2.2: K-means convergence validation (future improvement)
 - Section 1.3: PACF numerical stability for very long lags (future enhancement)
 - Section 3: Probabilistic false-negative scoring (future enhancement)
