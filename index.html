@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 
+      Content Security Policy (CSP) for OSCAR Export Analyzer
+      Provides defense-in-depth against XSS attacks and unauthorized resource loading.
+      Designed for local-first privacy: blocks all external resources, allows only same-origin scripts.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+    />
     <!-- Theme colors for light and dark mode -->
     <meta
       name="theme-color"
