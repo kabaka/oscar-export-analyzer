@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { GuideLink } from './ui';
 import { useData } from '../context/DataContext';
 import {
@@ -112,8 +112,25 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
   const [tab, setTab] = useState('summary');
   const rows = tab === 'summary' ? summaryRows : detailRows;
   const allColumns = useMemo(() => uniqueCols(rows), [rows]);
-  const [visibleCols, setVisibleCols] = useState(allColumns);
-  useEffect(() => setVisibleCols(allColumns), [allColumns]);
+  const [visibleColsState, setVisibleColsState] = useState(() => ({
+    base: allColumns,
+    cols: allColumns,
+  }));
+  const visibleCols = useMemo(
+    () =>
+      visibleColsState.base === allColumns ? visibleColsState.cols : allColumns,
+    [visibleColsState, allColumns],
+  );
+  const updateVisibleCols = useCallback(
+    (updater) => {
+      setVisibleColsState((prev) => {
+        const current = prev.base === allColumns ? prev.cols : allColumns;
+        const next = typeof updater === 'function' ? updater(current) : updater;
+        return { base: allColumns, cols: next };
+      });
+    },
+    [allColumns],
+  );
 
   const [sortBy, setSortBy] = useState({ key: null, dir: 'asc' });
   const [query, setQuery] = useState('');
@@ -123,7 +140,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
   const [endDate, setEndDate] = useState('');
 
   const toggleCol = (c) => {
-    setVisibleCols((prev) =>
+    updateVisibleCols((prev) =>
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
     );
   };

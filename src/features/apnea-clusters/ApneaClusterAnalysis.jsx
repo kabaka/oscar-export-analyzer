@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   clustersToCsv,
   CLUSTER_ALGORITHMS,
@@ -29,15 +29,19 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   });
 
   const selectedCluster = selected !== null ? sorted[selected] : null;
-  const { leakTrace, pressureTrace } = useMemo(() => {
-    if (!selectedCluster || !details?.length)
-      return { leakTrace: [], pressureTrace: [] };
+  const clusterStartMs = selectedCluster?.start?.getTime() ?? null;
+  const clusterEndMs = selectedCluster?.end?.getTime() ?? null;
+  const detailsList = details || [];
+
+  let leakTrace = [];
+  let pressureTrace = [];
+  if (clusterStartMs !== null && clusterEndMs !== null && detailsList.length) {
     const padMs = 30000; // 30s padding around cluster
-    const start = new Date(selectedCluster.start.getTime() - padMs);
-    const end = new Date(selectedCluster.end.getTime() + padMs);
-    const leak = [],
-      pressure = [];
-    details.forEach((r) => {
+    const start = new Date(clusterStartMs - padMs);
+    const end = new Date(clusterEndMs + padMs);
+    const leak = [];
+    const pressure = [];
+    detailsList.forEach((r) => {
       const dt = new Date(r['DateTime']);
       if (dt < start || dt > end) return;
       const val = parseFloat(r['Data/Duration']);
@@ -45,8 +49,9 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
       if (r['Event'] === 'Pressure' || r['Event'] === 'EPAP')
         pressure.push({ x: dt, y: val });
     });
-    return { leakTrace: leak, pressureTrace: pressure };
-  }, [selectedCluster, details]);
+    leakTrace = leak;
+    pressureTrace = pressure;
+  }
 
   const handleExport = useCallback(() => {
     const csv = clustersToCsv(clusters);

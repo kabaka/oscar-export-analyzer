@@ -18,11 +18,15 @@ export function useCsvFiles() {
     cleanup: null,
   });
   const workerSeqRef = useRef(0);
+  const workerEpochRef = useRef(null);
 
-  const createWorkerId = () => {
+  const createWorkerId = useCallback(() => {
+    if (workerEpochRef.current === null) {
+      workerEpochRef.current = Date.now();
+    }
     workerSeqRef.current += 1;
-    return `csv-worker-${Date.now()}-${workerSeqRef.current}`;
-  };
+    return `csv-worker-${workerEpochRef.current}-${workerSeqRef.current}`;
+  }, []);
 
   const resetActiveTask = () => {
     activeTaskRef.current = {

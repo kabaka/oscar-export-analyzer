@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import {
   clusterApneaEvents,
   detectFalseNegatives,
@@ -79,32 +79,52 @@ const normalizeFalseNegatives = (entries) =>
     .map(normalizeFalseNegative)
     .filter(Boolean);
 
+const initialState = {
+  apneaClusters: [],
+  falseNegatives: [],
+  processing: false,
+};
+
+const analyticsReducer = (state, action) => {
+  switch (action.type) {
+    case 'start':
+      return { ...state, processing: true };
+    case 'complete':
+      return {
+        apneaClusters: normalizeClusters(action.clusters),
+        falseNegatives: normalizeFalseNegatives(action.falseNegatives),
+        processing: false,
+      };
+    case 'reset':
+      return initialState;
+    case 'idle':
+      return state.processing ? { ...state, processing: false } : state;
+    default:
+      return state;
+  }
+};
+
 export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
-  const [apneaClusters, setApneaClusters] = useState([]);
-  const [falseNegatives, setFalseNegatives] = useState([]);
-  const [processing, setProcessing] = useState(false);
+  const [state, dispatch] = useReducer(analyticsReducer, initialState);
   const jobIdRef = useRef(0);
+  const hasDetails = Array.isArray(detailsData) && detailsData.length > 0;
 
   useEffect(() => {
     const jobId = jobIdRef.current + 1;
     jobIdRef.current = jobId;
 
-    if (!detailsData || !detailsData.length) {
-      setApneaClusters([]);
-      setFalseNegatives([]);
-      setProcessing(false);
+    if (!hasDetails) {
+      dispatch({ type: 'reset' });
       return undefined;
     }
 
-    setProcessing(true);
+    dispatch({ type: 'start' });
     let worker;
     const isStale = () => jobIdRef.current !== jobId;
 
     const completeWithResults = (clusters, falseNegs) => {
       if (isStale()) return;
-      setApneaClusters(normalizeClusters(clusters));
-      setFalseNegatives(normalizeFalseNegatives(falseNegs));
-      setProcessing(false);
+      dispatch({ type: 'complete', clusters, falseNegatives: falseNegs });
     };
 
     const fallbackCompute = () => {
@@ -143,7 +163,6 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
     };
 
     try {
-      // eslint-disable-next-line no-undef
       worker = new Worker(
         new URL('../workers/analytics.worker.js', import.meta.url),
         {
@@ -177,10 +196,18 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
       }
       if (!isStale()) {
         // Only mark idle if this job was still the latest when cleaning up.
-        setProcessing(false);
+        dispatch({ type: 'idle' });
       }
     };
-  }, [detailsData, clusterParams, fnOptions]);
+  }, [hasDetails, detailsData, clusterParams, fnOptions]);
 
-  return { apneaClusters, falseNegatives, processing };
+  const activeClusters = hasDetails ? state.apneaClusters : [];
+  const activeFalseNegatives = hasDetails ? state.falseNegatives : [];
+  const isProcessing = hasDetails ? state.processing : false;
+
+  return {
+    apneaClusters: activeClusters,
+    falseNegatives: activeFalseNegatives,
+    processing: isProcessing,
+  };
 }
