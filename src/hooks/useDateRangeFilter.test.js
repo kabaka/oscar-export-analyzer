@@ -33,10 +33,14 @@ describe('useDateRangeFilter', () => {
     expect(result.current.quickRange).toBe('custom');
 
     expect(result.current.parseDate('not-a-date')).toBeNull();
-    const formatted = result.current.formatDate(new Date('2024-02-02T12:00:00Z'));
+    const formatted = result.current.formatDate(
+      new Date('2024-02-02T12:00:00Z'),
+    );
     expect(formatted).toBe('2024-02-02');
 
-    act(() => result.current.setDateFilter({ start: new Date(), end: new Date() }));
+    act(() =>
+      result.current.setDateFilter({ start: new Date(), end: new Date() }),
+    );
     act(() => result.current.resetDateFilter());
     expect(result.current.dateFilter).toEqual({ start: null, end: null });
     expect(result.current.quickRange).toBe('all');

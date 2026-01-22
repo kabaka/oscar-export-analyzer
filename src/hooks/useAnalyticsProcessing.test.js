@@ -113,7 +113,9 @@ describe('useAnalyticsProcessing', () => {
 
     const clusterParams = { gapSec: 300, algorithm: 'dbscan' };
     const { result } = renderHook(() =>
-      useAnalyticsProcessing(detailsData, clusterParams, { sensitivity: 'high' }),
+      useAnalyticsProcessing(detailsData, clusterParams, {
+        sensitivity: 'high',
+      }),
     );
 
     act(() => {
