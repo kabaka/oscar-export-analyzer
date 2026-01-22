@@ -13,12 +13,24 @@ export function useCsvFiles() {
   const [error, setError] = useState(null);
   const activeTaskRef = useRef({
     worker: null,
+    workerId: null,
     setLoading: null,
     cleanup: null,
   });
+  const workerSeqRef = useRef(0);
+
+  const createWorkerId = () => {
+    workerSeqRef.current += 1;
+    return `csv-worker-${Date.now()}-${workerSeqRef.current}`;
+  };
 
   const resetActiveTask = () => {
-    activeTaskRef.current = { worker: null, setLoading: null, cleanup: null };
+    activeTaskRef.current = {
+      worker: null,
+      workerId: null,
+      setLoading: null,
+      cleanup: null,
+    };
   };
 
   const cancelCurrent = useCallback(() => {
@@ -75,15 +87,17 @@ export function useCsvFiles() {
         new URL('../workers/csv.worker.js', import.meta.url),
         { type: 'module' },
       );
+      const workerId = createWorkerId();
       const clearTask = () => {
-        if (activeTaskRef.current.worker !== worker) return;
+        if (activeTaskRef.current.workerId !== workerId) return;
         const { cleanup } = activeTaskRef.current;
         if (cleanup) cleanup();
         resetActiveTask();
       };
       worker.onmessage = (ev) => {
-        if (activeTaskRef.current.worker !== worker) return;
-        const { type, rows, cursor, error: msg } = ev.data || {};
+        const { workerId: messageWorkerId, type, rows, cursor, error: msg } =
+          ev.data || {};
+        if (activeTaskRef.current.workerId !== messageWorkerId) return;
         if (type === 'progress') {
           setProgress(cursor);
         } else if (type === 'rows') {
@@ -99,7 +113,12 @@ export function useCsvFiles() {
           clearTask();
         }
       };
-      activeTaskRef.current = { worker, setLoading, cleanup: null };
+      activeTaskRef.current = {
+        worker,
+        workerId,
+        setLoading,
+        cleanup: null,
+      };
       if (signal) {
         const onAbort = () => {
           cancelCurrent();
@@ -109,7 +128,7 @@ export function useCsvFiles() {
           signal.removeEventListener('abort', onAbort);
         };
       }
-      worker.postMessage({ file, filterEvents });
+      worker.postMessage({ workerId, file, filterEvents });
     };
 
   return {

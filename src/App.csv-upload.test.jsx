@@ -12,7 +12,11 @@ describe('CSV uploads and cross-component interactions', () => {
 
   beforeEach(() => {
     class MockWorker {
-      postMessage({ file, filterEvents }) {
+      constructor() {
+        this.workerId = null;
+      }
+      postMessage({ file, filterEvents, workerId } = {}) {
+        this.workerId = workerId;
         const rows = filterEvents
           ? [
               {
@@ -32,9 +36,9 @@ describe('CSV uploads and cross-component interactions', () => {
         // Use Promise.resolve for proper async handling
         Promise.resolve().then(() => {
           this.onmessage?.({
-            data: { type: 'rows', rows, cursor: file.size },
+            data: { workerId, type: 'rows', rows, cursor: file.size },
           });
-          this.onmessage?.({ data: { type: 'complete' } });
+          this.onmessage?.({ data: { workerId, type: 'complete' } });
         });
       }
       terminate() {}

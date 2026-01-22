@@ -74,9 +74,12 @@ beforeAll(() => {
   // Basic Web Worker stub for tests; individual tests can override as needed
   if (!globalThis.Worker || typeof globalThis.Worker !== 'function') {
     class MockWorker {
-      constructor() {}
-      postMessage({ file } = {}) {
+      constructor() {
+        this.workerId = null;
+      }
+      postMessage({ file, workerId } = {}) {
         if (!file) return;
+        this.workerId = workerId;
         let rows;
         if ((file.name || '').includes('summary')) {
           rows = [
@@ -98,9 +101,9 @@ beforeAll(() => {
         }
         // Use Promise.resolve to defer execution, allowing async test operations to complete
         Promise.resolve().then(() => {
-          this.onmessage?.({ data: { type: 'progress', cursor: file.size } });
-          this.onmessage?.({ data: { type: 'rows', rows } });
-          this.onmessage?.({ data: { type: 'complete' } });
+          this.onmessage?.({ data: { workerId, type: 'progress', cursor: file.size } });
+          this.onmessage?.({ data: { workerId, type: 'rows', rows } });
+          this.onmessage?.({ data: { workerId, type: 'complete' } });
         });
       }
       terminate() {}

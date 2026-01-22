@@ -75,12 +75,15 @@ describe('Worker Integration Tests', () => {
 
   it('renders an error message when CSV parsing fails', async () => {
     class ErrorWorker {
-      constructor() {}
-      postMessage() {
+      constructor() {
+        this.workerId = null;
+      }
+      postMessage({ workerId } = {}) {
+        this.workerId = workerId;
         // Defer the error callback to allow test infrastructure to set up
         Promise.resolve().then(() => {
           this.onmessage?.({
-            data: { type: 'error', error: 'Malformed CSV' },
+            data: { workerId, type: 'error', error: 'Malformed CSV' },
           });
         });
       }

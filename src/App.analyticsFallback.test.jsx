@@ -87,11 +87,13 @@ describe('App fallback analytics', () => {
       constructor(url) {
         this.url = typeof url === 'string' ? url : url?.href || '';
         this.messages = [];
+        this.workerId = null;
         workerInstances.push(this);
       }
 
       postMessage(message) {
         this.messages.push(message);
+        this.workerId = message?.workerId;
         if (this.url.includes('analytics.worker')) {
           // Use Promise.resolve for proper async handling
           Promise.resolve().then(() => {

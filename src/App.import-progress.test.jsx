@@ -20,15 +20,19 @@ describe('Header import progress', () => {
     });
 
     class MockWorker {
-      postMessage() {
+      constructor() {
+        this.workerId = null;
+      }
+      postMessage({ workerId } = {}) {
+        this.workerId = workerId;
         // Use Promise.resolve for proper async handling
         Promise.resolve().then(() => {
-          this.onmessage?.({ data: { type: 'progress', cursor: 50 } });
+          this.onmessage?.({ data: { workerId, type: 'progress', cursor: 50 } });
         });
         Promise.resolve().then(() => {
           setTimeout(() => {
-            this.onmessage?.({ data: { type: 'rows', rows: [], cursor: 50 } });
-            this.onmessage?.({ data: { type: 'complete' } });
+            this.onmessage?.({ data: { workerId, type: 'rows', rows: [], cursor: 50 } });
+            this.onmessage?.({ data: { workerId, type: 'complete' } });
           }, HEADER_IMPORT_COMPLETION_DELAY_MS);
         });
       }

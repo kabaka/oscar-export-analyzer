@@ -1,0 +1,7 @@
+import { HEADER_SCROLL_MARGIN_PX, MAX_LAG_INPUT, MIN_LAG_INPUT } from '../../constants';
+
+export const LAG_CONTROL_GAP_PX = HEADER_SCROLL_MARGIN_PX;
+export const LAG_CONTROL_MARGIN_TOP_PX = 12;
+export const LAG_CONTROL_MARGIN_BOTTOM_PX = 4;
+export const LAG_INPUT_MIN = MIN_LAG_INPUT;
+export const LAG_INPUT_MAX = MAX_LAG_INPUT;

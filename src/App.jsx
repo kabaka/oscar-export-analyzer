@@ -133,7 +133,7 @@ export function AppShell() {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
     };
-  }, [filteredSummary, filteredDetails, tocSections, setActiveSectionId]);
+  }, [tocSections, setActiveSectionId]);
 
   const ERROR_MARGIN_STYLE = `${HEADER_SCROLL_MARGIN_PX}px 0`;
 

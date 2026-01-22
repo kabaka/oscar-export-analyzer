@@ -3,7 +3,7 @@ import { FLG_BRIDGE_THRESHOLD } from '../utils/clustering.js';
 
 // Parses CSV files off the main thread and streams filtered rows
 self.onmessage = (e) => {
-  const { file, filterEvents } = e.data || {};
+  const { workerId, file, filterEvents } = e.data || {};
   if (!file) return;
   Papa.parse(file, {
     worker: false,
@@ -13,7 +13,11 @@ self.onmessage = (e) => {
     chunkSize: 1024 * 1024,
     // Runs in a worker: update progress and filter events per chunk to keep the UI responsive
     chunk(results) {
-      self.postMessage({ type: 'progress', cursor: results.meta.cursor });
+      self.postMessage({
+        workerId,
+        type: 'progress',
+        cursor: results.meta.cursor,
+      });
       let rows = results.data;
       if (filterEvents) {
         rows = rows.filter((r) => {
@@ -30,14 +34,18 @@ self.onmessage = (e) => {
           }
           return r;
         });
-        self.postMessage({ type: 'rows', rows: processed });
+        self.postMessage({ workerId, type: 'rows', rows: processed });
       }
     },
     complete() {
-      self.postMessage({ type: 'complete' });
+      self.postMessage({ workerId, type: 'complete' });
     },
     error(err) {
-      self.postMessage({ type: 'error', error: err?.message || String(err) });
+      self.postMessage({
+        workerId,
+        type: 'error',
+        error: err?.message || String(err),
+      });
     },
   });
 };

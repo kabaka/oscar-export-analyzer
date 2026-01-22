@@ -21,6 +21,9 @@ describe('useCsvFiles', () => {
     }
   }
 
+  const workerIdFor = (idx = 0) =>
+    workers[idx]?.postMessage?.mock.calls?.[0]?.[0]?.workerId;
+
   beforeEach(() => {
     workers = [];
     originalWorker = global.Worker;
@@ -49,19 +52,27 @@ describe('useCsvFiles', () => {
     expect(result.current.summaryProgressMax).toBe(20);
 
     act(() => {
-      workers[0].onmessage?.({ data: { type: 'progress', cursor: 5 } });
+      workers[0].onmessage?.({
+        data: { workerId: workerIdFor(0), type: 'progress', cursor: 5 },
+      });
     });
     expect(result.current.summaryProgress).toBe(5);
 
     act(() => {
       workers[0].onmessage?.({
-        data: { type: 'rows', rows: [{ id: 'row-1' }] },
+        data: {
+          workerId: workerIdFor(0),
+          type: 'rows',
+          rows: [{ id: 'row-1' }],
+        },
       });
     });
     expect(result.current.summaryData).toEqual([{ id: 'row-1' }]);
 
     act(() => {
-      workers[0].onmessage?.({ data: { type: 'complete' } });
+      workers[0].onmessage?.({
+        data: { workerId: workerIdFor(0), type: 'complete' },
+      });
     });
     expect(result.current.loadingSummary).toBe(false);
   });
@@ -92,10 +103,12 @@ describe('useCsvFiles', () => {
       result.current.onDetailsFile({ target: { files: [file] } });
     });
 
-    expect(workers[0].postMessage).toHaveBeenCalledWith({
-      file,
-      filterEvents: true,
-    });
+    expect(workers[0].postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        file,
+        filterEvents: true,
+      }),
+    );
   });
 
   it('records worker errors and stops loading', () => {
@@ -107,7 +120,9 @@ describe('useCsvFiles', () => {
     });
 
     act(() => {
-      workers[0].onmessage?.({ data: { type: 'error', error: 'bad file' } });
+      workers[0].onmessage?.({
+        data: { workerId: workerIdFor(0), type: 'error', error: 'bad file' },
+      });
     });
 
     expect(result.current.error).toBe('bad file');

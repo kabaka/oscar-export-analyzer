@@ -109,12 +109,18 @@ describe('useCsvFiles worker management', () => {
 
   class MockWorker {
     constructor() {
-      this.postMessage = vi.fn();
+      this.workerId = null;
+      this.postMessage = vi.fn((message) => {
+        this.workerId = message?.workerId;
+      });
       this.terminate = vi.fn();
       this.onmessage = null;
       workers.push(this);
     }
   }
+
+  const workerIdFor = (idx = 0) =>
+    workers[idx]?.postMessage?.mock.calls?.[0]?.[0]?.workerId;
 
   beforeEach(() => {
     workers = [];
@@ -141,7 +147,11 @@ describe('useCsvFiles worker management', () => {
 
     act(() => {
       firstWorker.onmessage?.({
-        data: { type: 'rows', rows: [{ id: 'first-row' }] },
+        data: {
+          workerId: workerIdFor(0),
+          type: 'rows',
+          rows: [{ id: 'first-row' }],
+        },
       });
     });
 
@@ -160,10 +170,18 @@ describe('useCsvFiles worker management', () => {
 
     act(() => {
       firstWorker.onmessage?.({
-        data: { type: 'rows', rows: [{ id: 'stale-row' }] },
+        data: {
+          workerId: workerIdFor(0),
+          type: 'rows',
+          rows: [{ id: 'stale-row' }],
+        },
       });
       secondWorker.onmessage?.({
-        data: { type: 'rows', rows: [{ id: 'second-row' }] },
+        data: {
+          workerId: workerIdFor(1),
+          type: 'rows',
+          rows: [{ id: 'second-row' }],
+        },
       });
     });
 

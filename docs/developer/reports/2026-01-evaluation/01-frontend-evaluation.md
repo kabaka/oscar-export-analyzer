@@ -72,6 +72,8 @@ The frontend shows evidence of careful planning and incremental refinement. Key 
   }
   ```
 
+- ✅ Resolved: UsagePatternsCharts split into focused subcomponents and hooks to shrink footprint and isolate rendering logic.
+
 #### Issue #2: Prop Drilling in App.jsx
 
 **Severity**: Medium  
@@ -263,6 +265,8 @@ The frontend shows evidence of careful planning and incremental refinement. Key 
     // ... handle message
   };
   ```
+
+- ✅ Resolved: Added workerId guard across useCsvFiles and csv.worker to ignore stale messages from terminated workers.
 
 #### Issue #8: Missing Worker Error Boundaries
 
@@ -604,6 +608,8 @@ return { ...r, DateTime: ms };
   }, [tocSections, setActiveSectionId]); // Remove filteredSummary, filteredDetails
   ```
 
+- ✅ Resolved: useEffect dependencies trimmed to tocSections and setActiveSectionId to avoid unnecessary observer re-creation.
+
 #### Issue #20: Stale Closure in Worker Callbacks
 
 **Severity**: Medium  
@@ -677,6 +683,8 @@ return { ...r, DateTime: ms };
     }, [data, metric, rollingWindows]);
   }
   ```
+
+- ✅ Resolved: Shared time-series processing extracted into reusable hooks/utils with new tests covering the processing pipeline.
 
 #### Issue #23: Inline Styles Throughout Components
 

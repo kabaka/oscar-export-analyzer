@@ -1,14 +1,15 @@
-import React, { useMemo, useCallback, useState, useId } from 'react';
+import React, { useMemo, useCallback } from 'react';
+import { normalQuantile } from '../utils/stats';
+import { useTimeSeriesProcessing } from '../hooks/useTimeSeriesProcessing';
+import { useUsageStats } from '../hooks/useUsageStats';
+import { useAutocorrelation } from '../hooks/useAutocorrelation';
 import {
-  quantile,
-  detectUsageBreakpoints,
-  computeUsageRolling,
-  detectChangePoints,
-  normalQuantile,
-  stlDecompose,
-  computeAutocorrelation,
-  computePartialAutocorrelation,
-} from '../utils/stats';
+  LAG_CONTROL_GAP_PX,
+  LAG_CONTROL_MARGIN_BOTTOM_PX,
+  LAG_CONTROL_MARGIN_TOP_PX,
+  LAG_INPUT_MAX,
+  LAG_INPUT_MIN,
+} from './usage/lagConstants';
 import { COLORS } from '../utils/colors';
 import { ThemedPlot, VizHelp } from './ui';
 import {
@@ -19,19 +20,9 @@ import {
   CLUSTER_DURATION_ALERT_SEC,
   DEFAULT_MAX_LAG,
   DEFAULT_ROLLING_WINDOWS,
-  FREEDMAN_DIACONIS_FACTOR,
-  FREEDMAN_DIACONIS_EXPONENT,
-  HEADER_SCROLL_MARGIN_PX,
-  HISTOGRAM_FALLBACK_BINS,
   HIGH_CENTRAL_APNEA_FRACTION,
   IQR_OUTLIER_MULTIPLIER,
-  MAX_LAG_INPUT,
-  MIN_LAG_INPUT,
-  NORMAL_CONFIDENCE_Z,
   PERCENT_SCALE,
-  QUARTILE_LOWER,
-  QUARTILE_MEDIAN,
-  QUARTILE_UPPER,
   ROLLING_WINDOW_LONG_DAYS,
   ROLLING_WINDOW_SHORT_DAYS,
   STL_SEASON_LENGTH,
@@ -52,9 +43,6 @@ import {
   SUMMARY_DECIMAL_PLACES,
 } from '../constants/charts';
 
-const LAG_CONTROL_GAP_PX = HEADER_SCROLL_MARGIN_PX;
-const LAG_CONTROL_MARGIN_TOP_PX = 12;
-const LAG_CONTROL_MARGIN_BOTTOM_PX = 4;
 const LAG_CONTROL_MARGIN = `${LAG_CONTROL_MARGIN_TOP_PX}px 0 ${LAG_CONTROL_MARGIN_BOTTOM_PX}px`;
 const LAG_INPUT_WIDTH_PX = 80;
 const LAG_INPUT_STEP = 1;
@@ -74,53 +62,31 @@ export default function AhiTrendsCharts({
 }) {
   const {
     dates,
-    ahis,
-    rolling7,
-    rolling30,
-    r7Low,
-    r7High,
-    r30Low,
-    r30High,
+    values: ahis,
+    rolling,
     breakDates,
     cpDates,
-    oai,
-    cai,
-    mai,
     decomposition,
-  } = useMemo(() => {
-    const pts = data
-      .map((r) => ({ date: new Date(r['Date']), ahi: parseFloat(r['AHI']) }))
-      .filter((p) => !isNaN(p.ahi))
-      .sort((a, b) => a.date - b.date);
-    const datesArr = pts.map((p) => p.date);
-    const ahisArr = pts.map((p) => p.ahi);
-    const rolling = computeUsageRolling(
-      datesArr,
-      ahisArr,
-      DEFAULT_ROLLING_WINDOWS,
-    );
-    const rolling7 = rolling.avg7;
-    const rolling30 = rolling.avg30;
-    const r7Low = rolling['avg7_ci_low'];
-    const r7High = rolling['avg7_ci_high'];
-    const r30Low = rolling['avg30_ci_low'];
-    const r30High = rolling['avg30_ci_high'];
-    const breakDates = detectUsageBreakpoints(
-      rolling7,
-      rolling30,
-      datesArr,
-      AHI_BREAKPOINT_MIN_DELTA,
-    );
-    const cpDates = detectChangePoints(
-      ahisArr,
-      datesArr,
-      AHI_CHANGEPOINT_PENALTY,
-    );
-    const decomposition = stlDecompose(ahisArr, {
-      seasonLength: STL_SEASON_LENGTH,
-    });
+  } = useTimeSeriesProcessing({
+    data,
+    mapPoint: (r) => ({
+      date: new Date(r['Date']),
+      value: parseFloat(r['AHI']),
+    }),
+    rollingWindows: DEFAULT_ROLLING_WINDOWS,
+    changePointPenalty: AHI_CHANGEPOINT_PENALTY,
+    breakpointMinDelta: AHI_BREAKPOINT_MIN_DELTA,
+    seasonLength: STL_SEASON_LENGTH,
+  });
 
-    // Optional decomposition if columns present
+  const rolling7 = rolling[`avg${ROLLING_WINDOW_SHORT_DAYS}`] || [];
+  const rolling30 = rolling[`avg${ROLLING_WINDOW_LONG_DAYS}`] || [];
+  const r7Low = rolling[`avg${ROLLING_WINDOW_SHORT_DAYS}_ci_low`] || [];
+  const r7High = rolling[`avg${ROLLING_WINDOW_SHORT_DAYS}_ci_high`] || [];
+  const r30Low = rolling[`avg${ROLLING_WINDOW_LONG_DAYS}_ci_low`] || [];
+  const r30High = rolling[`avg${ROLLING_WINDOW_LONG_DAYS}_ci_high`] || [];
+
+  const { oai, cai, mai } = useMemo(() => {
     const keys = data.length ? Object.keys(data[0]) : [];
     const oaiKey = keys.find((k) => /obstructive/i.test(k) && /index/i.test(k));
     const caiKey = keys.find((k) => /central/i.test(k) && /index/i.test(k));
@@ -133,79 +99,27 @@ export default function AhiTrendsCharts({
     const oaiPts = oaiKey ? compose(oaiKey) : [];
     const caiPts = caiKey ? compose(caiKey) : [];
     const maiPts = maiKey ? compose(maiKey) : [];
-    const oai =
-      oaiPts.length === datesArr.length ? oaiPts.map((p) => p.val) : null;
-    const cai =
-      caiPts.length === datesArr.length ? caiPts.map((p) => p.val) : null;
-    const mai =
-      maiPts.length === datesArr.length ? maiPts.map((p) => p.val) : null;
-    return {
-      dates: datesArr,
-      ahis: ahisArr,
-      rolling7,
-      rolling30,
-      breakDates,
-      oai,
-      cai,
-      mai,
-      cpDates,
-      r7Low,
-      r7High,
-      r30Low,
-      r30High,
-      decomposition,
-    };
-  }, [data]);
+    const oaiVals =
+      oaiPts.length === dates.length ? oaiPts.map((p) => p.val) : null;
+    const caiVals =
+      caiPts.length === dates.length ? caiPts.map((p) => p.val) : null;
+    const maiVals =
+      maiPts.length === dates.length ? maiPts.map((p) => p.val) : null;
+    return { oai: oaiVals, cai: caiVals, mai: maiVals };
+  }, [data, dates]);
 
-  const [maxLag, setMaxLag] = useState(DEFAULT_MAX_LAG);
-  const lagInputId = useId();
+  const {
+    maxLag,
+    lagInputId,
+    acfValues,
+    pacfValues,
+    acfConfidence,
+    handleLagChange,
+  } = useAutocorrelation(ahis, { initialMaxLag: DEFAULT_MAX_LAG });
   const shortWindowLabel = `${ROLLING_WINDOW_SHORT_DAYS}-night`;
   const longWindowLabel = `${ROLLING_WINDOW_LONG_DAYS}-night`;
 
-  const { acfValues, pacfValues, acfConfidence } = useMemo(() => {
-    const finiteAhis = ahis.filter((v) => Number.isFinite(v));
-    const sampleSize = finiteAhis.length;
-    if (sampleSize <= 1) {
-      return { acfValues: [], pacfValues: [], acfConfidence: NaN };
-    }
-    const requestedLag = Math.max(1, Math.round(maxLag));
-    const cappedLag = Math.min(
-      requestedLag,
-      sampleSize - 1,
-      Math.max(1, ahis.length - 1),
-    );
-    const acf = computeAutocorrelation(ahis, cappedLag).values.filter(
-      (d) => d.lag > 0,
-    );
-    const pacf = computePartialAutocorrelation(ahis, cappedLag).values;
-    const conf =
-      sampleSize > 0 ? NORMAL_CONFIDENCE_Z / Math.sqrt(sampleSize) : NaN;
-    return { acfValues: acf, pacfValues: pacf, acfConfidence: conf };
-  }, [ahis, maxLag]);
-
-  const handleLagChange = useCallback((event) => {
-    const raw = Number(event.target.value);
-    if (!Number.isFinite(raw)) {
-      return;
-    }
-    const rounded = Math.round(raw) || MIN_LAG_INPUT;
-    const clamped = Math.max(MIN_LAG_INPUT, Math.min(rounded, MAX_LAG_INPUT));
-    setMaxLag(clamped);
-  }, []);
-
-  // Summary stats and adaptive histogram bins
-  const p25 = quantile(ahis, QUARTILE_LOWER);
-  const median = quantile(ahis, QUARTILE_MEDIAN);
-  const p75 = quantile(ahis, QUARTILE_UPPER);
-  const iqr = p75 - p25;
-  const mean = ahis.reduce((sum, v) => sum + v, 0) / ahis.length;
-  const binWidth =
-    FREEDMAN_DIACONIS_FACTOR *
-    iqr *
-    Math.pow(ahis.length, FREEDMAN_DIACONIS_EXPONENT);
-  const range = Math.max(...ahis) - Math.min(...ahis);
-  const nbins =
-    binWidth > 0 ? Math.ceil(range / binWidth) : HISTOGRAM_FALLBACK_BINS;
+  const { p25, median, p75, mean, nbins } = useUsageStats(ahis);
 
   // Severity bands counts
   const bands = useMemo(
@@ -245,8 +159,8 @@ export default function AhiTrendsCharts({
   const theo = probs.map((p) => mu + sigma * normalQuantile(p));
 
   // Bad-night tagging with explanations
-  const p25b = quantile(ahis, QUARTILE_LOWER);
-  const p75b = quantile(ahis, QUARTILE_UPPER);
+  const p25b = p25;
+  const p75b = p75;
   const iqrb = p75b - p25b;
   const outlierHighCut = p75b + IQR_OUTLIER_MULTIPLIER * iqrb;
   const dateStr = (d) => d.toISOString().slice(0, ISO_DATE_LENGTH);
@@ -495,8 +409,8 @@ export default function AhiTrendsCharts({
           <input
             id={lagInputId}
             type="number"
-            min={MIN_LAG_INPUT}
-            max={MAX_LAG_INPUT}
+            min={LAG_INPUT_MIN}
+            max={LAG_INPUT_MAX}
             step={LAG_INPUT_STEP}
             value={maxLag}
             onChange={handleLagChange}

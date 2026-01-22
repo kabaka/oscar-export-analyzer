@@ -79,6 +79,8 @@ describe('TOC active highlighting', () => {
       { timeout: 8000 },
     );
 
+    expect(IO._instances.length).toBe(1);
+
     await screen.findByRole('heading', { name: /Pressure Settings/i });
 
     // Click-based activation
