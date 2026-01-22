@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: debugger-rca-analyst
 description: Root cause analysis specialist focused on rigorous testing, hypothesis validation, and comprehensive diagnostic documentation
@@ -88,9 +88,10 @@ You understand:
 // - Apply fix and verify issue no longer reproduces
 // - Check fix doesn't break other functionality
 // - Confirm fix addresses root cause, not symptom
-```
+````
 
 ### Reproduction Test
+
 ```jsx
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
@@ -100,13 +101,13 @@ describe('CSV parsing issue #42', () => {
   it('should parse CSV with date-only format (no time component)', async () => {
     // Hypothesis: Parser fails when dates don't have time
     // Evidence: Users report blank charts with date-only CSV
-    
+
     const csvContent = `Date,AHI,EPAP,Usage (hours)
 2024-01-01,5.2,8.5,7.5
 2024-01-02,4.8,8.3,7.2`;
 
     render(<App csvData={csvContent} />);
-    
+
     await waitFor(() => {
       // Expect data to parse successfully
       expect(screen.getByText(/AHI/i)).toBeInTheDocument();
@@ -118,11 +119,11 @@ describe('CSV parsing issue #42', () => {
   it('should handle Web Worker parsing error gracefully', async () => {
     // Hypothesis: Worker throws but error not caught
     // Evidence: No error message displayed, chart blank
-    
+
     const csvContent = 'invalid'; // Not valid CSV
-    
+
     render(<App csvData={csvContent} />);
-    
+
     await waitFor(() => {
       // Should show error message, not blank
       expect(screen.getByText(/error parsing CSV/i)).toBeInTheDocument();
@@ -132,21 +133,25 @@ describe('CSV parsing issue #42', () => {
 ```
 
 ### Diagnostic Checklist
+
 ```markdown
 ## Issue: [Title]
 
 ### Symptom
+
 - What does the user observe?
 - When does it occur (consistently, intermittently)?
 - What steps reproduce it?
 
 ### Environment
+
 - Browser/version
 - OS
 - Node version (if relevant)
 - npm version
 
 ### Investigation
+
 - [ ] Check browser console for errors
 - [ ] Check React DevTools: component tree, state, re-renders
 - [ ] Check Network tab: API calls, data loading
@@ -156,21 +161,27 @@ describe('CSV parsing issue #42', () => {
 - [ ] Review git diff for suspected changes
 
 ### Hypotheses Tested
+
 - [ ] Hypothesis A: [description] — Result: [Pass/Fail]
 - [ ] Hypothesis B: [description] — Result: [Pass/Fail]
 - [ ] Hypothesis C: [description] — Result: [Pass/Fail]
 
 ### Root Cause
+
 [Description of what's actually wrong]
 
 ### Fix Applied
+
 [Description of fix]
 
 ### Validation
+
 - [ ] Issue no longer reproduces
 - [ ] Related tests pass
 - [ ] No regressions detected
 - [ ] Edge cases tested
+```
+
 ```
 
 ```

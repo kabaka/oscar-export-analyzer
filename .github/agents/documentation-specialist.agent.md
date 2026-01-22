@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: documentation-specialist
 description: Technical documentation expert for OSCAR analyzer's architecture, guides, user docs, and code documentation
@@ -127,52 +127,66 @@ How to contribute
 
 ## License
 License information
-```
+````
 
 ### Architecture Doc
+
 ```markdown
 # Architecture Overview
 
 ## System Overview
+
 [Diagram or description of major components]
 
 ## Component Breakdown
+
 - Component A: What it does
 - Component B: What it does
 
 ## Data Flow
+
 [Description of how data moves through the system]
 
 ## Key Technologies
+
 - Vite: Why used
 - React: Why used
 - etc.
 ```
 
 ### Developer Guide Template
+
 ```markdown
 # Guide Title
 
 ## Overview
+
 What this guide covers and why it's important.
 
 ## Prerequisites
+
 What you need to know before reading.
 
 ## Step-by-Step Instructions
+
 1. First step
 2. Second step
 3. Third step
 
 ## Code Example
+
 [Concrete example if applicable]
 
 ## Common Issues
+
 Common problems and how to solve them.
 
 ## See Also
+
 - Related guide 1
 - Related guide 2
+```
+
 ```
 
 ```

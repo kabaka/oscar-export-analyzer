@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: ux-designer
 description: User experience and design specialist focused on data visualization, accessibility, medical interface design, and interaction patterns
@@ -78,9 +78,10 @@ For each chart/visualization:
 - [ ] Print-friendly (colors optional; text legible on paper)
 - [ ] Mobile responsive (layout adapts to screen size)
 - [ ] Error state clear (what to do if data is missing/invalid)
-```
+````
 
 ### Responsive Layout Pattern
+
 ```jsx
 import React from 'react';
 import './ChartComponent.css';
@@ -126,7 +127,7 @@ export function ChartComponent({ title, data }) {
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  
+
   .chart-legend {
     display: block !important; /* Ensure visible in print */
   }
@@ -134,6 +135,7 @@ export function ChartComponent({ title, data }) {
 ```
 
 ### Medical Data Visualization Principles
+
 ```markdown
 ## Principles for OSCAR/CPAP Data
 
@@ -144,6 +146,8 @@ export function ChartComponent({ title, data }) {
 5. **Actionable Insights** — Design visualizations to answer: "Is my therapy working?"
 6. **Clinician-Friendly** — Include formal statistical tests (Mann-Whitney U p-values, effect sizes)
 7. **Patient-Friendly** — Plain language labels, tooltips explain medical terms
+```
+
 ```
 
 ```

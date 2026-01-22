@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: data-scientist
 description: Data science specialist focused on statistical analysis, algorithm validation, medical data interpretation, and computational methods
@@ -86,19 +86,19 @@ function compareRanges(dataRangeA, dataRangeB) {
   const valuesA = dataRangeA
     .map(r => parseFloat(r['AHI']))
     .filter(v => !isNaN(v));
-  
+
   const valuesB = dataRangeB
     .map(r => parseFloat(r['AHI']))
     .filter(v => !isNaN(v));
-  
+
   // Check assumptions
   if (valuesA.length < 2 || valuesB.length < 2) {
     return { valid: false, reason: 'Insufficient samples' };
   }
-  
+
   // Perform test (Mann-Whitney U is non-parametric, doesn't assume normality)
   const result = mannWhitneyUTest(valuesA, valuesB);
-  
+
   return {
     valid: true,
     statistic: result.statistic,
@@ -109,9 +109,10 @@ function compareRanges(dataRangeA, dataRangeB) {
     interpretation: result.pValue < 0.05 ? 'Significant difference' : 'No significant difference'
   };
 }
-```
+````
 
 ### Algorithm Validation Test Pattern
+
 ```javascript
 import { describe, it, expect } from 'vitest';
 import { clusterApneaEvents } from '../utils/clustering';
@@ -124,9 +125,9 @@ describe('Apnea Clustering Algorithm', () => {
       { date: new Date('2024-01-01T22:05:00'), durationSec: 20 }, // 240s gap, exceeds threshold
     ];
     const flgEvents = [];
-    
+
     const clusters = clusterApneaEvents(events, flgEvents, 120); // 120s threshold
-    
+
     expect(clusters).toHaveLength(2); // Two clusters
     expect(clusters[0].count).toBe(2);
     expect(clusters[1].count).toBe(1);
@@ -140,24 +141,23 @@ describe('Apnea Clustering Algorithm', () => {
     ];
     // FLG reading between them indicating apnea
     const flgEvents = [
-      { date: new Date('2024-01-01T22:01:30'), level: 0.08 } // Below threshold
+      { date: new Date('2024-01-01T22:01:30'), level: 0.08 }, // Below threshold
     ];
-    
+
     const clusters = clusterApneaEvents(
-      events, flgEvents,
+      events,
+      flgEvents,
       120, // gapSec
-      0.1  // bridgeThreshold
+      0.1, // bridgeThreshold
     );
-    
+
     // Should bridge the gap via FLG reading
     expect(clusters).toHaveLength(1);
   });
 
   it('extends boundaries based on FLG edge segments', () => {
     // Annotation event
-    const events = [
-      { date: new Date('2024-01-01T22:00:00'), durationSec: 30 }
-    ];
+    const events = [{ date: new Date('2024-01-01T22:00:00'), durationSec: 30 }];
     // High FLG readings before and after (edge detection)
     const flgEvents = [
       { date: new Date('2024-01-01T21:59:00'), level: 0.6 },
@@ -165,9 +165,9 @@ describe('Apnea Clustering Algorithm', () => {
       { date: new Date('2024-01-01T22:00:30'), level: 0.62 },
       { date: new Date('2024-01-01T22:00:45'), level: 0.58 },
     ];
-    
+
     const clusters = clusterApneaEvents(events, flgEvents);
-    
+
     // Cluster should be extended beyond annotation event
     expect(clusters[0].durationSec).toBeGreaterThan(30);
   });
@@ -175,9 +175,9 @@ describe('Apnea Clustering Algorithm', () => {
   it('handles edge case: isolated single event', () => {
     const events = [{ date: new Date('2024-01-01T22:00:00'), durationSec: 20 }];
     const flgEvents = [];
-    
+
     const clusters = clusterApneaEvents(events, flgEvents);
-    
+
     expect(clusters).toHaveLength(1);
     expect(clusters[0].durationSec).toBe(20);
   });
@@ -190,34 +190,37 @@ describe('Apnea Clustering Algorithm', () => {
 ```
 
 ### Medical Data Validation Pattern
+
 ```javascript
 // Check CPAP data for suspicious values
 function validateCPAPReading(row) {
   const issues = [];
-  
+
   // AHI validation
   const ahi = parseFloat(row['AHI']);
   if (ahi < 0 || ahi > 150) {
     issues.push(`Suspicious AHI: ${ahi} (normal range 0-150)`);
   }
-  
+
   // EPAP validation
   const epap = parseFloat(row['EPAP']);
   if (epap < 4 || epap > 20) {
     issues.push(`Suspicious EPAP: ${epap} (normal range 4-20 cmH₂O)`);
   }
-  
+
   // Usage validation
   const usage = parseDuration(row['Total Time']);
   if (usage > 12 * 3600) {
-    issues.push(`Excessive usage: ${(usage / 3600).toFixed(1)}h (max ~12h/night)`);
+    issues.push(
+      `Excessive usage: ${(usage / 3600).toFixed(1)}h (max ~12h/night)`,
+    );
   }
-  
+
   // Consistency check
   if (ahi === 0 && usage === 0) {
     issues.push('Zero AHI and zero usage — likely no therapy night');
   }
-  
+
   return { valid: issues.length === 0, issues };
 }
 ```
@@ -225,15 +228,19 @@ function validateCPAPReading(row) {
 ## Key Parameters & Defaults (Document Why These Were Chosen)
 
 ### Apnea Clustering
+
 - **GAP_SEC = 120** — Events within 2 minutes usually part of same apnea episode (clinical observation)
 - **FLG_BRIDGE_THRESHOLD = 0.1** — FLG level indicating apnea; 0.1 cmH₂O is moderate resistance
 - **EDGE_THRESHOLD = 0.5** — FLG level indicating clear apnea; hysteresis improves robustness
 - **MIN_DURATION_SEC = 10** — Minimum time for FLG edge segment (noise vs. real apnea)
 
 ### False Negative Detection
+
 - **MIN_TOTAL_SEC = 60** — Minimum apnea event duration to flag as potential cluster
 - **CONFIDENCE_MIN = 0.95** — High confidence (95%) required before reporting false negative
 
-*Document the reasoning behind each default to enable future tuning and medical validation.*
+_Document the reasoning behind each default to enable future tuning and medical validation._
+
+```
 
 ```

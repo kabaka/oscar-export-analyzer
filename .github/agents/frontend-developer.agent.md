@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: frontend-developer
 description: React/JSX frontend specialist for OSCAR Export Analyzer UI and component development
@@ -79,12 +79,15 @@ export const useDateRangeFilter = (initialData) => {
 
   return { filteredData: filteredData(), startDate, setStartDate, endDate, setEndDate };
 };
-```
+````
 
 ### Web Worker Communication
+
 ```jsx
 // Use web worker for heavy CSV parsing
-const worker = new Worker(new URL('../workers/csvParser.js', import.meta.url), { type: 'module' });
+const worker = new Worker(new URL('../workers/csvParser.js', import.meta.url), {
+  type: 'module',
+});
 
 const parseCSV = (csvText) => {
   return new Promise((resolve, reject) => {
@@ -99,6 +102,7 @@ const parseCSV = (csvText) => {
 ```
 
 ### Component Test Pattern (Vitest + Testing Library)
+
 ```jsx
 // UsagePatternsCharts.test.jsx
 import { render, screen } from '@testing-library/react';
@@ -116,6 +120,8 @@ describe('UsagePatternsCharts', () => {
     expect(screen.getByText(/no data available/i)).toBeInTheDocument();
   });
 });
+```
+
 ```
 
 ```

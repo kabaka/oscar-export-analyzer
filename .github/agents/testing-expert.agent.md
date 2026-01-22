@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: testing-expert
 description: QA and testing specialist focused on test strategy, synthetic test data, and comprehensive test coverage using Vitest and Testing Library
@@ -97,9 +97,10 @@ describe('filterByDateRange', () => {
     expect(result).toHaveLength(0);
   });
 });
-```
+````
 
 ### Component Test with User Interactions
+
 ```jsx
 // components/DateRangeControls.test.jsx
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -110,28 +111,31 @@ describe('DateRangeControls', () => {
   it('calls onChange callback when dates are selected', () => {
     const mockCallback = vi.fn();
     render(<DateRangeControls onChange={mockCallback} />);
-    
+
     const startInput = screen.getByLabelText(/start date/i);
     fireEvent.change(startInput, { target: { value: '2024-01-01' } });
-    
+
     expect(mockCallback).toHaveBeenCalled();
   });
 
   it('displays validation error for invalid date range', () => {
     render(<DateRangeControls />);
-    
+
     const startInput = screen.getByLabelText(/start date/i);
     const endInput = screen.getByLabelText(/end date/i);
-    
+
     fireEvent.change(startInput, { target: { value: '2024-12-31' } });
     fireEvent.change(endInput, { target: { value: '2024-01-01' } });
-    
-    expect(screen.getByText(/end date must be after start date/i)).toBeInTheDocument();
+
+    expect(
+      screen.getByText(/end date must be after start date/i),
+    ).toBeInTheDocument();
   });
 });
 ```
 
 ### Synthetic Test Data
+
 ```js
 // tests/fixtures/mockCsvData.js
 export const mockCsvDataSmall = `Date,AHI,EPAP,Usage (hours)
@@ -145,6 +149,8 @@ export const mockCsvDataEdgeCases = `Date,AHI,EPAP,Usage (hours)
 2024-01-01,0,8.0,0.1
 2024-01-02,25.5,15.0,8.0
 2024-01-03,invalid,invalid,invalid`; // Edge cases
+```
+
 ```
 
 ```

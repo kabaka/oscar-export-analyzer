@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: adr-specialist
 description: Architect specializing in architecture decision records (ADRs) and technical design documentation
@@ -105,6 +105,8 @@ What alternatives were considered?
 
 ## References
 - [Related docs, code, issues]
+````
+
 ```
 
 ```

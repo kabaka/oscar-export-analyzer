@@ -1,4 +1,4 @@
-```chatagent
+````chatagent
 ---
 name: readiness-reviewer
 description: Pre-commit quality gate specialist ensuring scope completion, passing checks, and organized files before merge
@@ -70,11 +70,13 @@ npm run build        # Vite build - must succeed with no warnings
 
 # If any fail: ESCALATE to @frontend-developer or @testing-expert
 # Do not approve until all pass
-```
+````
 
 ### 2. Scope Validation
+
 ```markdown
 # Compare PR description to changes
+
 - [ ] All requested features implemented?
 - [ ] No extra features added (gold-plating)?
 - [ ] Edge cases handled as specified?
@@ -85,32 +87,39 @@ npm run build        # Vite build - must succeed with no warnings
 ```
 
 ### 3. File Organization
+
 ```markdown
 # React Components
+
 - [ ] Components in src/components/
 - [ ] Tests alongside components (.test.jsx)
 - [ ] File naming: PascalCase (e.g., UsagePatternsCharts.jsx)
 
 # Hooks & Utils
+
 - [ ] Custom hooks in src/hooks/ (e.g., useDateRangeFilter.js)
 - [ ] Utilities in src/utils/
 - [ ] Tests colocated with code (.test.js)
 
 # Documentation
+
 - [ ] README updated if user-facing changes
 - [ ] Developer docs in docs/developer/ updated if needed
 - [ ] Inline code comments for complex logic
 - [ ] JSDoc comments for exported functions
 
 # No stray files
+
 - [ ] No build artifacts committed
 - [ ] No node_modules committed
 - [ ] No .env or sensitive data
 ```
 
 ### 4. Documentation Check
+
 ```markdown
 # Check what needs updating
+
 - [ ] README.md updated? (if features changed)
 - [ ] docs/developer/ updated? (if architecture changed)
 - [ ] Component comments clear? (JSDoc for complex components)
@@ -120,8 +129,10 @@ npm run build        # Vite build - must succeed with no warnings
 ```
 
 ### 5. Data Privacy & Security
+
 ```markdown
 # OSCAR analyzer is data-sensitive—CSV exports are private
+
 - [ ] No OSCAR exports committed to git
 - [ ] No unencrypted data in source code
 - [ ] CSV data stays local (browser only)
@@ -130,13 +141,15 @@ npm run build        # Vite build - must succeed with no warnings
 ```
 
 ### 6. Git & Commit Quality
+
 ```markdown
 # Check commit history
+
 - [ ] Commits follow Conventional Commits style (feat:, fix:, docs:, etc.)
 - [ ] Commit messages are clear and descriptive
 - [ ] No merge commits (should be rebased)
 - [ ] No accidental commits (linting artifacts, node_modules, etc.)
-- [ ] No stray .DS_Store, *.log, or editor files
+- [ ] No stray .DS_Store, \*.log, or editor files
 ```
 
 ## Typical Readiness Review Flow
@@ -149,5 +162,7 @@ npm run build        # Vite build - must succeed with no warnings
 6. **Approve** → Mark as ready for merge
 
 **If everything passes**: Approve and merge. **If issues found**: Document clearly which agent should address them and re-request review.
+
+```
 
 ```
