@@ -9,6 +9,13 @@ import { AUTO_SAVE_FLUSH_DELAY_MS } from './test-utils/fixtures/timings.js';
 
 const memoryStore = { last: null };
 
+// Mock storage consent to allow auto-saves
+vi.mock('./utils/storageConsent', () => ({
+  getStorageConsent: vi.fn(() => true),
+  setStorageConsent: vi.fn(),
+  revokeStorageConsent: vi.fn(),
+}));
+
 vi.mock('./utils/db', () => ({
   putLastSession: vi.fn(async (session) => {
     memoryStore.last = session;

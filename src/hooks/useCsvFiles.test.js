@@ -344,4 +344,35 @@ describe('useCsvFiles', () => {
     expect(result.current.loadingSummary).toBe(true);
     expect(workers).toHaveLength(1);
   });
+
+  it('displays sanitized error messages from worker without exposing data', () => {
+    const { result } = renderHook(() => useCsvFiles());
+    const file = createFile('summary.csv');
+
+    act(() => {
+      result.current.onSummaryFile({ target: { files: [file] } });
+    });
+
+    // Simulate worker sending sanitized error message
+    act(() => {
+      workers[0].onmessage?.({
+        data: {
+          workerId: workerIdFor(0),
+          type: 'error',
+          error: 'Failed to parse CSV file. Please check the file format.',
+        },
+      });
+    });
+
+    // Verify the sanitized error is displayed
+    expect(result.current.error).toBe(
+      'Failed to parse CSV file. Please check the file format.',
+    );
+    expect(result.current.loadingSummary).toBe(false);
+
+    // Verify error message doesn't contain sensitive information
+    expect(result.current.error).not.toMatch(/line \d+/i);
+    expect(result.current.error).not.toMatch(/DateTime|Session|Event/i);
+    expect(result.current.error).not.toMatch(/\d{4}-\d{2}-\d{2}/); // No dates
+  });
 });

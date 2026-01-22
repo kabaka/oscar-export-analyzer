@@ -346,9 +346,11 @@ export function clusterApneaEventsKMeans(options = {}) {
   }
 
   if (maxIterationsReached) {
-    console.warn(
-      `[KMeans] Max iterations reached without convergence; results may be suboptimal.`,
-    );
+    if (import.meta.env.DEV) {
+      console.warn(
+        `[KMeans] Max iterations reached without convergence; results may be suboptimal.`,
+      );
+    }
   }
 
   const out = filterByDensity(

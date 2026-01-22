@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { buildSession, applySession } from '../utils/session';
 import { putLastSession, getLastSession } from '../utils/db';
+import { getStorageConsent } from '../utils/storageConsent';
 import { DECIMAL_PLACES_2 } from '../constants';
 
 export function useSessionManager({
@@ -17,6 +18,7 @@ export function useSessionManager({
   setRangeB,
   setSummaryData,
   setDetailsData,
+  onNeedConsent,
 }) {
   useEffect(() => {
     if (!summaryData && !detailsData) return;
@@ -30,7 +32,24 @@ export function useSessionManager({
         rangeB,
         fnPreset,
       });
-      putLastSession(session).catch(() => {});
+
+      // Check storage consent before saving
+      const consent = getStorageConsent();
+      if (consent === null) {
+        // First time or "ask later" - need to ask user
+        if (onNeedConsent) {
+          onNeedConsent(() => {
+            putLastSession(session).catch(() => {});
+          });
+        }
+        return;
+      }
+
+      if (consent === true) {
+        // User has consented - proceed with save
+        putLastSession(session).catch(() => {});
+      }
+      // If consent === false (denied), skip save silently
     }, 500); // eslint-disable-line no-magic-numbers -- debounce timeout (ms) for session persistence
     return () => clearTimeout(timer);
   }, [
@@ -41,6 +60,7 @@ export function useSessionManager({
     rangeA,
     rangeB,
     fnPreset,
+    onNeedConsent,
   ]);
 
   const handleLoadSaved = async () => {
@@ -102,7 +122,9 @@ export function useSessionManager({
           }
           throw new Error('Session file missing required data');
         } catch (err) {
-          console.error('Session import failed:', err);
+          if (import.meta.env.DEV) {
+            console.error('Session import failed:', err);
+          }
           reject(err);
         }
       };

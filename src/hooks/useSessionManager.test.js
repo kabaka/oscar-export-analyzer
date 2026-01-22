@@ -7,11 +7,25 @@ import { buildSession } from '../utils/session';
 
 const memoryStore = { last: null };
 
+// Mock storage consent to allow auto-saves
+vi.mock('../utils/storageConsent', () => ({
+  getStorageConsent: vi.fn(() => true),
+  setStorageConsent: vi.fn(),
+  revokeStorageConsent: vi.fn(),
+}));
+
 vi.mock('../utils/db', () => ({
   putLastSession: vi.fn(async (session) => {
     memoryStore.last = session;
   }),
   getLastSession: vi.fn(async () => memoryStore.last),
+}));
+
+// Mock storage consent to allow auto-saves
+vi.mock('../utils/storageConsent', () => ({
+  getStorageConsent: vi.fn(() => true),
+  setStorageConsent: vi.fn(),
+  revokeStorageConsent: vi.fn(),
 }));
 
 describe('useSessionManager', () => {

@@ -8,7 +8,9 @@ function ErrorBoundary({ fallback, children }) {
         <div role="alert">{fallback || 'Something went wrong.'}</div>
       )}
       onError={(error, info) => {
-        console.error('ErrorBoundary caught an error', error, info);
+        if (import.meta.env.DEV) {
+          console.error('ErrorBoundary caught an error', error, info);
+        }
       }}
     >
       {children}

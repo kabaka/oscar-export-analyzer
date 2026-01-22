@@ -175,7 +175,9 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
         if (ok) {
           completeWithResults(data.clusters, data.falseNegatives);
         } else {
-          console.warn('Analytics worker error:', error);
+          if (import.meta.env.DEV) {
+            console.warn('Analytics worker error:', error);
+          }
           fallbackCompute();
         }
       };
@@ -184,7 +186,9 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
         payload: { detailsData, params: clusterParams, fnOptions },
       });
     } catch (err) {
-      console.warn('Worker unavailable, using fallback', err);
+      if (import.meta.env.DEV) {
+        console.warn('Worker unavailable, using fallback', err);
+      }
       fallbackCompute();
     }
 

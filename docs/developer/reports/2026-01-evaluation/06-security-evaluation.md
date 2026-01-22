@@ -728,25 +728,29 @@ a.download = 'oscar_session.json';
 
 ### Priority 2 — Medium Impact, Medium Effort
 
-1. **Disable Console Error Logging in Production**
+1. ✅ **Disable Console Error Logging in Production** — **COMPLETED**
    - Wrap error logs in `if (import.meta.env.DEV)`
    - **Effort**: 30 minutes
    - **Impact**: Prevent stack trace disclosure in production
+   - **Implementation**: Wrapped console.error() statements in [src/components/ui/ErrorBoundary.jsx](../../../src/components/ui/ErrorBoundary.jsx#L11), [src/hooks/useSessionManager.js](../../../src/hooks/useSessionManager.js#L104), [src/workers/csv.worker.js](../../../src/workers/csv.worker.js#L12,L20), and [src/workers/analytics.worker.js](../../../src/workers/analytics.worker.js#L51). Production builds now have zero stack trace exposure while development mode retains full debugging capabilities.
 
-2. **Add Explicit IndexedDB Opt-In**
+2. ✅ **Add Explicit IndexedDB Opt-In** — **COMPLETED**
    - Require user confirmation before saving to IndexedDB
    - **Effort**: 1–2 hours
    - **Impact**: Respect user privacy; align with consent principles
+   - **Implementation**: Created [src/components/ui/StorageConsentDialog.jsx](../../../src/components/ui/StorageConsentDialog.jsx) with WCAG AA accessible modal dialog. Added [src/utils/storageConsent.js](../../../src/utils/storageConsent.js) for consent management (localStorage for "allow", sessionStorage for "deny"). Modified [src/hooks/useSessionManager.js](../../../src/hooks/useSessionManager.js) to check consent before auto-save. Dialog appears on first save attempt with three choices: "Don't Save" (session-only denial), "Save to Browser" (persistent opt-in), "Ask me later" (dismisses and asks again). Fully tested with 26 new tests.
 
-3. **Sanitize CSV Parser Error Messages**
+3. ✅ **Sanitize CSV Parser Error Messages** — **COMPLETED**
    - Replace with generic error messages
    - **Effort**: 30 minutes
    - **Impact**: Prevent error message data leakage
+   - **Implementation**: Added `sanitizeErrorMessage()` function in [src/workers/csv.worker.js](../../../src/workers/csv.worker.js) that maps specific PapaParse errors to generic messages. Production error messages never contain CSV data samples, cell values, line numbers with context, or stack traces. Development mode still logs full details to console. Tested with 5 new sanitization tests.
 
-4. **Add Header Validation for CSV Files**
+4. ✅ **Add Header Validation for CSV Files** — **COMPLETED**
    - Validate required columns exist before processing
    - **Effort**: 1 hour
    - **Impact**: Fail-fast on malformed files
+   - **Implementation**: Created [src/utils/csvValidation.js](../../../src/utils/csvValidation.js) with `validateSummaryHeaders()` (requires Date, AHI, Median EPAP, Total Time) and `validateDetailsHeaders()` (requires Event, DateTime, Data/Duration). Integrated in [src/workers/csv.worker.js](../../../src/workers/csv.worker.js) to validate headers before processing. Fail-fast with clear, sanitized error messages. Added 22 comprehensive tests (15 utility tests + 7 integration tests).
 
 ### Priority 3 — Lower Impact or Higher Effort
 

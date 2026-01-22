@@ -5,6 +5,7 @@ import {
   DataImportModal,
   DocsModal,
   PrintWarningDialog,
+  StorageConsentDialog,
   ThemeToggle,
 } from './components/ui';
 import AppLayout from './app/AppLayout';
@@ -15,6 +16,7 @@ import { RangeComparisonsSection } from './features/range-comparisons';
 import { ApneaClustersSection } from './features/apnea-clusters';
 import FalseNegativesSection from './features/false-negatives/Section';
 import RawExplorerSection from './features/raw-explorer/Section';
+import { setStorageConsent } from './utils/storageConsent';
 import {
   DEFAULT_HEADER_OFFSET_PX,
   HEADER_SCROLL_MARGIN_PX,
@@ -62,6 +64,10 @@ export function AppShell() {
     closeGuide,
     filteredSummary,
     filteredDetails,
+    showStorageConsent,
+    setShowStorageConsent,
+    pendingSave,
+    setPendingSave,
   } = useAppContext();
 
   const tocSections = useMemo(
@@ -333,6 +339,27 @@ export function AppShell() {
         isOpen={printWarningModal.isOpen}
         onClose={printWarningModal.close}
         onConfirm={() => window.print()}
+      />
+      <StorageConsentDialog
+        isOpen={showStorageConsent}
+        onAllow={() => {
+          setStorageConsent('allow');
+          setShowStorageConsent(false);
+          if (pendingSave) {
+            pendingSave();
+            setPendingSave(null);
+          }
+        }}
+        onDeny={() => {
+          setStorageConsent('deny-session');
+          setShowStorageConsent(false);
+          setPendingSave(null);
+        }}
+        onDismiss={() => {
+          setStorageConsent('ask-later');
+          setShowStorageConsent(false);
+          setPendingSave(null);
+        }}
       />
     </>
   );

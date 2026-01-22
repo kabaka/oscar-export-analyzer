@@ -68,6 +68,10 @@ export function useAppState() {
   const importModal = useModal(true);
   const printWarningModal = useModal(false);
 
+  // Storage consent dialog state
+  const [showStorageConsent, setShowStorageConsent] = useState(false);
+  const [pendingSave, setPendingSave] = useState(null);
+
   const [clusterParams, setClusterParams] = useState({
     algorithm: DEFAULT_CLUSTER_ALGORITHM,
     gapSec: APNEA_GAP_DEFAULT,
@@ -136,6 +140,10 @@ export function useAppState() {
     setRangeB,
     setSummaryData,
     setDetailsData,
+    onNeedConsent: (saveCallback) => {
+      setPendingSave(() => saveCallback);
+      setShowStorageConsent(true);
+    },
   });
 
   const exportAggregatesCsv = useCallback(() => {
@@ -227,6 +235,10 @@ export function useAppState() {
     setRangeB,
     importModal,
     printWarningModal,
+    showStorageConsent,
+    setShowStorageConsent,
+    pendingSave,
+    setPendingSave,
     clusterParams,
     setClusterParams,
     fnPreset,
