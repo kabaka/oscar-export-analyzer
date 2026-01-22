@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   clusterApneaEvents,
   detectFalseNegatives,
@@ -83,8 +83,12 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
   const [apneaClusters, setApneaClusters] = useState([]);
   const [falseNegatives, setFalseNegatives] = useState([]);
   const [processing, setProcessing] = useState(false);
+  const jobIdRef = useRef(0);
 
   useEffect(() => {
+    const jobId = jobIdRef.current + 1;
+    jobIdRef.current = jobId;
+
     if (!detailsData || !detailsData.length) {
       setApneaClusters([]);
       setFalseNegatives([]);
@@ -93,11 +97,18 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
     }
 
     setProcessing(true);
-    let cancelled = false;
     let worker;
+    const isStale = () => jobIdRef.current !== jobId;
+
+    const completeWithResults = (clusters, falseNegs) => {
+      if (isStale()) return;
+      setApneaClusters(normalizeClusters(clusters));
+      setFalseNegatives(normalizeFalseNegatives(falseNegs));
+      setProcessing(false);
+    };
 
     const fallbackCompute = () => {
-      if (cancelled) return;
+      if (isStale()) return;
       const apneaEvents = detailsData
         .filter((r) =>
           ['ClearAirway', 'Obstructive', 'Mixed'].includes(r['Event']),
@@ -127,11 +138,8 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
         linkageThresholdSec: clusterParams.linkageThresholdSec,
       });
       const validClusters = finalizeClusters(rawClusters, clusterParams);
-      setApneaClusters(normalizeClusters(validClusters));
-      setFalseNegatives(
-        normalizeFalseNegatives(detectFalseNegatives(detailsData, fnOptions)),
-      );
-      setProcessing(false);
+      const fns = detectFalseNegatives(detailsData, fnOptions);
+      completeWithResults(validClusters, fns);
     };
 
     try {
@@ -143,12 +151,10 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
         },
       );
       worker.onmessage = (evt) => {
-        if (cancelled) return;
+        if (isStale()) return;
         const { ok, data, error } = evt.data || {};
         if (ok) {
-          setApneaClusters(normalizeClusters(data.clusters));
-          setFalseNegatives(normalizeFalseNegatives(data.falseNegatives));
-          setProcessing(false);
+          completeWithResults(data.clusters, data.falseNegatives);
         } else {
           console.warn('Analytics worker error:', error);
           fallbackCompute();
@@ -164,13 +170,15 @@ export function useAnalyticsProcessing(detailsData, clusterParams, fnOptions) {
     }
 
     return () => {
-      cancelled = true;
       try {
         worker && worker.terminate && worker.terminate();
       } catch {
         // ignore termination errors
       }
-      setProcessing(false);
+      if (!isStale()) {
+        // Only mark idle if this job was still the latest when cleaning up.
+        setProcessing(false);
+      }
     };
   }, [detailsData, clusterParams, fnOptions]);
 

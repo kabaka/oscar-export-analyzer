@@ -107,18 +107,16 @@ npm outdated  # 17 minor/patch updates available
 - Verify 4.5:1 contrast ratio for all text
 - Add comprehensive aria-label descriptions to charts
 
-### 🟡 6. Custom Hook Testing Gap (8/9 hooks untested)
+### ✅ 6. Custom Hook Testing Gap — RESOLVED
 
 **Impact**: Critical business logic unverified  
-**Untested Hooks**: useAnalyticsProcessing, useCsvFiles, useDateRangeFilter, useEffectiveDarkMode, useGuide, useModal, usePrefersDarkMode, useTheme  
-**Fix Effort**: 1 week  
+**Status**: ✅ **FIXED** — New tests cover all 8 previously untested hooks (analytics processing, CSV workflow, date filtering, theming, guides, modal) with jsdom behaviors validated and worker mocks aligned.  
 **Owner**: @testing-expert
 
-### 🟡 7. Web Worker Race Condition
+### ✅ 7. Web Worker Race Condition — RESOLVED
 
 **Impact**: Potential data corruption if multiple analysis jobs overlap  
-**Location**: [src/hooks/useAnalyticsProcessing.js](../../../src/hooks/useAnalyticsProcessing.js)  
-**Fix Effort**: 2-4 hours  
+**Status**: ✅ **FIXED** — Added per-job sequencing with cancellation of stale worker messages and guarded state updates in [src/hooks/useAnalyticsProcessing.js](../../../src/hooks/useAnalyticsProcessing.js).  
 **Owner**: @frontend-developer
 
 ---
@@ -369,8 +367,8 @@ The OSCAR Export Analyzer is a **high-quality medical data analysis tool** with 
 
 **Ready for Phase 2** (Production Readiness, 1-2 weeks):
 
-1. Add tests for 8 untested hooks
-2. Fix Web Worker race condition
+1. Add tests for 8 untested hooks — ✅ completed
+2. Fix Web Worker race condition — ✅ completed
 3. Create CHANGELOG.md and RELEASE_PROCESS.md
 4. Add missing ADRs (top 5: Vite, local-first, Web Workers, Context, Plotly)
 
