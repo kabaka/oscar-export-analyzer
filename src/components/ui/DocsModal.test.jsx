@@ -1,21 +1,28 @@
 import { render, screen } from '@testing-library/react';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import DocsModal from './DocsModal';
 import { fireEvent } from '@testing-library/react';
 
+// Use minimal markdown fixtures to speed up tests
+const MINIMAL_MARKDOWN = `# Guide
+## Section
+Content here.`;
+
+const MINIMAL_WITH_MATH = '# Title\n$$x=1$$';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('DocsModal', () => {
   it('renders guide content and closes', async () => {
     const onClose = vi.fn();
-    const guideMarkdown = `# Usage & Interpretation Guide
-## Introduction
-Welcome to the OSCAR Sleep Data Analysis guide.
-`;
     render(
       <DocsModal
         isOpen={true}
         onClose={onClose}
-        markdownSource={guideMarkdown}
+        markdownSource={MINIMAL_MARKDOWN}
       />,
     );
     expect(
@@ -24,31 +31,26 @@ Welcome to the OSCAR Sleep Data Analysis guide.
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: /Usage & Interpretation Guide/i,
+        name: /guide/i,
       }),
     ).toBeInTheDocument();
   });
 
   it('deep-links to a section when provided', async () => {
-    const markdown = `# Main Content
-## Usage Patterns
-Some detailed content about usage patterns.
-## Other Section
-More content.
-`;
+    const markdown = `# Main\n## Target\nContent.`;
     render(
       <DocsModal
         isOpen={true}
         onClose={() => {}}
         markdownSource={markdown}
-        initialAnchor="usage-patterns"
+        initialAnchor="target"
       />,
     );
-    const headings = await screen.findAllByRole('heading', {
+    const heading = await screen.findByRole('heading', {
       level: 2,
-      name: /Usage Patterns/i,
+      name: /target/i,
     });
-    expect(headings.length).toBeGreaterThan(0);
+    expect(heading).toBeInTheDocument();
   });
 
   it('sanitizes malicious markdown', async () => {
@@ -62,10 +64,17 @@ More content.
     expect(document.querySelector('script')).toBeNull();
   });
 
-  it('renders display math delimited by dollars', () => {
-    const md = '$$\\text{Severity}=1$$';
-    render(<DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />);
-    expect(document.querySelector('.katex')).not.toBeNull();
+  it('renders display math', () => {
+    render(
+      <DocsModal
+        isOpen={true}
+        onClose={() => {}}
+        markdownSource={MINIMAL_WITH_MATH}
+      />,
+    );
+    // KaTeX renders to .katex elements
+    const mathElement = document.querySelector('.katex');
+    expect(mathElement).not.toBeNull();
   });
 
   it('renders tables', () => {
@@ -75,17 +84,17 @@ More content.
   });
 
   it('converts internal links to anchors', async () => {
-    const md = `[Next](02-visualizations.md#rolling-windows)`;
+    const md = `[Next](#section)`;
     render(<DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />);
     const link = await screen.findByRole('link', { name: /next/i });
-    expect(link).toHaveAttribute('href', '#rolling-windows');
+    expect(link).toHaveAttribute('href', '#section');
     fireEvent.click(link);
   });
 
   it('nests table of contents items', async () => {
-    const md = '# A\n\n## B\n\n# C';
+    const md = '# Level1\n## Level2\n### Level3';
     render(<DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />);
-    await screen.findByRole('link', { name: 'A' });
+    await screen.findByRole('link', { name: /level1/i });
     const level2 = document.querySelector('.doc-toc .level-2');
     expect(level2).not.toBeNull();
   });

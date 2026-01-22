@@ -43,7 +43,7 @@ describe('DataImportModal layout', () => {
     expect(closeBtn).toHaveStyle({ alignSelf: 'center' });
   });
 
-  it('remains open when reopened with loaded data', () => {
+  it('remains open when reopened with loaded data', async () => {
     const onClose = vi.fn();
     render(
       <DataImportModal
@@ -63,9 +63,13 @@ describe('DataImportModal layout', () => {
         detailsProgressMax={0}
       />,
     );
-    expect(
-      screen.getByRole('dialog', { name: /import data/i }),
-    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('dialog', { name: /import data/i }),
+      ).toBeInTheDocument();
+    });
+
     expect(onClose).not.toHaveBeenCalled();
   });
 

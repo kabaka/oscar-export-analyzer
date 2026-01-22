@@ -1,4 +1,8 @@
 export function applyChartTheme(isDark, layout = {}) {
+  // Handle null layout gracefully
+  if (layout === null) {
+    layout = {};
+  }
   const light = {
     paper_bgcolor: '#ffffff',
     plot_bgcolor: '#ffffff',
