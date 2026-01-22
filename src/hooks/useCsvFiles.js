@@ -95,8 +95,13 @@ export function useCsvFiles() {
         resetActiveTask();
       };
       worker.onmessage = (ev) => {
-        const { workerId: messageWorkerId, type, rows, cursor, error: msg } =
-          ev.data || {};
+        const {
+          workerId: messageWorkerId,
+          type,
+          rows,
+          cursor,
+          error: msg,
+        } = ev.data || {};
         if (activeTaskRef.current.workerId !== messageWorkerId) return;
         if (type === 'progress') {
           setProgress(cursor);

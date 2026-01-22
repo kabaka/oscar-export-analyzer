@@ -30,7 +30,9 @@ function UsageTimelineChart({
   onRelayout,
 }) {
   return (
-    <ChartWithHelp text={`Nightly CPAP usage hours with ${shortWindowLabel} and ${longWindowLabel} rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints.`}>
+    <ChartWithHelp
+      text={`Nightly CPAP usage hours with ${shortWindowLabel} and ${longWindowLabel} rolling averages. Purple lines mark detected change-points; dotted lines mark crossover breakpoints.`}
+    >
       <ThemedPlot
         useResizeHandler
         style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}

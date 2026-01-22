@@ -21,7 +21,8 @@ function UsageKpiGrid({
 }) {
   const compliancePct =
     usageHours.length > 0
-      ? (usageHours.filter((h) => h >= USAGE_COMPLIANCE_THRESHOLD_HOURS).length /
+      ? (usageHours.filter((h) => h >= USAGE_COMPLIANCE_THRESHOLD_HOURS)
+          .length /
           usageHours.length) *
         PERCENT_SCALE
       : 0;

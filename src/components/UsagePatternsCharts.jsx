@@ -29,7 +29,15 @@ import UsageHistogram from './usage/UsageHistogram';
 import UsageBoxplot from './usage/UsageBoxplot';
 import UsageCalendarHeatmap from './usage/UsageCalendarHeatmap';
 
-const DOW_LABELS = Object.freeze(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+const DOW_LABELS = Object.freeze([
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+]);
 const MONDAY_INDEX_OFFSET = 6;
 const ISO_DATE_LENGTH = 10;
 const HEATMAP_MARGIN_TOP_PX = 16;

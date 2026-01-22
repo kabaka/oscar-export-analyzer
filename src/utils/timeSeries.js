@@ -74,8 +74,7 @@ export function adherenceMetrics(
   { complianceThreshold, strictThreshold, longWindowDays },
 ) {
   const adherence = computeAdherenceStreaks(values);
-  const longestCompliance =
-    adherence[`longest_${complianceThreshold}`] ?? 0;
+  const longestCompliance = adherence[`longest_${complianceThreshold}`] ?? 0;
   const longestStrict = adherence[`longest_${strictThreshold}`] ?? 0;
   const complianceKey = `compliance${complianceThreshold}_${longWindowDays}`;
   return {

@@ -26,12 +26,17 @@ export function useAutocorrelation(values = [], options = {}) {
       return { acfValues: [], pacfValues: [], acfConfidence: NaN };
     }
     const requestedLag = Math.max(1, Math.round(maxLagState));
-    const cappedLag = Math.min(requestedLag, sampleSize - 1, Math.max(1, values.length - 1));
+    const cappedLag = Math.min(
+      requestedLag,
+      sampleSize - 1,
+      Math.max(1, values.length - 1),
+    );
     const acf = computeAutocorrelation(values, cappedLag).values.filter(
       (d) => d.lag > 0,
     );
     const pacf = computePartialAutocorrelation(values, cappedLag).values;
-    const conf = sampleSize > 0 ? NORMAL_CONFIDENCE_Z / Math.sqrt(sampleSize) : NaN;
+    const conf =
+      sampleSize > 0 ? NORMAL_CONFIDENCE_Z / Math.sqrt(sampleSize) : NaN;
     return { acfValues: acf, pacfValues: pacf, acfConfidence: conf };
   }, [values, maxLagState]);
 

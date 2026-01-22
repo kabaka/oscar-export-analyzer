@@ -27,11 +27,15 @@ describe('Header import progress', () => {
         this.workerId = workerId;
         // Use Promise.resolve for proper async handling
         Promise.resolve().then(() => {
-          this.onmessage?.({ data: { workerId, type: 'progress', cursor: 50 } });
+          this.onmessage?.({
+            data: { workerId, type: 'progress', cursor: 50 },
+          });
         });
         Promise.resolve().then(() => {
           setTimeout(() => {
-            this.onmessage?.({ data: { workerId, type: 'rows', rows: [], cursor: 50 } });
+            this.onmessage?.({
+              data: { workerId, type: 'rows', rows: [], cursor: 50 },
+            });
             this.onmessage?.({ data: { workerId, type: 'complete' } });
           }, HEADER_IMPORT_COMPLETION_DELAY_MS);
         });

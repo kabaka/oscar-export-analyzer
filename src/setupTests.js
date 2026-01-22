@@ -101,7 +101,9 @@ beforeAll(() => {
         }
         // Use Promise.resolve to defer execution, allowing async test operations to complete
         Promise.resolve().then(() => {
-          this.onmessage?.({ data: { workerId, type: 'progress', cursor: file.size } });
+          this.onmessage?.({
+            data: { workerId, type: 'progress', cursor: file.size },
+          });
           this.onmessage?.({ data: { workerId, type: 'rows', rows } });
           this.onmessage?.({ data: { workerId, type: 'complete' } });
         });

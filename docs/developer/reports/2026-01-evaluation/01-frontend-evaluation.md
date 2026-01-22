@@ -58,6 +58,7 @@ The frontend shows evidence of careful planning and incremental refinement. Key 
 - Move data processing logic to utility functions or custom hooks
 - Create a `ChartGrid` wrapper component for layout
 - Example refactoring:
+
   ```jsx
   // Instead of one 820-line component:
   function UsagePatternsCharts({ data }) {
@@ -257,6 +258,7 @@ The frontend shows evidence of careful planning and incremental refinement. Key 
 - Add worker ID tracking to ensure messages come from active worker
 - Implement abort controller pattern more rigorously
 - Example:
+
   ```javascript
   const workerId = Date.now() + Math.random();
   worker.workerId = workerId;
@@ -602,6 +604,7 @@ return { ...r, DateTime: ms };
 - Only include `tocSections` and `setActiveSectionId`
 - Add ESLint disable comment with justification if warning persists
 - Example:
+
   ```javascript
   useEffect(() => {
     // ... observer setup
@@ -673,6 +676,7 @@ return { ...r, DateTime: ms };
 - Create reusable processing pipeline in `src/utils/chartDataProcessing.js`
 - Estimated savings: ~200 lines of duplicated code
 - Example:
+
   ```javascript
   function useChartDataProcessing(data, { metric, rollingWindows }) {
     return useMemo(() => {
