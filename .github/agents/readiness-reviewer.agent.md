@@ -28,13 +28,18 @@ You understand:
 2. ✅ Verify scope: Does PR address the original request? Nothing more, nothing less?
 3. ✅ Check file organization: Files in correct locations, naming conventions followed
 4. ✅ Validate documentation: README, docs/, inline comments updated if needed
-5. ✅ Review git state: Clean history, good commit messages, no sensitive data
-6. ✅ Quick security scan: No API keys, no OSCAR exports committed, data stays local
-7. ✅ Integration check: Does this work with existing features? Any breaking changes?
+5. ✅ Enforce working directory cleanup: `docs/work/` and `temp/` must be empty
+6. ✅ Verify documentation placement: Docs in proper locations (`docs/developer/`, `docs/user/`, etc.)
+7. ✅ Security content scan: Check for sensitive health data in committed files
+8. ✅ Review git state: Clean history, good commit messages, no sensitive data
+9. ✅ Integration check: Does this work with existing features? Any breaking changes?
 
 **When to escalate (not approve):**
 - Tests failing → `@frontend-developer` or `@testing-expert`
 - Linting/format errors → `@frontend-developer`
+- Working directories not empty → `@orchestrator-manager` (for cleanup delegation)
+- Documentation in wrong locations → `@orchestrator-manager` + `@documentation-specialist`
+- Sensitive health data detected → `@security-auditor` (DO NOT review in detail yourself)
 - Security concerns → `@security-auditor`
 - Statistical/algorithm issues → `@data-scientist`
 - UX/visualization concerns → `@ux-designer`
@@ -58,6 +63,9 @@ You understand:
 - Missing features from scope
 - Performance issues
 - Component architecture problems
+- Non-empty working directories (`docs/work/`, `temp/`) — escalate to @orchestrator-manager
+- Sensitive health data or privacy violations — escalate to @security-auditor
+- Documentation in wrong locations — escalate to @documentation-specialist (via @orchestrator-manager)
 
 ## Key Checks
 
@@ -128,7 +136,103 @@ npm run build        # Vite build - must succeed with no warnings
 # If docs incomplete: Either request update or mark as documentation-specialist followup
 ```
 
-### 5. Data Privacy & Security
+### 5. Working Directory Cleanup
+
+**REJECT readiness if either directory contains files. Do NOT auto-delete.**
+
+```markdown
+# Check temporary working directories
+
+- [ ] `docs/work/` is empty?
+  - If files exist: REJECT with list of files
+  - Escalate to @orchestrator-manager for cleanup delegation
+  - Message: "Working directory not empty: docs/work/ contains [list files]. Escalate for cleanup."
+
+- [ ] `temp/` is empty?
+  - If files exist: REJECT with list of files
+  - Escalate to @orchestrator-manager for cleanup delegation
+  - Message: "Working directory not empty: temp/ contains [list files]. Escalate for cleanup."
+
+# Verify no valuable work is lost
+
+- Do NOT delete files yourself
+- Valuable permanent findings should be migrated to proper locations:
+  - Algorithm insights → docs/developer/architecture/ or inline comments
+  - RCA findings → docs/developer/reports/ (if systemic issues)
+  - Test strategy → permanent test docs
+  - Implementation notes → ADRs via @adr-specialist
+```
+
+### 6. Documentation Location Validation
+
+**REJECT readiness if docs are in wrong locations. Escalate for remediation.**
+
+```markdown
+# Verify documentation in correct directories
+
+- [ ] Architecture/design docs → `docs/developer/architecture/`
+- [ ] ADRs (Architectural Decision Records) → `docs/developer/architecture/adr/`
+- [ ] User guides → `docs/user/`
+- [ ] Developer guides → `docs/developer/`
+- [ ] Setup/installation → `docs/developer/setup.md` or `docs/developer/README.md`
+- [ ] API/reference → `docs/developer/`
+- [ ] Developer reports (RCA, findings) → `docs/developer/reports/`
+- [ ] Inline code comments → alongside code in src/
+
+# If docs are in wrong locations
+
+- REJECT with guidance: "Documentation placement incorrect. [File] should be in [correct location]."
+- Escalate to @documentation-specialist (via @orchestrator-manager)
+- Example: "Found architectural notes in docs/work/architecture-notes.md — should be in docs/developer/architecture/. Escalate to @documentation-specialist for migration."
+```
+
+### 7. Security Content Scan
+
+**Check for sensitive health data accidentally committed. REJECT if suspicious patterns found.**
+
+```markdown
+# Scan staged files for health data patterns
+
+Health data is strictly PRIVATE and NEVER committed to git.
+
+Protected Health Information (PHI) includes:
+
+- Raw OSCAR CSV exports or excerpts
+- AHI (Apnea-Hypopnea Index) values
+- EPAP/IPAP (pressure settings) numeric values
+- SpO2 (oxygen saturation) readings
+- Leak rates or mask fit data
+- Session timestamps with numeric metrics
+- Patient identifiers or dates from real data
+
+# Scan for patterns
+
+Search staged/modified files for:
+
+- [ ] CSV headers like "Date,Time,AHI,EPAP,IPAP" or "SpO2,Leak"
+- [ ] Numeric patterns: "AHI=\d+\.\d+", "EPAP=\d+" (real metrics, not test data)
+- [ ] Date-metric patterns: "2024-01-15._\d+\.\d+._\d+" (OSCAR timestamps with values)
+- [ ] File references: OSCAR export filenames or "from OSCAR..."
+- [ ] Session data with dates: "2024-01-\d{2}._Duration._\d+" (real session logs)
+
+# Distinguish from safe patterns
+
+✅ SAFE: Synthetic test data from `src/test-utils/builders.js`
+✅ SAFE: Metadata descriptions: "high AHI outlier case", "analyzed 2847 rows"
+✅ SAFE: Algorithm descriptions: "AHI spike correlates with leak events"
+✅ SAFE: Data patterns without values: "Contains session timestamp and metrics"
+❌ UNSAFE: Any file with actual numeric metrics and dates from real data
+
+# If suspicious patterns found
+
+- REJECT with specific pattern details
+- Do NOT review real data yourself (privacy breach risk)
+- Escalate to @security-auditor for manual review
+- Message: "Potential sensitive health data detected in [file]: [pattern excerpt]. Escalate to @security-auditor for review."
+- Do NOT commit until @security-auditor confirms safe
+```
+
+### 8. Data Privacy & Security
 
 ```markdown
 # OSCAR analyzer is data-sensitive—CSV exports are private

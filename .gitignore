@@ -9,3 +9,7 @@ data/
 .env.*.local
 .DS_Store
 Thumbs.db
+
+# Subagent working directories (ephemeral files, never commit)
+docs/work/
+temp/

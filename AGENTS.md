@@ -34,6 +34,96 @@ OSCAR Export Analyzer includes **9 specialized GitHub Copilot agents** for devel
 - `dist/`: production build output (generated).
 - `.github/workflows/ci.yml`: CI for build and tests.
 - `.github/agents/`: Agent specifications for coordinated development.
+- `docs/work/`: temporary investigation documents (gitignored, must be empty before commits).
+- `temp/`: temporary scripts and files (gitignored, must be empty before commits).
+
+---
+
+## Working Directory Policy for Subagents
+
+OSCAR Export Analyzer provides two `.gitignore`d directories for temporary work. **Both must be empty before any commit.** The `@readiness-reviewer` enforces this as part of the pre-commit quality gate.
+
+### Directory Purposes
+
+- **`docs/work/`**: Temporary investigation documentation
+  - RCA reports and debugging analysis (by `@debugger-rca-analyst`)
+  - Algorithm validation notes (by `@data-scientist`)
+  - Implementation planning documents
+  - Test reports and coverage investigations
+  - Draft documentation before finalization
+- **`temp/`**: Temporary scripts and files
+  - One-off utility scripts for testing or analysis
+  - Temporary data transformation scripts
+  - Build/test artifacts that aren't in `dist/`
+  - Experimental code not ready for `src/`
+
+### Critical Security Requirements
+
+**NEVER place files containing real OSCAR CSV data or patient health information in these directories.**
+
+Protected Health Information (PHI) includes:
+
+- Raw OSCAR CSV exports (even "sample" files)
+- AHI values, SpO2 readings, leak rates, pressure settings
+- Session timestamps, dates, durations
+- Any derivative data from real patient exports
+
+**Safe patterns:**
+
+- ✅ Use synthetic test data from `src/test-utils/builders.js`
+- ✅ Reference data by description: "high AHI outlier case", "zero-usage session"
+- ✅ Include only metadata: "parsed 2847 rows", "found 3 clusters"
+- ✅ Document patterns: "AHI spike correlates with leak events"
+
+**Unsafe patterns (NEVER do this):**
+
+- ❌ Copy real CSV files to `temp/` for "testing"
+- ❌ Log actual metric values: "AHI=42.3 on 2024-01-15"
+- ❌ Include CSV excerpts in RCA notes, even if "anonymized"
+- ❌ Hardcode real data samples in temporary scripts
+- ❌ Store screenshots of charts with real patient data
+
+### Cleanup Expectations
+
+**Agents must clean up their own files when work is complete:**
+
+1. **After completing investigation**: Delete temporary RCA/debugging docs from `docs/work/`
+2. **After merging features**: Delete temporary implementation notes
+3. **After fixing bugs**: Archive valuable RCA findings to `docs/developer/reports/` or delete
+4. **After experiments**: Delete temporary scripts from `temp/`
+
+**The `@readiness-reviewer` will reject commits if these directories are not empty.**
+
+### Migration Path for Permanent Documentation
+
+If temporary work produces valuable permanent documentation:
+
+- **Algorithm insights** → Extract to `docs/developer/architecture/` or inline code comments (coordinate with `@documentation-specialist`)
+- **Test strategy findings** → Move to permanent test documentation or ADRs
+- **RCA findings** → Archive to `docs/developer/reports/` if they document systemic issues
+- **Implementation notes** → Extract key decisions to ADRs via `@adr-specialist`
+
+**Never promote files containing real patient data to permanent locations.**
+
+### Example Workflow
+
+```bash
+# @debugger-rca-analyst investigating a bug
+echo "RCA: Date filter regression" > docs/work/debugging/date-filter-rca.md
+# ... investigation using synthetic test data only ...
+# After fix is merged:
+rm docs/work/debugging/date-filter-rca.md
+
+# @data-scientist validating algorithm changes
+echo "Cluster validation results" > docs/work/testing/cluster-validation.md
+# ... testing with builders.buildSession() data ...
+# Extract insights to permanent docs:
+# (coordinate with @documentation-specialist)
+# Then delete temporary notes:
+rm docs/work/testing/cluster-validation.md
+```
+
+---
 
 ## Build, Test, and Development Commands
 

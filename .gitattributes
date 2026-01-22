@@ -1,0 +1,6 @@
+# Never allow ephemeral working directories to be tracked
+# This provides defense-in-depth beyond .gitignore
+# Even `git add -f` should not track files in these directories
+
+docs/work/** -text -diff -merge
+temp/** -text -diff -merge
