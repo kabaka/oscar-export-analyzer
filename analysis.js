@@ -163,10 +163,11 @@ async function main() {
   const args = process.argv;
   const positionals = [];
   const flags = {};
+  // eslint-disable-next-line no-magic-numbers -- skip node (0) and script path (1)
   for (const arg of args.slice(2)) {
-    // eslint-disable-line no-magic-numbers -- skip node executable (0) and script path (1)
     if (arg.startsWith('--')) {
-      const [rawKey, rawVal] = arg.slice(2).split('='); // eslint-disable-line no-magic-numbers -- skip "--" prefix (2 chars)
+      // eslint-disable-next-line no-magic-numbers -- skip "--" prefix (2 chars)
+      const [rawKey, rawVal] = arg.slice(2).split('=');
       const key = rawKey.trim();
       const value = rawVal === undefined ? true : rawVal.trim();
       flags[key] = value;
