@@ -153,6 +153,11 @@ npm run build        # Vite build - must succeed with no warnings
   - Escalate to @orchestrator-manager for cleanup delegation
   - Message: "Working directory not empty: temp/ contains [list files]. Escalate for cleanup."
 
+- [ ] No temporary files in `/tmp` or system temp paths?
+  - Remind: All temporary work must use local `docs/work/` or `temp/` directories
+  - `/tmp` writes require user approval and are outside workspace context
+  - Message: "Agents should not write to `/tmp`. Use `docs/work/` or `temp/` instead (both must be empty before commit)."
+
 # Verify no valuable work is lost
 
 - Do NOT delete files yourself

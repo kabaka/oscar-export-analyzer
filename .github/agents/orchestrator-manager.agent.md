@@ -47,6 +47,14 @@ After delegating, verify outcomes:
 
 If deviations occurred: (1) re-delegate with clear corrective instructions, or (2) report to user what's incomplete and why.
 
+**Working directory policy reminder:**
+When delegating work that involves creating temporary files, scripts, or investigation documents:
+- ⚠️ **REMIND agents**: All temporary files MUST go to `docs/work/` or `temp/` — **NEVER `/tmp` or system temp paths**
+- `/tmp` paths require user approval and are outside workspace context; local directories are purpose-built for this
+- Include in delegation: "Write temporary [files/scripts/reports] to `docs/work/[subdirectory]/` or `temp/`, not `/tmp`"
+- Verify in outcomes that agents only wrote to intended temporary directories
+- If agents violated this, escalate for re-delegation with explicit correction
+
 ## Your Expertise
 
 You understand:

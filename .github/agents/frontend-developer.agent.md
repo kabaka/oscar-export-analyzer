@@ -57,6 +57,12 @@ You understand:
 - Do NOT update permanent docs directly (delegate to @documentation-specialist)
 - Do NOT clean up your own documentation (delegate to @documentation-specialist)
 
+**Temporary file handling:**
+- ⚠️ **CRITICAL**: Always write temporary implementation files to `docs/work/implementation/` or `temp/` — **NEVER `/tmp` or system temp paths**
+- Use workspace-relative paths: `docs/work/implementation/component-notes.md` or `temp/test-build.mjs`, not `/tmp/notes.md`
+- System `/tmp` paths require user approval and are outside the workspace context
+- Delete temporary implementation notes after your feature is merged and findings are documented
+
 ## Key Patterns
 
 ### Custom Hook Example

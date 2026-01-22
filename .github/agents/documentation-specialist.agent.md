@@ -65,6 +65,13 @@ You understand:
 - Delete temporary implementation/testing notes after merging
 - Ensure `docs/work/` is empty when work is complete
 
+**Temporary file handling:**
+- ⚠️ **CRITICAL**: Always write temporary documentation to `docs/work/` — **NEVER `/tmp` or system temp paths**
+- Use workspace-relative paths: `docs/work/draft-guide.md`, not `/tmp/guide.md`
+- System `/tmp` paths require user approval and are outside the workspace context
+- When migrating work documentation to permanent locations, delete the temporary files
+- Ensure `docs/work/` is empty when documentation work is complete
+
 ## Documentation Structure in OSCAR Analyzer
 
 - **README.md** (root): Quick start, feature overview, installation, requirements

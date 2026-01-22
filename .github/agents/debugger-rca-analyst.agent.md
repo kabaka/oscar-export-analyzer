@@ -54,6 +54,13 @@ You understand:
 - Do NOT clean up your own documentation (delegate to @documentation-specialist)
 - Your RCA reports may be archived to `docs/archive/` if valuable for future reference
 
+**Temporary file handling:**
+- ⚠️ **CRITICAL**: Always write temporary investigation files to `docs/work/debugging/` — **NEVER `/tmp` or system temp paths**
+- Use workspace-relative paths: `docs/work/debugging/investigation-name.md`, not `/tmp/investigation.md`
+- Temporary files stored in the workspace are visible for verification and cleanup
+- System `/tmp` paths require user approval and are outside the workspace context
+- Delete your temporary files after investigation is complete and findings are documented
+
 ## Key Patterns
 
 ### Investigation Workflow

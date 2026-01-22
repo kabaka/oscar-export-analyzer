@@ -64,6 +64,13 @@ You understand:
 - Do NOT clean up your own documentation (delegate to @documentation-specialist)
 - Test documentation is usually temporary; permanent patterns go in `docs/developer/` guides
 
+**Temporary file handling:**
+- ⚠️ **CRITICAL**: Always write temporary test files to `docs/work/testing/` or `temp/` — **NEVER `/tmp` or system temp paths**
+- Use workspace-relative paths: `docs/work/testing/coverage-report.md` or `temp/test-script.mjs`, not `/tmp/report.md`
+- System `/tmp` paths require user approval and are outside the workspace context
+- Clean up temporary test data and scripts after test runs complete
+- Delete temporary documentation after findings are migrated to permanent test guides or ADRs
+
 ## Key Patterns
 
 ### Unit Test (Fast, Isolated)

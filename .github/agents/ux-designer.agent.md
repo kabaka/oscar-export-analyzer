@@ -63,6 +63,12 @@ You understand:
 - Do NOT update permanent docs directly (delegate to @documentation-specialist)
 - Do NOT clean up your own documentation (delegate to @documentation-specialist)
 
+**Temporary file handling:**
+- ⚠️ **CRITICAL**: Always write temporary design files to `docs/work/design/` — **NEVER `/tmp` or system temp paths**
+- Use workspace-relative paths: `docs/work/design/chart-mockups.md`, not `/tmp/mockups.md`
+- System `/tmp` paths require user approval and are outside the workspace context
+- Delete temporary design documentation after your UX recommendations are implemented
+
 ## Key Patterns
 
 ### Chart Accessibility Checklist

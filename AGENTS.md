@@ -41,7 +41,19 @@ OSCAR Export Analyzer includes **9 specialized GitHub Copilot agents** for devel
 
 ## Working Directory Policy for Subagents
 
-OSCAR Export Analyzer provides two `.gitignore`d directories for temporary work. **Both must be empty before any commit.** The `@readiness-reviewer` enforces this as part of the pre-commit quality gate.
+OSCAR Export Analyzer provides two `.gitignore`d directories for temporary work. **Agents MUST use these local directories instead of `/tmp` or system temp paths.** Both directories must be empty before any commit. The `@readiness-reviewer` enforces this as part of the pre-commit quality gate.
+
+### Why Use Local Temp Directories (Not `/tmp`)
+
+**Critical rule**: All temporary files go to `docs/work/` or `temp/` — **NEVER `/tmp` or system temp paths.**
+
+**Why this matters:**
+
+- ❌ `/tmp` writes are outside the workspace and typically require user approval to access
+- ❌ System temp paths are hard to track, clean up, and may be deleted unexpectedly
+- ✅ `docs/work/` and `temp/` are gitignored, version-controlled, and visible in the workspace
+- ✅ Local temp directories allow agents to coordinate cleanup and user verification
+- ✅ All temporary work stays within the project, making it discoverable and maintainable
 
 ### Directory Purposes
 

@@ -75,6 +75,14 @@ You understand:
 - Do NOT clean up your own documentation (delegate to @documentation-specialist)
 - Archive important analysis insights if they guide future development
 
+**Temporary file handling:**
+- ⚠️ **CRITICAL**: Always write temporary analysis files to `docs/work/analysis/` — **NEVER `/tmp` or system temp paths**
+- Use workspace-relative paths: `docs/work/analysis/validation-results.md`, not `/tmp/validation.md`
+- Temporary scripts or data files go to `temp/` (e.g., `temp/cluster-validation.mjs`)
+- System `/tmp` paths require user approval and are outside the workspace context
+- Delete your temporary files after analysis is complete and findings are migrated to permanent docs
+- Never store real OSCAR CSV data in temporary directories—use only synthetic test data
+
 ## Key Patterns
 
 ### Statistical Test Pattern (JavaScript)
