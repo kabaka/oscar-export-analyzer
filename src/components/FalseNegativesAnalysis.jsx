@@ -1,5 +1,5 @@
 import React from 'react';
-import { FALSE_NEG_CONFIDENCE_MIN } from '../utils/clustering';
+import { FALSE_NEG_PEAK_FLG_LEVEL_MIN } from '../utils/clustering';
 import { GuideLink, ThemedPlot, VizHelp } from './ui';
 import { HEADER_SCROLL_MARGIN_PX, PERCENT_SCALE } from '../constants';
 import {
@@ -48,7 +48,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
         </span>
       </div>
       <div>
-        <h3>False Negative Clusters by Confidence Over Time</h3>
+        <h3>False Negative Clusters by Peak FLG Level Over Time</h3>
         <div className="chart-with-help">
           <ThemedPlot
             useResizeHandler
@@ -61,7 +61,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                 type: 'scatter',
                 mode: 'markers',
                 x: list.map((cl) => cl.start),
-                y: list.map((cl) => cl.confidence * PERCENT_SCALE),
+                y: list.map((cl) => cl.peakFLGLevel * PERCENT_SCALE),
                 marker: {
                   size: list.map((cl) =>
                     Math.max(
@@ -73,25 +73,25 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                       ),
                     ),
                   ),
-                  color: list.map((cl) => cl.confidence * PERCENT_SCALE),
+                  color: list.map((cl) => cl.peakFLGLevel * PERCENT_SCALE),
                   colorscale: 'Viridis',
                   showscale: true,
-                  colorbar: { title: 'Confidence (%)' },
+                  colorbar: { title: 'Peak FLG Level (%)' },
                 },
                 text: list.map(
                   (cl) =>
-                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Confidence: ${(cl.confidence * PERCENT_SCALE).toFixed(0)}%`,
+                    `Start: ${cl.start.toLocaleString()}<br>Duration: ${cl.durationSec.toFixed(0)} s<br>Peak FLG Level: ${(cl.peakFLGLevel * PERCENT_SCALE).toFixed(0)}%`,
                 ),
                 hovertemplate: '%{text}<extra></extra>',
               },
             ]}
             layout={{
-              title: 'False Negative Clusters by Confidence Over Time',
+              title: 'False Negative Clusters by Peak FLG Level Over Time',
               xaxis: { type: 'date', title: 'Cluster Start Time' },
               yaxis: {
-                title: 'Confidence (%)',
+                title: 'Peak FLG Level (%)',
                 range: [
-                  FALSE_NEG_CONFIDENCE_MIN * PERCENT_SCALE,
+                  FALSE_NEG_PEAK_FLG_LEVEL_MIN * PERCENT_SCALE,
                   PERCENT_SCALE,
                 ],
               },
@@ -110,7 +110,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
               <th>#</th>
               <th>Start</th>
               <th>Duration (s)</th>
-              <th>Confidence</th>
+              <th>Peak FLG Level</th>
             </tr>
           </thead>
           <tbody>
@@ -119,7 +119,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
                 <td>{i + 1}</td>
                 <td>{cl.start.toLocaleString()}</td>
                 <td>{cl.durationSec.toFixed(0)}</td>
-                <td>{(cl.confidence * PERCENT_SCALE).toFixed(0)}%</td>
+                <td>{(cl.peakFLGLevel * PERCENT_SCALE).toFixed(0)}%</td>
               </tr>
             ))}
           </tbody>

@@ -33,7 +33,7 @@ const FLG_LEVEL_TRANSITION = 0.45;
 const FLG_LEVEL_DECAY = 0.38;
 const FLG_LEVEL_ENTER = 0.6;
 const EDGE_MIN_DURATION = 5;
-const LENIENT_CONFIDENCE = 0.7;
+const LENIENT_PEAK_FLG_LEVEL = 0.7;
 const BRIDGE_DURATION_MULTIPLIER = 1.5;
 
 describe('clusterApneaEvents', () => {
@@ -349,7 +349,7 @@ describe('k-means metadata and convergence', () => {
 });
 
 describe('detectFalseNegatives', () => {
-  it('filters FLG clusters by duration, absence of apnea, and confidence', () => {
+  it('filters FLG clusters by duration, absence of apnea, and peakFLGLevel', () => {
     const details = [
       { Event: 'FLG', 'Data/Duration': 1.0, DateTime: '2021-01-01T00:00:00Z' },
       { Event: 'FLG', 'Data/Duration': 1.0, DateTime: '2021-01-01T00:01:00Z' },
@@ -365,23 +365,23 @@ describe('detectFalseNegatives', () => {
     expect(fns[0].durationSec).toBeGreaterThanOrEqual(
       CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC,
     );
-    expect(fns[0].confidence).toBe(1);
+    expect(fns[0].peakFLGLevel).toBe(1);
   });
 
-  it('respects false-negative detection options (threshold and confidence)', () => {
+  it('respects false-negative detection options (threshold and peakFLGLevel)', () => {
     const details = [
       { Event: 'FLG', 'Data/Duration': 0.8, DateTime: '2021-01-01T00:00:00Z' },
       { Event: 'FLG', 'Data/Duration': 0.8, DateTime: '2021-01-01T00:00:40Z' },
     ];
     const strict = detectFalseNegatives(details, {
       flThreshold: STRICT_FL_THRESHOLD,
-      confidenceMin: CLUSTERING_DEFAULTS.FALSE_NEG_CONFIDENCE_MIN,
+      peakFLGLevelMin: CLUSTERING_DEFAULTS.FALSE_NEG_PEAK_FLG_LEVEL_MIN,
       gapSec: BRIDGED_GAP_SECONDS,
       minDurationSec: MIN_DURATION_THRESHOLD,
     });
     const lenient = detectFalseNegatives(details, {
       flThreshold: LENIENT_FL_THRESHOLD,
-      confidenceMin: LENIENT_CONFIDENCE,
+      peakFLGLevelMin: LENIENT_PEAK_FLG_LEVEL,
       gapSec: BRIDGED_GAP_SECONDS,
       minDurationSec: MIN_DURATION_THRESHOLD,
     });
@@ -435,6 +435,67 @@ describe('computeClusterSeverity', () => {
     expect(s2).toBeGreaterThan(s1);
     expect(s3).toBeGreaterThan(s1);
     expect(s4).toBeGreaterThan(s1);
+  });
+});
+
+describe('weighted density metrics', () => {
+  it('calculates weightedDensity as total apnea duration / window duration', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    // 3 events, each 10 seconds, within a 90 second window (last event ends at 90s)
+    const events = [
+      { date: base, durationSec: 10 },
+      { date: new Date(base.getTime() + 40000), durationSec: 10 },
+      { date: new Date(base.getTime() + 80000), durationSec: 10 },
+    ];
+    const clusters = clusterApneaEvents({ events, flgEvents: [] });
+    expect(clusters).toHaveLength(1);
+    const cl = clusters[0];
+    // window = 90s (last event starts at 80s, duration 10s), total apnea duration = 30s
+    // weightedDensity = 30 / (90/60) = 30 / 1.5 = 20
+    expect(cl.totalApneaDurationSec).toBe(30);
+    expect(cl.weightedDensity).toBeCloseTo(20, 1);
+  });
+
+  it('distinguishes density from weightedDensity', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    // 6 events over approximately 50 seconds: high density but varying duration
+    const events = [
+      { date: new Date(base.getTime() + 0), durationSec: 5 },
+      { date: new Date(base.getTime() + 10000), durationSec: 5 },
+      { date: new Date(base.getTime() + 20000), durationSec: 8 },
+      { date: new Date(base.getTime() + 30000), durationSec: 8 },
+      { date: new Date(base.getTime() + 40000), durationSec: 3 },
+      { date: new Date(base.getTime() + 50000), durationSec: 3 },
+    ];
+    const clusters = clusterApneaEvents({ events, flgEvents: [] });
+    expect(clusters).toHaveLength(1);
+    const cl = clusters[0];
+    // Last event starts at 50s, duration 3s -> window ends at 53s, window duration ≈ 53s
+    // count=6 over ~53s window -> density = 6 / (53/60) ≈ 6.79 events/min
+    expect(cl.density).toBeCloseTo(6.79, 1);
+    // total duration=32s over ~53s window -> weightedDensity = 32/(53/60) ≈ 36.23
+    expect(cl.weightedDensity).toBeCloseTo(36.23, 1);
+  });
+
+  it('maintains backward compatibility with existing cluster data', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    const events = [
+      { date: base, durationSec: 10 },
+      { date: new Date(base.getTime() + 30000), durationSec: 10 },
+    ];
+    const clusters = clusterApneaEvents({ events, flgEvents: [] });
+    expect(clusters).toHaveLength(1);
+    const cl = clusters[0];
+    // Original fields still present and accessible
+    expect(cl.start).toBeDefined();
+    expect(cl.end).toBeDefined();
+    expect(cl.durationSec).toBeDefined();
+    expect(cl.count).toBeDefined();
+    expect(cl.density).toBeDefined();
+    expect(cl.events).toBeDefined();
+    // New fields also available
+    expect(cl.weightedDensity).toBeDefined();
+    expect(cl.totalApneaDurationSec).toBeDefined();
   });
 });
 

@@ -24,7 +24,7 @@ export const CLUSTERING_DEFAULTS = Object.freeze({
   KMEANS_MAX_ITERATIONS: 25,
   MIN_DENSITY_CUTOFF: 0,
   MAX_FALSE_NEG_FLG_DURATION_SEC: 10 * SECONDS_PER_MINUTE,
-  FALSE_NEG_CONFIDENCE_MIN: 0.95,
+  FALSE_NEG_PEAK_FLG_LEVEL_MIN: 0.95,
   MAX_CLUSTER_DURATION_SEC: 230,
 });
 
@@ -40,8 +40,8 @@ export const APOEA_CLUSTER_MIN_TOTAL_SEC =
 const FLG_DURATION_THRESHOLD_SEC = CLUSTERING_DEFAULTS.MIN_CLUSTER_DURATION_SEC; // min FLG-only cluster duration for false-negatives
 const MAX_FALSE_NEG_FLG_DURATION_SEC =
   CLUSTERING_DEFAULTS.MAX_FALSE_NEG_FLG_DURATION_SEC; // cap on FLG-only cluster duration (sec)
-export const FALSE_NEG_CONFIDENCE_MIN =
-  CLUSTERING_DEFAULTS.FALSE_NEG_CONFIDENCE_MIN; // min confidence (fraction) for false-negative reporting
+export const FALSE_NEG_PEAK_FLG_LEVEL_MIN =
+  CLUSTERING_DEFAULTS.FALSE_NEG_PEAK_FLG_LEVEL_MIN; // min peak FLG level (normalized; cmH₂O) for false-negative reporting
 
 export {
   CLUSTER_ALGORITHMS,
@@ -62,7 +62,27 @@ function summarizeClusterEvents(events, overrides = {}) {
   const durationSec = (end - start) / 1000;
   const density =
     durationSec > 0 ? count / (durationSec / SECONDS_PER_MINUTE) : 0;
-  return { start, end, durationSec, count, density, events };
+
+  // Calculate weighted density: total apnea duration / window duration (apnea burden per time)
+  const totalApneaDurationSec = events.reduce(
+    (sum, evt) => sum + (evt.durationSec || 0),
+    0,
+  );
+  const weightedDensity =
+    durationSec > 0
+      ? totalApneaDurationSec / (durationSec / SECONDS_PER_MINUTE)
+      : 0;
+
+  return {
+    start,
+    end,
+    durationSec,
+    count,
+    density,
+    weightedDensity,
+    totalApneaDurationSec,
+    events,
+  };
 }
 
 function normalizeMinDensity(options = {}) {
@@ -345,9 +365,10 @@ export function clusterApneaEvents(options = {}) {
 
 /**
  * Detect potential false negatives by clustering high FLG events without apnea events.
+ * Peak FLG level is the maximum normalized Flow Limitation Level (in cmH₂O) observed in a cluster.
  * @param {Array<Object>} details - rows with DateTime, Event, Data/Duration
  * @param {number} flThreshold - min FLG level to consider
- * @returns {Array<{start: Date, end: Date, durationSec: number, confidence: number}>}
+ * @returns {Array<{start: Date, end: Date, durationSec: number, peakFLGLevel: number}>}
  */
 export function detectFalseNegatives(details, opts = {}) {
   const {
@@ -355,7 +376,7 @@ export function detectFalseNegatives(details, opts = {}) {
     gapSec = DEFAULT_FLG_CLUSTER_GAP_SEC,
     minDurationSec = FLG_DURATION_THRESHOLD_SEC,
     maxDurationSec = MAX_FALSE_NEG_FLG_DURATION_SEC,
-    confidenceMin = FALSE_NEG_CONFIDENCE_MIN,
+    peakFLGLevelMin = FALSE_NEG_PEAK_FLG_LEVEL_MIN,
   } = typeof opts === 'number' ? { flThreshold: opts } : opts;
   const flEvents = details
     .filter((r) => r['Event'] === 'FLG' && r['Data/Duration'] >= flThreshold)
@@ -384,8 +405,8 @@ export function detectFalseNegatives(details, opts = {}) {
       const start = cl[0].date;
       const end = cl[cl.length - 1].date;
       const durationSec = (end - start) / 1000;
-      const confidence = Math.max(...cl.map((e) => e.level));
-      return { start, end, durationSec, confidence };
+      const peakFLGLevel = Math.max(...cl.map((e) => e.level));
+      return { start, end, durationSec, peakFLGLevel };
     })
     .filter(
       (cl) =>
@@ -402,7 +423,7 @@ export function detectFalseNegatives(details, opts = {}) {
         );
       });
     })
-    .filter((cl) => cl.confidence >= confidenceMin);
+    .filter((cl) => cl.peakFLGLevel >= peakFLGLevelMin);
 }
 
 // Expose default bridge threshold for use in filtering and parsing logic

@@ -57,9 +57,20 @@ export const STL_SEASON_LENGTH = 7;
 export const USAGE_COMPLIANCE_THRESHOLD_HOURS = 4;
 export const USAGE_STRICT_THRESHOLD_HOURS = 6;
 
-/** Apnea event duration thresholds (seconds) */
+/** AASM Diagnostic threshold for apnea events (seconds)
+ * Reference: AASM Task Force (2012) - The AASM Manual for the Scoring of Sleep and Associated Events, Version 2.0
+ * Per AASM guidelines, an apnea event is scored when airflow cessation persists for at least 10 seconds.
+ * This threshold applies to diagnostic/clinical scoring.
+ */
+export const APNEA_DIAGNOSTIC_THRESHOLD_SEC = 10;
+
+/** Clustering/analysis threshold for apnea event grouping (seconds)
+ * This is NOT a diagnostic threshold. Used internally for clustering and analytical purposes.
+ * Set to 30s to focus on longer, potentially more clinically significant events.
+ * Reference: AASM Task Force (2012) - The AASM Manual for the Scoring of Sleep and Associated Events, Version 2.0
+ */
 export const APNEA_DURATION_THRESHOLD_SEC = 30;
-export const APNEA_DURATION_HIGH_SEC = 60;
+export const APNEA_DURATION_HIGH_SEC = 60; // High-severity apnea event duration threshold for analysis
 
 /** Minimum number of events required for a valid apnea cluster */
 export const APNEA_CLUSTER_MIN_EVENTS = 3;

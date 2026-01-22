@@ -24,6 +24,34 @@ import {
 
 /**
  * Utility functions for data parsing and statistical summaries.
+ *
+ * ## Statistical Design & Assumptions
+ *
+ * This module implements statistical and time-series analysis methods for OSCAR sleep therapy data.
+ * Key assumptions and design choices:
+ *
+ * ### Missing Data Handling
+ * - **Default approach**: Missing data is assumed to be Missing At Random (MAR)
+ * - **Pairwise deletion**: Functions like `computeAutocorrelation` use pairwise deletion to retain
+ *   maximum information when computing correlations between lags
+ * - **Global variance**: When computing lag-specific correlations, we use variance estimated from
+ *   all finite observations to maintain consistency across lags
+ *
+ * ### Normality Assumptions
+ * - **Quantile functions**: `computeAutocorrelation`, confidence intervals use sample quantiles (percentile method)
+ * - **Linear filters**: LOESS smoothing and trend decomposition (STL) do not assume normality
+ * - **Outlier detection**: IQR-based methods are nonparametric and robust to non-normal distributions
+ *
+ * ### Sample Size Requirements
+ * - **ACF/PACF**: Minimum 3-4 observations recommended for reliable estimation; lags are capped at n/3
+ * - **Quantiles**: Minimum 1 observation (returns NaN if empty)
+ * - **Trends/STL**: Requires at least one complete seasonal cycle; best with 30+ observations
+ * - **Clustering**: Algorithms work with any cluster size but recommend minimum 3 events for stable statistics
+ *
+ * ### Statistical Constants & References
+ * - Normal confidence Z = 1.96 (95% confidence interval)
+ * - Outlier threshold = Q3 + 1.5 × IQR (Tukey's hinges)
+ * - See `AASM Manual for Scoring Sleep and Associated Events` (2012) for event definitions
  */
 
 /**
@@ -69,8 +97,20 @@ export function parseDuration(s, opts = {}) {
   return h * SECONDS_PER_HOUR + m * SECONDS_PER_MINUTE + sec;
 }
 
-// Compute approximate quantile (q in [0,1]) of numeric array.
-// Returns NaN when the input array is empty.
+/**
+ * Compute the sample quantile (percentile) at probability level q ∈ [0,1].
+ * Uses linear interpolation between sorted values (Type 7 quantile, R default).
+ *
+ * **Statistical Properties:**
+ * - Nonparametric: makes no distributional assumptions
+ * - Works reliably with non-normal data and small samples (n >= 2 preferred)
+ * - Linear interpolation reduces quantile bias vs. nearest-rank method
+ * - Returns NaN for empty arrays
+ *
+ * @param {number[]} arr - Numeric array (may contain NaN/Infinity; filter beforehand if needed)
+ * @param {number} q - Quantile level, 0 <= q <= 1 (e.g., q=0.25 for first quartile)
+ * @returns {number} Sample quantile value or NaN if array is empty
+ */
 export function quantile(arr, q) {
   if (!arr.length) return NaN;
   const sorted = arr.slice().sort((a, b) => a - b);
@@ -88,9 +128,17 @@ export function quantile(arr, q) {
  * Missing values (`NaN`, `undefined`, or non-finite numbers) are ignored
  * pairwise so each lag uses only nights where both observations exist.
  *
- * @param {number[]} series - Numeric time-series values.
- * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute.
+ * **Statistical Assumptions:**
+ * - Missing data is assumed to be Missing At Random (MAR); uses pairwise deletion with global variance
+ * - Pairwise deletion may bias estimates if missingness is highly correlated with values
+ * - Best used with sample sizes >= 30; caution for samples < 10 (high variance in estimates)
+ * - ACF values at large lags (> n/3) become unreliable; consider using max lag <= n/3
+ *
+ * @param {number[]} series - Numeric time-series values (e.g., nightly AHI values)
+ * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute; typical range 7-30 for sleep data
  * @returns {{ values: Array<{ lag: number, autocorrelation: number, pairs: number }>, sampleSize: number }}
+ *   Returns ACF values for lags 0 to min(maxLag, n-1). Each entry includes lag, autocorrelation ([-1, 1]),
+ *   and pair count. Lag 0 always returns 1.0 (perfect autocorrelation with self).
  */
 export function computeAutocorrelation(series, maxLag = DEFAULT_MAX_LAG) {
   if (!Array.isArray(series) || !series.length) {
@@ -134,9 +182,18 @@ export function computeAutocorrelation(series, maxLag = DEFAULT_MAX_LAG) {
  * Compute the partial autocorrelation function (PACF) using the
  * Durbin–Levinson recursion.
  *
- * @param {number[]} series - Numeric time-series values.
- * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute.
- * @returns {{ values: Array<{ lag: number, partialAutocorrelation: number }>, sampleSize: number }}
+ * **Statistical Assumptions:**
+ * - Assumes the time series is stationary or approximately stationary
+ * - Uses recursive linear system solving with numerical stability checks
+ * - Recommended sample size >= 20; caution for n < 10
+ * - Maximum lag is capped at n/3 for reliable estimation
+ * - Returns warnings if near-zero pivot conditions indicate numerical instability
+ *
+ * @param {number[]} series - Numeric time-series values (e.g., nightly AHI, EPAP settings)
+ * @param {number} [maxLag=30] - Maximum lag (inclusive) to compute
+ * @returns {{ values: Array<{ lag: number, partialAutocorrelation: number }>, sampleSize: number, meta: {recommendedMaxLag: number, unstableLags: Array<number>, warnings: Array<string>} }}
+ *   Returns PACF values with stability diagnostics. Includes recommended max lag based on sample size
+ *   and warnings about numerical issues or insufficient data.
  */
 export function computePartialAutocorrelation(
   series,
@@ -970,7 +1027,20 @@ export function computeEPAPTrends(data) {
   };
 }
 
-// Pearson correlation helper
+// Pearson correlation coefficient
+// **Statistical Assumptions:**
+// - Assumes linear relationship between variables
+// - Sensitive to outliers; not robust to non-normal distributions
+// - Requires at least 2 complete pairs (x_i, y_i)
+// - Returns NaN if fewer than 2 valid pairs, or if variance is zero
+/**
+ * Compute Pearson correlation coefficient between two arrays.
+ * Ignores missing/non-finite values pairwise.
+ *
+ * @param {number[]} x - First variable values
+ * @param {number[]} y - Second variable values
+ * @returns {number} Correlation coefficient in [-1, 1], or NaN if insufficient data
+ */
 export function pearson(x, y) {
   const n = Math.min(x.length, y.length);
   let count = 0,
@@ -998,7 +1068,8 @@ export function pearson(x, y) {
   return denom ? cov / denom : NaN;
 }
 
-// Rank arrays for Spearman
+// Rank arrays for Spearman correlation
+// Handles ties by averaging ranks
 export function rank(arr) {
   const indexed = arr.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
   const ranks = new Array(arr.length);
@@ -1013,6 +1084,21 @@ export function rank(arr) {
   return ranks;
 }
 
+/**
+ * Compute Spearman rank correlation coefficient.
+ * Nonparametric alternative to Pearson; robust to outliers and monotonic relationships.
+ *
+ * **Statistical Properties:**
+ * - Nonparametric: makes no distributional assumptions
+ * - Robust to outliers and non-linear monotonic relationships
+ * - Handles ties by averaging ranks
+ * - Requires at least 2 complete pairs
+ * - More conservative (lower power) than Pearson for linear data
+ *
+ * @param {number[]} x - First variable values
+ * @param {number[]} y - Second variable values
+ * @returns {number} Spearman correlation coefficient in [-1, 1], or NaN if insufficient data
+ */
 export function spearman(x, y) {
   const rx = rank(x);
   const ry = rank(y);
@@ -1064,7 +1150,25 @@ export function normalCdf(z) {
   return prob;
 }
 
-// Mann-Whitney U test with normal approximation (two-sided)
+/**
+ * Mann-Whitney U test: nonparametric test for comparing two independent samples.
+ * Tests null hypothesis that distributions of two groups are equal.
+ *
+ * **Statistical Assumptions & Properties:**
+ * - **No normality assumption**: nonparametric; works with any continuous or ordinal data
+ * - **Independence**: observations within and between groups must be independent
+ * - **Scale invariance**: invariant under monotonic transformations
+ * - **Ties handled**: uses average rank method; reports tie-corrected variance
+ * - **Small samples (n≤28)**: uses exact distribution via dynamic programming
+ * - **Large samples (n>28)**: uses normal approximation with continuity correction
+ * - **Recommended sample sizes**: n₁, n₂ ≥ 3 for acceptable power; best with n₁=n₂
+ *
+ * @param {number[]} a - First sample values
+ * @param {number[]} b - Second sample values
+ * @returns {{ U: number, z: number, p: number, effect: number, method: string }}
+ *   U: test statistic; z: standardized test statistic; p: two-tailed p-value;
+ *   effect: effect size (rank-biserial correlation); method: 'exact' or 'normal'
+ */
 export function mannWhitneyUTest(a, b) {
   const n1 = a.length,
     n2 = b.length;

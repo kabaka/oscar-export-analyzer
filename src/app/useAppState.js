@@ -5,7 +5,7 @@ import { useAnalyticsProcessing } from '../hooks/useAnalyticsProcessing';
 import { useDateRangeFilter } from '../hooks/useDateRangeFilter';
 import { useModal } from '../hooks/useModal';
 import {
-  FALSE_NEG_CONFIDENCE_MIN,
+  FALSE_NEG_PEAK_FLG_LEVEL_MIN,
   FLG_BRIDGE_THRESHOLD,
   APOEA_CLUSTER_MIN_TOTAL_SEC,
   MAX_CLUSTER_DURATION_SEC,
@@ -90,13 +90,13 @@ export function useAppState() {
           FALSE_NEG_STRICT_FALLBACK_FL_THRESHOLD,
           FLG_BRIDGE_THRESHOLD,
         ),
-        confidenceMin: FALSE_NEG_STRICT_MIN_CONFIDENCE,
+        peakFLGLevelMin: FALSE_NEG_STRICT_MIN_CONFIDENCE,
         gapSec: FLG_CLUSTER_GAP_DEFAULT,
         minDurationSec: FALSE_NEG_STRICT_MIN_DURATION_SEC,
       },
       balanced: {
         flThreshold: FLG_BRIDGE_THRESHOLD,
-        confidenceMin: FALSE_NEG_CONFIDENCE_MIN,
+        peakFLGLevelMin: FALSE_NEG_PEAK_FLG_LEVEL_MIN,
         gapSec: FLG_CLUSTER_GAP_DEFAULT,
         minDurationSec: FALSE_NEG_BALANCED_MIN_DURATION_SEC,
       },
@@ -105,7 +105,7 @@ export function useAppState() {
           FALSE_NEG_LENIENT_BASE_FL_THRESHOLD,
           FLG_BRIDGE_THRESHOLD * FALSE_NEG_LENIENT_BRIDGE_SCALE,
         ),
-        confidenceMin: FALSE_NEG_LENIENT_MIN_CONFIDENCE,
+        peakFLGLevelMin: FALSE_NEG_LENIENT_MIN_CONFIDENCE,
         gapSec: FLG_CLUSTER_GAP_DEFAULT,
         minDurationSec: FALSE_NEG_LENIENT_MIN_DURATION_SEC,
       },
