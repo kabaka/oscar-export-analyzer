@@ -59,9 +59,11 @@ describe('TOC active highlighting', () => {
       </AppProviders>,
     );
 
-    const summaryFile = new File(['Date,AHI\n2025-06-01,5'], 'summary.csv', {
-      type: 'text/csv',
-    });
+    const summaryFile = new File(
+      ['Date,Total Time,AHI,Median EPAP\n2025-06-01,08:00:00,5,6'],
+      'summary.csv',
+      { type: 'text/csv' },
+    );
     const detailsFile = new File(
       ['Event,DateTime,Data/Duration\nClearAirway,2025-06-01T00:00:00,12'],
       'details.csv',
