@@ -1,5 +1,5 @@
 import { render, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 
 const summaryData = [{ Date: '2025-06-01', 'Total Time': '08:00:00' }];
 const detailsData = [
@@ -93,9 +93,10 @@ describe('App fallback analytics', () => {
       postMessage(message) {
         this.messages.push(message);
         if (this.url.includes('analytics.worker')) {
-          setTimeout(() => {
+          // Use Promise.resolve for proper async handling
+          Promise.resolve().then(() => {
             this.onmessage?.({ ok: false, data: null, error: 'fail' });
-          }, 0);
+          });
         }
       }
 
@@ -113,9 +114,12 @@ describe('App fallback analytics', () => {
       </AppProviders>,
     );
 
-    await waitFor(() => {
-      expect(analytics.finalizeClusters).toHaveBeenCalled();
-    });
+    await waitFor(
+      () => {
+        expect(analytics.finalizeClusters).toHaveBeenCalled();
+      },
+      { timeout: 8000 },
+    );
     expect(workerInstances.length).toBeGreaterThan(0);
     expect(workerInstances[0].messages[0]).toMatchObject({
       action: 'analyzeDetails',

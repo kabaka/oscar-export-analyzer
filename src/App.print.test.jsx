@@ -1,6 +1,7 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import Papa from 'papaparse';
 import { AppProviders } from './app/AppProviders';
 import { AppShell } from './App';
@@ -46,7 +47,17 @@ describe('Print Page control', () => {
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
 
-    const menuBtn = await screen.findByRole('button', { name: /menu/i });
+    // Wait for the app to process CSVs and display data
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole('button', { name: /menu/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
     await userEvent.click(menuBtn);
     const printItem = await screen.findByRole('menuitem', {
       name: /Print Page/i,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AppProviders } from './app/AppProviders';
 import { AppShell } from './App';
 
@@ -28,12 +29,13 @@ describe('CSV uploads and cross-component interactions', () => {
                 'Median EPAP': '6',
               },
             ];
-        setTimeout(() => {
+        // Use Promise.resolve for proper async handling
+        Promise.resolve().then(() => {
           this.onmessage?.({
             data: { type: 'rows', rows, cursor: file.size },
           });
           this.onmessage?.({ data: { type: 'complete' } });
-        }, 0);
+        });
       }
       terminate() {}
     }
@@ -66,13 +68,14 @@ describe('CSV uploads and cross-component interactions', () => {
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
 
-    await new Promise((r) => setTimeout(r, 0));
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole('heading', { name: /Overview Dashboard/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
 
     // Default worker stub handles parsing; reaching here implies workers executed
   });

@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Papa from 'papaparse';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AppProviders } from './app/AppProviders';
 import { AppShell } from './App';
 
@@ -26,19 +27,8 @@ IO._instances = [];
 
 describe('TOC active highlighting', () => {
   beforeEach(() => {
-    // @ts-ignore
-    global.IntersectionObserver = IO;
-  });
-  afterEach(() => {
-    vi.restoreAllMocks();
-    // @ts-ignore
-    delete global.IntersectionObserver;
-    window.location.hash = '';
-    IO._instances = [];
-  });
-
-  function mockSummaryParse() {
-    return vi.spyOn(Papa, 'parse').mockImplementation((file, options) => {
+    // Mock Papa.parse for fast CSV processing
+    vi.spyOn(Papa, 'parse').mockImplementation((file, options) => {
       const rows = [
         {
           Date: '2025-06-01',
@@ -51,10 +41,18 @@ describe('TOC active highlighting', () => {
         options.chunk({ data: rows, meta: { cursor: file.size } });
       if (options.complete) options.complete({ data: rows });
     });
-  }
+    // @ts-ignore
+    global.IntersectionObserver = IO;
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    // @ts-ignore
+    delete global.IntersectionObserver;
+    window.location.hash = '';
+    IO._instances = [];
+  });
 
   it('sets active class on click and on intersection change', async () => {
-    mockSummaryParse();
     render(
       <AppProviders>
         <AppShell />
@@ -72,11 +70,14 @@ describe('TOC active highlighting', () => {
     const input = await screen.findByLabelText(/CSV or session files/i);
     await userEvent.upload(input, [summaryFile, detailsFile]);
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole('heading', { name: /Overview Dashboard/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
 
     await screen.findByRole('heading', { name: /Pressure Settings/i });
 

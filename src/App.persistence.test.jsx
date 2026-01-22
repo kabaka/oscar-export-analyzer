@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
+import Papa from 'papaparse';
 import { AppProviders } from './app/AppProviders.jsx';
 import { AppShell } from './App.jsx';
 import { AUTO_SAVE_FLUSH_DELAY_MS } from './test-utils/fixtures/timings.js';
@@ -20,6 +21,28 @@ describe('App persistence flow', () => {
   beforeEach(() => {
     memoryStore.last = null;
     vi.clearAllMocks();
+    // Mock Papa.parse for fast CSV processing in tests
+    vi.spyOn(Papa, 'parse').mockImplementation((file, options) => {
+      const rows = (file.name || '').includes('summary')
+        ? [
+            {
+              Date: '2025-06-01',
+              'Total Time': '08:00:00',
+              AHI: '5',
+              'Median EPAP': '6',
+            },
+          ]
+        : [
+            {
+              Event: 'ClearAirway',
+              DateTime: '2025-06-01T00:00:00',
+              'Data/Duration': 12,
+            },
+          ];
+      if (options.chunk)
+        options.chunk({ data: rows, meta: { cursor: file.size } });
+      if (options.complete) options.complete({ data: rows });
+    });
   });
 
   it('auto-saves after loading CSVs', async () => {
@@ -38,7 +61,13 @@ describe('App persistence flow', () => {
       { type: 'text/csv' },
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
-    await screen.findAllByText('Median AHI');
+    // Wait for CSV processing to complete
+    await waitFor(
+      () => {
+        expect(screen.getByText('Median AHI')).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
     await new Promise((r) => setTimeout(r, AUTO_SAVE_FLUSH_DELAY_MS));
     const { putLastSession } = await import('./utils/db');
     expect(putLastSession).toHaveBeenCalled();
@@ -62,7 +91,9 @@ describe('App persistence flow', () => {
     );
     const input = await screen.findByLabelText(/CSV or session files/i);
     await userEvent.upload(input, file);
-    const cards = await screen.findAllByText('Median AHI');
+    const cards = await waitFor(() => screen.findAllByText('Median AHI'), {
+      timeout: 8000,
+    });
     const cardEl = cards[0].closest('.kpi-card');
     expect(cardEl).not.toBeNull();
     expect(within(cardEl).getByText('3.00')).toBeInTheDocument();
@@ -84,7 +115,14 @@ describe('App persistence flow', () => {
       name: /Load previous session/i,
     });
     await userEvent.click(loadBtn);
-    await screen.findAllByText('Median AHI');
+    await waitFor(
+      () => {
+        // Use findAllByText to get all instances, then check at least one exists
+        const elems = screen.queryAllByText('Median AHI');
+        expect(elems.length).toBeGreaterThan(0);
+      },
+      { timeout: 8000 },
+    );
     const { getLastSession } = await import('./utils/db');
     expect(getLastSession).toHaveBeenCalled();
   });

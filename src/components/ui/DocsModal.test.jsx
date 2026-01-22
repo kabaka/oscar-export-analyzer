@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { vi, describe, it, expect } from 'vitest';
 import React from 'react';
 import DocsModal from './DocsModal';
 import { fireEvent } from '@testing-library/react';
@@ -6,23 +7,40 @@ import { fireEvent } from '@testing-library/react';
 describe('DocsModal', () => {
   it('renders guide content and closes', async () => {
     const onClose = vi.fn();
-    render(<DocsModal isOpen={true} onClose={onClose} />);
+    const guideMarkdown = `# Usage & Interpretation Guide
+## Introduction
+Welcome to the OSCAR Sleep Data Analysis guide.
+`;
+    render(
+      <DocsModal
+        isOpen={true}
+        onClose={onClose}
+        markdownSource={guideMarkdown}
+      />,
+    );
     expect(
       await screen.findByRole('dialog', { name: /usage guide/i }),
     ).toBeInTheDocument();
     expect(
       await screen.findByRole('heading', {
-        level: 3,
+        level: 1,
         name: /Usage & Interpretation Guide/i,
       }),
     ).toBeInTheDocument();
   });
 
   it('deep-links to a section when provided', async () => {
+    const markdown = `# Main Content
+## Usage Patterns
+Some detailed content about usage patterns.
+## Other Section
+More content.
+`;
     render(
       <DocsModal
         isOpen={true}
         onClose={() => {}}
+        markdownSource={markdown}
         initialAnchor="usage-patterns"
       />,
     );

@@ -1,19 +1,50 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { vi } from 'vitest';
+import { vi, beforeAll, beforeEach } from 'vitest';
 
-// Mock Plotly charts to simplify component tests
-const plotlyMock = vi.fn((props) =>
-  React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
-);
-vi.mock('react-plotly.js', () => {
-  return { default: plotlyMock };
-});
+// Mirror helpers are applied after jsdom creates the window
+const mirrorToWindow = (name, value) => {
+  const scope = globalThis;
+  scope[name] = value;
+  if (scope.window) {
+    scope.window[name] = value;
+  }
+};
 
-// Provide a minimal IntersectionObserver polyfill for jsdom
-if (typeof global.IntersectionObserver === 'undefined') {
-  class MockIO {
-    constructor() {}
+// Mock localStorage - complete implementation with all methods
+const localStorageMock = (() => {
+  let store = {};
+
+  return {
+    getItem: (key) => store[key] ?? null,
+    setItem: (key, value) => {
+      store[key] = String(value);
+    },
+    removeItem: (key) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: (index) => {
+      const keys = Object.keys(store);
+      return keys[index] ?? null;
+    },
+  };
+})();
+
+beforeAll(() => {
+  // Apply localStorage mock to window and global
+  mirrorToWindow('localStorage', localStorageMock);
+
+  // Provide a minimal MutationObserver polyfill for jsdom and expose it on window
+  class MockMutationObserver {
+    constructor(callback) {
+      this.callback = callback;
+    }
     observe() {}
     unobserve() {}
     disconnect() {}
@@ -21,41 +52,72 @@ if (typeof global.IntersectionObserver === 'undefined') {
       return [];
     }
   }
-  // eslint-disable-next-line no-undef
-  global.IntersectionObserver = MockIO;
-}
+  mirrorToWindow('MutationObserver', MockMutationObserver);
 
-// Basic Web Worker stub for tests; individual tests can override as needed
-if (typeof global.Worker === 'undefined') {
-  class MockWorker {
-    constructor() {}
-    postMessage({ file } = {}) {
-      if (!file) return;
-      let rows;
-      if ((file.name || '').includes('summary')) {
-        rows = [
-          {
-            Date: '2025-06-01',
-            'Total Time': '08:00:00',
-            AHI: '5',
-            'Median EPAP': '6',
-          },
-        ];
-      } else {
-        rows = [
-          {
-            Event: 'ClearAirway',
-            DateTime: new Date('2025-06-01T00:00:00').getTime(),
-            'Data/Duration': 12,
-          },
-        ];
+  // Provide a minimal IntersectionObserver polyfill for jsdom
+  if (
+    !globalThis.IntersectionObserver ||
+    typeof globalThis.IntersectionObserver !== 'function'
+  ) {
+    class MockIO {
+      constructor() {}
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
       }
-      this.onmessage?.({ data: { type: 'progress', cursor: file.size } });
-      this.onmessage?.({ data: { type: 'rows', rows } });
-      this.onmessage?.({ data: { type: 'complete' } });
     }
-    terminate() {}
+    mirrorToWindow('IntersectionObserver', MockIO);
   }
-  // eslint-disable-next-line no-undef
-  global.Worker = MockWorker;
-}
+
+  // Basic Web Worker stub for tests; individual tests can override as needed
+  if (!globalThis.Worker || typeof globalThis.Worker !== 'function') {
+    class MockWorker {
+      constructor() {}
+      postMessage({ file } = {}) {
+        if (!file) return;
+        let rows;
+        if ((file.name || '').includes('summary')) {
+          rows = [
+            {
+              Date: '2025-06-01',
+              'Total Time': '08:00:00',
+              AHI: '5',
+              'Median EPAP': '6',
+            },
+          ];
+        } else {
+          rows = [
+            {
+              Event: 'ClearAirway',
+              DateTime: new Date('2025-06-01T00:00:00').getTime(),
+              'Data/Duration': 12,
+            },
+          ];
+        }
+        // Use Promise.resolve to defer execution, allowing async test operations to complete
+        Promise.resolve().then(() => {
+          this.onmessage?.({ data: { type: 'progress', cursor: file.size } });
+          this.onmessage?.({ data: { type: 'rows', rows } });
+          this.onmessage?.({ data: { type: 'complete' } });
+        });
+      }
+      terminate() {}
+    }
+    mirrorToWindow('Worker', MockWorker);
+  }
+});
+
+// Reset localStorage before each test
+beforeEach(() => {
+  localStorage.clear();
+});
+
+// Also mock Plotly charts to simplify component tests
+const plotlyMock = vi.fn((props) =>
+  React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
+);
+vi.mock('react-plotly.js', () => {
+  return { default: plotlyMock };
+});

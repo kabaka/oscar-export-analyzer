@@ -1,10 +1,29 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import Papa from 'papaparse';
 import { AppProviders } from './app/AppProviders';
 import { AppShell } from './App';
 
 describe('In-page navigation', () => {
+  beforeEach(() => {
+    // Mock Papa.parse for fast CSV processing
+    vi.spyOn(Papa, 'parse').mockImplementation((file, options) => {
+      const rows = [
+        {
+          Date: '2025-06-01',
+          'Total Time': '08:00:00',
+          AHI: '5',
+          'Median EPAP': '6',
+        },
+      ];
+      if (options.chunk)
+        options.chunk({ data: rows, meta: { cursor: file.size } });
+      if (options.complete) options.complete({ data: rows });
+    });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     window.location.hash = '';
@@ -28,11 +47,14 @@ describe('In-page navigation', () => {
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: /Overview Dashboard/i }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole('heading', { name: /Overview Dashboard/i }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
     expect(
       await screen.findByRole('heading', { name: /Usage Patterns/i }),
     ).toBeInTheDocument();

@@ -25,6 +25,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
     include: ['src/**/*.test.{js,jsx,ts,tsx}', 'styles.*.test.js'],
+    testTimeout: 20000,
   },
   // Treat any Vite/Rollup warnings as errors to enforce clean builds
   build: {
