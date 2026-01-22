@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific color values and opacity thresholds */
 import { describe, it, expect } from 'vitest';
 import { COLORS } from './colors';
 

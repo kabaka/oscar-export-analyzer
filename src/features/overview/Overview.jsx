@@ -5,6 +5,7 @@ import {
   computeEPAPTrends,
 } from '../../utils/stats';
 import { GuideLink, KPICard } from '../../components/ui';
+import { DECIMAL_PLACES_2 } from '../../constants';
 import MetricGrid from './MetricGrid';
 import { useData } from '../../context/DataContext';
 
@@ -12,6 +13,7 @@ import { useData } from '../../context/DataContext';
  * Sparkline chart for a series of numeric data points.
  */
 function Sparkline({ data, width = 100, height = 30 }) {
+  // eslint-disable-next-line no-magic-numbers -- minimum 2 points needed to draw a line chart
   if (!data || data.length < 2) {
     return null;
   }
@@ -53,13 +55,22 @@ export default function Overview({ clusters, falseNegatives }) {
         <GuideLink anchor="overview-dashboard" label="Guide" />
       </h2>
       <MetricGrid>
-        <KPICard title="Avg Usage (hrs)" value={usage.avgHours.toFixed(2)}>
+        <KPICard
+          title="Avg Usage (hrs)"
+          value={usage.avgHours.toFixed(DECIMAL_PLACES_2)}
+        >
           <Sparkline data={usage.usageHours} />
         </KPICard>
-        <KPICard title="Median AHI" value={ahi.medianAHI.toFixed(2)}>
+        <KPICard
+          title="Median AHI"
+          value={ahi.medianAHI.toFixed(DECIMAL_PLACES_2)}
+        >
           <Sparkline data={ahi.ahis} />
         </KPICard>
-        <KPICard title="Median EPAP" value={epap.medianEPAP.toFixed(2)}>
+        <KPICard
+          title="Median EPAP"
+          value={epap.medianEPAP.toFixed(DECIMAL_PLACES_2)}
+        >
           <Sparkline data={epap.epaps} />
         </KPICard>
         <KPICard title="# Clusters" value={clusters.length.toString()} />

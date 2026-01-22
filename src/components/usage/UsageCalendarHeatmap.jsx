@@ -1,15 +1,23 @@
 import React from 'react';
 import { ThemedPlot } from '../ui';
-import { DEFAULT_PLOT_MARGIN } from '../../constants/charts';
+import {
+  DEFAULT_PLOT_MARGIN,
+  GRADIENT_OPACITY_LOW,
+  GRADIENT_OPACITY_MED_LOW,
+  GRADIENT_OPACITY_MED_HIGH,
+  GRADIENT_OPACITY_HIGH,
+  GRADIENT_OPACITY_MAX,
+  GRADIENT_OPACITY_MIN,
+} from '../../constants';
 import ChartWithHelp from './ChartWithHelp';
 
 const DARK_MODE_HEATMAP_SCALE = Object.freeze([
-  [0, '#121821'],
-  [0.2, '#1b2b3b'],
-  [0.4, '#23445a'],
-  [0.6, '#2b5c7a'],
-  [0.8, '#3c7db0'],
-  [1, '#58a6ff'],
+  [GRADIENT_OPACITY_MIN, '#121821'],
+  [GRADIENT_OPACITY_LOW, '#1b2b3b'],
+  [GRADIENT_OPACITY_MED_LOW, '#23445a'],
+  [GRADIENT_OPACITY_MED_HIGH, '#2b5c7a'],
+  [GRADIENT_OPACITY_HIGH, '#3c7db0'],
+  [GRADIENT_OPACITY_MAX, '#58a6ff'],
 ]);
 
 function UsageCalendarHeatmap({ heatmap, isDark, height }) {

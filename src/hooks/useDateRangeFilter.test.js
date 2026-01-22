@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific date values and sample data */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDateRangeFilter } from './useDateRangeFilter';

@@ -34,6 +34,7 @@ export function buildTrendWindowSequence({
   for (let i = 0; i < nights; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
+    // eslint-disable-next-line no-magic-numbers -- ISO 8601 date format: YYYY-MM-DD is first 10 characters
     const formatted = date.toISOString().slice(0, 10);
     const overrides = valueAccessor ? valueAccessor(i, formatted) : {};
     rows.push({ Date: formatted, ...overrides });

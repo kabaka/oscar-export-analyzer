@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific numerical data and processing scenarios */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTimeSeriesProcessing } from './useTimeSeriesProcessing';

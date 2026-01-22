@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific autocorrelation test data and lag values */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAutocorrelation } from './useAutocorrelation';

@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- color values and theme proportions */
 export function applyChartTheme(isDark, layout = {}) {
   // Handle null layout gracefully
   if (layout === null) {

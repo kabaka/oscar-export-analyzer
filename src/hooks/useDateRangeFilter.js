@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { MILLISECONDS_PER_MINUTE } from '../constants';
 
 export function useDateRangeFilter(summaryData) {
   const [dateFilter, setDateFilter] = useState({ start: null, end: null });
@@ -44,7 +45,10 @@ export function useDateRangeFilter(summaryData) {
 
   const formatDate = useCallback((d) => {
     if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '';
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    const local = new Date(
+      d.getTime() - d.getTimezoneOffset() * MILLISECONDS_PER_MINUTE,
+    );
+    // eslint-disable-next-line no-magic-numbers -- ISO 8601 date format: YYYY-MM-DD is first 10 characters
     return local.toISOString().slice(0, 10);
   }, []);
 

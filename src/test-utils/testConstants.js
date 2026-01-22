@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- canonical test constants for shared test scenarios */
 import {
   CLI_DEFAULTS,
   DEFAULT_APNEA_CLUSTER_GAP_SEC as APNEA_GAP_DEFAULT_SEC,

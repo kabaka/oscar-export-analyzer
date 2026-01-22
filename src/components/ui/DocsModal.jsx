@@ -62,6 +62,7 @@ export default function DocsModal({
     if (!markdown) return { html: '', toc: [] };
 
     const headingComponents = {};
+    // eslint-disable-next-line no-magic-numbers -- HTML supports heading levels h1–h6 (canonical limit)
     for (let level = 1; level <= 6; level++) {
       const Tag = `h${level}`;
       // eslint-disable-next-line react/display-name
@@ -144,6 +145,7 @@ export default function DocsModal({
           <aside className="doc-toc" aria-label="Guide sections">
             <ul>
               {parsed.toc
+                // eslint-disable-next-line no-magic-numbers -- filter to main heading levels (h1–h2) for ToC readability
                 .filter((h) => h.level <= 2)
                 .map((h) => (
                   <li key={h.id} className={`level-${h.level}`}>
@@ -167,7 +169,6 @@ export default function DocsModal({
             className="doc-content"
             ref={contentRef}
             // sanitized HTML; DOMPurify removes unsafe markup
-            // eslint-disable-next-line no-unsanitized/property
             dangerouslySetInnerHTML={{ __html: parsed.html }}
           />
         </div>

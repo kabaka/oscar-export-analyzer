@@ -1,6 +1,11 @@
 import React, { useMemo, useCallback } from 'react';
 import { parseDuration, mannWhitneyUTest } from '../../utils/stats';
 import { useData } from '../../context/DataContext';
+import {
+  SECONDS_PER_HOUR,
+  DECIMAL_PLACES_2,
+  SECONDARY_TEXT_OPACITY,
+} from '../../constants';
 
 /**
  * Compare usage hours and AHI across two date ranges.
@@ -30,7 +35,7 @@ export default function RangeComparisons({ rangeA, rangeB }) {
   const B = useMemo(() => pick(rangeB), [pick, rangeB]);
   const toUsage = (rows) =>
     rows
-      .map((r) => parseDuration(r['Total Time']) / 3600)
+      .map((r) => parseDuration(r['Total Time']) / SECONDS_PER_HOUR)
       .filter((v) => !isNaN(v));
   const toAHI = (rows) =>
     rows.map((r) => parseFloat(r['AHI'])).filter((v) => !isNaN(v));
@@ -70,33 +75,39 @@ export default function RangeComparisons({ rangeA, rangeB }) {
         <tbody>
           <tr>
             <td>Usage (h/night)</td>
-            <td>{kpi.usageA.toFixed(2)}</td>
-            <td>{kpi.usageB.toFixed(2)}</td>
-            <td>{kpi.usageDelta.toFixed(2)}</td>
+            <td>{kpi.usageA.toFixed(DECIMAL_PLACES_2)}</td>
+            <td>{kpi.usageB.toFixed(DECIMAL_PLACES_2)}</td>
+            <td>{kpi.usageDelta.toFixed(DECIMAL_PLACES_2)}</td>
             <td>
-              {isFinite(kpi.usageMW.p) ? kpi.usageMW.p.toExponential(2) : '—'}
+              {isFinite(kpi.usageMW.p)
+                ? kpi.usageMW.p.toExponential(DECIMAL_PLACES_2)
+                : '—'}
             </td>
             <td title="Rank-biserial effect; positive means B tends to be larger">
               {isFinite(kpi.usageMW.effect)
-                ? kpi.usageMW.effect.toFixed(2)
+                ? kpi.usageMW.effect.toFixed(DECIMAL_PLACES_2)
                 : '—'}
             </td>
           </tr>
           <tr>
             <td>AHI (events/h)</td>
-            <td>{kpi.ahiA.toFixed(2)}</td>
-            <td>{kpi.ahiB.toFixed(2)}</td>
-            <td>{kpi.ahiDelta.toFixed(2)}</td>
+            <td>{kpi.ahiA.toFixed(DECIMAL_PLACES_2)}</td>
+            <td>{kpi.ahiB.toFixed(DECIMAL_PLACES_2)}</td>
+            <td>{kpi.ahiDelta.toFixed(DECIMAL_PLACES_2)}</td>
             <td>
-              {isFinite(kpi.ahiMW.p) ? kpi.ahiMW.p.toExponential(2) : '—'}
+              {isFinite(kpi.ahiMW.p)
+                ? kpi.ahiMW.p.toExponential(DECIMAL_PLACES_2)
+                : '—'}
             </td>
             <td title="Rank-biserial effect; positive means B tends to be larger">
-              {isFinite(kpi.ahiMW.effect) ? kpi.ahiMW.effect.toFixed(2) : '—'}
+              {isFinite(kpi.ahiMW.effect)
+                ? kpi.ahiMW.effect.toFixed(DECIMAL_PLACES_2)
+                : '—'}
             </td>
           </tr>
         </tbody>
       </table>
-      <p style={{ opacity: 0.8 }}>
+      <p style={{ opacity: SECONDARY_TEXT_OPACITY }}>
         nA={kpi.nA}, nB={kpi.nB}. Mann–Whitney U p-values and signed
         rank-biserial effects (positive means range B tends to be larger) shown.
       </p>

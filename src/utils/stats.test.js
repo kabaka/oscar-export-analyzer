@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific numerical data and statistical test scenarios */
 import { describe, it, expect } from 'vitest';
 import {
   computeAHITrends,

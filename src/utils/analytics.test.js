@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific data and clustering scenarios */
 import { describe, expect, it } from 'vitest';
 import { finalizeClusters } from './analytics';
 import { APNEA_CLUSTER_MIN_EVENTS } from '../constants';

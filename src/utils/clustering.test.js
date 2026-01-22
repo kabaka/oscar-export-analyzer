@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific event durations, thresholds, and clustering scenarios */
 import { describe, it, expect, vi } from 'vitest';
 import {
   clusterApneaEvents,

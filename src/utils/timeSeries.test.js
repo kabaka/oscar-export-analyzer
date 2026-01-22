@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific time series data and numerical scenarios */
 import { describe, it, expect } from 'vitest';
 import { timeSeriesHeatmap, adherenceMetrics } from './timeSeries';
 

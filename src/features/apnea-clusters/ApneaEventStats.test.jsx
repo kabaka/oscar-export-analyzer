@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific event counts and statistical assertions */
 import React from 'react';
 import { render } from '@testing-library/react';
 import ApneaEventStats from './ApneaEventStats';

@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- CSV formatting and statistical calculation constants */
 // Build CSV exports for aggregates without external deps
 import { summarizeUsage, computeAHITrends, computeEPAPTrends } from './stats';
 

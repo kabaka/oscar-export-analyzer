@@ -10,6 +10,7 @@ import {
   ThemedPlot,
   VizHelp,
 } from '../../components/ui';
+import { MILLISECONDS_PER_SECOND, DECIMAL_PLACES_2 } from '../../constants';
 import { PARAM_FIELDS_BY_ALGORITHM } from './paramFields';
 
 function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
@@ -127,7 +128,9 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                   type: 'bar',
                   orientation: 'h',
                   y: sorted[selected].events.map((_, i) => `Evt ${i + 1}`),
-                  x: sorted[selected].events.map((e) => e.durationSec * 1000),
+                  x: sorted[selected].events.map(
+                    (e) => e.durationSec * MILLISECONDS_PER_SECOND,
+                  ),
                   base: sorted[selected].events.map((e) =>
                     e.date.toISOString(),
                   ),
@@ -144,8 +147,8 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                 yaxis: { title: 'Event #' },
                 margin: { l: 80, r: 20, t: 40, b: 40 },
                 height: Math.max(
-                  200,
-                  sorted[selected].events.length * 30 + 100,
+                  200, // eslint-disable-line no-magic-numbers -- min 200px base height for chart
+                  sorted[selected].events.length * 30 + 100, // eslint-disable-line no-magic-numbers -- 30px per event + 100px padding
                 ),
               }}
               config={{ displayModeBar: false }}
@@ -261,7 +264,7 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                 <td>{cl.start.toLocaleString()}</td>
                 <td>{cl.durationSec.toFixed(0)}</td>
                 <td>{cl.count}</td>
-                <td>{cl.severity?.toFixed(2)}</td>
+                <td>{cl.severity?.toFixed(DECIMAL_PLACES_2)}</td>
               </tr>
             ))}
           </tbody>

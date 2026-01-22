@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific usage statistics and duration values */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUsageStats } from './useUsageStats';

@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific color values and theme constants */
 import { describe, it, expect } from 'vitest';
 import { applyChartTheme } from './chartTheme';
 

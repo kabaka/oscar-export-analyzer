@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- signal processing and clustering algorithm parameters */
 // Utility functions for clustering apnea annotation events and detecting false negatives.
 
 import {

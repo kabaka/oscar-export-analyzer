@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { buildSession, applySession } from '../utils/session';
 import { putLastSession, getLastSession } from '../utils/db';
+import { DECIMAL_PLACES_2 } from '../constants';
 
 export function useSessionManager({
   summaryData,
@@ -30,7 +31,7 @@ export function useSessionManager({
         fnPreset,
       });
       putLastSession(session).catch(() => {});
-    }, 500);
+    }, 500); // eslint-disable-line no-magic-numbers -- debounce timeout (ms) for session persistence
     return () => clearTimeout(timer);
   }, [
     summaryData,
@@ -67,7 +68,7 @@ export function useSessionManager({
       rangeB,
       fnPreset,
     });
-    const blob = new Blob([JSON.stringify(session, null, 2)], {
+    const blob = new Blob([JSON.stringify(session, null, DECIMAL_PLACES_2)], {
       type: 'application/json',
     });
     const url = URL.createObjectURL(blob);

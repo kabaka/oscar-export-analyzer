@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { GuideLink } from './ui';
 import { useData } from '../context/DataContext';
+import { DECIMAL_PLACES_2 } from '../constants';
 import {
   VIRTUAL_TABLE_BUFFER_ROWS,
   VIRTUAL_TABLE_DEFAULT_HEIGHT,
@@ -482,7 +483,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
                   {pivot.columns.map((c) => (
                     <td key={c}>
                       {typeof r[c] === 'number'
-                        ? r[c].toFixed(2)
+                        ? r[c].toFixed(DECIMAL_PLACES_2)
                         : String(r[c])}
                     </td>
                   ))}

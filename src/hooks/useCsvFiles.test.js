@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific file sizes and line counts */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCsvFiles } from './useCsvFiles';

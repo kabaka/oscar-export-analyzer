@@ -5,6 +5,7 @@ import { GuideLink, ThemedPlot, VizHelp } from '../../components/ui';
 import {
   APNEA_DURATION_HIGH_SEC,
   APNEA_DURATION_THRESHOLD_SEC,
+  PERCENT_SCALE,
 } from '../../constants';
 import { DEFAULT_CHART_HEIGHT } from '../../constants/charts';
 
@@ -60,14 +61,22 @@ export default function ApneaEventStats() {
             <td>Events &gt; {APNEA_DURATION_THRESHOLD_SEC} s</td>
             <td>
               {stats.countOver30} (
-              {((stats.countOver30 / stats.totalEvents) * 100).toFixed(1)}%)
+              {(
+                (stats.countOver30 / stats.totalEvents) *
+                PERCENT_SCALE
+              ).toFixed(1)}
+              %)
             </td>
           </tr>
           <tr>
             <td>Events &gt; {APNEA_DURATION_HIGH_SEC} s</td>
             <td>
               {stats.countOver60} (
-              {((stats.countOver60 / stats.totalEvents) * 100).toFixed(1)}%)
+              {(
+                (stats.countOver60 / stats.totalEvents) *
+                PERCENT_SCALE
+              ).toFixed(1)}
+              %)
             </td>
           </tr>
           <tr>

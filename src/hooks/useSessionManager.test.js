@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- test-specific session durations and timeout values */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSessionManager } from './useSessionManager';

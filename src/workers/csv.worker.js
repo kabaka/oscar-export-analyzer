@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { FLG_BRIDGE_THRESHOLD } from '../utils/clustering.js';
+import { CSV_CHUNK_SIZE_BYTES } from '../constants/ui.js';
 
 // Parses CSV files off the main thread and streams filtered rows
 self.onmessage = (e) => {
@@ -10,7 +11,7 @@ self.onmessage = (e) => {
     header: true,
     dynamicTyping: true,
     skipEmptyLines: true,
-    chunkSize: 1024 * 1024,
+    chunkSize: CSV_CHUNK_SIZE_BYTES,
     // Runs in a worker: update progress and filter events per chunk to keep the UI responsive
     chunk(results) {
       self.postMessage({

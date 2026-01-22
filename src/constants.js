@@ -5,6 +5,8 @@ export * from './constants/time.js';
 export * from './constants/layout.js';
 export * from './constants/cli.js';
 export * from './constants/charts.js';
+export * from './constants/ui.js';
+export * from './constants/testData.js';
 
 /**
  * Global configuration constants for the OSCAR Export Analyzer.

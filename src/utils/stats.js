@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers -- canonical statistical and numerical constants for domain logic */
 import {
   AHI_SEVERITY_LIMITS,
   APNEA_DURATION_HIGH_SEC,

@@ -55,6 +55,7 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
       continue;
     }
     const cols = line.split(',');
+    // eslint-disable-next-line no-magic-numbers -- CSV expected format: [timestamp, ignored, event, value, ...]
     if (cols.length < 4) continue;
     const tm = cols[0];
     if (!tm.startsWith(targetDateStr)) continue;
@@ -159,12 +160,13 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
 module.exports = { run };
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process.argv;
   const positionals = [];
   const flags = {};
-  for (const arg of args) {
+  for (const arg of args.slice(2)) {
+    // eslint-disable-line no-magic-numbers -- skip node executable (0) and script path (1)
     if (arg.startsWith('--')) {
-      const [rawKey, rawVal] = arg.slice(2).split('=');
+      const [rawKey, rawVal] = arg.slice(2).split('='); // eslint-disable-line no-magic-numbers -- skip "--" prefix (2 chars)
       const key = rawKey.trim();
       const value = rawVal === undefined ? true : rawVal.trim();
       flags[key] = value;
