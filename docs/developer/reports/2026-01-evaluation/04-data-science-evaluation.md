@@ -924,46 +924,48 @@ _None identified — no critical statistical errors_
 ### High Priority (Address in Next Sprint)
 
 1. **K-means Convergence Validation** (Section 2.2)
-   - **Issue:** Algorithm may silently produce poor clusterings without convergence feedback
-   - **Action:** Add convergence tracking, warn if max iterations reached, return quality metrics
-   - **Effort:** 2-4 hours (add metadata, tests)
-   - **Impact:** Prevents misleading clustering results for users
+   **Issue:** Algorithm may silently produce poor clusterings without convergence feedback
+   **Action:** Add convergence tracking, warn if max iterations reached, return quality metrics
+   **Effort:** 2-4 hours (add metadata, tests)
+   **Impact:** Prevents misleading clustering results for users
+   **Status:** ✅ Completed (2026-01-22). Implemented convergence metadata (`converged`, `iterations`, `maxIterationsReached`, `wcss`, `kOverspecified`) attached to the returned clusters array in [src/utils/clustering.js](../../../src/utils/clustering.js); added warnings when max iterations are reached without convergence; and updated tests in [src/utils/clustering.test.js](../../../src/utils/clustering.test.js) to validate metadata presence, fast convergence on bimodal data, overspecification flagging, and WCSS positivity.
 
-2. **PACF Numerical Stability for High Lags** (Section 1.3)
-   - **Issue:** May return NaN for lags > 40 due to ill-conditioned linear systems
-   - **Action:** Add condition number check, document max recommended lag, consider QR decomposition
-   - **Effort:** 4-6 hours (implement check, add tests, document)
-   - **Impact:** Avoids silent failures for advanced time-series analysis
+1. **PACF Numerical Stability for High Lags** (Section 1.3)
+   **Issue:** May return NaN for lags > 40 due to ill-conditioned linear systems
+   **Action:** Add condition number check, document max recommended lag, consider QR decomposition
+   **Effort:** 4-6 hours (implement check, add tests, document)
+   **Impact:** Avoids silent failures for advanced time-series analysis
+   **Status:** ✅ Completed (2026-01-22). Added high-lag ill-conditioning heuristic and near-zero pivot detection with warnings and `unstableLags` metadata in [src/utils/stats.js](../../../src/utils/stats.js) `computePartialAutocorrelation`; introduced `recommendedMaxLag = min(n/3, 40)` with warnings when requesting lags above the recommended threshold; and added tests in [src/utils/stats.test.js](../../../src/utils/stats.test.js) to verify metadata presence and high-lag warnings.
 
 ---
 
 ### Medium Priority (Next Quarter)
 
-3. **Document Clustering Parameter Clinical Rationale** (Section 2.1)
+1. **Document Clustering Parameter Clinical Rationale** (Section 2.1)
    - **Issue:** GAP_SEC=120, BRIDGE_THRESHOLD=0.1 lack cited clinical sources
    - **Action:** Add code comments citing sleep medicine literature or internal validation studies
    - **Effort:** 1-2 hours (literature review, update comments)
    - **Impact:** Increases clinical credibility and facilitates parameter tuning
 
-4. **Rename "Confidence" in False Negatives** (Section 3)
+2. **Rename "Confidence" in False Negatives** (Section 3)
    - **Issue:** Misleading terminology (is max FLG level, not statistical confidence)
    - **Action:** Rename to "maxFLGLevel" in code, "Peak FLG" in UI
    - **Effort:** 1-2 hours (refactor, update tests)
    - **Impact:** Reduces user confusion, improves scientific accuracy
 
-5. **Apnea Duration Threshold Documentation** (Section 6.3)
+3. **Apnea Duration Threshold Documentation** (Section 6.3)
    - **Issue:** 30s threshold differs from AASM diagnostic 10s threshold
    - **Action:** Add comments clarifying 30s is for "prolonged apneas" in clustering, not diagnosis
    - **Effort:** 30 minutes (add comments, create APNEA_DIAGNOSTIC_THRESHOLD_SEC constant)
    - **Impact:** Prevents clinical misinterpretation
 
-6. **Add Weighted Density Metric for Clusters** (Section 2.1)
+4. **Add Weighted Density Metric for Clusters** (Section 2.1)
    - **Issue:** Current density ignores event durations (total apnea burden)
    - **Action:** Implement `weightedDensity = totalApneaDuration / windowDuration`
    - **Effort:** 2-3 hours (implement, test, document)
    - **Impact:** More clinically relevant cluster severity scoring
 
-7. **Statistical Assumption Documentation** (Section 9)
+5. **Statistical Assumption Documentation** (Section 9)
    - **Issue:** Many functions lack documented assumptions (normality, independence, etc.)
    - **Action:** Add JSDoc comments for assumptions, limitations, failure modes
    - **Effort:** 4-6 hours (audit all statistical functions, add docs)
@@ -973,41 +975,41 @@ _None identified — no critical statistical errors_
 
 ### Low Priority (Future Enhancements)
 
-8. **Probabilistic False-Negative Scoring** (Section 3)
+1. **Probabilistic False-Negative Scoring** (Section 3)
    - **Current:** Single-threshold heuristic
    - **Enhancement:** Train probabilistic model on annotated datasets
    - **Effort:** 40-80 hours (data collection, model development, validation)
    - **Impact:** Higher sensitivity/specificity in false-negative detection
 
-9. **K-means++ Initialization** (Section 2.2)
+2. **K-means++ Initialization** (Section 2.2)
    - **Current:** Evenly-spaced deterministic initialization
    - **Enhancement:** Weighted random initialization for better convergence
    - **Effort:** 2-4 hours (implement, test)
    - **Impact:** Faster convergence, better clustering quality
 
-10. **EPAP Data Validation** (Section 6.2)
-    - **Current:** No range checks on imported pressure values
-    - **Enhancement:** Warn for values outside 4-25 cmH₂O therapeutic range
-    - **Effort:** 1-2 hours (implement, test)
-    - **Impact:** Catches device errors or data corruption early
+3. **EPAP Data Validation** (Section 6.2)
+   - **Current:** No range checks on imported pressure values
+   - **Enhancement:** Warn for values outside 4-25 cmH₂O therapeutic range
+   - **Effort:** 1-2 hours (implement, test)
+   - **Impact:** Catches device errors or data corruption early
 
-11. **Change-Point Algorithm Optimization** (Section 7.1)
-    - **Current:** O(n²) dynamic programming
-    - **Enhancement:** Implement PELT with pruning for O(n) average case
-    - **Effort:** 8-12 hours (research, implement, validate)
-    - **Impact:** Enables analysis of very long datasets (n > 5000 nights)
+4. **Change-Point Algorithm Optimization** (Section 7.1)
+   - **Current:** O(n²) dynamic programming
+   - **Enhancement:** Implement PELT with pruning for O(n) average case
+   - **Effort:** 8-12 hours (research, implement, validate)
+   - **Impact:** Enables analysis of very long datasets (n > 5000 nights)
 
-12. **Realistic Test Data Generators** (Section 8.3)
-    - **Current:** Simple builders with fixed timestamps
-    - **Enhancement:** Generate synthetic CPAP sessions with realistic patterns
-    - **Effort:** 6-10 hours (design generators, validate against real data)
-    - **Impact:** Improves test coverage realism and regression detection
+5. **Realistic Test Data Generators** (Section 8.3)
+   - **Current:** Simple builders with fixed timestamps
+   - **Enhancement:** Generate synthetic CPAP sessions with realistic patterns
+   - **Effort:** 6-10 hours (design generators, validate against real data)
+   - **Impact:** Improves test coverage realism and regression detection
 
-13. **Minimum Sample Size Checks** (Section 4.2)
-    - **Current:** Some functions proceed with n=1 or n=2
-    - **Enhancement:** Add explicit checks and warnings for insufficient data
-    - **Effort:** 2-3 hours (add checks, tests)
-    - **Impact:** Prevents statistically meaningless results from being reported
+6. **Minimum Sample Size Checks** (Section 4.2)
+   - **Current:** Some functions proceed with n=1 or n=2
+   - **Enhancement:** Add explicit checks and warnings for insufficient data
+   - **Effort:** 2-3 hours (add checks, tests)
+   - **Impact:** Prevents statistically meaningless results from being reported
 
 ---
 

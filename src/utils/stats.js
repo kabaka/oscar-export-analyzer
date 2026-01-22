@@ -143,13 +143,29 @@ export function computePartialAutocorrelation(
   maxLag = DEFAULT_MAX_LAG,
 ) {
   if (!Array.isArray(series) || !series.length) {
-    return { values: [], sampleSize: 0 };
+    return {
+      values: [],
+      sampleSize: 0,
+      meta: { recommendedMaxLag: 0, unstableLags: [], warnings: [] },
+    };
   }
   const values = series.slice();
   const finiteVals = values.filter((v) => Number.isFinite(v));
   const sampleSize = finiteVals.length;
+  const recommendedMaxLag = Math.min(
+    Math.max(0, Math.floor(sampleSize / 3)),
+    40,
+  );
   if (sampleSize <= 1) {
-    return { values: [], sampleSize };
+    return {
+      values: [],
+      sampleSize,
+      meta: {
+        recommendedMaxLag,
+        unstableLags: [],
+        warnings: ['Insufficient finite observations for PACF'],
+      },
+    };
   }
 
   const limit = Math.min(
@@ -162,6 +178,7 @@ export function computePartialAutocorrelation(
     const n = mat.length;
     if (!n) return null;
     const augmented = mat.map((row, i) => row.slice().concat(rhs[i]));
+    let nearZeroPivotCount = 0;
     for (let i = 0; i < n; i++) {
       let pivot = i;
       for (let r = i + 1; r < n; r++) {
@@ -170,7 +187,8 @@ export function computePartialAutocorrelation(
         }
       }
       if (Math.abs(augmented[pivot][i]) < NUMERIC_TOLERANCE) {
-        return null;
+        nearZeroPivotCount += 1;
+        return { solution: null, nearZeroPivotCount };
       }
       if (pivot !== i) {
         const tmp = augmented[i];
@@ -178,6 +196,9 @@ export function computePartialAutocorrelation(
         augmented[pivot] = tmp;
       }
       const pivotVal = augmented[i][i];
+      if (Math.abs(pivotVal) < 10 * NUMERIC_TOLERANCE) {
+        nearZeroPivotCount += 1;
+      }
       for (let c = i; c <= n; c++) {
         augmented[i][c] /= pivotVal;
       }
@@ -189,13 +210,13 @@ export function computePartialAutocorrelation(
         }
       }
     }
-    return augmented.map((row) => row[n]);
+    return { solution: augmented.map((row) => row[n]), nearZeroPivotCount };
   };
 
-  const computeResiduals = (targets, controls) => {
+  const computeResidualsWithMeta = (targets, controls, lagK) => {
     if (!controls.length || !controls[0]?.length) {
       const mean = targets.reduce((sum, v) => sum + v, 0) / targets.length;
-      return targets.map((v) => v - mean);
+      return { residuals: targets.map((v) => v - mean), unstable: false };
     }
     const p = controls[0].length;
     const colMeans = new Array(p).fill(0);
@@ -220,11 +241,30 @@ export function computePartialAutocorrelation(
         }
       }
     }
-    const beta = solveLinearSystem(xtx, xty);
-    if (!beta) {
-      return targets.map(() => NaN);
+    // Ill-conditioning heuristic for high lags
+    let unstable = false;
+    const absVals = [];
+    for (let a = 0; a < p; a++) {
+      for (let b = 0; b < p; b++) {
+        absVals.push(Math.abs(xtx[a][b]));
+      }
     }
-    return controls.map((row, idx) => {
+    const maxAbs = Math.max(...absVals, 0);
+    const minAbs = Math.min(...absVals, maxAbs);
+    const condRatio = maxAbs > 0 ? minAbs / maxAbs : 0;
+    if (lagK > 40 && condRatio < 1e-12) {
+      unstable = true;
+    }
+    const solved = solveLinearSystem(xtx, xty);
+    if (!solved || !solved.solution) {
+      unstable = true;
+      return { residuals: targets.map(() => NaN), unstable };
+    }
+    if (solved.nearZeroPivotCount >= 2) {
+      unstable = true;
+    }
+    const beta = solved.solution;
+    const residuals = controls.map((row, idx) => {
       const centeredRow = row.map((val, j) => val - colMeans[j]);
       let pred = targetMean;
       for (let j = 0; j < p; j++) {
@@ -232,6 +272,7 @@ export function computePartialAutocorrelation(
       }
       return targets[idx] - pred;
     });
+    return { residuals, unstable };
   };
 
   const correlation = (x, y) => {
@@ -261,6 +302,8 @@ export function computePartialAutocorrelation(
   };
 
   const results = [];
+  const unstableLags = [];
+  const warnings = [];
   for (let k = 1; k <= limit; k++) {
     const targets = [];
     const lagValues = [];
@@ -296,15 +339,38 @@ export function computePartialAutocorrelation(
       });
       continue;
     }
-    const resY = computeResiduals(targets, controlRows);
-    const resX = computeResiduals(lagValues, controlRows);
+    const resYMeta = computeResidualsWithMeta(targets, controlRows, k);
+    const resXMeta = computeResidualsWithMeta(lagValues, controlRows, k);
+    const isUnstable = resYMeta.unstable || resXMeta.unstable;
+    if (isUnstable) {
+      unstableLags.push(k);
+      if (k > 40) {
+        warnings.push(
+          `PACF lag ${k} considered unstable due to ill-conditioned system; set to NaN`,
+        );
+      } else {
+        warnings.push(
+          `PACF lag ${k} encountered near-singular system; set to NaN`,
+        );
+      }
+      results.push({ lag: k, partialAutocorrelation: NaN });
+      continue;
+    }
     results.push({
       lag: k,
-      partialAutocorrelation: correlation(resY, resX),
+      partialAutocorrelation: correlation(
+        resYMeta.residuals,
+        resXMeta.residuals,
+      ),
     });
   }
-
-  return { values: results, sampleSize };
+  const out = { values: results, sampleSize };
+  out.meta = {
+    recommendedMaxLag,
+    unstableLags,
+    warnings,
+  };
+  return out;
 }
 
 /**

@@ -177,9 +177,23 @@ export function clusterApneaEventsBridged(options = {}) {
 }
 
 export function clusterApneaEventsKMeans(options = {}) {
-  const { events = [], k: rawK = DEFAULT_KMEANS_K } = options;
+  const {
+    events = [],
+    k: rawK = DEFAULT_KMEANS_K,
+    maxIterations: maxIterationsOpt,
+  } = options;
   const minDensity = normalizeMinDensity(options);
-  if (!events.length) return [];
+  if (!events.length) {
+    const empty = [];
+    empty.meta = {
+      converged: true,
+      iterations: 0,
+      maxIterationsReached: false,
+      wcss: 0,
+      kOverspecified: false,
+    };
+    return empty;
+  }
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const times = sorted.map((evt) => evt.date.getTime());
   const k = Math.max(1, Math.min(sorted.length, Math.round(rawK || 1)));
@@ -189,9 +203,18 @@ export function clusterApneaEventsKMeans(options = {}) {
     return times[pos];
   });
   const assignments = new Array(times.length).fill(0);
-  const maxIterations = CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS;
+  const maxIterations =
+    typeof maxIterationsOpt === 'number'
+      ? Math.max(1, Math.floor(maxIterationsOpt))
+      : CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS;
+
+  // TODO: Consider k-means++ initialization on 1D timestamps for improved stability.
+
+  let iterationsUsed = 0;
+  let converged = false;
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
+    iterationsUsed = iteration + 1;
     let changed = false;
     for (let i = 0; i < times.length; i++) {
       let bestIdx = 0;
@@ -226,7 +249,10 @@ export function clusterApneaEventsKMeans(options = {}) {
       }
     }
 
-    if (!changed) break;
+    if (!changed) {
+      converged = true;
+      break;
+    }
   }
 
   const groups = Array.from({ length: k }, () => []);
@@ -238,10 +264,36 @@ export function clusterApneaEventsKMeans(options = {}) {
     .filter((group) => group.length)
     .map((group) => summarizeClusterEvents(group));
 
-  return filterByDensity(
+  const maxIterationsReached = !converged && iterationsUsed >= maxIterations;
+  const kOverspecified = k > Math.floor(times.length / 3);
+  let wcss = 0;
+  for (let i = 0; i < times.length; i++) {
+    const cIdx = assignments[i];
+    const diff = times[i] - centroids[cIdx];
+    wcss += diff * diff;
+  }
+
+  if (maxIterationsReached) {
+    console.warn(
+      `[KMeans] Max iterations reached without convergence; results may be suboptimal.`,
+    );
+  }
+
+  const out = filterByDensity(
     clusters.sort((a, b) => a.start - b.start),
     minDensity,
   );
+
+  // Attach metadata without breaking array consumers
+  out.meta = {
+    converged,
+    iterations: iterationsUsed,
+    maxIterationsReached,
+    wcss,
+    kOverspecified,
+  };
+
+  return out;
 }
 
 export function clusterApneaEventsAgglomerative(options = {}) {

@@ -183,6 +183,62 @@ describe('computePartialAutocorrelation', () => {
       expect(partialAutocorrelation).toBeCloseTo(reference, 6);
     });
   });
+
+  it('attaches PACF stability metadata and recommended max lag', () => {
+    const n = 90;
+    const series = Array.from({ length: n }, (_, i) => Math.sin(i / 10));
+    const out = computePartialAutocorrelation(series, 60);
+    expect(out.meta).toBeDefined();
+    expect(out.meta.recommendedMaxLag).toBe(
+      Math.min(Math.floor(out.sampleSize / 3), 40),
+    );
+    expect(Array.isArray(out.meta.unstableLags)).toBe(true);
+    expect(Array.isArray(out.meta.warnings)).toBe(true);
+  });
+
+  it('warns when requested maxLag exceeds recommended stability threshold', () => {
+    const series = Array(90).fill(1);
+    const result = computePartialAutocorrelation(series, 60);
+    expect(result.meta.recommendedMaxLag).toBeLessThanOrEqual(40);
+    expect(result.meta.warnings.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('exposes meta and unstableLags array even for low-lag requests', () => {
+    const series = Array.from({ length: 12 }, (_, idx) => Math.cos(idx / 3));
+    const result = computePartialAutocorrelation(series, 4);
+    expect(result.meta).toBeDefined();
+    expect(Array.isArray(result.meta.unstableLags)).toBe(true);
+    expect(result.meta.unstableLags.length).toBeGreaterThanOrEqual(0);
+  });
+
+  it('flags high-lag instability and sets PACF to NaN', () => {
+    const n = 120;
+    const series = Array(n).fill(5); // constant series -> ill-conditioned
+    const out = computePartialAutocorrelation(series, 80);
+    expect(out.meta.warnings.length).toBeGreaterThan(0);
+    // Unstable lags should include some > 40
+    const hasHighLag = out.meta.unstableLags.some((k) => k > 40);
+    expect(hasHighLag).toBe(true);
+    // Values for unstable lags should be NaN
+    out.meta.unstableLags.forEach((lag) => {
+      const entry = out.values.find((v) => v.lag === lag);
+      if (entry) {
+        expect(entry.partialAutocorrelation).toBeNaN();
+      }
+    });
+  });
+
+  it('provides meta with recommendedMaxLag and warnings for high lags', () => {
+    // synthetic constant series to trigger instability at high lags
+    const series = Array(90).fill(1);
+    const result = computePartialAutocorrelation(series, 60);
+    expect(result.meta).toBeDefined();
+    expect(result.meta.recommendedMaxLag).toBeLessThanOrEqual(40);
+    expect(Array.isArray(result.meta.unstableLags)).toBe(true);
+    expect(Array.isArray(result.meta.warnings)).toBe(true);
+    // When exceeding recommended max lag, warnings should be present
+    expect(result.meta.warnings.length).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('partialCorrelation (controls reduce confounding)', () => {

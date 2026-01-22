@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   clusterApneaEvents,
   clusterApneaEventsBridged,
@@ -141,6 +141,104 @@ describe('clusterApneaEvents', () => {
     expect(clusters[0].count + clusters[1].count).toBe(6);
   });
 
+  it('k-means attaches convergence metadata and WCSS', () => {
+    const base = new Date('2024-01-01T00:00:00Z');
+    const events = Array.from({ length: 6 }).map((_, idx) => ({
+      date: new Date(
+        base.getTime() +
+          (idx < 3 ? idx * 60_000 : (idx - 3) * 60_000 + 24 * 3600 * 1000),
+      ),
+      durationSec: 10,
+    }));
+    const clusters = clusterApneaEventsKMeans({ events, k: 2 });
+    expect(Array.isArray(clusters)).toBe(true);
+    expect(clusters.meta).toBeDefined();
+    expect(typeof clusters.meta.converged).toBe('boolean');
+    expect(typeof clusters.meta.iterations).toBe('number');
+    expect(typeof clusters.meta.wcss).toBe('number');
+    expect(clusters.meta.kOverspecified).toBe(false);
+  });
+
+  it('k-means converges quickly on well-separated bimodal events', () => {
+    const base = new Date('2025-01-01T00:00:00Z');
+    const clusterA = Array.from({ length: 5 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 60_000),
+      durationSec: 8,
+    }));
+    const clusterBBase = new Date(base.getTime() + 24 * 3600 * 1000);
+    const clusterB = Array.from({ length: 5 }).map((_, idx) => ({
+      date: new Date(clusterBBase.getTime() + idx * 60_000),
+      durationSec: 8,
+    }));
+    const clusters = clusterApneaEventsKMeans({
+      events: [...clusterA, ...clusterB],
+      k: 2,
+    });
+    expect(clusters.meta.converged).toBe(true);
+    expect(clusters.meta.iterations).toBeLessThan(
+      CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS,
+    );
+    expect(clusters).toHaveLength(2);
+  });
+
+  it('k-means marks overspecified k when k approaches half the sample size', () => {
+    const base = new Date('2025-02-01T00:00:00Z');
+    const events = Array.from({ length: 12 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 45_000),
+      durationSec: 6,
+    }));
+    const clusters = clusterApneaEventsKMeans({ events, k: 6 });
+    expect(clusters.meta.kOverspecified).toBe(true);
+    expect(clusters.meta.converged).toBe(true);
+  });
+
+  it('k-means flags max iterations reached under adversarial iteration limits', () => {
+    const base = new Date('2025-03-01T00:00:00Z');
+    const events = Array.from({ length: 8 }).map((_, idx) => ({
+      date: new Date(
+        base.getTime() + (idx % 2 === 0 ? idx * 5_000 : idx * 90_000),
+      ),
+      durationSec: 10,
+    }));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const clusters = clusterApneaEventsKMeans({
+      events,
+      k: 2,
+      maxIterations: 1,
+    });
+    expect(clusters.meta.maxIterationsReached).toBe(true);
+    expect(clusters.meta.converged).toBe(false);
+    warnSpy.mockRestore();
+  });
+
+  it('computes finite positive WCSS for clustered events', () => {
+    const base = new Date('2025-04-01T00:00:00Z');
+    const events = Array.from({ length: 9 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 30_000),
+      durationSec: 12,
+    }));
+    const clusters = clusterApneaEventsKMeans({ events, k: 3 });
+    expect(Number.isFinite(clusters.meta.wcss)).toBe(true);
+    expect(clusters.meta.wcss).toBeGreaterThan(0);
+  });
+
+  it('k-means warns when max iterations reached', () => {
+    const base = new Date('2024-01-01T00:00:00Z');
+    const events = Array.from({ length: 6 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 10_000),
+      durationSec: 10,
+    }));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const clusters = clusterApneaEventsKMeans({
+      events,
+      k: 2,
+      maxIterations: 1,
+    });
+    expect(clusters.meta.maxIterationsReached).toBe(true);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   it('clusters with single-link agglomerative when requested', () => {
     const base = new Date('2021-01-01T00:00:00Z');
     const events = [
@@ -197,6 +295,56 @@ describe('dedicated apnea clustering implementations', () => {
     });
     expect(clusters).toHaveLength(2);
     expect(clusters.map((cl) => cl.count)).toEqual([2, 1]);
+  });
+});
+
+describe('k-means metadata and convergence', () => {
+  it('attaches metadata and converges quickly on bimodal data', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    const clusterA = Array.from({ length: 5 }).map((_, i) => ({
+      date: new Date(base.getTime() + i * 30_000),
+      durationSec: 10,
+    }));
+    const clusterB = Array.from({ length: 5 }).map((_, i) => ({
+      date: new Date(base.getTime() + 3_600_000 + i * 30_000),
+      durationSec: 10,
+    }));
+    const clusters = clusterApneaEventsKMeans({
+      events: [...clusterA, ...clusterB],
+      k: 2,
+    });
+    expect(Array.isArray(clusters)).toBe(true);
+    expect(clusters.meta).toBeDefined();
+    expect(clusters.meta.converged).toBe(true);
+    expect(clusters.meta.iterations).toBeLessThanOrEqual(
+      CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS,
+    );
+    expect(clusters.meta.wcss).toBeGreaterThan(0);
+  });
+
+  it('flags overspecified k when k > n/3', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    const events = Array.from({ length: 9 }).map((_, i) => ({
+      date: new Date(base.getTime() + i * 60_000),
+      durationSec: 10,
+    }));
+    const clusters = clusterApneaEventsKMeans({ events, k: 4 });
+    expect(clusters.meta.kOverspecified).toBe(true);
+  });
+
+  it('sets maxIterationsReached when capped and warns', () => {
+    const base = new Date('2021-01-01T00:00:00Z');
+    const events = Array.from({ length: 10 }).map((_, i) => ({
+      date: new Date(base.getTime() + i * 30_000),
+      durationSec: 10,
+    }));
+    const clusters = clusterApneaEventsKMeans({
+      events,
+      k: 3,
+      maxIterations: 1,
+    });
+    expect(clusters.meta.maxIterationsReached).toBe(true);
+    expect(clusters.meta.iterations).toBe(1);
   });
 });
 
