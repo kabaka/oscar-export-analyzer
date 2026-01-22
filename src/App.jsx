@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo } from 'react';
 import HeaderMenu from './components/HeaderMenu';
 import DateRangeControls from './components/DateRangeControls';
-import { DataImportModal, DocsModal, ThemeToggle } from './components/ui';
+import {
+  DataImportModal,
+  DocsModal,
+  PrintWarningDialog,
+  ThemeToggle,
+} from './components/ui';
 import AppLayout from './app/AppLayout';
 import { useAppContext } from './app/AppProviders';
 import { OverviewSection } from './features/overview';
@@ -29,6 +34,7 @@ export function AppShell() {
     detailsProgressMax,
     processing,
     importModal,
+    printWarningModal,
     onSummaryFile,
     onDetailsFile,
     handleLoadSaved,
@@ -135,6 +141,23 @@ export function AppShell() {
     };
   }, [tocSections, setActiveSectionId]);
 
+  // Intercept Ctrl+P/Cmd+P to show print warning dialog
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Check for Ctrl+P (Windows/Linux) or Cmd+P (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        // Only intercept if we have data to print
+        if (summaryAvailable) {
+          e.preventDefault();
+          printWarningModal.open();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [summaryAvailable, printWarningModal]);
+
   const ERROR_MARGIN_STYLE = `${HEADER_SCROLL_MARGIN_PX}px 0`;
 
   const beforeHeader = (
@@ -192,7 +215,7 @@ export function AppShell() {
           onExportJson={handleExportJson}
           onExportCsv={exportAggregatesCsv}
           onClearSession={handleClearSession}
-          onPrint={() => window.print()}
+          onPrint={printWarningModal.open}
           onOpenGuide={openGuideForActive}
           hasAnyData={hasAnyData}
           summaryAvailable={summaryAvailable}
@@ -291,6 +314,11 @@ export function AppShell() {
         isOpen={guideOpen}
         onClose={closeGuide}
         initialAnchor={guideAnchor}
+      />
+      <PrintWarningDialog
+        isOpen={printWarningModal.isOpen}
+        onClose={printWarningModal.close}
+        onConfirm={() => window.print()}
       />
     </>
   );

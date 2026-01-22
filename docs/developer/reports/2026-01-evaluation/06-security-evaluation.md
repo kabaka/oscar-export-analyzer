@@ -696,69 +696,73 @@ a.download = 'oscar_session.json';
 
 ### Priority 1 — High Impact, Low Effort
 
-1. **Add File Size Validation** (CRITICAL)
+1. ✅ **Add File Size Validation** (CRITICAL) — **COMPLETED**
    - Implement 50–100 MB file size limit
    - **Effort**: 15 minutes
    - **Impact**: Prevent DoS via massive CSV files
+   - **Implementation**: Added MAX_FILE_SIZE_MB check in [src/hooks/useCsvFiles.js](../../../src/hooks/useCsvFiles.js#L86-L91) with user-friendly error message
 
-2. **Add Print Warning Dialog**
+2. ✅ **Add Print Warning Dialog** — **COMPLETED**
    - Confirm before printing sensitive data
    - **Effort**: 30 minutes
    - **Impact**: Prevent accidental data exposure via printing
+   - **Implementation**: Created [src/components/ui/PrintWarningDialog.jsx](../../../src/components/ui/PrintWarningDialog.jsx) with full accessibility (alertdialog role, focus trap, keyboard navigation). Integrated in [src/App.jsx](../../../src/App.jsx) with Ctrl+P/Cmd+P interception. Warns about PHI before printing.
 
-3. **Rename Session Export File**
+3. ✅ **Rename Session Export File** — **COMPLETED**
    - Use `oscar_session_PHI.json` naming
    - **Effort**: 10 minutes
    - **Impact**: Signal data sensitivity to users
+   - **Implementation**: Updated filename in [src/hooks/useSessionManager.js](../../../src/hooks/useSessionManager.js#L77) to `oscar_session_PHI.json`
 
-4. **Document Data Lifecycle**
+4. ✅ **Document Data Lifecycle** — **COMPLETED**
    - Add clear section to user docs explaining when/where data is stored
    - **Effort**: 45 minutes
    - **Impact**: Set correct user expectations
+   - **Implementation**: Added comprehensive "Data Storage and Privacy" section to [docs/user/01-getting-started.md](../../../docs/user/01-getting-started.md#5-data-storage-and-privacy) covering when/where/how long data is stored, deletion instructions, and privacy guarantees
 
 ### Priority 2 — Medium Impact, Medium Effort
 
-5. **Disable Console Error Logging in Production**
+1. **Disable Console Error Logging in Production**
    - Wrap error logs in `if (import.meta.env.DEV)`
    - **Effort**: 30 minutes
    - **Impact**: Prevent stack trace disclosure in production
 
-6. **Add Explicit IndexedDB Opt-In**
+2. **Add Explicit IndexedDB Opt-In**
    - Require user confirmation before saving to IndexedDB
    - **Effort**: 1–2 hours
    - **Impact**: Respect user privacy; align with consent principles
 
-7. **Sanitize CSV Parser Error Messages**
+3. **Sanitize CSV Parser Error Messages**
    - Replace with generic error messages
    - **Effort**: 30 minutes
    - **Impact**: Prevent error message data leakage
 
-8. **Add Header Validation for CSV Files**
+4. **Add Header Validation for CSV Files**
    - Validate required columns exist before processing
    - **Effort**: 1 hour
    - **Impact**: Fail-fast on malformed files
 
 ### Priority 3 — Lower Impact or Higher Effort
 
-9. **Implement Content Security Policy (CSP)**
+1. **Implement Content Security Policy (CSP)**
    - Define strict CSP meta tag
    - **Effort**: 1 hour (plus testing)
    - **Impact**: Defense-in-depth for XSS
 
-10. **Add Client-Side Encryption for IndexedDB**
-    - Encrypt sensitive data at rest
-    - **Effort**: 3–4 hours
-    - **Impact**: Protect against device theft or malicious extensions
+2. **Add Client-Side Encryption for IndexedDB**
+   - Encrypt sensitive data at rest
+   - **Effort**: 3–4 hours
+   - **Impact**: Protect against device theft or malicious extensions
 
-11. **Implement Automatic Data Deletion on Tab Close**
-    - Clear sensitive data from memory when user closes tab
-    - **Effort**: 2–3 hours
-    - **Impact**: Session-like privacy mode
+3. **Implement Automatic Data Deletion on Tab Close**
+   - Clear sensitive data from memory when user closes tab
+   - **Effort**: 2–3 hours
+   - **Impact**: Session-like privacy mode
 
-12. **Add npm Audit to CI Pipeline**
-    - Fail builds on moderate/high severity vulnerabilities
-    - **Effort**: 30 minutes
-    - **Impact**: Continuous supply chain monitoring
+4. **Add npm Audit to CI Pipeline**
+   - Fail builds on moderate/high severity vulnerabilities
+   - **Effort**: 30 minutes
+   - **Impact**: Continuous supply chain monitoring
 
 ---
 

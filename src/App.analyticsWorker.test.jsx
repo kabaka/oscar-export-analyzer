@@ -74,6 +74,7 @@ vi.mock('./components/ui', () => ({
   __esModule: true,
   DataImportModal: () => null,
   DocsModal: () => null,
+  PrintWarningDialog: () => null,
   ThemeToggle: () => null,
   GuideLink: () => null,
   ErrorBoundary: ({ children }) => children,

@@ -64,6 +64,20 @@ describe('Print Page control', () => {
     });
     expect(printItem).toBeEnabled();
     await userEvent.click(printItem);
+
+    // Now the print warning dialog should appear
+    const warningDialog = await screen.findByRole('alertdialog', {
+      name: /print sensitive health data/i,
+    });
+    expect(warningDialog).toBeInTheDocument();
+
+    // Click "Print Anyway" to confirm
+    const printAnywayBtn = screen.getByRole('button', {
+      name: /confirm and print/i,
+    });
+    await userEvent.click(printAnywayBtn);
+
+    // Now window.print should be called
     expect(window.print).toHaveBeenCalled();
 
     expect(

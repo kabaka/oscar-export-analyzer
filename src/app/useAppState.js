@@ -65,6 +65,7 @@ export function useAppState() {
   const [rangeA, setRangeA] = useState({ start: null, end: null });
   const [rangeB, setRangeB] = useState({ start: null, end: null });
   const importModal = useModal(true);
+  const printWarningModal = useModal(false);
 
   const [clusterParams, setClusterParams] = useState({
     algorithm: DEFAULT_CLUSTER_ALGORITHM,
@@ -223,6 +224,7 @@ export function useAppState() {
     rangeB,
     setRangeB,
     importModal,
+    printWarningModal,
     clusterParams,
     setClusterParams,
     fnPreset,

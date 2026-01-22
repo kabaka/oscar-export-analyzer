@@ -82,6 +82,19 @@ export function useCsvFiles() {
       if (signal?.aborted) {
         return;
       }
+
+      const MAX_FILE_SIZE_MB = 50;
+      const BYTES_PER_KB = 1024;
+      const KB_PER_MB = 1024;
+      const BYTES_PER_MB = BYTES_PER_KB * KB_PER_MB;
+      if (file.size > MAX_FILE_SIZE_MB * BYTES_PER_MB) {
+        setError(
+          `File exceeds ${MAX_FILE_SIZE_MB}MB limit. Please contact support if you need to analyze larger datasets.`,
+        );
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       setProgress(0);
