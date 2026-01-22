@@ -1,6 +1,29 @@
-# Repository Guidelines
+# OSCAR Export Analyzer — Agent Guide
 
-This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests via Vitest and Testing Library. Use Node 20 and npm.
+## Custom Copilot Agents
+
+OSCAR Export Analyzer includes **9 specialized GitHub Copilot agents** for development workflows. When completing tasks that could be delegated, use these agents as subagents; they coordinate development, testing, documentation, analysis, and quality assurance.
+
+**Agents** (in `.github/agents/`):
+
+- `@orchestrator-manager` — Coordinate projects, delegate tasks, track progress across workflows
+- `@frontend-developer` — Build React/JSX components, hooks, component architecture
+- `@ux-designer` — Design user experiences, accessibility, data visualization, medical UI patterns
+- `@testing-expert` — Design test strategy, write Vitest tests, synthetic test data, coverage
+- `@data-scientist` — Statistical analysis, algorithm validation, medical data interpretation
+- `@documentation-specialist` — Write and maintain documentation, guides, architecture docs, code comments
+- `@security-auditor` — Audit security, privacy, sensitive health data handling (local-first privacy)
+- `@adr-specialist` — Document architectural decisions, technology choices, rationale
+- `@debugger-rca-analyst` — Determine root cause through rigorous testing and analysis
+- `@readiness-reviewer` — Pre-commit quality gate: tests pass, linting clean, scope complete, docs updated
+
+**Documentation**:
+
+- [**Individual Agent Details**](.github/agents/*.agent.md) — Full agent descriptions, expertise, and patterns
+- **Delegation Model**: Always delegate — use multiple agents for complex work. See orchestrator-manager for patterns.
+- **Quality Bar**: All tests pass, linting clean, documentation updated, no sensitive data committed.
+
+---
 
 ## Project Structure & Module Organization
 
@@ -10,6 +33,7 @@ This repo contains a Vite + React app for analyzing OSCAR sleep data, with tests
 - `analysis.js`: optional CLI for deeper event analysis.
 - `dist/`: production build output (generated).
 - `.github/workflows/ci.yml`: CI for build and tests.
+- `.github/agents/`: Agent specifications for coordinated development.
 
 ## Build, Test, and Development Commands
 
