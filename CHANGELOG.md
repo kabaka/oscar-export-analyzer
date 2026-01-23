@@ -3,7 +3,8 @@
 All notable changes to OSCAR Export Analyzer will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
+to track releases as they're deployed to production on the main branch.
 
 ## [Unreleased]
 
@@ -41,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved worker flow stability and error handling
 - Fixed chart theme helper to handle null layouts gracefully
 
-## [1.0.0] - 2026-01-21
+## [2026-01-21]
 
 Initial production release with comprehensive CPAP data analysis capabilities.
 
@@ -118,7 +119,7 @@ Initial production release with comprehensive CPAP data analysis capabilities.
 - Date parsing for various CSV date formats
 - Statistical edge cases (empty inputs, NaN handling, tie handling in Mann-Whitney)
 
-## [0.3.0] - 2025-08-10
+## [2025-08-10]
 
 ### Added
 
@@ -143,7 +144,7 @@ Initial production release with comprehensive CPAP data analysis capabilities.
 - Session preservation when no files are loaded
 - Tooltip ID generation for deterministic testing
 
-## [0.2.0] - 2025-08-09
+## [2025-08-09]
 
 ### Added
 
@@ -174,7 +175,7 @@ Initial production release with comprehensive CPAP data analysis capabilities.
 - Heatmap colorscales optimized for dark backgrounds
 - Violin and QQ plot theming
 
-## [0.1.0] - 2025-07-30
+## [2025-07-30]
 
 ### Added
 
@@ -199,7 +200,7 @@ Initial production release with comprehensive CPAP data analysis capabilities.
 - Active TOC section highlighting on scroll
 - Z-index layering for sticky elements
 
-## [0.0.1] - 2025-07-14
+## [2025-07-14]
 
 Initial alpha release.
 
@@ -236,9 +237,9 @@ Initial alpha release.
 - Worker thread event filtering
 - Chart responsiveness and layout issues
 
-[Unreleased]: https://github.com/kabaka/oscar-export-analyzer/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/v1.0.0
-[0.3.0]: https://github.com/kabaka/oscar-export-analyzer/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/kabaka/oscar-export-analyzer/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/kabaka/oscar-export-analyzer/compare/v0.0.1...v0.1.0
-[0.0.1]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/v0.0.1
+[Unreleased]: https://github.com/kabaka/oscar-export-analyzer/compare/2026-01-21...HEAD
+[2026-01-21]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/2026-01-21
+[2025-08-10]: https://github.com/kabaka/oscar-export-analyzer/compare/2025-08-09...2025-08-10
+[2025-08-09]: https://github.com/kabaka/oscar-export-analyzer/compare/2025-07-30...2025-08-09
+[2025-07-30]: https://github.com/kabaka/oscar-export-analyzer/compare/2025-07-14...2025-07-30
+[2025-07-14]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/2025-07-14

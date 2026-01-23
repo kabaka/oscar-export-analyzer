@@ -202,7 +202,15 @@ The project follows [Keep a Changelog](https://keepachangelog.com/) format. Add 
 ❌ Typo fixes in code comments  
 ❌ CI/CD changes (unless affecting contributors)
 
-**Format:**
+**Format and Workflow:**
+
+The project uses date-based versioning (YYYY-MM-DD) because main branch deploys to GitHub Pages immediately with no staging environment. Changes flow through these stages:
+
+1. **Before commit**: Add entries to `[Unreleased]` section
+2. **On commit**: Entries stay in `[Unreleased]` until a release boundary is reached
+3. **At release**: Move entries from `[Unreleased]` to a dated section (e.g., `[2026-01-23]`)
+
+**Typical workflow for agents:**
 
 ```markdown
 ## [Unreleased]
@@ -212,25 +220,28 @@ The project follows [Keep a Changelog](https://keepachangelog.com/) format. Add 
 - Brief description of what was added ([#123](link-to-issue-or-pr))
 ```
 
-**Workflow:**
-
-1. Make code changes and add tests
-2. Update CHANGELOG.md in the same commit
-3. Use present tense, be concise but descriptive
-4. Include link to issue/PR when available
-5. `@readiness-reviewer` will verify CHANGELOG is updated before approving
-
-**Example entry:**
+When a set of changes should be grouped as a release (e.g., end of sprint, major feature completion), the orchestrator moves `[Unreleased]` entries to a dated section:
 
 ```markdown
+## [2026-01-23]
+
 ### Added
 
 - Accessibility guide documenting keyboard navigation and WCAG AA compliance
+- Testing patterns guide with 10 patterns and 29 code examples
 
 ### Fixed
 
 - Date range filter now correctly handles sessions spanning midnight
 ```
+
+**Guidelines:**
+
+1. Add entries to `[Unreleased]` when you commit code with user-facing changes
+2. Use present tense, be concise but descriptive
+3. Include links to issues/PRs when available
+4. Don't worry about dates—that's handled during release coordination
+5. `@readiness-reviewer` will verify CHANGELOG is updated before approving
 
 For questions about what belongs in CHANGELOG, consult `@documentation-specialist`.
 
