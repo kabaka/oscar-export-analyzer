@@ -11,6 +11,7 @@ corresponds to changes released on that day.
 
 ### Added
 
+- **CI quality gates** enforcing bundle size limits (2.6MB gzipped max), security audit (moderate+ vulnerabilities), and test coverage thresholds (80% minimum line coverage)
 - **67 comprehensive accessibility tests** for HeaderMenu (17 tests), DateRangeControls (26 tests), and DataImportModal (24 tests) covering keyboard navigation, ARIA attributes, and focus management
 - **Accessibility Testing Patterns guide** in testing-patterns.md documenting keyboard navigation tests, ARIA attribute verification, focus management tests, and best practices for WCAG 2.1 AA compliance
 - **Coverage baseline measurement** with Vitest v8 provider achieving 89.87% line coverage and 71.38% branch coverage across 431 tests
