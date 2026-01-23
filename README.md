@@ -117,11 +117,17 @@ If the application fails to load or a chart appears blank, consult [docs/user/06
 
 ## Documentation
 
-Extensive documentation lives in the [`docs`](./docs) folder.
+Comprehensive documentation lives in the [`docs`](./docs) folder. Start with the [**Documentation Hub**](docs/README.md) for a complete index and quick-start navigation.
 
-- **User Guide** – Eight chapters cover setup, visualization interpretation, statistical concepts, and more.
-- **Developer Guide** – Explains project structure, coding conventions, and how to run tests.
-- **Rendering** – Markdown guides are rendered with [react-markdown](https://github.com/remarkjs/react-markdown), [KaTeX](https://katex.org/) for math using GitHub-compatible `$`/`$$` delimiters, and [remark-gfm](https://github.com/remarkjs/remark-gfm) for tables, then sanitized with [DOMPurify](https://github.com/cure53/DOMPurify) to guard against malicious input.
+### Quick Links
+
+- **[Documentation Hub](docs/README.md)** — Central index with guides organized by role and task
+- **[User Guide](docs/user/01-getting-started.md)** — Getting started, visualizations, statistics, troubleshooting
+- **[Developer Guide](docs/developer/README.md)** — Architecture, setup, adding features, CLI tool
+- **[Printing & Exporting](docs/user/09-printing-and-exporting.md)** — Generate PDFs, export sessions, save CSV aggregates
+- **[CLI Tool](docs/developer/cli-tool.md)** — Command-line analysis for batch processing and scripting
+
+**Rendering:** Markdown guides are rendered with [react-markdown](https://github.com/remarkjs/react-markdown), [KaTeX](https://katex.org/) for math using GitHub-compatible `$`/`$$` delimiters, and [remark-gfm](https://github.com/remarkjs/remark-gfm) for tables, then sanitized with [DOMPurify](https://github.com/cure53/DOMPurify) to guard against malicious input.
 
 ## Contributing
 

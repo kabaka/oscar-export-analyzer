@@ -18,6 +18,7 @@ codebase:
    to date.
 4. [Adding Features](adding-features.md) — conventions, testing strategies, and a gentle checklist for shepherding an
    idea from sketch to pull request.
+5. [CLI Tool](cli-tool.md) — command-line analysis tool for batch processing, scripting, and algorithm experimentation.
 
 You do not need to read these documents in order. Skim the sections that match your immediate task, then come back for
 a longer read when you are curious.
@@ -41,7 +42,8 @@ the top‑level directories:
 - `src/` — UI components, hooks, and utility modules. Tests live next to the files they cover.
 - `docs/` — user and developer documentation. The user guide walks through visualizations; the developer guide is the
   place you are reading now.
-- `analysis.js` — a Node script for deeper batch analytics outside the browser.
+- `analysis.js` — a Node script for deeper batch analytics outside the browser. See the [CLI Tool guide](cli-tool.md)
+  for usage details.
 - `dist/` — generated build output. This folder is ignored in Git; run `npm run build` to create it locally.
 
 Browsing through `src/components` is a great way to understand how a view is assembled. Most charts share a handful of

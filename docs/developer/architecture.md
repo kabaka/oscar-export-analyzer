@@ -6,6 +6,28 @@ framework abstractions. This section peels back the layers so you can orient you
 
 ### High‑Level Flow
 
+The following diagram shows how data flows through the analyzer from initial upload to rendered visualizations:
+
+```mermaid
+graph LR
+    A[Browser Upload] --> B[CSV Parser Worker]
+    B -->|Parsed Rows| C[DataContext]
+    C --> D[Date Filter]
+    D --> E[Feature Modules]
+    E --> F[UI Components]
+    F --> G[Plotly Charts]
+    C -.->|Optional| H[IndexedDB]
+    B -->|Heavy Computation| I[Analytics Worker]
+    I -->|Results| C
+
+    style A fill:#e1f5ff
+    style C fill:#fff4e1
+    style G fill:#e8f5e9
+    style H fill:#f3e5f5
+```
+
+**Flow breakdown:**
+
 1. **Entry Point** – `main.jsx` bootstraps the React app and mounts `<AppProviders><AppShell /></AppProviders>` inside a
    root DOM node. `AppProviders` centralizes shared hooks, modals, and the CSV/session state machine so feature code can
    assume those contexts already exist. Vite handles module loading and hot replacement during development.
@@ -27,6 +49,46 @@ framework abstractions. This section peels back the layers so you can orient you
 
 ### Component Structure
 
+The component hierarchy follows a clear top-down pattern:
+
+```mermaid
+graph TD
+    A[main.jsx] --> B[AppProviders]
+    B --> C[AppShell]
+    C --> D[HeaderMenu]
+    C --> E[TableOfContents]
+    C --> F[Feature Sections]
+
+    F --> G[OverviewSection]
+    F --> H[ApneaClustersSection]
+    F --> I[FalseNegativesSection]
+    F --> J[RangeComparisonsSection]
+    F --> K[RawExplorerSection]
+
+    G --> L[UI Components]
+    H --> L
+    I --> L
+    J --> L
+    K --> L
+
+    L --> M[DocsModal]
+    L --> N[ThemeToggle]
+    L --> O[ThemedPlot]
+    L --> P[Card]
+    L --> Q[Button]
+
+    B -.->|Provides| R[DataContext]
+    B -.->|Provides| S[ThemeContext]
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e8f5e9
+    style F fill:#ffe0b2
+    style L fill:#f3e5f5
+```
+
+**Component roles:**
+
 `App.jsx` now exports `AppShell`, a lightweight composition layer that wires the header layout, table-of-contents, and
 feature sections together. Sidebar links still set an "active view" state, but the heavy lifting is handled inside the
 feature modules so `AppShell` stays thin. This keeps the bundle small without introducing a routing library for what is
@@ -44,6 +106,38 @@ data or a Plotly regression—the boundary displays a friendly message rather th
 also logged to the console for debugging.
 
 ### State and Persistence
+
+State management flows through several layers, with clear separation between UI state and data state:
+
+```mermaid
+graph TB
+    A[User Upload] --> B[CSV Parser]
+    B --> C[DataContext]
+    C --> D{Persistence Enabled?}
+    D -->|Yes| E[IndexedDB]
+    D -->|No| F[Memory Only]
+
+    G[Date Filter UI] --> H[useData Hook]
+    H --> C
+    C --> I[Filtered Sessions]
+    I --> J[Feature Components]
+
+    K[Export Session] --> L[buildSession]
+    C --> L
+    L --> M[JSON Download]
+
+    N[Import Session] --> O[applySession]
+    O --> C
+
+    E -.->|Auto-restore| C
+
+    style C fill:#fff4e1
+    style E fill:#e8f5e9
+    style H fill:#e1f5ff
+    style L fill:#f3e5f5
+```
+
+**State flow:**
 
 `DataContext` combines several concerns:
 

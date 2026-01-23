@@ -22,7 +22,13 @@ Open the header menu and choose **Load Data** to reopen the import dialog. You c
 
 ### Can I export results for my doctor?
 
-Use the menu's **Print Page** option or aggregates CSV export for sharing. The print view hides navigation and buttons but preserves charts and summary tables.
+Yes! The analyzer provides several export options:
+
+- **Print to PDF** — Use the header menu's **Print Page** option to generate a comprehensive report with charts and statistics. See the [Printing & Exporting guide](09-printing-and-exporting.md#printing-reports) for details.
+- **Export Aggregates CSV** — Download summary statistics for spreadsheet analysis. Perfect for sharing tabular data.
+- **Export Session JSON** — Save your entire analysis for backup or sharing (contains PHI—handle securely).
+
+The print view hides navigation and buttons but preserves all charts and summary tables, making it ideal for clinical discussions.
 
 ### Is my data uploaded anywhere?
 
@@ -68,7 +74,27 @@ Open the “Clustered Apnea Events” panel and expand the settings section. Par
 
 ### Can I script analyses instead of using the UI?
 
-The repository includes `analysis.js`, a Node script that mirrors the app's clustering logic. Run `node analysis.js <Details.csv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec] [--algorithm=<bridged|kmeans|agglomerative>] [--k=<clusters>] [--linkage-threshold-sec=<seconds>]` to analyze a night from the command line. Flags default to the same parameters exposed in the UI, so offline batches see identical behavior.
+Yes! The repository includes `analysis.js`, a Node.js command-line tool that mirrors the app's clustering logic. This is perfect for batch processing, automation, and reproducible analysis.
+
+**Basic usage:**
+
+```bash
+node analysis.js <Details.csv> [YYYY-MM-DD] [gapSec] [flgBridgeThreshold] [flgClusterGapSec]
+```
+
+**Advanced options:**
+
+- `--algorithm=<time-gap|flg-bridge|kmeans|single-linkage>` — Choose clustering algorithm
+- `--k=<number>` — Number of clusters for k-means
+- `--linkage-threshold-sec=<seconds>` — Distance threshold for single-linkage
+
+**Example:**
+
+```bash
+node analysis.js ~/oscar/Details.csv 2024-01-15 --algorithm=flg-bridge
+```
+
+See the complete [CLI Tool documentation](../developer/cli-tool.md) for detailed examples, parameter explanations, and scripting patterns.
 
 ### Does the analyzer support non‑OSCAR CSVs?
 
