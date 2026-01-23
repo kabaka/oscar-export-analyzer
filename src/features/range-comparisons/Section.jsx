@@ -1,21 +1,25 @@
 import React, { useCallback } from 'react';
 import { ErrorBoundary, GuideLink } from '../../components/ui';
 import RangeComparisons from './RangeComparisons';
-import { useAppContext } from '../../app/AppProviders';
+import { useData } from '../../context/DataContext';
+import { useDateFilter } from '../../hooks/useDateFilter';
+import { useRangeComparisons } from '../../hooks/useRangeComparisons';
 
 /**
  * Feature section wrapper for range comparison analysis.
  *
  * Provides UI for selecting two date ranges and displays comparative
  * statistics. Only renders if Summary CSV data is available.
+ * Uses granular hooks to access range and filter state directly from context.
  *
  * @returns {JSX.Element | null} Section with range controls and comparison, or null if no data
  *
  * @see RangeComparisons - Comparison component
  */
 export default function RangeComparisonsSection() {
-  const { filteredSummary, rangeA, setRangeA, rangeB, setRangeB, dateFilter } =
-    useAppContext();
+  const { filteredSummary } = useData();
+  const { dateFilter } = useDateFilter();
+  const { rangeA, setRangeA, rangeB, setRangeB } = useRangeComparisons();
 
   const hasSummary = !!filteredSummary?.length;
 

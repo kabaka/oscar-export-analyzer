@@ -1,5 +1,6 @@
 export { default as DataImportModal } from './DataImportModal';
 export { default as DocsModal } from './DocsModal';
+export { default as ErrorAlert } from './ErrorAlert';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as GuideLink } from './GuideLink';
 export { default as KPICard } from './KPICard';
@@ -8,4 +9,5 @@ export { default as PrintWarningDialog } from './PrintWarningDialog';
 export { default as StorageConsentDialog } from './StorageConsentDialog';
 export { default as ThemeToggle } from './ThemeToggle';
 export { default as ThemedPlot } from './ThemedPlot';
+export { default as VirtualTable } from './VirtualTable';
 export { default as VizHelp } from './VizHelp';

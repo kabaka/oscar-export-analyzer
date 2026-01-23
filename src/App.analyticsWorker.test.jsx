@@ -88,6 +88,7 @@ vi.mock('./components/ui', () => ({
   ),
   ParamInput: () => null,
   ThemedPlot: () => null,
+  VirtualTable: () => null,
   VizHelp: () => null,
 }));
 

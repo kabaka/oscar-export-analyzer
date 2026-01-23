@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { ErrorBoundary } from '../../components/ui';
-import { useAppContext } from '../../app/AppProviders';
+import { useData } from '../../context/DataContext';
+import { useClusterParams } from '../../hooks/useClusterParams';
 
 const ApneaEventStats = lazy(() => import('./ApneaEventStats'));
 const ApneaClusterAnalysis = lazy(() => import('./ApneaClusterAnalysis'));
@@ -10,6 +11,7 @@ const ApneaClusterAnalysis = lazy(() => import('./ApneaClusterAnalysis'));
  *
  * Lazy-loads both ApneaEventStats and ApneaClusterAnalysis components
  * with error boundaries. Only renders if Details CSV data is available.
+ * Uses granular hooks to access cluster state directly from context.
  *
  * @returns {JSX.Element | null} Section with cluster analysis components or null
  *
@@ -17,12 +19,9 @@ const ApneaClusterAnalysis = lazy(() => import('./ApneaClusterAnalysis'));
  * @see ApneaClusterAnalysis - Cluster-level analysis
  */
 export default function ApneaClustersSection() {
-  const {
-    filteredDetails,
-    apneaClusters,
-    clusterParams,
-    onClusterParamChange,
-  } = useAppContext();
+  const { filteredDetails } = useData();
+  const { apneaClusters, clusterParams, onClusterParamChange } =
+    useClusterParams();
 
   if (!filteredDetails?.length) {
     return null;

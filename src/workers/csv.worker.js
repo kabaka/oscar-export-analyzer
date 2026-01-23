@@ -110,6 +110,23 @@ self.onmessage = (e) => {
           });
         }
         if (rows.length) {
+          /**
+           * Convert DateTime to milliseconds for worker-to-main-thread serialization.
+           *
+           * The structured clone algorithm used by postMessage cannot serialize Date objects
+           * or Luxon DateTime instances. Converting to milliseconds (primitive number) ensures
+           * reliable serialization. Main thread receives milliseconds and can reconstruct
+           * Date/DateTime objects as needed.
+           *
+           * Alternative considered: ISO 8601 strings would serialize but require parsing overhead
+           * on every receive. Milliseconds are more efficient and directly compatible with
+           * new Date(ms) and DateTime.fromMillis(ms).
+           *
+           * **IMPORTANT**: When refactoring worker message passing, preserve this DateTime-to-
+           * milliseconds conversion pattern. Do not send Date or DateTime objects directly.
+           *
+           * @see https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
+           */
           const processed = rows.map((r) => {
             if (r['DateTime']) {
               const ms = new Date(r['DateTime']).getTime();

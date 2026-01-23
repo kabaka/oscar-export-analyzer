@@ -25,15 +25,13 @@
  * @see VirtualTable - Internal virtualization helper
  * @see rowsToCsv - CSV export utility
  */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { GuideLink } from './ui';
+import { GuideLink, VirtualTable } from './ui';
 import { useData } from '../context/DataContext';
 import { DECIMAL_PLACES_2 } from '../constants';
 import {
-  VIRTUAL_TABLE_BUFFER_ROWS,
   VIRTUAL_TABLE_DEFAULT_HEIGHT,
-  VIRTUAL_TABLE_OVERSCAN_ROWS,
   VIRTUAL_TABLE_ROW_HEIGHT,
 } from '../constants/charts';
 
@@ -59,46 +57,6 @@ function rowsToCsv(rows, columns) {
     .map((r) => cols.map((c) => esc(c, r[c])).join(','))
     .join('\n');
   return header + '\n' + body;
-}
-
-// Basic virtualized rows renderer for large datasets (no external deps)
-function VirtualTable({
-  rows,
-  rowHeight = VIRTUAL_TABLE_ROW_HEIGHT,
-  height = VIRTUAL_TABLE_DEFAULT_HEIGHT,
-  renderRow,
-}) {
-  const containerRef = useRef(null);
-  const [scrollTop, setScrollTop] = useState(0);
-  const total = rows.length;
-  const onScroll = (e) => setScrollTop(e.currentTarget.scrollTop);
-  const visibleCount =
-    Math.ceil(height / rowHeight) + VIRTUAL_TABLE_OVERSCAN_ROWS;
-  const start = Math.max(
-    0,
-    Math.floor(scrollTop / rowHeight) - VIRTUAL_TABLE_BUFFER_ROWS,
-  );
-  const end = Math.min(total, start + visibleCount);
-  const offsetY = start * rowHeight;
-  const slice = rows.slice(start, end);
-
-  return (
-    <div
-      ref={containerRef}
-      onScroll={onScroll}
-      className="virtual-table-container"
-      style={{ height: `${height}px` }}
-    >
-      <div
-        className="virtual-table-spacer"
-        style={{ height: `${total * rowHeight}px` }}
-      >
-        <div className="virtual-table-viewport" style={{ top: `${offsetY}px` }}>
-          {slice.map((row, i) => renderRow(row, start + i))}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function uniqueCols(rows) {

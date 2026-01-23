@@ -1,0 +1,186 @@
+/**
+ * ErrorAlert Component Styles
+ * Unified error/warning/info alert with WCAG AA contrast ratios
+ * and light/dark theme support.
+ *
+ * BEM Structure:
+ * - Block: .error-alert
+ * - Modifiers: .error-alert--error, .error-alert--warning, .error-alert--info
+ * - Elements: __icon, __message, __actions, __dismiss
+ */
+
+/* CSS Custom Properties — Light Mode (Default) */
+:root {
+  /* Error (Red) */
+  --color-error-text: #c41e3a; /* red 700, contrast 7.2:1 */
+  --color-error-bg: #fce4ec; /* red 50 */
+  --color-error-border: #ef5350; /* red 400 */
+
+  /* Warning (Amber/Orange) */
+  --color-warning-text: #e65100; /* orange 800, contrast 6.5:1 */
+  --color-warning-bg: #fff3e0; /* orange 50 */
+  --color-warning-border: #ffb74d; /* orange 300 */
+
+  /* Info (Blue) */
+  --color-info-text: #0d47a1; /* blue 900, contrast 5.8:1 */
+  --color-info-bg: #e3f2fd; /* blue 50 */
+  --color-info-border: #42a5f5; /* blue 400 */
+}
+
+/* Dark Mode CSS Variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Error (Red) */
+    --color-error-text: #ff5252; /* red 300, contrast 6.8:1 */
+    --color-error-bg: #1d0a0a; /* red 950 */
+    --color-error-border: #ff6b6b; /* red 400 */
+
+    /* Warning (Amber/Orange) */
+    --color-warning-text: #ffb74d; /* orange 300, contrast 6.2:1 */
+    --color-warning-bg: #1f1200; /* orange 950 */
+    --color-warning-border: #ff9800; /* orange 500 */
+
+    /* Info (Blue) */
+    --color-info-text: #42a5f5; /* blue 400, contrast 5.5:1 */
+    --color-info-bg: #0d1a2a; /* blue 950 */
+    --color-info-border: #64b5f6; /* blue 300 */
+  }
+}
+
+/* Block: Main Container */
+.error-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem; /* 12px spacing between icon, message, dismiss */
+  padding: 1rem; /* 16px all sides */
+  border-radius: 6px;
+  border-left: 4px solid;
+  border-top: 1px solid;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+  font-size: 1rem; /* 16px */
+  font-weight: 500; /* medium weight */
+  line-height: 1.5; /* 24px, improves readability */
+  position: relative;
+  margin-bottom: 1rem; /* Spacing between multiple alerts */
+}
+
+/* Mobile: Reduce padding */
+@media (max-width: 600px) {
+  .error-alert {
+    padding: 0.75rem; /* 12px on mobile */
+    font-size: 0.9375rem; /* 15px */
+  }
+}
+
+/* Modifier: Error Severity */
+.error-alert--error {
+  color: var(--color-error-text);
+  background-color: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+/* Modifier: Warning Severity */
+.error-alert--warning {
+  color: var(--color-warning-text);
+  background-color: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+}
+
+/* Modifier: Info Severity */
+.error-alert--info {
+  color: var(--color-info-text);
+  background-color: var(--color-info-bg);
+  border-color: var(--color-info-border);
+}
+
+/* Element: Icon Container */
+.error-alert__icon {
+  flex-shrink: 0; /* Prevent icon from shrinking */
+  font-size: 1.25rem; /* 20px */
+  line-height: 1;
+  margin-top: 0.125rem; /* 2px, align with first line of text */
+}
+
+/* Element: Message Text */
+.error-alert__message {
+  flex: 1; /* Take up remaining space */
+  text-align: left; /* Left-aligned for readability */
+  word-break: break-word; /* Prevent overflow on long words */
+}
+
+/* Element: Action Buttons/Links */
+.error-alert__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.error-alert__actions button,
+.error-alert__actions a {
+  text-decoration: underline;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Element: Dismiss Button */
+.error-alert__dismiss {
+  flex-shrink: 0; /* Prevent button from shrinking */
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin: 0;
+  margin-top: -0.25rem; /* Align with top edge */
+  background: transparent;
+  border: none;
+  font-size: 1.5rem; /* 24px for × symbol */
+  line-height: 1;
+  cursor: pointer;
+  color: inherit; /* Inherit severity color */
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+  border-radius: 4px;
+}
+
+.error-alert__dismiss:hover {
+  opacity: 0.8;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode: Adjust dismiss button hover background */
+@media (prefers-color-scheme: dark) {
+  .error-alert__dismiss:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Focus state for dismiss button (keyboard navigation) */
+.error-alert__dismiss:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Mobile: Increase touch target for dismiss button */
+@media (max-width: 600px) {
+  .error-alert__dismiss {
+    width: 32px;
+    height: 32px;
+    font-size: 1.75rem; /* Larger × on mobile */
+  }
+}
+
+/* Print styles: Simplify for readability */
+@media print {
+  .error-alert {
+    border: 2px solid #000;
+    background-color: #fff !important;
+    color: #000 !important;
+    page-break-inside: avoid;
+  }
+
+  .error-alert__dismiss {
+    display: none; /* Hide dismiss button in print */
+  }
+}

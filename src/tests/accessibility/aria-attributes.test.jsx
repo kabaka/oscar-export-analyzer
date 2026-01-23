@@ -1,66 +1,60 @@
-/* eslint-disable no-magic-numbers -- test-specific test data values and assertions */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import DateRangeControls from '../../components/DateRangeControls';
 import HeaderMenu from '../../components/HeaderMenu';
+import {
+  mockUseDateFilter,
+  clearUseDateFilterMock,
+} from '../../test-utils/mockHooks';
 
 describe('ARIA Attributes and Semantic HTML', () => {
   describe('DateRangeControls ARIA labels', () => {
-    const defaultProps = {
-      quickRange: 'all',
-      dateFilter: { start: null, end: null },
-      onQuickRangeChange: () => {},
-      onDateFilterChange: () => {},
-      onCustomRange: () => {},
-      onReset: () => {},
-      parseDate: (val) => (val ? new Date(val) : null),
-      formatDate: (date) => {
-        if (!date) return '';
-        const d = new Date(date);
-        return d.toISOString().slice(0, 10);
-      },
-    };
+    beforeEach(() => {
+      mockUseDateFilter();
+    });
+
+    afterEach(() => {
+      clearUseDateFilterMock();
+    });
 
     it('has aria-label on quick range selector', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       expect(select).toHaveAttribute('aria-label', 'Quick range');
     });
 
     it('has aria-label on start date input', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const input = screen.getByLabelText('Start date');
       expect(input).toHaveAttribute('aria-label', 'Start date');
     });
 
     it('has aria-label on end date input', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const input = screen.getByLabelText('End date');
       expect(input).toHaveAttribute('aria-label', 'End date');
     });
 
     it('has aria-label on reset button', () => {
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-02-01'),
-          }}
-        />,
-      );
+      mockUseDateFilter({
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-02-01'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const btn = screen.getByRole('button', { name: /reset date filter/i });
       expect(btn).toHaveAttribute('aria-label', 'Reset date filter');
     });
 
     it('uses semantic input type="date" for date inputs', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const startInput = screen.getByLabelText('Start date');
       const endInput = screen.getByLabelText('End date');
@@ -70,7 +64,7 @@ describe('ARIA Attributes and Semantic HTML', () => {
     });
 
     it('uses semantic select element for quick range', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       expect(select.tagName).toBe('SELECT');
@@ -80,7 +74,7 @@ describe('ARIA Attributes and Semantic HTML', () => {
     });
 
     it('renders option elements with descriptive text', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const options = screen.getAllByRole('option');
       const hasDescriptiveOptions = options.some(
@@ -154,24 +148,14 @@ describe('ARIA Attributes and Semantic HTML', () => {
 
   describe('Form validation and error states', () => {
     it('could display aria-invalid on date inputs when validation fails (structure test)', () => {
-      render(
-        <DateRangeControls
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-02-01'),
-            end: new Date('2024-01-01'),
-          }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      mockUseDateFilter({
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-02-01'),
+          end: new Date('2024-01-01'),
+        },
+      });
+      render(<DateRangeControls />);
 
       // Verify inputs are present and accessible
       const startInput = screen.getByLabelText('Start date');
@@ -185,21 +169,7 @@ describe('ARIA Attributes and Semantic HTML', () => {
     it('error messages (if displayed) should be associated with inputs', () => {
       // This test documents expected pattern for validation errors
       // Implementation depends on parent component state management
-      render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       // Verify inputs can be found
       const startInput = screen.getByLabelText('Start date');
@@ -213,21 +183,7 @@ describe('ARIA Attributes and Semantic HTML', () => {
   describe('Focus management and announcements', () => {
     it('maintains focus visibility through tab navigation', async () => {
       const user = userEvent.setup();
-      render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       await user.tab();
@@ -237,45 +193,23 @@ describe('ARIA Attributes and Semantic HTML', () => {
     });
 
     it('reset button becomes accessible when visible', async () => {
-      const { rerender } = render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      mockUseDateFilter();
+      const { rerender } = render(<DateRangeControls />);
 
       let resetBtn = screen.queryByRole('button', {
         name: /reset date filter/i,
       });
       expect(resetBtn).not.toBeInTheDocument();
 
-      rerender(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-02-01'),
-          }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      // Update mock with new date filter
+      clearUseDateFilterMock();
+      mockUseDateFilter({
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-02-01'),
+        },
+      });
+      rerender(<DateRangeControls />);
 
       resetBtn = screen.getByRole('button', { name: /reset date filter/i });
       expect(resetBtn).toHaveFocus || expect(resetBtn).toBeInTheDocument();
@@ -284,21 +218,7 @@ describe('ARIA Attributes and Semantic HTML', () => {
 
   describe('Color contrast and text accessibility', () => {
     it('uses text content instead of relying on color alone', () => {
-      render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       // All controls have descriptive labels
       const select = screen.getByRole('combobox', { name: /quick range/i });
@@ -311,24 +231,13 @@ describe('ARIA Attributes and Semantic HTML', () => {
     });
 
     it('reset button uses text label, not icon alone', () => {
-      render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-02-01'),
-          }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      mockUseDateFilter({
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-02-01'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -339,21 +248,8 @@ describe('ARIA Attributes and Semantic HTML', () => {
 
   describe('Screen reader announcements', () => {
     it('provides context for interactive elements via semantic labels', () => {
-      render(
-        <DateRangeControls
-          quickRange="7"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      mockUseDateFilter({ quickRange: '7' });
+      render(<DateRangeControls />);
 
       // Screen readers can identify:
       // - Control purpose via aria-label and semantic type
@@ -363,21 +259,7 @@ describe('ARIA Attributes and Semantic HTML', () => {
     });
 
     it('supports screen reader discovery of all interactive elements', () => {
-      render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       // All interactive elements should be discoverable
       const combobox = screen.getByRole('combobox', { name: /quick range/i });

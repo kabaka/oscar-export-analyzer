@@ -51,7 +51,16 @@ import {
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
-import { CALENDAR_HEATMAP_HEIGHT } from '../constants/charts';
+import {
+  CALENDAR_HEATMAP_HEIGHT,
+  HEATMAP_MARGIN_TOP_PX,
+  USAGE_HELP_TOOLTIP_MIN_COUNT,
+} from '../constants/charts';
+import { ISO_DATE_LENGTH } from '../constants/time';
+import { MONDAY_INDEX_OFFSET } from '../constants/layout';
+
+// Re-export for compatibility with existing tests
+export { USAGE_HELP_TOOLTIP_MIN_COUNT };
 import { parseDuration } from '../utils/stats';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { useTimeSeriesProcessing } from '../hooks/useTimeSeriesProcessing';
@@ -77,10 +86,6 @@ const DOW_LABELS = Object.freeze([
   'Sat',
   'Sun',
 ]);
-const MONDAY_INDEX_OFFSET = 6;
-const ISO_DATE_LENGTH = 10;
-const HEATMAP_MARGIN_TOP_PX = 16;
-export const USAGE_HELP_TOOLTIP_MIN_COUNT = 7;
 
 /**
  * Displays comprehensive CPAP usage analysis with multiple visualization perspectives.

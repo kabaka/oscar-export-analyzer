@@ -4,12 +4,28 @@
  * These functions ensure that date fields in cluster and false negative data
  * are converted to valid Date objects, handling various input formats
  * (Date instances, timestamps, ISO strings).
+ *
+ * **Date Serialization Context:**
+ * Web Workers send date values as milliseconds (primitive numbers) because the
+ * structured clone algorithm cannot serialize Date or DateTime objects. These
+ * normalization functions reconstruct Date objects from milliseconds on the
+ * main thread after receiving worker messages.
+ *
+ * @see src/workers/csv.worker.js - Where DateTime is converted to milliseconds
+ * @see docs/developer/architecture.md - Full date serialization strategy
  */
 
 /**
  * Converts various date formats to a valid Date object.
  *
- * @param {Date|number|string} value - Date value in various formats
+ * Handles the main thread side of worker date serialization: converts milliseconds
+ * (received from workers via postMessage) back to Date objects for use in React
+ * components and visualization libraries.
+ *
+ * @param {Date|number|string} value - Date value in various formats:
+ *   - number: milliseconds timestamp from worker (primary use case)
+ *   - Date: already a Date object (passthrough)
+ *   - string: ISO 8601 string (fallback)
  * @returns {Date|null} Valid Date object or null if conversion fails
  */
 export const toValidDate = (value) => {

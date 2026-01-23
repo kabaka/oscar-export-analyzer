@@ -12,6 +12,7 @@ import {
   VizHelp,
 } from '../../components/ui';
 import { MILLISECONDS_PER_SECOND, DECIMAL_PLACES_2 } from '../../constants';
+import { CLUSTER_ANALYSIS_PADDING_MS } from '../../constants/charts';
 import { PARAM_FIELDS_BY_ALGORITHM } from './paramFields';
 
 /**
@@ -56,9 +57,8 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   let leakTrace = [];
   let pressureTrace = [];
   if (clusterStartMs !== null && clusterEndMs !== null && detailsList.length) {
-    const padMs = 30000; // 30s padding around cluster
-    const start = new Date(clusterStartMs - padMs);
-    const end = new Date(clusterEndMs + padMs);
+    const start = new Date(clusterStartMs - CLUSTER_ANALYSIS_PADDING_MS);
+    const end = new Date(clusterEndMs + CLUSTER_ANALYSIS_PADDING_MS);
     const leak = [];
     const pressure = [];
     detailsList.forEach((r) => {

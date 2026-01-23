@@ -79,8 +79,52 @@ self.onmessage = (e) => {
 - Keep worker logic pure: input → computation → output (no DOM access)
 - Post progress updates for long operations: `self.postMessage({ type: 'progress', percent: 50 })`
 - Terminate workers when unmounting components: `worker.terminate()`
+- **Date Serialization**: Always convert Date/DateTime objects to milliseconds (number) before postMessage
 
-**See Also**: [src/workers/](../../src/workers/), [src/hooks/useAnalyticsProcessing.js](../../src/hooks/useAnalyticsProcessing.js) 4. **Visualization Components** – Each feature now lives in `src/features/<feature>/`, which bundles the `Section`
+**Date Serialization Strategy:**
+
+The structured clone algorithm used by `postMessage` cannot serialize `Date` objects or Luxon `DateTime` instances.
+All date values sent from workers to the main thread must be converted to milliseconds (primitive numbers):
+
+```javascript
+// In worker: Convert DateTime to milliseconds before sending
+const processed = rows.map((r) => {
+  if (r['DateTime']) {
+    const ms = new Date(r['DateTime']).getTime();
+    return { ...r, DateTime: ms };
+  }
+  return r;
+});
+self.postMessage({ type: 'rows', rows: processed });
+
+// In main thread: Reconstruct Date/DateTime from milliseconds
+worker.onmessage = (e) => {
+  if (e.data.type === 'rows') {
+    const rows = e.data.rows.map((r) => ({
+      ...r,
+      DateTime: new Date(r.DateTime), // or DateTime.fromMillis(r.DateTime)
+    }));
+    setData(rows);
+  }
+};
+```
+
+**Why milliseconds?**
+
+- Milliseconds are primitive numbers that serialize reliably via structured cloning
+- Directly compatible with `new Date(ms)` and Luxon's `DateTime.fromMillis(ms)`
+- More efficient than ISO 8601 strings, which require parsing on every receive
+
+**Alternatives considered:**
+
+- **ISO 8601 strings**: Would serialize but add parsing overhead for every row received
+- **Custom serialization**: Would require maintaining a bidirectional serialization protocol
+- **Milliseconds** (chosen): Optimal balance of simplicity, performance, and compatibility
+
+**CRITICAL**: When refactoring worker message passing, preserve this DateTime-to-milliseconds pattern.
+Do not attempt to send Date or DateTime objects directly—they will be received as empty objects `{}`.
+
+**See Also**: [src/workers/](../../src/workers/), [src/hooks/useAnalyticsProcessing.js](../../src/hooks/useAnalyticsProcessing.js), [Structured Clone Algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) 4. **Visualization Components** – Each feature now lives in `src/features/<feature>/`, which bundles the `Section`
 container, local components, and colocated tests. The directory exposes a public API through `index.js` so the rest of
 the app imports `import { OverviewSection } from '@features/overview'` style entry points. Sections pull shared
 primitives (cards, modals, themed charts, etc.) from `src/components/ui`, keeping feature modules focused on

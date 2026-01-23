@@ -1,31 +1,27 @@
-/* eslint-disable no-magic-numbers -- test-specific DOM element indices and timing values */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import DateRangeControls from '../../components/DateRangeControls';
 import HeaderMenu from '../../components/HeaderMenu';
+import {
+  mockUseDateFilter,
+  clearUseDateFilterMock,
+} from '../../test-utils/mockHooks';
 
 describe('Keyboard Navigation Tests', () => {
   describe('DateRangeControls', () => {
-    const defaultProps = {
-      quickRange: 'all',
-      dateFilter: { start: null, end: null },
-      onQuickRangeChange: () => {},
-      onDateFilterChange: () => {},
-      onCustomRange: () => {},
-      onReset: () => {},
-      parseDate: (val) => (val ? new Date(val) : null),
-      formatDate: (date) => {
-        if (!date) return '';
-        const d = new Date(date);
-        return d.toISOString().slice(0, 10);
-      },
-    };
+    beforeEach(() => {
+      mockUseDateFilter();
+    });
+
+    afterEach(() => {
+      clearUseDateFilterMock();
+    });
 
     it('allows tabbing through all interactive elements in order', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const quickRangeSelect = screen.getByRole('combobox', {
         name: /quick range/i,
@@ -48,7 +44,7 @@ describe('Keyboard Navigation Tests', () => {
 
     it('allows reverse tab navigation (Shift+Tab)', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const endDateInput = screen.getByLabelText('End date');
 
@@ -64,7 +60,7 @@ describe('Keyboard Navigation Tests', () => {
 
     it('allows opening quick range dropdown with Enter/Space', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       select.focus();
@@ -76,7 +72,7 @@ describe('Keyboard Navigation Tests', () => {
 
     it('allows selecting date inputs with keyboard', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const startInput = screen.getByLabelText('Start date');
       startInput.focus();
@@ -89,7 +85,7 @@ describe('Keyboard Navigation Tests', () => {
 
     it('shows visible focus indicator on keyboard navigation', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
 
@@ -103,12 +99,7 @@ describe('Keyboard Navigation Tests', () => {
 
     it('includes reset button in tab order when visible', async () => {
       const user = userEvent.setup();
-      const { rerender } = render(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      const { rerender } = render(<DateRangeControls />);
 
       const endDateInput = screen.getByLabelText('End date');
 
@@ -119,15 +110,13 @@ describe('Keyboard Navigation Tests', () => {
       expect(endDateInput).toHaveFocus();
 
       // Rerender with dates to show reset button
-      rerender(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-02-01'),
-          }}
-        />,
-      );
+      mockUseDateFilter({
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-02-01'),
+        },
+      });
+      rerender(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -227,23 +216,17 @@ describe('Keyboard Navigation Tests', () => {
   });
 
   describe('Form navigation in modals', () => {
+    beforeEach(() => {
+      mockUseDateFilter();
+    });
+
+    afterEach(() => {
+      clearUseDateFilterMock();
+    });
+
     it('maintains tab order within modal overlay (DateRangeControls)', async () => {
       const user = userEvent.setup();
-      render(
-        <DateRangeControls
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-          onQuickRangeChange={() => {}}
-          onDateFilterChange={() => {}}
-          onCustomRange={() => {}}
-          onReset={() => {}}
-          parseDate={(val) => (val ? new Date(val) : null)}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       select.focus();

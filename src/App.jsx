@@ -4,6 +4,7 @@ import DateRangeControls from './components/DateRangeControls';
 import {
   DataImportModal,
   DocsModal,
+  ErrorAlert,
   PrintWarningDialog,
   StorageConsentDialog,
   ThemeToggle,
@@ -55,14 +56,8 @@ export function AppShell() {
     summaryAvailable,
     error,
     warning,
-    quickRange,
-    handleQuickRangeChange,
-    dateFilter,
-    setDateFilter,
-    selectCustomRange,
-    resetDateFilter,
-    parseDate,
-    formatDate,
+    setError,
+    setWarning,
     activeSectionId,
     setActiveSectionId,
     filteredSummary,
@@ -190,14 +185,18 @@ export function AppShell() {
         warning={warning}
       />
       {error && (
-        <div role="alert" className="alert-error">
-          {error}
-        </div>
+        <ErrorAlert
+          message={error}
+          severity="error"
+          onDismiss={() => setError(null)}
+        />
       )}
       {warning && !error && (
-        <div role="status" className="alert-warning">
-          {warning}
-        </div>
+        <ErrorAlert
+          message={warning}
+          severity="warning"
+          onDismiss={() => setWarning(null)}
+        />
       )}
     </>
   );
@@ -208,16 +207,7 @@ export function AppShell() {
         <h1>OSCAR Sleep Data Analysis</h1>
         <span className="badge">beta</span>
       </div>
-      <DateRangeControls
-        quickRange={quickRange}
-        onQuickRangeChange={handleQuickRangeChange}
-        dateFilter={dateFilter}
-        onDateFilterChange={setDateFilter}
-        onCustomRange={selectCustomRange}
-        onReset={resetDateFilter}
-        parseDate={parseDate}
-        formatDate={formatDate}
-      />
+      <DateRangeControls />
       <div className="actions">
         <ThemeToggle />
         <HeaderMenu

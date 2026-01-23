@@ -10,10 +10,9 @@ import {
   FALSE_NEG_SCATTER_HEIGHT,
   FALSE_NEG_SCATTER_MARGIN,
 } from '../constants/charts';
+import { PRESET_GAP_PX, PRESET_DESCRIPTION_OPACITY } from '../constants/layout';
 
-const PRESET_GAP_PX = 12;
 const PRESET_MARGIN_BOTTOM_PX = HEADER_SCROLL_MARGIN_PX;
-const PRESET_DESCRIPTION_OPACITY = 0.8;
 
 /**
  * Analyzes and visualizes potential false negatives (missed apnea events) in CPAP data.

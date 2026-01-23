@@ -9,13 +9,21 @@ corresponds to changes released on that day.
 
 ## 2026-01-23
 
+### Changed
+
+- **Extracted VirtualTable to reusable component** (Issue #3): Extracted 34-line inline VirtualTable from RawDataExplorer.jsx to standalone `src/components/ui/VirtualTable.jsx` component with PropTypes validation, JSDoc documentation, and comprehensive test suite. RawDataExplorer reduced from 483 to 449 lines, improving maintainability and enabling component reuse.
+- **Consolidated magic numbers into shared constants** (Issue #15): Refactored 31 magic numbers across 13 files into semantic constants in `src/constants/` (PERCENTILES, CLUSTER_PRESETS, TABLE_DEFAULTS, CANVAS_OPTIONS) with JSDoc documentation. Eliminated scattered literals for percentile thresholds, cluster parameters, table configurations, and canvas sizes, improving maintainability and reducing duplication.
+
 ### Fixed
 
 - **Analytics worker race condition** (Issue #11 follow-up): Fixed test failures in `App.analyticsFallback.test.jsx` and `App.analyticsWorker.test.jsx` caused by `useAnalyticsWorker` job tracking race condition. Replaced state-based job tracking with ref-based tracking to ensure proper staleness detection when worker callbacks fire before React state updates are applied. All tests now pass.
+- **Prop drilling reduced with granular hooks** (Issue #2): Refactored DateRangeControls, ApneaClustersSection, FalseNegativesSection, and RangeComparisonsSection to use granular context hooks (`useDateFilter`, `useClusterParams`, `useFalseNegatives`, `useRangeComparisons`) instead of receiving 8+ props from App.jsx, reducing coupling and improving component reusability. All 467 tests pass including comprehensive accessibility test coverage.
 
 ### Added
 
 - **PropTypes validation for all components** (Issue #13): Added comprehensive PropTypes to 24 components across `src/components/`, `src/features/`, `src/components/ui/`, and `src/app/`, improving type safety and developer experience. All components receiving props now validate prop types at runtime during development.
+- **Consistent ErrorAlert component** (Issue #14): Created reusable `ErrorAlert.jsx` component with comprehensive accessibility features (WCAG 2.1 AA compliant), semantic HTML, ARIA attributes, keyboard navigation, and 47 test cases. Deployed across App.jsx, RawDataExplorer.jsx, and all major sections for consistent error UX.
+- **Documentation for date serialization strategy** (Issue #9): Added comprehensive JSDoc comments in csv.worker.js and analytics.worker.js explaining ISO 8601 date serialization for Web Worker postMessage (structured clone algorithm requires string serialization since Date objects aren't directly transferable).
 - **CI quality gates** enforcing bundle size limits (2.6MB gzipped max), security audit (moderate+ vulnerabilities), and test coverage thresholds (80% minimum line coverage)
 - **67 comprehensive accessibility tests** for HeaderMenu (17 tests), DateRangeControls (26 tests), and DataImportModal (24 tests) covering keyboard navigation, ARIA attributes, and focus management
 - **Accessibility Testing Patterns guide** in testing-patterns.md documenting keyboard navigation tests, ARIA attribute verification, focus management tests, and best practices for WCAG 2.1 AA compliance

@@ -145,7 +145,6 @@ export function useAnalyticsWorker(detailsData, clusterParams, fnOptions) {
         // ignore termination errors
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasDetails, detailsData, clusterParams, fnOptions]);
   // Note: state.jobId is intentionally excluded - this effect PRODUCES job IDs
   // and should only re-run when inputs change. Including state.jobId would

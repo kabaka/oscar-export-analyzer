@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getLastSession } from '../../utils/db';
+import ErrorAlert from './ErrorAlert';
 
 /**
  * Modal dialog for uploading CPAP CSV exports or importing saved sessions.
@@ -184,14 +185,14 @@ export default function DataImportModal({
             />
           )}
           {(error || localError) && (
-            <div role="alert" style={{ color: 'red' }}>
-              {error || localError}
-            </div>
+            <ErrorAlert
+              message={error || localError}
+              severity="error"
+              onDismiss={() => setLocalError('')}
+            />
           )}
           {warning && !error && !localError && (
-            <div role="status" style={{ color: 'orange' }}>
-              {warning}
-            </div>
+            <ErrorAlert message={warning} severity="warning" />
           )}
         </div>
         <button

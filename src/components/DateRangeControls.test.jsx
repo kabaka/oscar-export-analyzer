@@ -4,13 +4,16 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import DateRangeControls from './DateRangeControls';
+import * as useDateFilterModule from '../hooks/useDateFilter';
 
 describe('DateRangeControls', () => {
-  const mockCallbacks = {
-    onQuickRangeChange: vi.fn(),
-    onDateFilterChange: vi.fn(),
-    onCustomRange: vi.fn(),
-    onReset: vi.fn(),
+  const mockUseDateFilter = {
+    quickRange: 'all',
+    handleQuickRangeChange: vi.fn(),
+    dateFilter: { start: null, end: null },
+    setDateFilter: vi.fn(),
+    selectCustomRange: vi.fn(),
+    resetDateFilter: vi.fn(),
     parseDate: vi.fn((val) => (val ? new Date(val) : null)),
     formatDate: vi.fn((date) => {
       if (!date) return '';
@@ -19,19 +22,16 @@ describe('DateRangeControls', () => {
     }),
   };
 
-  const defaultProps = {
-    quickRange: 'all',
-    dateFilter: { start: null, end: null },
-    ...mockCallbacks,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue(
+      mockUseDateFilter,
+    );
   });
 
   describe('Basic Functionality', () => {
     it('renders quick range selector with all preset options', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByDisplayValue('All');
       expect(select).toBeInTheDocument();
@@ -45,16 +45,18 @@ describe('DateRangeControls', () => {
 
     it('changes quick range when preset is selected', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       await user.selectOptions(select, '30');
 
-      expect(defaultProps.onQuickRangeChange).toHaveBeenCalledWith('30');
+      expect(mockUseDateFilter.handleQuickRangeChange).toHaveBeenCalledWith(
+        '30',
+      );
     });
 
     it('renders start and end date inputs with aria labels', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const startInput = screen.getByLabelText('Start date');
       const endInput = screen.getByLabelText('End date');
@@ -67,59 +69,44 @@ describe('DateRangeControls', () => {
       const user = userEvent.setup();
       const newDate = '2024-01-15';
 
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          parseDate={(val) => (val ? new Date(val) : null)}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const startInput = screen.getByLabelText('Start date');
       await user.clear(startInput);
       await user.type(startInput, newDate);
 
-      expect(defaultProps.onCustomRange).toHaveBeenCalled();
-      expect(defaultProps.onDateFilterChange).toHaveBeenCalled();
+      expect(mockUseDateFilter.selectCustomRange).toHaveBeenCalled();
+      expect(mockUseDateFilter.setDateFilter).toHaveBeenCalled();
     });
 
     it('updates end date and triggers custom range mode', async () => {
       const user = userEvent.setup();
       const newDate = '2024-02-15';
 
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          parseDate={(val) => (val ? new Date(val) : null)}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const endInput = screen.getByLabelText('End date');
       await user.clear(endInput);
       await user.type(endInput, newDate);
 
-      expect(defaultProps.onCustomRange).toHaveBeenCalled();
-      expect(defaultProps.onDateFilterChange).toHaveBeenCalled();
+      expect(mockUseDateFilter.selectCustomRange).toHaveBeenCalled();
+      expect(mockUseDateFilter.setDateFilter).toHaveBeenCalled();
     });
 
     it('shows reset button only when filter has dates', () => {
-      const { rerender } = render(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      const { rerender } = render(<DateRangeControls />);
 
       let resetBtn = screen.queryByRole('button', {
         name: /reset date filter/i,
       });
       expect(resetBtn).not.toBeInTheDocument();
 
-      rerender(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{ start: new Date('2024-01-01'), end: null }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        dateFilter: { start: new Date('2024-01-01'), end: null },
+      });
+
+      rerender(<DateRangeControls />);
 
       resetBtn = screen.getByRole('button', { name: /reset date filter/i });
       expect(resetBtn).toBeInTheDocument();
@@ -127,38 +114,34 @@ describe('DateRangeControls', () => {
 
     it('calls onReset when reset button is clicked', async () => {
       const user = userEvent.setup();
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-02-01'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-02-01'),
+        },
+      });
+
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
       });
       await user.click(resetBtn);
 
-      expect(defaultProps.onReset).toHaveBeenCalled();
+      expect(mockUseDateFilter.resetDateFilter).toHaveBeenCalled();
     });
 
     it('formats and displays dates in start/end inputs', () => {
       const startDate = new Date('2024-01-15');
       const endDate = new Date('2024-02-15');
 
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{ start: startDate, end: endDate }}
-          formatDate={(date) => {
-            if (!date) return '';
-            return date.toISOString().slice(0, 10);
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        dateFilter: { start: startDate, end: endDate },
+      });
+
+      render(<DateRangeControls />);
 
       const startInput = screen.getByLabelText('Start date');
       const endInput = screen.getByLabelText('End date');
@@ -168,13 +151,12 @@ describe('DateRangeControls', () => {
     });
 
     it('maintains selected quick range value', () => {
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="30"
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: '30',
+      });
+
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       expect(select).toHaveValue('30');
@@ -182,21 +164,24 @@ describe('DateRangeControls', () => {
 
     it('handles edge case: switching between custom range and presets', async () => {
       const user = userEvent.setup();
-      const { rerender } = render(
-        <DateRangeControls {...defaultProps} quickRange="custom" />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+      });
+
+      const { rerender } = render(<DateRangeControls />);
 
       const startInput = screen.getByLabelText('Start date');
       await user.clear(startInput);
       await user.type(startInput, '2024-01-10');
 
-      rerender(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="7"
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: '7',
+        dateFilter: { start: null, end: null },
+      });
+
+      rerender(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       expect(select).toHaveValue('7');
@@ -206,13 +191,7 @@ describe('DateRangeControls', () => {
   describe('Keyboard Navigation - Tab Order (WCAG 2.1 2.4.3)', () => {
     it('maintains correct tab order: select → start date → end date → reset', async () => {
       const user = userEvent.setup();
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       const startDate = screen.getByLabelText('Start date');
@@ -233,16 +212,15 @@ describe('DateRangeControls', () => {
 
     it('tab to reset button when custom dates are set', async () => {
       const user = userEvent.setup();
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       const startDate = screen.getByLabelText('Start date');
@@ -264,16 +242,15 @@ describe('DateRangeControls', () => {
 
     it('reverse tab order with Shift+Tab', async () => {
       const user = userEvent.setup();
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -289,28 +266,21 @@ describe('DateRangeControls', () => {
 
     it('reset button only appears in tab order when custom dates are set', async () => {
       const user = userEvent.setup();
-      const { rerender } = render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="all"
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      const { rerender } = render(<DateRangeControls />);
 
       expect(
         screen.queryByRole('button', { name: /reset date filter/i }),
       ).not.toBeInTheDocument();
 
-      rerender(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      rerender(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -327,7 +297,7 @@ describe('DateRangeControls', () => {
   describe('Keyboard Navigation - Dropdown (WCAG 2.1 2.1.1)', () => {
     it('opens dropdown with Enter on select element', async () => {
       const user = userEvent.setup();
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       select.focus();
@@ -343,15 +313,7 @@ describe('DateRangeControls', () => {
 
     it('navigates dropdown options with arrow keys', async () => {
       const user = userEvent.setup();
-      const onQuickRangeChange = vi.fn();
-
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          onQuickRangeChange={onQuickRangeChange}
-          quickRange="all"
-        />,
-      );
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       select.focus();
@@ -365,14 +327,7 @@ describe('DateRangeControls', () => {
 
     it('selects option with arrow and Enter in dropdown', async () => {
       const user = userEvent.setup();
-      const onQuickRangeChange = vi.fn();
-
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          onQuickRangeChange={onQuickRangeChange}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       select.focus();
@@ -381,22 +336,21 @@ describe('DateRangeControls', () => {
       await user.selectOptions(select, '7');
 
       // Verify the callback was called (native select may not update immediately in test)
-      expect(onQuickRangeChange).toHaveBeenCalled();
+      expect(mockUseDateFilter.handleQuickRangeChange).toHaveBeenCalled();
     });
   });
 
   describe('ARIA Attributes (WCAG 2.1 1.3.1)', () => {
     it('date inputs have proper aria-label attributes', () => {
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const startDate = screen.getByLabelText('Start date');
       const endDate = screen.getByLabelText('End date');
@@ -406,23 +360,22 @@ describe('DateRangeControls', () => {
     });
 
     it('quick range selector has aria-label', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       expect(select).toHaveAttribute('aria-label', 'Quick range');
     });
 
     it('reset button has accessible label', () => {
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -435,7 +388,7 @@ describe('DateRangeControls', () => {
     });
 
     it('date input elements have type="date" for native a11y support', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const startDate = screen.getByLabelText('Start date');
       const endDate = screen.getByLabelText('End date');
@@ -447,7 +400,7 @@ describe('DateRangeControls', () => {
 
   describe('Focus Management (WCAG 2.1 2.4.3)', () => {
     it('quick range select can receive focus', () => {
-      render(<DateRangeControls {...defaultProps} />);
+      render(<DateRangeControls />);
 
       const select = screen.getByRole('combobox', { name: /quick range/i });
       select.focus();
@@ -456,12 +409,7 @@ describe('DateRangeControls', () => {
     });
 
     it('date inputs can receive focus', () => {
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          dateFilter={{ start: null, end: null }}
-        />,
-      );
+      render(<DateRangeControls />);
 
       const startDate = screen.getByLabelText('Start date');
       const endDate = screen.getByLabelText('End date');
@@ -474,16 +422,15 @@ describe('DateRangeControls', () => {
     });
 
     it('reset button can receive focus when visible', () => {
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -495,19 +442,15 @@ describe('DateRangeControls', () => {
 
     it('activates reset button with Enter key', async () => {
       const user = userEvent.setup();
-      const onReset = vi.fn();
-
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          onReset={onReset}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -516,24 +459,20 @@ describe('DateRangeControls', () => {
 
       await user.keyboard('{Enter}');
 
-      expect(onReset).toHaveBeenCalled();
+      expect(mockUseDateFilter.resetDateFilter).toHaveBeenCalled();
     });
 
     it('activates reset button with Space key', async () => {
       const user = userEvent.setup();
-      const onReset = vi.fn();
-
-      render(
-        <DateRangeControls
-          {...defaultProps}
-          onReset={onReset}
-          quickRange="custom"
-          dateFilter={{
-            start: new Date('2024-01-01'),
-            end: new Date('2024-12-31'),
-          }}
-        />,
-      );
+      vi.spyOn(useDateFilterModule, 'useDateFilter').mockReturnValue({
+        ...mockUseDateFilter,
+        quickRange: 'custom',
+        dateFilter: {
+          start: new Date('2024-01-01'),
+          end: new Date('2024-12-31'),
+        },
+      });
+      render(<DateRangeControls />);
 
       const resetBtn = screen.getByRole('button', {
         name: /reset date filter/i,
@@ -542,7 +481,7 @@ describe('DateRangeControls', () => {
 
       await user.keyboard(' ');
 
-      expect(onReset).toHaveBeenCalled();
+      expect(mockUseDateFilter.resetDateFilter).toHaveBeenCalled();
     });
   });
 });

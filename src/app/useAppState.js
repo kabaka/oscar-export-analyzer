@@ -91,6 +91,8 @@ export function useAppState() {
     onDetailsFile,
     error,
     warning,
+    setError,
+    setWarning,
     cancelCurrent,
   } = csvState;
 
@@ -262,6 +264,8 @@ export function useAppState() {
     onDetailsFile,
     error,
     warning,
+    setError,
+    setWarning,
     cancelCurrent,
     dateFilter,
     setDateFilter,

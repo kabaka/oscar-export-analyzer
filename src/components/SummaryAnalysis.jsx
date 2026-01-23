@@ -43,12 +43,14 @@ import {
 import { useData } from '../context/DataContext';
 import {
   AHI_SEVERITY_LIMITS,
+  DECIMAL_PLACES_2,
   EPAP_SPLIT_THRESHOLD,
   IQR_OUTLIER_MULTIPLIER,
   PERCENT_SCALE,
   ROLLING_WINDOW_LONG_DAYS,
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
 } from '../constants';
+import { DECIMAL_PLACES_PERCENT } from '../constants/charts';
 
 /**
  * Displays high-level summary statistics and embeds all main trend analysis charts.
@@ -84,8 +86,7 @@ export default function SummaryAnalysis({ clusters = [] }) {
   const usage = summarizeUsage(data || []);
   const ahi = computeAHITrends(data || []);
   const epap = computeEPAPTrends(data || []);
-  const DECIMAL_PLACES_PERCENT = 1;
-  const DECIMAL_PLACES_TWO = 2;
+  const DECIMAL_PLACES_TWO = DECIMAL_PLACES_2;
   const percent = (count, denom) =>
     denom
       ? ((count / denom) * PERCENT_SCALE).toFixed(DECIMAL_PLACES_PERCENT)

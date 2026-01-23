@@ -229,6 +229,8 @@ export function useCsvFiles() {
     // Expose setters so App can restore from saved sessions
     setSummaryData,
     setDetailsData,
+    setError,
+    setWarning,
     onSummaryFile: (e, options) => {
       setDetailsData(null);
       handleFile(
