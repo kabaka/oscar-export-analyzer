@@ -9,6 +9,10 @@ corresponds to changes released on that day.
 
 ## 2026-01-23
 
+### Added
+
+- **Comprehensive JSDoc comments for complex logic** (Issue #25): Added detailed JSDoc and inline comments to 38+ functions across hooks, utilities, and components including RawDataExplorer helper functions (`rowsToCsv`, `uniqueCols`, `numericColumns`, `dateFromAny`, `formatCell`), CSV worker, analytics worker, time-series analysis, clustering algorithms, and data transformation functions. Documentation includes parameter descriptions, return types, code examples, error handling notes, and references to related functions. Inline comments clarify complex algorithms (filtering, sorting, pivoting) and worker communication patterns.
+
 ### Changed
 
 - **Extracted VirtualTable to reusable component** (Issue #3): Extracted 34-line inline VirtualTable from RawDataExplorer.jsx to standalone `src/components/ui/VirtualTable.jsx` component with PropTypes validation, JSDoc documentation, and comprehensive test suite. RawDataExplorer reduced from 483 to 449 lines, improving maintainability and enabling component reuse.

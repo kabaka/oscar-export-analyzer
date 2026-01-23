@@ -1,5 +1,25 @@
-// Analytics Web Worker: clusters apnea events and detects false negatives off the main thread.
-// Vite will bundle this as a module worker.
+/**
+ * Analytics Web Worker: clusters apnea events and detects false negatives off the main thread.
+ * Vite will bundle this as a module worker.
+ *
+ * **Worker Communication Protocol:**
+ * Receives: { action: 'analyzeDetails', payload: { detailsData, params, fnOptions } }
+ * Sends: { ok: true, data: { clusters, falseNegatives } } or { ok: false, error: string }
+ *
+ * **Performance Rationale:**
+ * Clustering and false negative detection involve computationally intensive algorithms
+ * (k-means, hierarchical clustering, edge detection). Running in a Web Worker prevents
+ * UI freezing during analysis. Results are memoized on main thread to avoid re-analysis.
+ *
+ * **Error Handling:**
+ * All errors are caught and returned as ok=false messages (never thrown to main thread).
+ * Validation errors are caught early to fail fast. Processing errors are logged in DEV mode
+ * but sent as sanitized messages to prevent information disclosure.
+ *
+ * @see useAnalyticsWorker - Main thread coordinator
+ * @see clusterApneaEvents - Clustering algorithm
+ * @see detectFalseNegatives - False negative detection algorithm
+ */
 import {
   clusterApneaEvents,
   detectFalseNegatives,

@@ -49,8 +49,6 @@ import {
   ROLLING_WINDOW_LONG_DAYS,
   SECONDS_PER_HOUR,
   SECONDS_PER_MINUTE,
-} from '../constants';
-import {
   CHART_EXPORT_FORMAT,
   CORRELATION_DECIMALS,
   CORR_HEATMAP_MARGIN,
@@ -74,12 +72,10 @@ import {
   SCATTER_MARKER_OPACITY,
   SCATTER_MARKER_SIZE,
   SQUARE_EXPONENT,
-} from '../constants/charts';
-import {
   LEAK_SECTION_MARGIN_TOP_PX,
   PARTIAL_CORR_MARGIN_TOP_PX,
   TITRATION_SECTION_MARGIN_TOP_PX,
-} from '../constants/layout';
+} from '../constants';
 
 const PRIMARY_LINE_WIDTH = LINE_WIDTH_FINE;
 const FIT_LINE_WIDTH = LINE_WIDTH_BOLD;

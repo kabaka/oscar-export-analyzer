@@ -23,6 +23,7 @@ import {
   DEFAULT_HEADER_OFFSET_PX,
   OBSERVER_THRESHOLDS,
   PERCENT_SCALE,
+  SCROLL_RESIZE_THROTTLE_MS,
   buildObserverRootMargin,
   computeTopMargin,
 } from './constants';
@@ -112,6 +113,35 @@ export function AppShell() {
       setActiveSectionId(current);
     };
 
+    // Throttle implementation for scroll/resize handlers
+    let lastCallTime = 0;
+    let timeoutId = null;
+    const throttledPickActive = () => {
+      const now = Date.now();
+      const timeSinceLastCall = now - lastCallTime;
+
+      if (timeSinceLastCall >= SCROLL_RESIZE_THROTTLE_MS) {
+        // Enough time has passed, execute immediately
+        lastCallTime = now;
+        pickActive();
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
+      } else {
+        // Not enough time has passed, schedule for later
+        if (!timeoutId) {
+          const remainingDelay = SCROLL_RESIZE_THROTTLE_MS - timeSinceLastCall;
+          timeoutId = setTimeout(() => {
+            lastCallTime = Date.now();
+            pickActive();
+            timeoutId = null;
+          }, remainingDelay);
+        }
+      }
+    };
+
+    // Use IntersectionObserver which handles its own throttling naturally
     const observer = new IntersectionObserver(
       () => {
         pickActive();
@@ -134,18 +164,17 @@ export function AppShell() {
     };
     window.addEventListener('hashchange', onHash);
 
-    const onScroll = () => pickActive();
-    const onResize = () => pickActive();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', throttledPickActive, { passive: true });
+    window.addEventListener('resize', throttledPickActive);
 
     pickActive();
 
     return () => {
       observer.disconnect();
       window.removeEventListener('hashchange', onHash);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', throttledPickActive);
+      window.removeEventListener('resize', throttledPickActive);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [tocSections, setActiveSectionId]);
 

@@ -61,8 +61,6 @@ import {
   ROLLING_WINDOW_LONG_DAYS,
   ROLLING_WINDOW_SHORT_DAYS,
   STL_SEASON_LENGTH,
-} from '../constants';
-import {
   AUTOCORRELATION_CHART_HEIGHT,
   AUTOCORRELATION_CHART_MARGIN,
   AUTOCORRELATION_CONFIDENCE_LABEL,
@@ -79,8 +77,8 @@ import {
   MEDIAN_ANNOTATION_OFFSET,
   SQUARE_EXPONENT,
   SUMMARY_DECIMAL_PLACES,
-} from '../constants/charts';
-import { ISO_DATE_LENGTH } from '../constants/time';
+  ISO_DATE_LENGTH,
+} from '../constants';
 
 const LAG_LABEL = 'Max lag (nights):';
 const MEDIAN_ANNOTATION_Y = MEDIAN_ANNOTATION_OFFSET;

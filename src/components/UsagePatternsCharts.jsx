@@ -50,14 +50,12 @@ import {
   USAGE_CHANGEPOINT_PENALTY,
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
-} from '../constants';
-import {
   CALENDAR_HEATMAP_HEIGHT,
   HEATMAP_MARGIN_TOP_PX,
   USAGE_HELP_TOOLTIP_MIN_COUNT,
-} from '../constants/charts';
-import { ISO_DATE_LENGTH } from '../constants/time';
-import { MONDAY_INDEX_OFFSET } from '../constants/layout';
+  ISO_DATE_LENGTH,
+  MONDAY_INDEX_OFFSET,
+} from '../constants';
 
 // Re-export for compatibility with existing tests
 export { USAGE_HELP_TOOLTIP_MIN_COUNT };
