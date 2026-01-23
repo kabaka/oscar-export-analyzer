@@ -32,6 +32,48 @@ import {
 import { buildSummaryAggregatesCSV, downloadTextFile } from '../utils/export';
 import { clearLastSession } from '../utils/db';
 
+/**
+ * Master hook managing all application state and UI interactions.
+ *
+ * Orchestrates:
+ * - CSV file loading and parsing (via useCsvFiles)
+ * - Date range filtering (via useDateRangeFilter)
+ * - Clustering algorithm parameters and analytics (via useAnalyticsProcessing)
+ * - Session persistence (via useSessionManager)
+ * - Modal and dialog states (import, print, storage consent)
+ * - Comparison range selections (rangeA, rangeB)
+ * - False negative detection presets
+ * - Filtered data subsets based on date range
+ * - Data export functionality (JSON session, CSV aggregates)
+ *
+ * This is the central state hub; all state is managed here and passed to child
+ * components via AppProviders context.
+ *
+ * @returns {Object} Comprehensive app state and methods:
+ *   - summaryData, detailsData: Parsed CSV arrays
+ *   - filteredSummary, filteredDetails: Date-filtered subsets
+ *   - loadingSummary, loadingDetails: Loading flags
+ *   - summaryProgress, detailsProgress: File parsing progress (0-100%)
+ *   - clusterParams: Clustering configuration object
+ *   - fnPreset: False negative detection preset ('strict', 'balanced', 'lenient')
+ *   - dateFilter, quickRange: Date filtering state
+ *   - rangeA, rangeB: Comparison date ranges
+ *   - clustersAnalytics, falseNegatives: Analyzed clusters
+ *   - Modal states: importModal, printWarningModal, showStorageConsent
+ *   - Export functions: handleExportJson, handleExportCsv
+ *   - Session functions: handleLoadSaved, handleClearSession
+ *   - All setter functions for state updates
+ *
+ * @example
+ * const appState = useAppState();
+ * // Typically used within AppProviders context
+ * return <AppLayout header={<HeaderMenu {...appState} />} />;
+ *
+ * @see AppProviders - Provider component that wraps entire app with this state
+ * @see useCsvFiles - File loading hook
+ * @see useAnalyticsProcessing - Clustering and analytics hook
+ * @see useSessionManager - Session persistence hook
+ */
 export function useAppState() {
   const csvState = useCsvFiles();
   const {

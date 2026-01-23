@@ -1,6 +1,6 @@
 # OSCAR Export Analyzer
 
-[![CI](https://github.com/kabaka/oscar-export-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/kabaka/oscar-export-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/kabaka/oscar-export-analyzer/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produced by the [OSCAR](https://www.sleepfiles.com/OSCAR/) sleep‑therapy companion. It was built for curious patients, clinicians, and researchers who want to inspect nightly therapy performance in greater depth than OSCAR’s own interface. The application parses both nightly summary exports and detailed event logs, renders a large collection of interactive charts, and surfaces statistics that help guide conversations with a healthcare professional.
@@ -43,7 +43,7 @@ The analyzer is implemented as a [Vite](https://vitejs.dev/) + [React](https://r
 1. Install [Node.js 20](https://nodejs.org/) and npm.
 2. Clone this repository and install dependencies:
    ```bash
-   git clone https://github.com/OWNER/REPO.git
+   git clone https://github.com/kabaka/oscar-export-analyzer.git
    cd oscar-export-analyzer
    npm install
    npm run prepare
@@ -82,10 +82,25 @@ Common workflows for contributors:
 
 ## Feature Tour
 
+Screenshots are temporarily unavailable and will be refreshed after the corrected SVG exports are regenerated.
+
+### Usage Patterns Dashboard
+
+**Usage Patterns** – Time‑series, histograms, STL trend/seasonal/residual panes, calendar heatmaps, and autocorrelation/partial autocorrelation bars reveal how consistently therapy is being used. A 7‑night and 30‑night rolling average quantify medium‑ and long‑term trends while the decomposition highlights weekday habits and outlier nights.
+
+### AHI Trends Analysis
+
+**AHI Trends** – Breaks AHI into nightly values with optional obstructive/central stacking. Histogram and QQ plots test whether AHI is normally distributed, while weekly STL decomposition and paired autocorrelation plots separate the smooth trend from recurring seasonal swings and noisy residuals.
+
+### Pressure & Correlation Analysis
+
+**Pressure & Correlation** – Investigates how exhalation pressure (EPAP) relates to AHI. Scatter plots, LOESS curves, and correlation matrices support hypothesis generation.
+
+---
+
+### Additional Features
+
 - **Overview Dashboard** – At‑a‑glance KPIs for adherence and AHI with small trend sparklines.
-- **Usage Patterns** – Time‑series, histograms, STL trend/seasonal/residual panes, calendar heatmaps, and new autocorrelation/partial autocorrelation bars reveal how consistently therapy is being used. A 7‑night and 30‑night rolling average quantify medium‑ and long‑term trends while the decomposition highlights weekday habits and outlier nights.
-- **AHI Trends** – Breaks AHI into nightly values with optional obstructive/central stacking. Histogram and QQ plots test whether AHI is normally distributed, while weekly STL decomposition and paired autocorrelation plots separate the smooth trend from recurring seasonal swings and noisy residuals.
-- **Pressure & Correlation** – Investigates how exhalation pressure (EPAP) relates to AHI. Scatter plots, LOESS curves, and correlation matrices support hypothesis generation.
 - **Range Comparison** – Select two date ranges to compute deltas, `p`‑values, and effect sizes for usage and AHI.
 - **Event Exploration** – Duration distributions, survival curves, and interactive tables for apnea clusters and potential false negatives. Toggle between FLG-bridged, k-means, or single-link clustering algorithms (with tunable parameters) to experiment with different grouping assumptions.
 - **Raw Data Explorer** – Spreadsheet‑like views with sorting and filtering for the original CSV fields.

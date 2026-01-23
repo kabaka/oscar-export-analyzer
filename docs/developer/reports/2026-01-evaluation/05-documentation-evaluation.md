@@ -76,14 +76,10 @@ The user documentation is comprehensive, well-organized, and pedagogically effec
 
 **Medium Priority**:
 
-1. **Missing Screenshots** (Severity: Medium)  
+1. **Screenshots temporarily unavailable** (Severity: Medium)  
    **Location**: All user guides  
-   **Description**: User documentation lacks screenshots or annotated diagrams showing the UI, charts, or interaction patterns. New users must imagine what "clusters table" or "calendar heatmap" look like.  
-   **Recommendation**: Add 5-10 annotated screenshots to key sections:
-   - Getting started: Import dialog, sidebar navigation, header controls
-   - Visualizations: 2-3 chart examples with annotations
-   - Raw Data Explorer: Table view with filtering example
-   - Settings panels: Cluster parameter controls, false-negative presets
+   **Description**: Screenshots and annotated diagrams are temporarily unavailable while assets are regenerated. Users rely solely on text to imagine the UI.  
+   **Recommendation**: Keep textual walkthroughs concise and include a short note that refreshed screenshots will be added after the regenerated assets are ready.
 
 2. **Incomplete Navigation** (Severity: Low)  
    **Location**: [docs/user/01-getting-started.md](../../user/01-getting-started.md), [docs/user/02-visualizations.md](../../user/02-visualizations.md)  
@@ -145,7 +141,7 @@ Developer documentation provides solid coverage of setup, architecture, dependen
    - Wire up state via DataContext
    - Surface feature in App.jsx
    - Testing patterns
-   - Documentation and screenshots
+   - Documentation (screenshots refresh pending)
    - Pre-commit checklist
    - Accessibility considerations
    - Performance and footprint
@@ -528,15 +524,10 @@ The main README is exemplary: comprehensive, well-structured, welcoming to both 
    "OWNER/REPO" should be replaced with actual repository path.  
    **Recommendation**: Update to actual GitHub repository URL or use relative links if not yet published.
 
-2. **No Screenshots** (Severity: Medium)  
+2. **Screenshots temporarily unavailable** (Severity: Medium)  
    **Location**: [README.md](../../../README.md) Feature Tour section  
-   **Description**: README describes extensive visualizations but shows no screenshots. Users can't preview UI before installation.  
-   **Recommendation**: Add "Screenshots" section with 3-5 representative images:
-   - Overview dashboard with KPIs
-   - Usage Patterns with calendar heatmap and STL decomposition
-   - AHI Trends with distribution plots
-   - Clustered Apnea table with severity scores
-   - Include alt text for accessibility
+   **Description**: README describes the visualizations but screenshots are temporarily unavailable while assets are regenerated.  
+   **Recommendation**: Keep the Feature Tour text concise and include a note that refreshed screenshots will be added once regenerated, rather than linking to the current invalid images.
 
 3. **Missing "Quick Start" Section** (Severity: Low)  
    **Location**: [README.md](../../../README.md)  
@@ -1264,7 +1255,7 @@ export const EVENT_WINDOW_MS = 5 * MILLISECONDS_PER_SECOND;
 2. **Fix Placeholder URLs** — Update GitHub badge and clone URLs in README
 3. **Add Component JSDoc** — Document props, purpose, usage for all React components
 4. **Add Hook JSDoc** — Document parameters, return values, side effects for all hooks
-5. **Add Screenshots to README** — 3-5 representative images of key features
+5. **Refresh Screenshots in README** — Add updated images once regenerated to show key features
 
 ### High Priority (Next Sprint)
 
@@ -1305,10 +1296,10 @@ The OSCAR Export Analyzer demonstrates **exceptional documentation quality** tha
 
 **Primary Opportunities**:
 
-- **Visual elements**: Adding diagrams, screenshots, and flowcharts would make complex concepts immediately graspable
+- **Visual elements**: Add diagrams and flowcharts now, and refresh screenshots once regenerated to make complex concepts immediately graspable
 - **API documentation completeness**: Extending JSDoc coverage from utility functions to React components and hooks would create comprehensive API reference
 - **Contribution workflow**: Centralizing contribution guidelines, agent delegation patterns, and code review expectations in CONTRIBUTING.md would streamline onboarding
 
 **Overall Assessment**: The documentation is **production-ready** and represents ~90% of what best-in-class open-source projects achieve. The recommended improvements would elevate it to exceptional status, but current documentation already effectively serves users and contributors.
 
-**Recommendation**: Focus immediate efforts on adding visual elements (diagrams, screenshots) and completing API documentation for React layer. These high-leverage improvements would significantly enhance discoverability and developer experience.
+**Recommendation**: Focus immediate efforts on adding visual elements (diagrams now, refreshed screenshots once regenerated) and completing API documentation for React layer. These high-leverage improvements would significantly enhance discoverability and developer experience.

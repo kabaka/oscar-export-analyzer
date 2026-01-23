@@ -60,10 +60,10 @@ it('renders a histogram', () => {
 Aim for user‑facing assertions rather than implementation details. If a bug fix inspired the feature, add a regression
 test to catch similar issues in the future.
 
-### 6. Documentation and Screenshots
+### 6. Documentation (screenshots refreshing soon)
 
-Update the appropriate user and developer docs so others know the feature exists. Screenshots and GIFs in the pull
-request description make reviewers smile and help translators understand the UI flow.
+Update the appropriate user and developer docs so others know the feature exists. Screenshots and GIFs are
+temporarily unavailable; leave a short note instead and plan to refresh visuals once the regenerated assets are ready.
 
 ### 7. Final Checklist
 

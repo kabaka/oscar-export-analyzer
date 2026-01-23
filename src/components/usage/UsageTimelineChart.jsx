@@ -14,6 +14,49 @@ import ChartWithHelp from './ChartWithHelp';
 const PRIMARY_LINE_WIDTH = LINE_WIDTH_FINE;
 const EMPHASIS_LINE_WIDTH = LINE_WIDTH_BOLD;
 
+/**
+ * Time-series chart of nightly CPAP usage with rolling averages and trend markers.
+ *
+ * Displays:
+ * - Nightly usage as line plot
+ * - Short-window rolling average (e.g., 7-night) with confidence interval ribbon
+ * - Long-window rolling average (e.g., 30-night) with confidence interval ribbon
+ * - Detected change-points (purple lines) and breakpoints (dotted lines)
+ *
+ * Supports interactive date range selection via click-and-drag.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Date>} props.dates - Nightly session dates
+ * @param {Array<number>} props.usageHours - Nightly usage in hours
+ * @param {Array<number>} props.r7Low - 7-night rolling average CI lower bound
+ * @param {Array<number>} props.r7High - 7-night rolling average CI upper bound
+ * @param {Array<number>} props.r30Low - 30-night rolling average CI lower bound
+ * @param {Array<number>} props.r30High - 30-night rolling average CI upper bound
+ * @param {Array<number>} props.rolling7 - 7-night rolling average values
+ * @param {Array<number>} props.rolling30 - 30-night rolling average values
+ * @param {string} props.shortWindowLabel - Display label for 7-night window (e.g., "7-night")
+ * @param {string} props.longWindowLabel - Display label for 30-night window (e.g., "30-night")
+ * @param {Array<Date>} [props.breakDates] - Dates where short/long window crossover occurs
+ * @param {Array<Date>} [props.cpDates] - Dates where change-points are detected
+ * @param {Function} [props.onRelayout] - Callback when user selects date range
+ * @returns {JSX.Element} A Plotly time-series chart wrapped in ChartWithHelp
+ *
+ * @example
+ * const { dates, values, rolling, breakDates, cpDates } = useTimeSeriesProcessing({...});
+ * return (
+ *   <UsageTimelineChart
+ *     dates={dates}
+ *     usageHours={values}
+ *     rolling7={rolling['avg7']}
+ *     rolling30={rolling['avg30']}
+ *     // ... other rolling series ...
+ *     shortWindowLabel="7-night"
+ *     longWindowLabel="30-night"
+ *     breakDates={breakDates}
+ *     cpDates={cpDates}
+ *   />
+ * );
+ */
 function UsageTimelineChart({
   dates,
   usageHours,

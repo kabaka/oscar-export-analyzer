@@ -1,3 +1,36 @@
+/**
+ * Comprehensive EPAP (Expiratory Positive Airway Pressure) trend analysis component.
+ *
+ * Displays multiple perspectives on nightly EPAP pressure management:
+ * - EPAP time series with rolling averages and confidence bands
+ * - EPAP distribution histogram with median and mean markers
+ * - Boxplot showing quartiles and outlier pressures
+ * - Violin plot showing full density distribution
+ * - Titration scatter plot: Pressure vs. time (color-coded by AHI impact)
+ * - Relationship heatmap: EPAP changes vs. corresponding AHI changes
+ * - EPAP split analysis (if present in data)
+ *
+ * Features:
+ * - Automatic detection of EPAP-related CSV columns
+ * - Statistical comparison between early and late therapy periods
+ * - Leak and usage correlations
+ * - Interactive date range selection by clicking/dragging
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.data - Parsed Summary CSV with date and EPAP columns
+ * @param {Function} [props.onRangeSelect] - Callback when user selects date range:
+ *   (range: { start: Date, end: Date }) => void
+ * @returns {JSX.Element} Div containing all EPAP analysis charts
+ *
+ * @example
+ * const { filteredSummary: data } = useData();
+ * return (
+ *   <EpapTrendsCharts
+ *     data={data}
+ *     onRangeSelect={({ start, end }) => console.log('EPAP range:', start, end)}
+ *   />
+ * );
+ */
 import React, { useMemo } from 'react';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
@@ -62,9 +95,31 @@ const DARK_HEATMAP_COLORSCALE = Object.freeze([
 const CORR_HEATMAP_MARGIN = Object.freeze({ t: 40, l: 80, r: 20, b: 80 });
 
 /**
- * EPAP Analysis Charts: boxplot of nightly median EPAP,
- * time-series of EPAP with first/last 30-night markers,
- * and scatter plot of EPAP vs AHI with regression line and correlation coefficient.
+ * Displays comprehensive EPAP (expiratory positive airway pressure) analysis charts.
+ *
+ * Features multiple visualizations:
+ * - Boxplot of nightly median EPAP values to identify outliers and distribution
+ * - Time-series of EPAP with marked first 30 and last 30 nights for treatment progress tracking
+ * - Leak rate analysis: scatter plot of leak events, histogram, and time-series
+ * - EPAP vs AHI scatter plot with Pearson correlation, linear regression line, and effect size (r²)
+ * - Running quantiles (median, 90th percentile) for EPAP to show variability over time
+ * - Titration analysis: comparison of early vs late EPAP pressure settings with Mann-Whitney U test
+ * - Correlation heatmap showing relationships between EPAP, AHI, leak, and usage metrics
+ * - Partial correlation analysis to isolate direct effects after controlling for other metrics
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.data - Array of parsed CPAP session objects with columns: Date,
+ *   Median EPAP, AHI, Leak Rate (optional), Total Time (optional)
+ * @returns {JSX.Element} A div containing multiple Plotly chart components and analysis tables
+ *
+ * @example
+ * const { filteredSummary: data } = useData();
+ * return <EpapTrendsCharts data={data} />;
+ *
+ * @see ThemedPlot - Plotly wrapper that applies theme (light/dark mode)
+ * @see mannWhitneyUTest - Statistical test for comparing early vs late EPAP periods
+ * @see pearson - Correlation coefficient calculation
+ * @see loessSmooth - Smoothing function for trend estimation
  */
 function EpapTrendsCharts({ data }) {
   const {

@@ -13,6 +13,30 @@ const KPI_GRID_GAP_PX = 12;
 const KPI_GRID_MARGIN_BOTTOM_PX = HEADER_SCROLL_MARGIN_PX;
 const KPI_GRID_TEMPLATE = `repeat(${KPI_GRID_COLUMN_COUNT}, minmax(${KPI_CARD_MIN_WIDTH_PX}px, 1fr))`;
 
+/**
+ * Key performance indicator grid for CPAP usage compliance metrics.
+ *
+ * Displays four primary usage KPIs:
+ * - % nights ≥ 4 hours: Compliance percentage at standard threshold
+ * - % nights ≥ 6 hours: Stricter compliance metric
+ * - Current compliance streak: Days of consecutive ≥4h usage
+ * - Longest streak: Maximum consecutive days of ≥4h usage
+ *
+ * @param {Object} props - Component props
+ * @param {Array<number>} props.usageHours - Nightly usage in hours
+ * @param {Array<number>} props.complianceSeries - Daily compliance streak values
+ * @param {number} props.longestCompliance - Longest compliance streak in days
+ * @param {number} props.longestStrict - Longest strict (6h) streak in days
+ * @returns {JSX.Element} A grid layout div containing KPI cards
+ *
+ * @example
+ * <UsageKpiGrid
+ *   usageHours={[4.2, 5.1, 6.0, 5.5, 4.8]}
+ *   complianceSeries={[1, 2, 3, 4, 5]}
+ *   longestCompliance={32}
+ *   longestStrict={18}
+ * />
+ */
 function UsageKpiGrid({
   usageHours,
   complianceSeries,

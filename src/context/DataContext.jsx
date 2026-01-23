@@ -14,6 +14,20 @@ export const THEMES = {
 
 const DataContext = createContext(null);
 
+/**
+ * Provides parsed session data, filtered subsets, and theme selection to the app.
+ * Wraps children with a single shared context for summary/details data and theme state.
+ *
+ * @param {Object} props - Provider props
+ * @param {React.ReactNode} props.children - Descendant components that need data/theme
+ * @param {Array|null} props.summaryData - Parsed summary CSV rows
+ * @param {Function} props.setSummaryData - Setter for summary data
+ * @param {Array|null} props.detailsData - Parsed detailed CSV rows
+ * @param {Function} props.setDetailsData - Setter for details data
+ * @param {Array|null} props.filteredSummary - Date-filtered summary rows
+ * @param {Array|null} props.filteredDetails - Date-filtered detail rows
+ * @returns {JSX.Element} Context provider with shared data and theme state
+ */
 export function DataProvider({
   children,
   summaryData = null,
@@ -68,12 +82,23 @@ export function DataProvider({
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
 
+/**
+ * Accessor hook for the shared data context.
+ * Must be used within a DataProvider; throws otherwise.
+ *
+ * @returns {Object} Data context containing parsed data, filters, and theme controls
+ */
 export function useData() {
   const ctx = useContext(DataContext);
   if (!ctx) throw new Error('useData must be used within a DataProvider');
   return ctx;
 }
 
+/**
+ * Convenience hook exposing only theme state from the data context.
+ *
+ * @returns {{ theme: string, setTheme: Function }} Current theme and setter
+ */
 export function useTheme() {
   const { theme, setTheme } = useData();
   return { theme, setTheme };

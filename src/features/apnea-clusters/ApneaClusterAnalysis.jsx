@@ -13,6 +13,24 @@ import {
 import { MILLISECONDS_PER_SECOND, DECIMAL_PLACES_2 } from '../../constants';
 import { PARAM_FIELDS_BY_ALGORITHM } from './paramFields';
 
+/**
+ * Interactive analysis of detected apnea clusters with configurable algorithm.
+ *
+ * Features:
+ * - Algorithm selection (k-means or single-linkage) with parameter controls
+ * - Sortable cluster table with severity, duration, count, timing
+ * - Cluster detail panel with event breakdown
+ * - Leak and pressure traces extracted from surrounding Details CSV events
+ * - Scatter plot of clusters color-coded by severity
+ * - CSV export of results
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.clusters - Detected clusters with start, end, durationSec, count, severity
+ * @param {Object} props.params - Clustering parameters (algorithm, gapSec, bridgeThreshold, etc.)
+ * @param {Function} props.onParamChange - Callback when parameters change: (name, value) => void
+ * @param {Array<Object>} [props.details] - Details CSV rows for extracting event-level data
+ * @returns {JSX.Element} Section with controls, table, detail panel, and charts
+ */
 function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
   const [selected, setSelected] = useState(null);
   const [sortBy, setSortBy] = useState({ key: 'severity', dir: 'desc' });

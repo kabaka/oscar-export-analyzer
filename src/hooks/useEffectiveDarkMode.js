@@ -13,6 +13,25 @@ function computeIsDark() {
   return false;
 }
 
+/**
+ * Tracks effective dark mode state based on theme setting and system preference.
+ *
+ * Responds to:
+ * - data-theme attribute changes on document root
+ * - System theme preference changes (prefers-color-scheme media query)
+ * - Initial sync on mount
+ *
+ * Returns true if dark mode is active (either explicitly set or system preference).
+ *
+ * @returns {boolean} Whether dark mode is active
+ *
+ * @example
+ * const isDark = useEffectiveDarkMode();
+ * const colorScheme = isDark ? darkTheme : lightTheme;
+ * return <Chart theme={colorScheme} />;
+ *
+ * @see useTheme - Hook to set theme preference (light/dark/system)
+ */
 export function useEffectiveDarkMode() {
   const [isDark, setIsDark] = useState(computeIsDark());
 

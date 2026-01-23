@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Hook to track if the user prefers a dark color scheme.
- * @returns {boolean} true if the system is in dark mode.
+ * Tracks the user's system dark mode preference via CSS media query.
+ *
+ * Responds to changes in system theme settings (e.g., when OS theme changes).
+ * Returns true if the system is set to dark mode.
+ *
+ * @returns {boolean} Whether system dark mode is active
+ *
+ * @example
+ * const prefersDark = usePrefersDarkMode();
+ * // Use in conjunction with useTheme for theme selection logic
  */
 export function usePrefersDarkMode() {
   const [isDark, setIsDark] = useState(

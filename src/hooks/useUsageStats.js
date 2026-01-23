@@ -9,6 +9,29 @@ import {
 } from '../constants';
 import { quantile } from '../utils/stats';
 
+/**
+ * Computes summary statistics for a numeric time-series (usage hours or AHI).
+ *
+ * Calculates percentiles (25th, median, 75th), mean, IQR, range, and optimal
+ * histogram bin count using Freedman-Diaconis rule.
+ *
+ * @param {Array<number>} [values=[]] - Numeric values to analyze
+ * @returns {Object} Summary statistics:
+ *   - p25 (number): 25th percentile (Q1)
+ *   - median (number): 50th percentile (Q2)
+ *   - p75 (number): 75th percentile (Q3)
+ *   - mean (number): Arithmetic mean
+ *   - iqr (number): Interquartile range (p75 - p25)
+ *   - nbins (number): Histogram bin count (Freedman-Diaconis rule)
+ *   - range (number): Max - Min
+ *
+ * @example
+ * const usageHours = [4.2, 5.1, 6.0, 5.5, 4.8, ...];
+ * const { median, mean, nbins } = useUsageStats(usageHours);
+ * return <UsageHistogram values={usageHours} median={median} mean={mean} nbins={nbins} />;
+ *
+ * @see quantile - Percentile calculation utility
+ */
 export function useUsageStats(values = []) {
   return useMemo(() => {
     if (!values.length) {

@@ -52,7 +52,8 @@ surprises.
 
 If you discover a rough edge, please open an issue before submitting code unless the fix is trivial. Others may be
 working on the same problem, and discussing approaches up front saves time. Pull requests should follow the
-[Conventional Commit](https://www.conventionalcommits.org/) style and include screenshots or GIFs for any UI changes.
+[Conventional Commit](https://www.conventionalcommits.org/) style and include a brief UI note; screenshots and GIFs
+will be refreshed once the updated assets are regenerated.
 
 ## Getting Help
 

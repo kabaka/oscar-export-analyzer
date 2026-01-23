@@ -1,3 +1,41 @@
+/**
+ * Comprehensive CPAP usage analysis with multiple visualization perspectives.
+ *
+ * Features:
+ * - KPI grid: % nights ≥4h, % nights ≥6h, longest compliance/strict usage streaks
+ * - Usage timeline: Nightly usage hours with rolling averages (7-night, 30-night) and 95% confidence intervals
+ * - Lag control: Interactive input to adjust max lag for ACF/PACF analysis
+ * - Autocorrelation (ACF) chart: Shows how strongly usage one night predicts the next
+ * - Partial autocorrelation (PACF) chart: Isolates direct usage memory effects at each lag
+ * - STL decomposition: Separates usage trend, weekly seasonal pattern, and residual noise
+ * - Histogram: Distribution of nightly usage hours with median/mean markers
+ * - Boxplot: Quartile-based view of usage distribution and outlier detection
+ * - Violin plot: Full density distribution with embedded box plot
+ * - Calendar heatmap: Day-of-week and week-over-week usage patterns
+ *
+ * Allows interactive date range selection by clicking and dragging on the timeline chart.
+ * Adapts to dark/light theme using Plotly theming.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.data - Array of parsed CPAP session objects.
+ *   Expected columns: 'Date' (date string/Date), 'Total Time' (duration string like \"H:MM:SS\")
+ * @param {Function} [props.onRangeSelect] - Callback when user selects a date range on timeline.
+ *   Called with { start: Date, end: Date }
+ * @returns {JSX.Element} A div containing KPI grid, multiple chart components, and help tooltips
+ *
+ * @example
+ * const { filteredSummary: data } = useData();
+ * const handleRangeSelect = (range) => {
+ *   console.log('Selected usage range:', range.start, 'to', range.end);
+ *   setDateFilter(range);
+ * };
+ * return <UsagePatternsCharts data={data} onRangeSelect={handleRangeSelect} />;
+ *
+ * @see useTimeSeriesProcessing - Provides time-series decomposition and rolling statistics
+ * @see useUsageStats - Provides summary statistics (median, mean, bin count)
+ * @see useAutocorrelation - Provides ACF/PACF calculations
+ * @see adherenceMetrics - Calculates compliance metrics and streaks
+ */
 import React, { useCallback } from 'react';
 import {
   DAYS_PER_WEEK,
@@ -43,6 +81,38 @@ const ISO_DATE_LENGTH = 10;
 const HEATMAP_MARGIN_TOP_PX = 16;
 export const USAGE_HELP_TOOLTIP_MIN_COUNT = 7;
 
+/**
+ * Displays comprehensive CPAP usage analysis with multiple visualization perspectives.
+ *
+ * Features:
+ * - KPI grid: % nights ≥ 4h, % nights ≥ 6h, current rolling compliance streak
+ * - Usage timeline: Nightly usage hours with rolling averages (7-night, 30-night) and confidence intervals
+ * - Lag control: Interactive input to adjust max lag for ACF/PACF analysis
+ * - Autocorrelation chart: Shows how strongly usage on one night predicts the next
+ * - Partial autocorrelation chart: Isolates direct usage memory effects
+ * - STL decomposition: Separates usage trend, weekly seasonal pattern, and residual noise
+ * - Histogram: Distribution of nightly usage hours with median/mean markers
+ * - Boxplot: Quartile-based view of usage distribution and outlier detection
+ * - Calendar heatmap: Day-of-week and week-over-week usage patterns
+ *
+ * Allows interactive date range selection by clicking and dragging on the timeline chart.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.data - Array of parsed CPAP session objects with columns: Date, Total Time
+ * @param {Function} [props.onRangeSelect] - Callback when user selects a date range on timeline.
+ *   Called with { start: Date, end: Date }
+ * @returns {JSX.Element} A div containing KPI grid, multiple chart components, and help tooltips
+ *
+ * @example
+ * const { filteredSummary: data } = useData();
+ * const handleRangeSelect = (range) => console.log('Selected:', range);
+ * return <UsagePatternsCharts data={data} onRangeSelect={handleRangeSelect} />;
+ *
+ * @see useTimeSeriesProcessing - Provides time-series decomposition and rolling statistics
+ * @see useUsageStats - Provides summary statistics (median, mean, bin count)
+ * @see useAutocorrelation - Provides ACF/PACF calculations
+ * @see adherenceMetrics - Calculates compliance metrics
+ */
 function UsagePatternsCharts({ data, onRangeSelect }) {
   const {
     dates,

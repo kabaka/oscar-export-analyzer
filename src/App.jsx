@@ -26,6 +26,13 @@ import {
   computeTopMargin,
 } from './constants';
 
+/**
+ * Top-level application shell that wires uploads, global navigation, and all feature sections.
+ * Gated rendering prevents feature dashboards from mounting until summary/detail data is available.
+ *
+ * @component
+ * @returns {JSX.Element} App layout with header controls, table of contents highlighting, and feature sections.
+ */
 export function AppShell() {
   const {
     loadingSummary,

@@ -12,6 +12,24 @@ import {
 } from '../../constants/charts';
 import ChartWithHelp from './ChartWithHelp';
 
+/**
+ * Histogram visualization of CPAP usage distribution with median and mean markers.
+ *
+ * Displays the frequency distribution of nightly usage hours with vertical lines
+ * marking median (dashed) and mean (dotted) values. Useful for assessing adherence
+ * distribution and identifying modes in usage patterns.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<number>} props.usageHours - Array of nightly usage hours
+ * @param {number} props.median - Median usage value for annotation
+ * @param {number} props.mean - Mean usage value for annotation
+ * @param {number} props.nbins - Number of histogram bins to display
+ * @returns {JSX.Element} A Plotly histogram wrapped in ChartWithHelp
+ *
+ * @example
+ * const { median, mean, nbins } = useUsageStats(usageHours);
+ * return <UsageHistogram usageHours={usageHours} median={median} mean={mean} nbins={nbins} />;
+ */
 function UsageHistogram({ usageHours, median, mean, nbins }) {
   return (
     <ChartWithHelp text="Distribution of nightly usage hours. Dashed line marks the median; dotted line marks the mean.">

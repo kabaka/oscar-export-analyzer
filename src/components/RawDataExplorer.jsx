@@ -1,3 +1,30 @@
+/**
+ * Displays raw CPAP session data in a searchable, sortable, virtualized table.
+ *
+ * Features:
+ * - Full-text search across all columns (case-insensitive substring matching)
+ * - Sort by column (ascending/descending toggle with persistent sort state)
+ * - Virtualized rendering for high-performance display of large datasets
+ * - Pagination with "Load More" button for managing memory
+ * - Column visibility toggle to show/hide non-essential fields
+ * - CSV export of selected columns
+ * - Date cell formatting (ISO 8601)
+ * - Numeric column sorting (numeric vs. alphabetic)
+ * - Helpful guide link to raw data documentation
+ *
+ * @param {Object} props - Component props (typically accepts onApplyDateFilter from parent)
+ * @param {Function} [props.onApplyDateFilter] - Callback when applying date filters from table
+ * @returns {JSX.Element} A div containing tab selection, search, table, and pagination controls
+ *
+ * @example
+ * const { summaryData, detailsData } = useData();
+ * return (
+ *   <RawDataExplorer onApplyDateFilter={(range) => setDateFilter(range)} />
+ * );
+ *
+ * @see VirtualTable - Internal virtualization helper
+ * @see rowsToCsv - CSV export utility
+ */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { GuideLink } from './ui';
 import { useData } from '../context/DataContext';

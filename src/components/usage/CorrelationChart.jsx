@@ -7,6 +7,37 @@ import {
 } from '../../constants/charts';
 import ChartWithHelp from './ChartWithHelp';
 
+/**
+ * Generic correlation chart component displaying autocorrelation or partial autocorrelation bars.
+ *
+ * Renders a bar chart of correlation values at different lags with confidence bands
+ * highlighting statistically significant correlations (bars crossing the grey band).
+ * Used as a base for both ACF and PACF visualizations.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.values - Correlation values with { lag, [yKey]: value } structure
+ * @param {number} props.confidence - 95% confidence band threshold (typically 1.96/sqrt(n))
+ * @param {string} props.title - Chart title
+ * @param {string} props.name - Legend name for the bar series (e.g., 'ACF', 'PACF')
+ * @param {string} props.color - Hex color for bars (e.g., '#1f77b4')
+ * @param {string} props.yKey - Property name in values array to plot (e.g., 'autocorrelation', 'partialAutocorrelation')
+ * @param {string} props.helpText - Help tooltip text explaining the chart
+ * @returns {JSX.Element} A bar chart wrapped in ChartWithHelp container
+ *
+ * @example
+ * <CorrelationChart
+ *   values={acfValues}
+ *   confidence={acfConfidence}
+ *   title="Usage Autocorrelation"
+ *   name="ACF"
+ *   color="#ff7f0e"
+ *   yKey="autocorrelation"
+ *   helpText="Bars outside the band indicate significant lags."
+ * />
+ *
+ * @see AutocorrelationChart - ACF-specific wrapper
+ * @see PartialAutocorrelationChart - PACF-specific wrapper
+ */
 function CorrelationChart({
   values,
   confidence,

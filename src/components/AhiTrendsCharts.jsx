@@ -1,3 +1,43 @@
+/**
+ * Comprehensive AHI (Apnea-Hypopnea Index) trend analysis component.
+ *
+ * Displays multiple perspectives on nightly AHI values:
+ * - Nightly AHI time series with rolling averages (7-night, 30-night) and confidence bands
+ * - Severity thresholds and detected change points / breakpoints
+ * - Autocorrelation (ACF): How strongly one night's AHI predicts the next
+ * - Partial Autocorrelation (PACF): Isolates direct dependencies after accounting for intermediate lags
+ * - STL Decomposition: Separates trend, seasonal (weekly), and residual components
+ * - Distribution histograms (skewness, outlier detection)
+ * - Boxplot showing quartiles and outliers
+ * - Violin plot showing full density distribution
+ * - QQ plot comparing observed AHI to normal distribution (for assessing non-normality)
+ * - Severity band summary: % nights in each AHI severity category
+ * - Bad-night tagging with explanations (high AHI, high CA%, long clusters)
+ *
+ * Features:
+ * - Interactive lag control for ACF/PACF analysis
+ * - Date range selection by clicking/dragging on timeline
+ * - AI analysis of clusters and patterns
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.data - Parsed Summary CSV with date-indexed AHI columns
+ *   (OAI, CAI, MAI if available; AHI columns are auto-detected)
+ * @param {Array<Object>} [props.clusters] - Detected apnea event clusters for severity assessment
+ * @param {Function} [props.onRangeSelect] - Callback when user selects date range on timeline:
+ *   (range: { start: Date, end: Date }) => void
+ * @returns {JSX.Element} Div containing all AHI analysis charts and controls
+ *
+ * @example
+ * const { filteredSummary: data } = useData();
+ * const { clustersAnalytics: clusters } = useAnalyticsProcessing(...);
+ * return (
+ *   <AhiTrendsCharts
+ *     data={data}
+ *     clusters={clusters}
+ *     onRangeSelect={({ start, end }) => console.log('Range:', start, end)}
+ *   />
+ * );
+ */
 import React, { useMemo, useCallback } from 'react';
 import { normalQuantile } from '../utils/stats';
 import { useTimeSeriesProcessing } from '../hooks/useTimeSeriesProcessing';
@@ -55,6 +95,42 @@ const SQUARE_EXPONENT = 2;
 const PRIMARY_LINE_WIDTH = LINE_WIDTH_FINE;
 const EMPHASIS_LINE_WIDTH = LINE_WIDTH_BOLD;
 
+/**
+ * Displays comprehensive AHI (Apnea-Hypopnea Index) analysis with time-series trends,
+ * autocorrelation, STL decomposition, and distribution visualizations.
+ *
+ * Features interactive charts showing:
+ * - Nightly AHI with rolling averages and confidence intervals (7-night and 30-night windows)
+ * - Optional stacking of obstructive, central, and mixed apnea indices
+ * - Detected change-points and breakpoints overlaid on the time-series
+ * - Autocorrelation (ACF) and Partial Autocorrelation (PACF) functions to identify AHI memory effects
+ * - STL (Seasonal-Trend Decomposition using Loess) to separate trend, seasonal, and residual components
+ * - Distribution histogram with median/mean annotations, boxplot, violin plot, and QQ plot
+ * - Severity band summary (≤5, 5-15, 15-30, >30 events/hour)
+ * - "Bad nights" tagging with reasons (high AHI, high central apnea percentage, long/dense clusters)
+ *
+ * Users can click and drag to select a date range, which triggers `onRangeSelect` callback.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.data - Array of parsed CPAP session objects with columns: Date, AHI,
+ *   Obstructive Index (optional), Central Index (optional), Mixed Index (optional)
+ * @param {Array<Object>} [props.clusters=[]] - Array of apnea cluster objects with start, end,
+ *   durationSec, count properties for tagging bad nights
+ * @param {Function} [props.onRangeSelect] - Callback fired when user selects a date range on chart.
+ *   Called with { start: Date, end: Date }
+ * @returns {JSX.Element} A div containing multiple Plotly chart components and analysis tables
+ *
+ * @example
+ * const { filteredSummary: data } = useData();
+ * const clusters = [];
+ * const handleRangeSelect = (range) => console.log('Selected:', range);
+ * return <AhiTrendsCharts data={data} clusters={clusters} onRangeSelect={handleRangeSelect} />;
+ *
+ * @see useTimeSeriesProcessing - Provides time-series decomposition and rolling statistics
+ * @see useAutocorrelation - Provides ACF/PACF calculations
+ * @see useUsageStats - Provides summary statistics (median, mean, quantiles)
+ * @see ThemedPlot - Plotly wrapper that applies theme (light/dark mode)
+ */
 export default function AhiTrendsCharts({
   data,
   clusters = [],

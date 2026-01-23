@@ -9,6 +9,20 @@ import {
 } from '../../constants/charts';
 import ChartWithHelp from './ChartWithHelp';
 
+/**
+ * Boxplot visualization of nightly CPAP usage hours distribution.
+ *
+ * Shows median (line in box), quartiles (box), whiskers, and outlier points.
+ * Useful for identifying typical usage range and detecting unusual nights.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<number>} props.usageHours - Array of nightly usage hours
+ * @returns {JSX.Element} A Plotly box chart wrapped in ChartWithHelp
+ *
+ * @example
+ * const usageHours = [4.2, 5.1, 6.0, 5.5, 4.8, ...];
+ * return <UsageBoxplot usageHours={usageHours} />;
+ */
 function UsageBoxplot({ usageHours }) {
   return (
     <ChartWithHelp text="Boxplot summarizing nightly usage; box shows the interquartile range (IQR), whiskers extend to typical range, points indicate outliers.">

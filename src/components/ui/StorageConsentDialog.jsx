@@ -1,5 +1,42 @@
 import React, { useEffect, useRef } from 'react';
 
+/**
+ * Modal dialog requesting user consent to store sessions in browser IndexedDB.
+ *
+ * Explains:
+ * - Sessions are stored locally in browser only (not sent to server)
+ * - User can load previous analysis without re-uploading CSV files
+ * - Storage can be cleared anytime via browser settings
+ *
+ * Provides three options:
+ * - Allow: Consent to storage; user session will be saved
+ * - Deny: Decline storage; analysis continues without saving
+ * - Dismiss ("Ask Later"): Postpone decision; session not saved but app continues
+ *
+ * Proper focus management (defaults to Deny for privacy) and keyboard accessibility
+ * (Escape to dismiss, Tab trapping).
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether modal is visible
+ * @param {Function} props.onAllow - Callback when user clicks "Allow" (approve storage)
+ * @param {Function} props.onDeny - Callback when user clicks "Deny" (refuse storage)
+ * @param {Function} props.onDismiss - Callback when user clicks "Ask Later" or presses Escape
+ * @returns {JSX.Element | null} Modal dialog or null if not open
+ *
+ * @example
+ * const [showConsent, setShowConsent] = useState(false);
+ * return (
+ *   <StorageConsentDialog
+ *     isOpen={showConsent}
+ *     onAllow={() => { setStorageConsent(true); setShowConsent(false); }}
+ *     onDeny={() => { setStorageConsent(false); setShowConsent(false); }}
+ *     onDismiss={() => setShowConsent(false)}
+ *   />
+ * );
+ *
+ * @see getStorageConsent, setStorageConsent - Utilities for managing consent preference
+ * @see useSessionManager - Hook that prompts for consent when saving sessions
+ */
 export default function StorageConsentDialog({
   isOpen,
   onAllow,

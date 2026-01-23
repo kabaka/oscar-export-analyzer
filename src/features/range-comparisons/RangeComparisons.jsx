@@ -8,12 +8,29 @@ import {
 } from '../../constants';
 
 /**
- * Compare usage hours and AHI across two date ranges.
+ * Compares usage hours and AHI metrics across two user-selected date ranges.
  *
- * @param {Object} props
- * @param {{ start: Date|null, end: Date|null }} [props.rangeA] - Range A.
- * @param {{ start: Date|null, end: Date|null }} [props.rangeB] - Range B.
- * @returns {JSX.Element|null}
+ * Computes:
+ * - Average usage and AHI for each range
+ * - Mann-Whitney U test to assess statistical significance of differences
+ * - Effect size (mean difference, percentage change)
+ * - Distribution visualization (histograms) for each range
+ *
+ * Useful for comparing therapy effectiveness before/after medication changes,
+ * pressure adjustments, or device changes.
+ *
+ * @param {Object} props - Component props
+ * @param {Object} [props.rangeA] - First date range: { start: Date | null, end: Date | null }
+ * @param {Object} [props.rangeB] - Second date range: { start: Date | null, end: Date | null }
+ * @returns {JSX.Element | null} Comparison tables and charts, or null if ranges not fully specified
+ *
+ * @example
+ * <RangeComparisons
+ *   rangeA={{ start: new Date('2024-01-01'), end: new Date('2024-02-01') }}
+ *   rangeB={{ start: new Date('2024-02-01'), end: new Date('2024-03-01') }}
+ * />
+ *
+ * @see mannWhitneyUTest - Statistical test for comparing two independent samples
  */
 export default function RangeComparisons({ rangeA, rangeB }) {
   const { summaryData = [] } = useData();

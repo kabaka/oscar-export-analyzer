@@ -1,3 +1,34 @@
+/**
+ * Comprehensive CPAP therapy analysis dashboard integrating all major analytics.
+ *
+ * Renders a complete narrative flow of therapy analysis:
+ * - Usage statistics table: total nights, valid nights, average usage, compliance metrics
+ * - Usage pattern charts: timeline, rolling averages, decomposition, calendar heatmap, ACF
+ * - AHI statistics table: severity distribution, median/mean/percentile values, outlier counts
+ * - AHI trend charts: time series, decomposition, QQ plot, boxplot, distribution, ACF
+ * - EPAP statistics table: pressure ranges, titration effectiveness, split analysis
+ * - EPAP trend charts: time series, titration scatter, correlation heatmap
+ * - False negative analysis: missed events detection and visualization
+ * - Range comparison section: compare metrics across two date ranges
+ *
+ * This is the primary analysis component that synthesizes all visualization and
+ * statistical modules into a cohesive narrative with guide links for each section.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} [props.clusters=[]] - Detected apnea clusters from analytics.
+ *   Passed to AhiTrendsCharts and FalseNegativesAnalysis for event-based analysis
+ * @returns {JSX.Element} Div containing statistics tables and embedded chart components
+ *
+ * @example
+ * const { clustersAnalytics: clusters } = useAnalyticsProcessing(sessionData);
+ * return <SummaryAnalysis clusters={clusters} />;
+ *
+ * @see UsagePatternsCharts - Usage timeline and distribution charts
+ * @see AhiTrendsCharts - AHI analysis charts
+ * @see EpapTrendsCharts - EPAP analysis charts
+ * @see FalseNegativesAnalysis - False negative cluster visualization
+ * @see RangeComparisons - Date range comparison analysis
+ */
 import React from 'react';
 import UsagePatternsCharts from './UsagePatternsCharts';
 import AhiTrendsCharts from './AhiTrendsCharts';
@@ -18,6 +49,35 @@ import {
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
 } from '../constants';
 
+/**
+ * Displays high-level summary statistics and embeds all main trend analysis charts.
+ *
+ * Renders:
+ * - Usage statistics table: total nights, valid nights, average usage, compliance metrics
+ * - AHI statistics table: severity distribution, median/mean values
+ * - EPAP statistics table: pressure ranges, titration progress
+ * - UsagePatternsCharts: Usage trends with KPIs, timeline, decomposition, calendar heatmap
+ * - AhiTrendsCharts: AHI analysis with autocorrelation and QQ plots
+ * - EpapTrendsCharts: EPAP analysis with titration and correlation heatmaps
+ * - FalseNegativesAnalysis: Potential missed apnea events
+ *
+ * This is the main analysis dashboard component that synthesizes all visualization and
+ * statistical modules into a cohesive narrative flow.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} [props.clusters=[]] - Array of detected apnea clusters.
+ *   Passed to sub-components for event-based analysis
+ * @returns {JSX.Element} A div containing summary tables and embedded chart components
+ *
+ * @example
+ * const { clusters, falseNegatives } = useAnalyticsProcessing(sessionData);
+ * return <SummaryAnalysis clusters={clusters} />;
+ *
+ * @see UsagePatternsCharts - Usage timeline and distribution charts
+ * @see AhiTrendsCharts - AHI analysis charts
+ * @see EpapTrendsCharts - EPAP analysis charts
+ * @see FalseNegativesAnalysis - False negative cluster visualization
+ */
 export default function SummaryAnalysis({ clusters = [] }) {
   const { filteredSummary: data } = useData();
   const usage = summarizeUsage(data || []);

@@ -1,6 +1,38 @@
 import { useCallback, useMemo, useState } from 'react';
 import { MILLISECONDS_PER_MINUTE } from '../constants';
 
+/**
+ * Manages date range filtering state and quick-range presets.
+ *
+ * Provides:
+ * - Quick-range shortcuts ("Last 7 days", "Last year", etc.)
+ * - Custom date range selection with date input parsing/formatting
+ * - Utilities for converting between Date objects and ISO string format
+ *
+ * @param {Array<Object>} summaryData - Parsed Summary CSV data to derive latest date
+ * @returns {Object} Date filtering state and handlers:
+ *   - dateFilter (Object): Current date range { start: Date | null, end: Date | null }
+ *   - setDateFilter (Function): Set custom date range: (range: Object) => void
+ *   - quickRange (string): Current quick-range selection ('all', '7', '30', '365', 'custom')
+ *   - handleQuickRangeChange (Function): Quick-range dropdown handler: (value: string) => void
+ *   - parseDate (Function): Parse date string to Date object: (str: string) => Date | null
+ *   - formatDate (Function): Format Date object to YYYY-MM-DD: (d: Date) => string
+ *   - selectCustomRange (Function): Switch to custom range mode: () => void
+ *   - resetDateFilter (Function): Reset to 'all' dates: () => void
+ *
+ * @example
+ * const { dateFilter, quickRange, handleQuickRangeChange, formatDate, parseDate } =
+ *   useDateRangeFilter(summaryData);
+ * return (
+ *   <DateRangeControls
+ *     quickRange={quickRange}
+ *     onQuickRangeChange={handleQuickRangeChange}
+ *     dateFilter={dateFilter}
+ *     formatDate={formatDate}
+ *     parseDate={parseDate}
+ *   />
+ * );
+ */
 export function useDateRangeFilter(summaryData) {
   const [dateFilter, setDateFilter] = useState({ start: null, end: null });
   const [quickRange, setQuickRange] = useState('all');

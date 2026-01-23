@@ -4,6 +4,54 @@ import { putLastSession, getLastSession } from '../utils/db';
 import { getStorageConsent } from '../utils/storageConsent';
 import { DECIMAL_PLACES_2 } from '../constants';
 
+/**
+ * Manages session persistence and restore functionality using IndexedDB and localStorage.
+ *
+ * Automatically saves session state (data, filters, cluster params) to browser storage
+ * with 500ms debounce. Prompts for storage consent on first save. Also provides
+ * functions to export sessions as JSON and import from saved session.
+ *
+ * @param {Object} params - Hook parameters
+ * @param {Array<Object>} params.summaryData - Current Summary CSV data
+ * @param {Array<Object>} params.detailsData - Current Details CSV data
+ * @param {Object} params.clusterParams - Current clustering parameters
+ * @param {Object} params.dateFilter - Current date filter state
+ * @param {Object} params.rangeA - First comparison date range
+ * @param {Object} params.rangeB - Second comparison date range
+ * @param {string} params.fnPreset - Current false negative detection preset
+ * @param {Function} params.setClusterParams - Update clustering parameters
+ * @param {Function} params.setDateFilter - Update date filter
+ * @param {Function} params.setRangeA - Update rangeA
+ * @param {Function} params.setRangeB - Update rangeB
+ * @param {Function} params.setSummaryData - Update summary data
+ * @param {Function} params.setDetailsData - Update details data
+ * @param {Function} [params.onNeedConsent] - Callback when storage consent is needed.
+ *   Called with resolve function: (resolve: Function) => void
+ * @returns {Object} Session management methods:
+ *   - handleLoadSaved (Function): Load session from IndexedDB: async () => void
+ *   - handleExportJson (Function): Download session as JSON file: () => void
+ *
+ * @example
+ * const { handleLoadSaved, handleExportJson } = useSessionManager({
+ *   summaryData,
+ *   detailsData,
+ *   clusterParams,
+ *   dateFilter,
+ *   setSummaryData,
+ *   setDetailsData,
+ *   // ... other setters ...
+ *   onNeedConsent: (resolve) => showStorageConsentDialog(resolve)
+ * });
+ * return (
+ *   <>
+ *     <button onClick={handleLoadSaved}>Load Saved</button>
+ *     <button onClick={handleExportJson}>Export Session</button>
+ *   </>
+ * );
+ *
+ * @see putLastSession, getLastSession - IndexedDB utilities
+ * @see buildSession, applySession - Session object builders/appliers
+ */
 export function useSessionManager({
   summaryData,
   detailsData,

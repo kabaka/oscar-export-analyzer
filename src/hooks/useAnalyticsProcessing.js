@@ -6,6 +6,44 @@ import {
 } from '../utils/clustering';
 import { finalizeClusters } from '../utils/analytics';
 
+/**
+ * Processes CPAP session data to detect apnea clusters and potential false negatives.
+ *
+ * Runs clustering and false negative detection algorithms in response to changes in
+ * session data or clustering parameters. Manages loading state and error handling.
+ *
+ * Returns normalized cluster objects and false negative candidates for visualization
+ * and further analysis.
+ *
+ * @param {Object} params - Hook parameters
+ * @param {Array<Object>} params.data - Parsed Details CSV with event-level CPAP data
+ * @param {Object} params.clusterParams - Clustering configuration:
+ *   - algorithm ('kmeans' or 'single-link')
+ *   - gapThreshold (seconds between events in same cluster)
+ *   - minTotalDuration (minimum cluster duration in seconds)
+ *   - maxDuration (maximum event duration in seconds)
+ * @param {Object} params.dateFilter - Date range filter: { start: Date, end: Date }
+ * @param {string} params.fnPreset - False negative detection preset: 'strict', 'balanced', 'lenient'
+ * @returns {Object} Detection results:
+ *   - clustersAnalytics (Array<Object>): Apnea clusters with timing and event statistics
+ *   - falseNegatives (Array<Object>): Potential false negative clusters
+ *   - isLoading (boolean): True while clustering is in progress
+ *   - error (Error | null): Error object if detection failed
+ *
+ * @example
+ * const { clustersAnalytics, falseNegatives, isLoading, error } = useAnalyticsProcessing({
+ *   data: detailsData,
+ *   clusterParams: { algorithm: 'kmeans', gapThreshold: 30, ... },
+ *   dateFilter: { start: new Date('2024-01-01'), end: new Date() },
+ *   fnPreset: 'balanced'
+ * });
+ * if (isLoading) return <Spinner />;
+ * if (error) return <ErrorMessage error={error} />;
+ * return <ClusterVisualization clusters={clustersAnalytics} />;
+ *
+ * @see clusterApneaEvents - Clustering algorithm implementation
+ * @see detectFalseNegatives - False negative detection algorithm
+ */
 const toValidDate = (value) => {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return value;

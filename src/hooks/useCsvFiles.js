@@ -1,5 +1,56 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+/**
+ * Manages loading and parsing of OSCAR CSV exports (Summary and Details) using Web Workers.
+ *
+ * Handles:
+ * - File selection and validation
+ * - Async parsing in a Web Worker to keep UI responsive
+ * - Progress tracking (bytes loaded / total bytes)
+ * - Error and warning messages (e.g., missing columns, encoding issues)
+ * - Session import from JSON files
+ * - Active task cancellation
+ *
+ * Returns separate state objects for Summary and Details CSV parsing, along with
+ * callbacks for file selection and session loading.
+ *
+ * @returns {Object} CSV loading state:
+ *   - summaryData (Array<Object> | null): Parsed Summary CSV rows
+ *   - detailsData (Array<Object> | null): Parsed Details CSV rows
+ *   - loadingSummary (boolean): Whether Summary CSV is parsing
+ *   - summaryProgress (number): Bytes parsed in Summary CSV
+ *   - summaryProgressMax (number): Total bytes in Summary CSV
+ *   - loadingDetails (boolean): Whether Details CSV is parsing
+ *   - detailsProgress (number): Bytes parsed in Details CSV
+ *   - detailsProgressMax (number): Total bytes in Details CSV
+ *   - error (Error | null): Error object if parsing failed
+ *   - warning (string | null): Warning message if parsing completed with issues
+ *   - onSummaryFile (Function): Callback for Summary CSV file input: (event) => Promise<void>
+ *   - onDetailsFile (Function): Callback for Details CSV file input: (event) => Promise<void>
+ *   - onSessionFile (Function): Callback for session JSON file import: (file) => Promise<void>
+ *   - cancelCurrent (Function): Cancel ongoing parsing
+ *
+ * @example
+ * const {
+ *   summaryData,
+ *   loadingSummary,
+ *   summaryProgress,
+ *   summaryProgressMax,
+ *   onSummaryFile,
+ *   error
+ * } = useCsvFiles();
+ * return (
+ *   <>
+ *     <input type="file" accept=".csv" onChange={onSummaryFile} />
+ *     {loadingSummary && <progress value={summaryProgress} max={summaryProgressMax} />}
+ *     {error && <p style={{ color: 'red' }}>{error.message}</p>}
+ *     {summaryData && <p>{summaryData.length} sessions loaded</p>}
+ *   </>
+ * );
+ *
+ * @see csvParserWorker - Web Worker that handles actual CSV parsing
+ * @see buildSession, applySession - Session export/import utilities
+ */
 // Hook for loading CSV files via file input
 export function useCsvFiles() {
   const [summaryData, setSummaryData] = useState(null);

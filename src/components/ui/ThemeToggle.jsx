@@ -1,6 +1,21 @@
 import React from 'react';
 import { useTheme, THEMES } from '../../hooks/useTheme';
 
+/**
+ * Toggle button group for switching between light, dark, and system themes.
+ *
+ * Radio buttons with emoji icons (☀️ 🌙 🖥️) for visual clarity.
+ * Screen readers see descriptive text via sr-only class.
+ * Syncs with useTheme hook and updates global theme context.
+ *
+ * @returns {JSX.Element} A radio button group for theme selection
+ *
+ * @example
+ * <ThemeToggle />
+ *
+ * @see useTheme - Hook managing theme state
+ * @see THEMES - Theme constant values (LIGHT, DARK, SYSTEM)
+ */
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   return (

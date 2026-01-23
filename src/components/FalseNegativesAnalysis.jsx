@@ -14,6 +14,87 @@ const PRESET_GAP_PX = 12;
 const PRESET_MARGIN_BOTTOM_PX = HEADER_SCROLL_MARGIN_PX;
 const PRESET_DESCRIPTION_OPACITY = 0.8;
 
+/**
+ * Analyzes and visualizes potential false negatives (missed apnea events) in CPAP data.
+ *
+ * False negatives are apnea events that may have been missed or under-detected by the CPAP device.
+ * This component detects cluster patterns using three sensitivity presets:
+ * - **Strict**: Highest specificity, most likely real missed events (conservative threshold)
+ * - **Balanced**: Medium sensitivity/specificity trade-off (recommended for most users)
+ * - **Lenient**: Highest sensitivity, includes more potential false negatives (exploratory)
+ *
+ * Features:
+ * - Scatter plot of false negative clusters over time
+ * - Cluster sizing by duration (longer clusters appear larger)
+ * - Color-coding by peak Flow Limitation Grade (FLG) level
+ * - Hover tooltips showing cluster duration, count, peak FLG level, and date
+ * - Preset selector to adjust detection thresholds interactively
+ * - Multiple analysis views: Peak FLG distribution, temporal patterns, cluster characteristics
+ * - Integration with apnea cluster data for comprehensive false negative assessment
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.list - Array of detected false negative clusters with properties:
+ *   - start (Date): Start time of cluster
+ *   - durationSec (number): Duration in seconds
+ *   - peakFLGLevel (number): Peak Flow Limitation Grade (0-1 scale)
+ *   - count (number): Number of detected events in cluster
+ * @param {string} props.preset - Current detection preset: 'strict', 'balanced', or 'lenient'
+ * @param {Function} [props.onPresetChange] - Callback when user changes preset.
+ *   Called with string value ('strict', 'balanced', or 'lenient')
+ * @returns {JSX.Element} A div containing scatter plot, controls, and analysis information
+ *
+ * @example
+ * const clusters = [...detected false negative clusters...];
+ * return (
+ *   <FalseNegativesAnalysis
+ *     list={clusters}
+ *     preset="balanced"
+ *     onPresetChange={(p) => handlePresetChange(p)}
+ *   />
+ * );
+ *
+ * @see detectFalseNegatives - Detection algorithm implementation
+ * @see clusterApneaEvents - Clustering algorithm for grouping events
+ */
+/**
+ * Displays analysis of potential false negatives in CPAP therapy.
+ *
+ * False negatives are apnea events that may have been missed or under-detected by the device.
+ * This component visualizes detected cluster patterns using three sensitivity presets:
+ * - **Strict**: Highest specificity, most likely real missed events
+ * - **Balanced**: Medium sensitivity/specificity trade-off (recommended)
+ * - **Lenient**: Highest sensitivity, includes more potential false negatives
+ *
+ * Features:
+ * - Scatter plot of false negative clusters over time, sized by duration and colored by peak FLG (Flow Limitation Grade)
+ * - Preset selector to adjust detection thresholds interactively
+ * - Multiple analysis views (Peak FLG, cluster characteristics, temporal patterns)
+ * - Interactive hover tooltips showing cluster duration, count, peak FLG level
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} props.list - Array of detected false negative clusters with properties:
+ *   - start (Date): Start time of cluster
+ *   - durationSec (number): Duration in seconds
+ *   - peakFLGLevel (number): Peak Flow Limitation Grade (0-1 scale)
+ *   - count (number): Number of detected events in cluster
+ * @param {string} props.preset - Current detection preset: 'strict', 'balanced', or 'lenient'
+ * @param {Function} [props.onPresetChange] - Callback when user changes preset.
+ *   Called with string value ('strict', 'balanced', or 'lenient')
+ * @returns {JSX.Element} A div containing scatter plot, controls, and analysis information
+ *
+ * @example
+ * const clusters = [...detected false negative clusters...];
+ * return (
+ *   <FalseNegativesAnalysis
+ *     list={clusters}
+ *     preset="balanced"
+ *     onPresetChange={(p) => handlePresetChange(p)}
+ *   />
+ * );
+ *
+ * @see detectFalseNegatives - Utility function for detecting false negatives
+ * @see ThemedPlot - Plotly wrapper for chart rendering
+ */
 function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
   return (
     <div>

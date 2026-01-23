@@ -3,6 +3,16 @@ import { ErrorBoundary, GuideLink } from '../../components/ui';
 import RangeComparisons from './RangeComparisons';
 import { useAppContext } from '../../app/AppProviders';
 
+/**
+ * Feature section wrapper for range comparison analysis.
+ *
+ * Provides UI for selecting two date ranges and displays comparative
+ * statistics. Only renders if Summary CSV data is available.
+ *
+ * @returns {JSX.Element | null} Section with range controls and comparison, or null if no data
+ *
+ * @see RangeComparisons - Comparison component
+ */
 export default function RangeComparisonsSection() {
   const { filteredSummary, rangeA, setRangeA, rangeB, setRangeB, dateFilter } =
     useAppContext();

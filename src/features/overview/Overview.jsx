@@ -12,6 +12,18 @@ import { useData } from '../../context/DataContext';
 /**
  * Sparkline chart for a series of numeric data points.
  */
+/**
+ * Mini sparkline chart for visualizing data trends in KPI cards.
+ *
+ * Renders a simple SVG line plot with auto-scaled Y-axis, useful for
+ * showing trends at a glance. Returns null if insufficient data.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<number>} props.data - Numeric data to plot
+ * @param {number} [props.width=100] - SVG viewBox width
+ * @param {number} [props.height=30] - SVG viewBox height
+ * @returns {JSX.Element | null} SVG sparkline or null if < 2 data points
+ */
 function Sparkline({ data, width = 100, height = 30 }) {
   // eslint-disable-next-line no-magic-numbers -- minimum 2 points needed to draw a line chart
   if (!data || data.length < 2) {
@@ -40,7 +52,23 @@ function Sparkline({ data, width = 100, height = 30 }) {
 }
 
 /**
- * Overview dashboard displaying high-level KPIs and sparklines.
+ * High-level overview dashboard with KPIs and sparklines.
+ *
+ * Displays summary statistics and mini trend visualizations for:
+ * - Average usage hours with sparkline
+ * - Median AHI with sparkline
+ * - Median EPAP with sparkline
+ * - Total nights and cluster counts
+ *
+ * Provides a quick snapshot of therapy effectiveness without detailed interaction.
+ *
+ * @param {Object} props - Component props
+ * @param {Array<Object>} [props.clusters] - Detected apnea clusters
+ * @param {Array<Object>} [props.falseNegatives] - Detected false negatives
+ * @returns {JSX.Element} Dashboard grid with KPI cards and sparklines
+ *
+ * @see MetricGrid - Layout wrapper
+ * @see KPICard - Individual metric card
  */
 export default function Overview({ clusters, falseNegatives }) {
   const { filteredSummary: summaryData } = useData();

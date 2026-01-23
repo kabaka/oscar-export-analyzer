@@ -1,5 +1,44 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+/**
+ * Top-level menu component providing access to data import, export, and session management.
+ *
+ * Renders a hamburger-style dropdown menu with options for:
+ * - Loading CSV data (Summary and/or Details exports from OSCAR)
+ * - Exporting analysis results (JSON session or CSV aggregates)
+ * - Clearing current session and starting fresh
+ * - Printing analysis (with page break settings)
+ * - Opening user guide documentation
+ *
+ * The menu auto-closes when clicking outside. Menu items are conditionally disabled based
+ * on data availability (e.g., export/clear are disabled if no data loaded).
+ *
+ * @param {Object} props - Component props
+ * @param {Function} props.onOpenImport - Callback to open CSV import modal
+ * @param {Function} props.onExportJson - Callback to export session as JSON
+ * @param {Function} props.onExportCsv - Callback to export aggregates as CSV
+ * @param {Function} props.onClearSession - Callback to clear session and data
+ * @param {Function} props.onPrint - Callback to print analysis
+ * @param {Function} props.onOpenGuide - Callback to open guide modal
+ * @param {boolean} props.hasAnyData - Whether any CSV data has been loaded
+ * @param {boolean} props.summaryAvailable - Whether Summary CSV is available for export
+ * @returns {JSX.Element} A menu container with button and conditional dropdown list
+ *
+ * @example
+ * const [open, setOpen] = useState(false);
+ * return (
+ *   <HeaderMenu
+ *     onOpenImport={() => setOpen(true)}
+ *     onExportJson={handleExportJson}
+ *     onExportCsv={handleExportCsv}
+ *     onClearSession={handleClear}
+ *     onPrint={handlePrint}
+ *     onOpenGuide={handleGuide}
+ *     hasAnyData={data !== null}
+ *     summaryAvailable={true}
+ *   />
+ * );
+ */
 export default function HeaderMenu({
   onOpenImport,
   onExportJson,

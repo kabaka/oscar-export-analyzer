@@ -20,6 +20,31 @@ const DARK_MODE_HEATMAP_SCALE = Object.freeze([
   [GRADIENT_OPACITY_MAX, '#58a6ff'],
 ]);
 
+/**
+ * Calendar heatmap visualization of CPAP usage by day of week.
+ *
+ * Shows usage patterns across a calendar grid where:
+ * - X-axis represents weeks (as dates)
+ * - Y-axis represents days of week (Mon-Sun)
+ * - Color intensity indicates nightly usage hours (blue scale, darker = more use)
+ *
+ * Helps identify weekly usage patterns (e.g., weekends vs weekdays, holiday breaks).
+ *
+ * @param {Object} props - Component props
+ * @param {Object | null} props.heatmap - Heatmap data structure: { z: Array, x: Array, y: Array }
+ *   or null if heatmap generation failed. z is matrix of usage values,
+ *   x is array of week dates, y is array of day-of-week labels
+ * @param {boolean} props.isDark - Whether dark theme is active (affects color scale)
+ * @param {number} props.height - Chart height in pixels
+ * @returns {JSX.Element | null} A Plotly heatmap wrapped in ChartWithHelp, or null if heatmap is null
+ *
+ * @example
+ * const { heatmap } = useTimeSeriesProcessing({ ..., includeHeatmap: true, ... });
+ * const isDark = useEffectiveDarkMode();
+ * return <UsageCalendarHeatmap heatmap={heatmap} isDark={isDark} height={300} />;
+ *
+ * @see timeSeriesHeatmap - Utility function generating heatmap data structure
+ */
 function UsageCalendarHeatmap({ heatmap, isDark, height }) {
   if (!heatmap) return null;
 

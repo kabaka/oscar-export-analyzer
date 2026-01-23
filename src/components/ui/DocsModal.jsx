@@ -36,6 +36,40 @@ function fileToSlug(filename) {
   return slugify(filename.replace(/^[0-9]+-/, '').replace(/\.md$/, ''));
 }
 
+/**
+ * Modal dialog displaying markdown documentation with table of contents, KaTeX math,
+ * and GitHub-flavored Markdown support.
+ *
+ * Features:
+ * - Lazy-loads markdown files from docs/user/ directory
+ * - Auto-generates table of contents from markdown headings
+ * - Syntax highlighting for code blocks
+ * - Renders inline math ($...$) and display math ($$...$$) with KaTeX
+ * - Support for GitHub Markdown features (tables, strikethrough, task lists)
+ * - Anchor jumping to specific sections
+ * - HTML sanitization to prevent XSS attacks
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether modal is visible
+ * @param {Function} props.onClose - Callback to close modal
+ * @param {string} [props.initialAnchor] - Optional anchor ID (heading slug) to scroll to on open
+ * @param {string} [props.markdownSource] - Optional pre-loaded markdown content.
+ *   If not provided, content is loaded from docs/user/*.md files
+ * @returns {JSX.Element | null} Modal dialog or null if not open
+ *
+ * @example
+ * const [isOpen, setIsOpen] = useState(false);
+ * return (
+ *   <>
+ *     <button onClick={() => setIsOpen(true)}>Guide</button>
+ *     <DocsModal
+ *       isOpen={isOpen}
+ *       onClose={() => setIsOpen(false)}
+ *       initialAnchor="usage-patterns"
+ *     />
+ *   </>
+ * );
+ */
 export default function DocsModal({
   isOpen,
   onClose,

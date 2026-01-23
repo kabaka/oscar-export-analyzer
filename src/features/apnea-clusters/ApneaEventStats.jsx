@@ -10,8 +10,22 @@ import {
 import { DEFAULT_CHART_HEIGHT } from '../../constants/charts';
 
 /**
- * Displays statistics and charts for individual apnea event durations
- * and their frequency per night to highlight anomalies and outliers.
+ * Displays statistics and charts for individual apnea event durations and patterns.
+ *
+ * Features:
+ * - Duration distribution (histogram) with percentile markers
+ * - Kaplan-Meier survival curve showing event duration frequency
+ * - Event count statistics (total, per-night average, histogram)
+ * - Central vs obstructive vs mixed event ratios
+ * - Per-event statistics (min, max, median, mean duration)
+ *
+ * Helps identify if events are predominantly short, long, or mixed,
+ * and whether central vs obstructive events dominate the data.
+ *
+ * @returns {JSX.Element | null} Section with event statistics tables and charts, or null if no event data
+ *
+ * @see computeApneaEventStats - Event statistics computation
+ * @see kmSurvival - Kaplan-Meier survival curve generation
  */
 export default function ApneaEventStats() {
   const { filteredDetails: data } = useData();

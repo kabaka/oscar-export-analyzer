@@ -1,5 +1,35 @@
 import React, { useEffect, useRef } from 'react';
 
+/**
+ * Modal dialog warning users about printing considerations before print.
+ *
+ * Informs users that:
+ * - PDF generation may take 1-2 minutes for large datasets
+ * - Page breaks can be configured in settings
+ * - Charts are included in export
+ *
+ * Provides proper focus management and keyboard accessibility (Escape to close,
+ * Tab trapping within dialog).
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Whether modal is visible
+ * @param {Function} props.onClose - Callback to cancel print
+ * @param {Function} props.onConfirm - Callback to proceed with print
+ * @returns {JSX.Element | null} Modal dialog or null if not open
+ *
+ * @example
+ * const [showWarning, setShowWarning] = useState(false);
+ * return (
+ *   <>
+ *     <button onClick={() => setShowWarning(true)}>Print</button>
+ *     <PrintWarningDialog
+ *       isOpen={showWarning}
+ *       onClose={() => setShowWarning(false)}
+ *       onConfirm={() => { window.print(); setShowWarning(false); }}
+ *     />
+ *   </>
+ * );
+ */
 export default function PrintWarningDialog({ isOpen, onClose, onConfirm }) {
   const cancelButtonRef = useRef(null);
   const dialogRef = useRef(null);
