@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Grid container layout for key performance indicator (KPI) cards.
@@ -19,3 +20,7 @@ import React from 'react';
 export default function MetricGrid({ children }) {
   return <div className="metric-grid">{children}</div>;
 }
+
+MetricGrid.propTypes = {
+  children: PropTypes.node.isRequired,
+};

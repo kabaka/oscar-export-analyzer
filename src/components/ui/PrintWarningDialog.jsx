@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Modal dialog warning users about printing considerations before print.
@@ -221,3 +222,9 @@ export default function PrintWarningDialog({ isOpen, onClose, onConfirm }) {
     </div>
   );
 }
+
+PrintWarningDialog.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+};

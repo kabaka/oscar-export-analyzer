@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   summarizeUsage,
   computeAHITrends,
@@ -110,3 +111,8 @@ export default function Overview({ clusters, falseNegatives }) {
     </div>
   );
 }
+
+Overview.propTypes = {
+  clusters: PropTypes.arrayOf(PropTypes.object),
+  falseNegatives: PropTypes.arrayOf(PropTypes.object),
+};

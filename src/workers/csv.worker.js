@@ -39,93 +39,117 @@ function sanitizeErrorMessage(err) {
 
 // Parses CSV files off the main thread and streams filtered rows
 self.onmessage = (e) => {
-  const { workerId, file, filterEvents } = e.data || {};
-  if (!file) return;
+  try {
+    const { workerId, file, filterEvents } = e.data || {};
 
-  let headersValidated = false;
-
-  Papa.parse(file, {
-    worker: false,
-    header: true,
-    dynamicTyping: true,
-    skipEmptyLines: true,
-    chunkSize: CSV_CHUNK_SIZE_BYTES,
-    // Runs in a worker: update progress and filter events per chunk to keep the UI responsive
-    chunk(results) {
-      // Validate headers on first chunk before processing any rows
-      if (!headersValidated) {
-        headersValidated = true;
-        const headers = results.meta.fields || [];
-
-        // Determine file type and validate appropriate schema
-        let validationResult;
-        if (filterEvents) {
-          // Details file (has Event column and needs filtering)
-          validationResult = validateDetailsHeaders(headers);
-        } else {
-          // Summary file (has Date, AHI, etc.)
-          validationResult = validateSummaryHeaders(headers);
-        }
-
-        if (!validationResult.valid) {
-          // Log detailed validation failure in development
-          if (import.meta.env.DEV) {
-            console.error('CSV validation failed:', validationResult);
-          }
-
-          // Send sanitized error message
-          const safeMessage = sanitizeErrorMessage(validationResult.error);
-          self.postMessage({
-            workerId,
-            type: 'error',
-            error: safeMessage,
-          });
-
-          // Abort parsing
-          return;
-        }
-      }
-
-      self.postMessage({
-        workerId,
-        type: 'progress',
-        cursor: results.meta.cursor,
-      });
-      let rows = results.data;
-      if (filterEvents) {
-        rows = rows.filter((r) => {
-          const e = r['Event'];
-          if (e === 'FLG') return r['Data/Duration'] >= FLG_BRIDGE_THRESHOLD;
-          return ['ClearAirway', 'Obstructive', 'Mixed'].includes(e);
-        });
-      }
-      if (rows.length) {
-        const processed = rows.map((r) => {
-          if (r['DateTime']) {
-            const ms = new Date(r['DateTime']).getTime();
-            return { ...r, DateTime: ms };
-          }
-          return r;
-        });
-        self.postMessage({ workerId, type: 'rows', rows: processed });
-      }
-    },
-    complete() {
-      self.postMessage({ workerId, type: 'complete' });
-    },
-    error(err) {
-      // Log detailed error in development mode only
-      if (import.meta.env.DEV) {
-        console.error('CSV parsing error:', err);
-      }
-
-      // Always send sanitized error message to main thread
-      const safeMessage = sanitizeErrorMessage(err);
+    // Validate required fields
+    if (!file) {
       self.postMessage({
         workerId,
         type: 'error',
-        error: safeMessage,
+        error: 'No file provided for parsing',
       });
-    },
-  });
+      return;
+    }
+
+    let headersValidated = false;
+
+    Papa.parse(file, {
+      worker: false,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      chunkSize: CSV_CHUNK_SIZE_BYTES,
+      // Runs in a worker: update progress and filter events per chunk to keep the UI responsive
+      chunk(results) {
+        // Validate headers on first chunk before processing any rows
+        if (!headersValidated) {
+          headersValidated = true;
+          const headers = results.meta.fields || [];
+
+          // Determine file type and validate appropriate schema
+          let validationResult;
+          if (filterEvents) {
+            // Details file (has Event column and needs filtering)
+            validationResult = validateDetailsHeaders(headers);
+          } else {
+            // Summary file (has Date, AHI, etc.)
+            validationResult = validateSummaryHeaders(headers);
+          }
+
+          if (!validationResult.valid) {
+            // Log detailed validation failure in development
+            if (import.meta.env.DEV) {
+              console.error('CSV validation failed:', validationResult);
+            }
+
+            // Send sanitized error message
+            const safeMessage = sanitizeErrorMessage(validationResult.error);
+            self.postMessage({
+              workerId,
+              type: 'error',
+              error: safeMessage,
+            });
+
+            // Abort parsing
+            return;
+          }
+        }
+
+        self.postMessage({
+          workerId,
+          type: 'progress',
+          cursor: results.meta.cursor,
+        });
+        let rows = results.data;
+        if (filterEvents) {
+          rows = rows.filter((r) => {
+            const e = r['Event'];
+            if (e === 'FLG') return r['Data/Duration'] >= FLG_BRIDGE_THRESHOLD;
+            return ['ClearAirway', 'Obstructive', 'Mixed'].includes(e);
+          });
+        }
+        if (rows.length) {
+          const processed = rows.map((r) => {
+            if (r['DateTime']) {
+              const ms = new Date(r['DateTime']).getTime();
+              return { ...r, DateTime: ms };
+            }
+            return r;
+          });
+          self.postMessage({ workerId, type: 'rows', rows: processed });
+        }
+      },
+      complete() {
+        self.postMessage({ workerId, type: 'complete' });
+      },
+      error(err) {
+        // Log detailed error in development mode only
+        if (import.meta.env.DEV) {
+          console.error('CSV parsing error:', err);
+        }
+
+        // Always send sanitized error message to main thread
+        const safeMessage = sanitizeErrorMessage(err);
+        self.postMessage({
+          workerId,
+          type: 'error',
+          error: safeMessage,
+        });
+      },
+    });
+  } catch (err) {
+    // Catch any unexpected errors in message handler or worker initialization
+    if (import.meta.env.DEV) {
+      console.error('CSV worker message handler error:', err);
+    }
+
+    const { workerId } = e.data || {};
+    const safeMessage = sanitizeErrorMessage(err);
+    self.postMessage({
+      workerId,
+      type: 'error',
+      error: safeMessage,
+    });
+  }
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Inline link button that opens the documentation modal with optional anchor.
@@ -31,3 +32,8 @@ export default function GuideLink({ anchor, label = 'Guide' }) {
     </button>
   );
 }
+
+GuideLink.propTypes = {
+  anchor: PropTypes.string.isRequired,
+  label: PropTypes.string,
+};

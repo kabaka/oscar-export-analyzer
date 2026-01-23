@@ -39,6 +39,7 @@
  * );
  */
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   DAYS_PER_FIVE_YEARS,
   DAYS_PER_FORTNIGHT,
@@ -162,5 +163,19 @@ function DateRangeControls({
     </div>
   );
 }
+
+DateRangeControls.propTypes = {
+  quickRange: PropTypes.string.isRequired,
+  onQuickRangeChange: PropTypes.func.isRequired,
+  dateFilter: PropTypes.shape({
+    start: PropTypes.instanceOf(Date),
+    end: PropTypes.instanceOf(Date),
+  }).isRequired,
+  onDateFilterChange: PropTypes.func.isRequired,
+  parseDate: PropTypes.func.isRequired,
+  formatDate: PropTypes.func.isRequired,
+  onCustomRange: PropTypes.func,
+  onReset: PropTypes.func,
+};
 
 export default DateRangeControls;

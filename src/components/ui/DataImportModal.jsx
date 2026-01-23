@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { getLastSession } from '../../utils/db';
 
 /**
@@ -119,12 +120,20 @@ export default function DataImportModal({
     [onSummaryFile, onDetailsFile, onSessionFile, onClose],
   );
 
-  const onInputChange = (e) => handleFiles(e.target.files);
-  const onDrop = (e) => {
-    e.preventDefault();
-    handleFiles(e.dataTransfer.files);
-  };
-  const onDragOver = (e) => e.preventDefault();
+  const onInputChange = useCallback(
+    (e) => handleFiles(e.target.files),
+    [handleFiles],
+  );
+
+  const onDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles],
+  );
+
+  const onDragOver = useCallback((e) => e.preventDefault(), []);
 
   if (!isOpen) return null;
 
@@ -135,48 +144,21 @@ export default function DataImportModal({
       aria-modal="true"
       aria-label="Import Data"
     >
-      <div
-        className="modal"
-        style={{
-          padding: 24,
-          width: 'min(480px, 96vw)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 24,
-          alignItems: 'center',
-        }}
-      >
-        <h3 style={{ margin: 0, textAlign: 'center' }}>Load OSCAR CSVs</h3>
+      <div className="modal import-modal">
+        <h3 className="import-modal-title">Load OSCAR CSVs</h3>
         {hasSaved && (
           <button
-            className="btn-primary"
+            className="btn-primary import-modal-button"
             onClick={() => {
               onLoadSaved();
               onClose();
             }}
-            style={{ alignSelf: 'center' }}
           >
             Load previous session
           </button>
         )}
-        <div
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          style={{
-            width: '100%',
-            flex: 1,
-            border: '2px dashed var(--color-border)',
-            padding: 20,
-            borderRadius: 8,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            gap: 12,
-          }}
-        >
-          <p style={{ margin: 0 }}>
+        <div onDrop={onDrop} onDragOver={onDragOver} className="drop-zone">
+          <p className="drop-zone-text">
             Drag and drop Summary & Details CSVs or a session JSON here or
             choose files
           </p>
@@ -213,10 +195,9 @@ export default function DataImportModal({
           )}
         </div>
         <button
-          className="btn-ghost"
+          className="btn-primary import-modal-button"
           onClick={onClose}
           aria-label="Close"
-          style={{ alignSelf: 'center' }}
         >
           Close
         </button>
@@ -224,3 +205,20 @@ export default function DataImportModal({
     </div>
   );
 }
+
+DataImportModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSummaryFile: PropTypes.func.isRequired,
+  onDetailsFile: PropTypes.func.isRequired,
+  onLoadSaved: PropTypes.func.isRequired,
+  onSessionFile: PropTypes.func.isRequired,
+  loadingSummary: PropTypes.bool.isRequired,
+  loadingDetails: PropTypes.bool.isRequired,
+  summaryProgress: PropTypes.number.isRequired,
+  summaryProgressMax: PropTypes.number.isRequired,
+  detailsProgress: PropTypes.number.isRequired,
+  detailsProgressMax: PropTypes.number.isRequired,
+  error: PropTypes.instanceOf(Error),
+  warning: PropTypes.string,
+};

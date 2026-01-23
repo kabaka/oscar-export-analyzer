@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Card component displaying a key performance indicator (KPI) with optional sparkline visualization.
@@ -26,3 +27,9 @@ export default function KPICard({ title, value, children }) {
     </div>
   );
 }
+
+KPICard.propTypes = {
+  title: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  children: PropTypes.node,
+};

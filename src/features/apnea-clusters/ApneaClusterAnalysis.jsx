@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import {
   clustersToCsv,
   CLUSTER_ALGORITHMS,
@@ -291,6 +292,25 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
     </div>
   );
 }
+
+ApneaClusterAnalysis.propTypes = {
+  clusters: PropTypes.arrayOf(
+    PropTypes.shape({
+      start: PropTypes.instanceOf(Date),
+      end: PropTypes.instanceOf(Date),
+      durationSec: PropTypes.number,
+      count: PropTypes.number,
+      severity: PropTypes.number,
+    }),
+  ).isRequired,
+  params: PropTypes.shape({
+    algorithm: PropTypes.string,
+    gapSec: PropTypes.number,
+    bridgeThreshold: PropTypes.number,
+  }).isRequired,
+  onParamChange: PropTypes.func.isRequired,
+  details: PropTypes.arrayOf(PropTypes.object),
+};
 
 export { ApneaClusterAnalysis };
 export { PARAM_FIELDS_BY_ALGORITHM } from './paramFields';

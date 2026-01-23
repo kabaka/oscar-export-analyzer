@@ -26,6 +26,7 @@
  * @see rowsToCsv - CSV export utility
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
 import { GuideLink } from './ui';
 import { useData } from '../context/DataContext';
 import { DECIMAL_PLACES_2 } from '../constants';
@@ -85,22 +86,14 @@ function VirtualTable({
     <div
       ref={containerRef}
       onScroll={onScroll}
-      style={{
-        position: 'relative',
-        overflow: 'auto',
-        height: `${height}px`,
-        border: '1px solid #ddd',
-      }}
+      className="virtual-table-container"
+      style={{ height: `${height}px` }}
     >
-      <div style={{ height: `${total * rowHeight}px`, position: 'relative' }}>
-        <div
-          style={{
-            position: 'absolute',
-            top: `${offsetY}px`,
-            left: 0,
-            right: 0,
-          }}
-        >
+      <div
+        className="virtual-table-spacer"
+        style={{ height: `${total * rowHeight}px` }}
+      >
+        <div className="virtual-table-viewport" style={{ top: `${offsetY}px` }}>
           {slice.map((row, i) => renderRow(row, start + i))}
         </div>
       </div>
@@ -167,11 +160,14 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const toggleCol = (c) => {
-    updateVisibleCols((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
-    );
-  };
+  const toggleCol = useCallback(
+    (c) => {
+      updateVisibleCols((prev) =>
+        prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+      );
+    },
+    [updateVisibleCols],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -219,17 +215,18 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
     return copy;
   }, [filtered, sortBy]);
 
-  const toggleSelect = (idx) => {
+  const toggleSelect = useCallback((idx) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(idx)) next.delete(idx);
       else next.add(idx);
       return next;
     });
-  };
+  }, []);
 
-  const clearSelection = () => setSelected(new Set());
-  const exportSelection = () => {
+  const clearSelection = useCallback(() => setSelected(new Set()), []);
+
+  const exportSelection = useCallback(() => {
     const cols = visibleCols.length ? visibleCols : allColumns;
     const selectedRows = Array.from(selected)
       .sort((a, b) => a - b)
@@ -243,14 +240,14 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
     a.download = `${tab}-rows${selectedRows.length ? '-selected' : ''}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [visibleCols, allColumns, selected, sorted, tab]);
 
-  const doApplyDateFilter = () => {
+  const doApplyDateFilter = useCallback(() => {
     if (!onApplyDateFilter) return;
     const sd = startDate ? new Date(startDate) : null;
     const ed = endDate ? new Date(endDate) : null;
     onApplyDateFilter({ start: sd, end: ed });
-  };
+  }, [onApplyDateFilter, startDate, endDate]);
 
   // Pivot summary by a chosen column; show counts and mean of numeric columns
   const pivot = useMemo(() => {
@@ -286,18 +283,11 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
       <h2 id="raw-data-explorer">
         Raw Data Explorer <GuideLink anchor="raw-data-explorer" label="Guide" />
       </h2>
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap',
-          alignItems: 'center',
-        }}
-      >
+      <div className="explorer-controls">
         <div
           role="tablist"
           aria-label="Raw data tabs"
-          style={{ display: 'inline-flex', gap: 4 }}
+          className="explorer-tabs"
         >
           <button
             aria-selected={tab === 'summary'}
@@ -319,7 +309,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
           placeholder="Search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: '1 1 200px' }}
+          className="explorer-search"
         />
         <label>
           Start date:
@@ -359,11 +349,11 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
         </button>
       </div>
 
-      <details style={{ marginTop: 8 }}>
+      <details className="explorer-details">
         <summary>Columns</summary>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div className="column-grid">
           {allColumns.map((c) => (
-            <label key={c} style={{ minWidth: 160 }}>
+            <label key={c} className="column-label">
               <input
                 type="checkbox"
                 checked={visibleCols.includes(c)}
@@ -375,16 +365,11 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
         </div>
       </details>
 
-      <div style={{ overflowX: 'auto', marginTop: 8 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="table-scroll-container">
+        <table className="virtual-table">
           <thead>
             <tr>
-              <th
-                className="table-sticky-left"
-                style={{ position: 'sticky', left: 0 }}
-              >
-                Sel
-              </th>
+              <th className="table-sticky-left">Sel</th>
               {(visibleCols.length ? visibleCols : allColumns).map((c) => (
                 <th
                   key={c}
@@ -394,7 +379,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
                       dir: s.key === c && s.dir === 'asc' ? 'desc' : 'asc',
                     }))
                   }
-                  style={{ cursor: 'pointer' }}
+                  className="sortable-header"
                 >
                   {c}
                   {sortBy.key === c ? (sortBy.dir === 'asc' ? ' ▲' : ' ▼') : ''}
@@ -403,12 +388,11 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
             </tr>
           </thead>
           <tbody>
-            <tr style={{ height: 0 }}>
+            <tr className="virtual-row-spacer">
               <td
                 colSpan={
                   (visibleCols.length ? visibleCols : allColumns).length + 1
                 }
-                style={{ padding: 0 }}
               >
                 <VirtualTable
                   rows={sorted}
@@ -418,20 +402,11 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
                     <div
                       role="row"
                       key={row.id ?? row.DateTime ?? row.Date ?? idx}
-                      style={{
-                        display: 'table',
-                        tableLayout: 'fixed',
-                        width: '100%',
-                      }}
+                      className="virtual-row"
                     >
                       <div
                         role="cell"
-                        className="table-sticky-left"
-                        style={{
-                          display: 'table-cell',
-                          padding: '4px 6px',
-                          borderBottom: '1px solid #eee',
-                        }}
+                        className="table-sticky-left virtual-cell"
                       >
                         <input
                           type="checkbox"
@@ -442,15 +417,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
                       </div>
                       {(visibleCols.length ? visibleCols : allColumns).map(
                         (c) => (
-                          <div
-                            role="cell"
-                            key={c}
-                            style={{
-                              display: 'table-cell',
-                              padding: '4px 6px',
-                              borderBottom: '1px solid #eee',
-                            }}
-                          >
+                          <div role="cell" key={c} className="virtual-cell">
                             {formatCell(c, row?.[c])}
                           </div>
                         ),
@@ -464,14 +431,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
         </table>
       </div>
 
-      <div
-        style={{
-          marginTop: 10,
-          display: 'flex',
-          gap: 12,
-          alignItems: 'center',
-        }}
-      >
+      <div className="explorer-footer">
         <strong>Rows:</strong>{' '}
         <span data-testid="row-count">{sorted.length}</span>
         <button
@@ -495,7 +455,7 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
       </div>
 
       {pivot && (
-        <div style={{ overflowX: 'auto', marginTop: 8 }}>
+        <div className="table-scroll-container">
           <table>
             <thead>
               <tr>
@@ -523,5 +483,9 @@ export default function RawDataExplorer({ onApplyDateFilter }) {
     </section>
   );
 }
+
+RawDataExplorer.propTypes = {
+  onApplyDateFilter: PropTypes.func,
+};
 
 export { rowsToCsv };

@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { parseDuration, mannWhitneyUTest } from '../../utils/stats';
 import { useData } from '../../context/DataContext';
 import {
@@ -131,3 +132,14 @@ export default function RangeComparisons({ rangeA, rangeB }) {
     </div>
   );
 }
+
+RangeComparisons.propTypes = {
+  rangeA: PropTypes.shape({
+    start: PropTypes.instanceOf(Date),
+    end: PropTypes.instanceOf(Date),
+  }),
+  rangeB: PropTypes.shape({
+    start: PropTypes.instanceOf(Date),
+    end: PropTypes.instanceOf(Date),
+  }),
+};

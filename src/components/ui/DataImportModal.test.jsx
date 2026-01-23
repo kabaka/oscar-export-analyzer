@@ -33,19 +33,19 @@ describe('DataImportModal', () => {
   });
 
   describe('Basic Functionality', () => {
-    it('adds padding and centers actions', async () => {
+    it('applies CSS classes for styling', async () => {
       render(<DataImportModal {...defaultProps} />);
 
       const modal = document.querySelector('.modal');
-      expect(modal).toHaveStyle({ padding: '24px' });
+      expect(modal).toHaveClass('modal', 'import-modal');
 
       const loadBtn = await screen.findByRole('button', {
         name: /load previous session/i,
       });
-      expect(loadBtn).toHaveStyle({ alignSelf: 'center' });
+      expect(loadBtn).toHaveClass('import-modal-button');
 
       const closeBtn = screen.getByRole('button', { name: /close/i });
-      expect(closeBtn).toHaveStyle({ alignSelf: 'center' });
+      expect(closeBtn).toHaveClass('import-modal-button');
     });
 
     it('remains open when reopened with loaded data', async () => {

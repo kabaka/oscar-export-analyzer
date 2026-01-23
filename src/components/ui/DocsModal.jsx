@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
 import { renderToStaticMarkup } from 'react-dom/server';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -210,3 +211,10 @@ export default function DocsModal({
     </div>
   );
 }
+
+DocsModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  initialAnchor: PropTypes.string,
+  markdownSource: PropTypes.string,
+};

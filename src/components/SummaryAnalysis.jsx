@@ -30,6 +30,7 @@
  * @see RangeComparisons - Date range comparison analysis
  */
 import React from 'react';
+import PropTypes from 'prop-types';
 import UsagePatternsCharts from './UsagePatternsCharts';
 import AhiTrendsCharts from './AhiTrendsCharts';
 import EpapTrendsCharts from './EpapTrendsCharts';
@@ -309,3 +310,7 @@ export default function SummaryAnalysis({ clusters = [] }) {
     </div>
   );
 }
+
+SummaryAnalysis.propTypes = {
+  clusters: PropTypes.arrayOf(PropTypes.object),
+};

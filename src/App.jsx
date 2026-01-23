@@ -10,6 +10,7 @@ import {
 } from './components/ui';
 import AppLayout from './app/AppLayout';
 import { useAppContext } from './app/AppProviders';
+import { useGuideContext } from './context/GuideContext';
 import { OverviewSection } from './features/overview';
 import AnalyticsSection from './features/analytics/Section';
 import { RangeComparisonsSection } from './features/range-comparisons';
@@ -19,7 +20,6 @@ import RawExplorerSection from './features/raw-explorer/Section';
 import { setStorageConsent } from './utils/storageConsent';
 import {
   DEFAULT_HEADER_OFFSET_PX,
-  HEADER_SCROLL_MARGIN_PX,
   OBSERVER_THRESHOLDS,
   PERCENT_SCALE,
   buildObserverRootMargin,
@@ -65,10 +65,6 @@ export function AppShell() {
     formatDate,
     activeSectionId,
     setActiveSectionId,
-    guideOpen,
-    guideAnchor,
-    openGuideForActive,
-    closeGuide,
     filteredSummary,
     filteredDetails,
     showStorageConsent,
@@ -76,6 +72,9 @@ export function AppShell() {
     pendingSave,
     setPendingSave,
   } = useAppContext();
+
+  const { guideOpen, guideAnchor, openGuideForActive, closeGuide } =
+    useGuideContext();
 
   const tocSections = useMemo(
     () => [
@@ -172,8 +171,6 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [summaryAvailable, printWarningModal]);
 
-  const ERROR_MARGIN_STYLE = `${HEADER_SCROLL_MARGIN_PX}px 0`;
-
   const beforeHeader = (
     <>
       <DataImportModal
@@ -193,26 +190,12 @@ export function AppShell() {
         warning={warning}
       />
       {error && (
-        <div
-          role="alert"
-          style={{
-            margin: ERROR_MARGIN_STYLE,
-            color: 'red',
-            textAlign: 'center',
-          }}
-        >
+        <div role="alert" className="alert-error">
           {error}
         </div>
       )}
       {warning && !error && (
-        <div
-          role="status"
-          style={{
-            margin: ERROR_MARGIN_STYLE,
-            color: 'orange',
-            textAlign: 'center',
-          }}
-        >
+        <div role="status" className="alert-warning">
           {warning}
         </div>
       )}

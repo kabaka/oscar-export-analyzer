@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Simple labeled input component for numeric parameters.
@@ -37,5 +38,12 @@ function ParamInput({ label, value, onChange, inputProps = {} }) {
     </div>
   );
 }
+
+ParamInput.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
+  inputProps: PropTypes.object,
+};
 
 export default React.memo(ParamInput);

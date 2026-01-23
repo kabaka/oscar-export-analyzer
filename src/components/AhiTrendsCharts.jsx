@@ -39,17 +39,12 @@
  * );
  */
 import React, { useMemo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { normalQuantile } from '../utils/stats';
 import { useTimeSeriesProcessing } from '../hooks/useTimeSeriesProcessing';
 import { useUsageStats } from '../hooks/useUsageStats';
 import { useAutocorrelation } from '../hooks/useAutocorrelation';
-import {
-  LAG_CONTROL_GAP_PX,
-  LAG_CONTROL_MARGIN_BOTTOM_PX,
-  LAG_CONTROL_MARGIN_TOP_PX,
-  LAG_INPUT_MAX,
-  LAG_INPUT_MIN,
-} from './usage/lagConstants';
+import { LAG_INPUT_MAX, LAG_INPUT_MIN } from './usage/lagConstants';
 import { COLORS } from '../utils/colors';
 import { ThemedPlot, VizHelp } from './ui';
 import {
@@ -83,8 +78,6 @@ import {
   SUMMARY_DECIMAL_PLACES,
 } from '../constants/charts';
 
-const LAG_CONTROL_MARGIN = `${LAG_CONTROL_MARGIN_TOP_PX}px 0 ${LAG_CONTROL_MARGIN_BOTTOM_PX}px`;
-const LAG_INPUT_WIDTH_PX = 80;
 const LAG_INPUT_STEP = 1;
 const LAG_LABEL = 'Max lag (nights):';
 const BAD_NIGHT_LIMIT = 10;
@@ -131,11 +124,7 @@ const EMPHASIS_LINE_WIDTH = LINE_WIDTH_BOLD;
  * @see useUsageStats - Provides summary statistics (median, mean, quantiles)
  * @see ThemedPlot - Plotly wrapper that applies theme (light/dark mode)
  */
-export default function AhiTrendsCharts({
-  data,
-  clusters = [],
-  onRangeSelect,
-}) {
+function AhiTrendsCharts({ data, clusters = [], onRangeSelect }) {
   const {
     dates,
     values: ahis,
@@ -289,7 +278,8 @@ export default function AhiTrendsCharts({
       <div className="chart-with-help">
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+          className="chart-container-full"
+          style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
           data={[
             {
               x: dates,
@@ -472,15 +462,7 @@ export default function AhiTrendsCharts({
       </div>
 
       {ahis.length > 1 ? (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            gap: `${LAG_CONTROL_GAP_PX}px`,
-            margin: LAG_CONTROL_MARGIN,
-          }}
-        >
+        <div className="lag-controls">
           <label htmlFor={lagInputId}>{LAG_LABEL}</label>
           <input
             id={lagInputId}
@@ -490,7 +472,7 @@ export default function AhiTrendsCharts({
             step={LAG_INPUT_STEP}
             value={maxLag}
             onChange={handleLagChange}
-            style={{ width: `${LAG_INPUT_WIDTH_PX}px` }}
+            className="lag-input"
           />
         </div>
       ) : null}
@@ -537,10 +519,8 @@ export default function AhiTrendsCharts({
               margin: { ...AUTOCORRELATION_CHART_MARGIN },
             }}
             useResizeHandler
-            style={{
-              width: '100%',
-              height: `${AUTOCORRELATION_CHART_HEIGHT}px`,
-            }}
+            className="chart-container-full"
+            style={{ height: `${AUTOCORRELATION_CHART_HEIGHT}px` }}
           />
           <VizHelp text="Autocorrelation shows how strongly tonight's AHI relates to prior nights. Bars outside the grey band exceed the 95% white-noise expectation; see docs/user/02-visualizations.md#ahi-trends." />
         </div>
@@ -685,7 +665,8 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+            className="chart-container-full"
+            style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: ahis,
@@ -755,7 +736,8 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+            className="chart-container-full"
+            style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 y: ahis,
@@ -778,7 +760,8 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+            className="chart-container-full"
+            style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 y: ahis,
@@ -799,7 +782,8 @@ export default function AhiTrendsCharts({
         <div className="chart-item chart-with-help">
           <ThemedPlot
             useResizeHandler
-            style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+            className="chart-container-full"
+            style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
             data={[
               {
                 x: theo,
@@ -830,7 +814,7 @@ export default function AhiTrendsCharts({
       </div>
 
       {/* Severity bands summary */}
-      <div className="section" style={{ marginTop: '8px' }}>
+      <div className="section chart-section-spacing">
         <h4>Severity Bands</h4>
         <table>
           <thead>
@@ -872,7 +856,7 @@ export default function AhiTrendsCharts({
       </div>
 
       {badNights.length ? (
-        <div className="section" style={{ marginTop: '8px' }}>
+        <div className="section chart-section-spacing">
           <h4>Bad Nights (top {BAD_NIGHT_LIMIT})</h4>
           <table>
             <thead>
@@ -897,3 +881,11 @@ export default function AhiTrendsCharts({
     </div>
   );
 }
+
+AhiTrendsCharts.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.object).isRequired,
+  clusters: PropTypes.arrayOf(PropTypes.object),
+  onRangeSelect: PropTypes.func,
+};
+
+export default AhiTrendsCharts;

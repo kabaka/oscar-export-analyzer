@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Small inline help tooltip icon with popover text for chart visualizations.
@@ -50,3 +51,10 @@ export default function VizHelp({ text, id, style, inline = true }) {
     </div>
   );
 }
+
+VizHelp.propTypes = {
+  text: PropTypes.string.isRequired,
+  id: PropTypes.string,
+  style: PropTypes.object,
+  inline: PropTypes.bool,
+};

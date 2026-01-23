@@ -9,8 +9,13 @@ corresponds to changes released on that day.
 
 ## 2026-01-23
 
+### Fixed
+
+- **Analytics worker race condition** (Issue #11 follow-up): Fixed test failures in `App.analyticsFallback.test.jsx` and `App.analyticsWorker.test.jsx` caused by `useAnalyticsWorker` job tracking race condition. Replaced state-based job tracking with ref-based tracking to ensure proper staleness detection when worker callbacks fire before React state updates are applied. All tests now pass.
+
 ### Added
 
+- **PropTypes validation for all components** (Issue #13): Added comprehensive PropTypes to 24 components across `src/components/`, `src/features/`, `src/components/ui/`, and `src/app/`, improving type safety and developer experience. All components receiving props now validate prop types at runtime during development.
 - **CI quality gates** enforcing bundle size limits (2.6MB gzipped max), security audit (moderate+ vulnerabilities), and test coverage thresholds (80% minimum line coverage)
 - **67 comprehensive accessibility tests** for HeaderMenu (17 tests), DateRangeControls (26 tests), and DataImportModal (24 tests) covering keyboard navigation, ARIA attributes, and focus management
 - **Accessibility Testing Patterns guide** in testing-patterns.md documenting keyboard navigation tests, ARIA attribute verification, focus management tests, and best practices for WCAG 2.1 AA compliance
@@ -27,16 +32,20 @@ corresponds to changes released on that day.
 
 - Raised CSV upload limit from 50MB to 150MB for larger datasets
 - Refactored CONTRIBUTING.md as human-focused guide with clear workflows
+- **Refactored inline style objects to CSS classes** (Issue #23): Replaced 38 inline style objects with semantic CSS classes across App, RawDataExplorer, DataImportModal, AhiTrendsCharts, and EpapTrendsCharts for improved maintainability, theme support, and reduced runtime style calculations. Dynamic styles (chart heights, scroll positions) preserved as inline where necessary.
 - Enhanced JSDoc coverage across codebase
 - Improved clustering documentation with density metrics and FLG hysteresis explanations
 - Adopted date-based CHANGELOG workflow where agents add entries directly to current date section
 - Update developer report to mark completed high-priority items (Issues #1, #7, #19, #22)
+- **Split AppStateContext and GuideContext** to prevent unnecessary re-renders when guide modal state changes independently from app state
+- **Refactored useAnalyticsProcessing hook** to reduce complexity from 179 to 59 lines by extracting normalization utilities to `src/utils/normalization.js` (with comprehensive tests) and worker communication logic to `useAnalyticsWorker` hook
 
 ### Security
 
 - Implemented Content Security Policy (CSP) for XSS defense
 - Added input sanitization for all worker message payloads
 - Hardened DOMPurify configuration for HTML sanitization
+- **Added comprehensive error boundaries to Web Worker message handlers** in csv.worker.js and analytics.worker.js with try-catch wrappers, malformed message validation, and proper error communication back to main thread
 - Applied secure coding practices across data handling paths
 
 ### Fixed

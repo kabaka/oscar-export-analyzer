@@ -176,9 +176,13 @@ describe('App analytics worker integration', () => {
       constructor(url) {
         this.url = typeof url === 'string' ? url : url?.href || '';
         this.onmessage = null;
+        this.messages = [];
+        this.workerId = null;
       }
 
-      postMessage() {
+      postMessage(message) {
+        this.messages.push(message);
+        this.workerId = message?.workerId;
         if (this.url.includes('analytics.worker')) {
           setTimeout(() => {
             const analyticsWorkerMessage = buildAnalyticsWorkerMessage();

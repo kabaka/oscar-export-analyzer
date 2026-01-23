@@ -37,6 +37,7 @@
  * @see adherenceMetrics - Calculates compliance metrics and streaks
  */
 import React, { useCallback } from 'react';
+import PropTypes from 'prop-types';
 import {
   DAYS_PER_WEEK,
   DEFAULT_MAX_LAG,
@@ -263,6 +264,11 @@ function UsagePatternsCharts({ data, onRangeSelect }) {
     </div>
   );
 }
+
+UsagePatternsCharts.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.object).isRequired,
+  onRangeSelect: PropTypes.func,
+};
 
 export { UsagePatternsCharts };
 export default React.memo(UsagePatternsCharts);

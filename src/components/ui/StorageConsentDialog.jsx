@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Modal dialog requesting user consent to store sessions in browser IndexedDB.
@@ -257,3 +258,10 @@ export default function StorageConsentDialog({
     </div>
   );
 }
+
+StorageConsentDialog.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onAllow: PropTypes.func.isRequired,
+  onDeny: PropTypes.func.isRequired,
+  onDismiss: PropTypes.func.isRequired,
+};

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Plot from 'react-plotly.js';
 import { useEffectiveDarkMode } from '../../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../../utils/chartTheme';
@@ -39,3 +40,12 @@ export default function ThemedPlot({ layout, ...props }) {
     <Plot key={isDark ? 'dark' : 'light'} layout={themedLayout} {...props} />
   );
 }
+
+ThemedPlot.propTypes = {
+  layout: PropTypes.object.isRequired,
+  data: PropTypes.arrayOf(PropTypes.object),
+  style: PropTypes.object,
+  onRelayout: PropTypes.func,
+  onHover: PropTypes.func,
+  config: PropTypes.object,
+};

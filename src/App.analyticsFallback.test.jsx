@@ -97,7 +97,9 @@ describe('App fallback analytics', () => {
         if (this.url.includes('analytics.worker')) {
           // Use Promise.resolve for proper async handling
           Promise.resolve().then(() => {
-            this.onmessage?.({ ok: false, data: null, error: 'fail' });
+            this.onmessage?.({
+              data: { ok: false, data: null, error: 'fail' },
+            });
           });
         }
       }

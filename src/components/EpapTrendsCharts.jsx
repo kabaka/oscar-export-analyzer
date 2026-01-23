@@ -32,6 +32,7 @@
  * );
  */
 import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { COLORS } from '../utils/colors';
 import { useEffectiveDarkMode } from '../hooks/useEffectiveDarkMode';
 import { ThemedPlot, VizHelp } from './ui';
@@ -399,7 +400,8 @@ function EpapTrendsCharts({ data }) {
       <div className="chart-with-help">
         <ThemedPlot
           useResizeHandler
-          style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+          className="chart-container-full"
+          style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
           data={[
             {
               x: dates,
@@ -717,7 +719,8 @@ function EpapTrendsCharts({ data }) {
             <div className="chart-item chart-with-help">
               <ThemedPlot
                 useResizeHandler
-                style={{ width: '100%', height: `${DEFAULT_CHART_HEIGHT}px` }}
+                className="chart-container-full"
+                style={{ height: `${DEFAULT_CHART_HEIGHT}px` }}
                 data={[
                   {
                     x: dates,
@@ -799,6 +802,10 @@ function EpapTrendsCharts({ data }) {
     </div>
   );
 }
+
+EpapTrendsCharts.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.object).isRequired,
+};
 
 export { EpapTrendsCharts };
 export default React.memo(EpapTrendsCharts);

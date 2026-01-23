@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 
 /**
  * Top-level menu component providing access to data import, export, and session management.
@@ -62,7 +63,7 @@ export default function HeaderMenu({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  const close = () => setOpen(false);
+  const close = useCallback(() => setOpen(false), []);
 
   return (
     <div className="app-menu" ref={ref}>
@@ -153,3 +154,14 @@ export default function HeaderMenu({
     </div>
   );
 }
+
+HeaderMenu.propTypes = {
+  onOpenImport: PropTypes.func.isRequired,
+  onExportJson: PropTypes.func.isRequired,
+  onExportCsv: PropTypes.func.isRequired,
+  onClearSession: PropTypes.func.isRequired,
+  onPrint: PropTypes.func.isRequired,
+  onOpenGuide: PropTypes.func.isRequired,
+  hasAnyData: PropTypes.bool.isRequired,
+  summaryAvailable: PropTypes.bool.isRequired,
+};

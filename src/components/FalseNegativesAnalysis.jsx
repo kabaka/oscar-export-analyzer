@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { FALSE_NEG_PEAK_FLG_LEVEL_MIN } from '../utils/clustering';
 import { GuideLink, ThemedPlot, VizHelp } from './ui';
 import { HEADER_SCROLL_MARGIN_PX, PERCENT_SCALE } from '../constants';
@@ -209,5 +210,18 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
     </div>
   );
 }
+
+FalseNegativesAnalysis.propTypes = {
+  list: PropTypes.arrayOf(
+    PropTypes.shape({
+      start: PropTypes.instanceOf(Date).isRequired,
+      durationSec: PropTypes.number.isRequired,
+      peakFLGLevel: PropTypes.number.isRequired,
+      count: PropTypes.number,
+    }),
+  ).isRequired,
+  preset: PropTypes.oneOf(['strict', 'balanced', 'lenient']).isRequired,
+  onPresetChange: PropTypes.func,
+};
 
 export default FalseNegativesAnalysis;

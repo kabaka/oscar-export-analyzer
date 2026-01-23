@@ -625,6 +625,128 @@ select:focus-visible {
   outline: 2px solid color-mix(in oklab, var(--color-accent) 40%, transparent);
   outline-offset: 2px;
 }
+/* Alert and Message Styling */
+.alert-error {
+  margin: 1rem;
+  color: red;
+  text-align: center;
+}
+
+.alert-warning {
+  margin: 1rem;
+  color: orange;
+  text-align: center;
+}
+
+/* Raw Data Explorer */
+.virtual-table-container {
+  position: relative;
+  overflow: auto;
+  border: 1px solid var(--color-border-light);
+}
+
+.virtual-table-spacer {
+  position: relative;
+}
+
+.virtual-table-viewport {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.explorer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.explorer-tabs {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.explorer-search {
+  flex: 1 1 200px;
+}
+
+.explorer-details {
+  margin-top: 8px;
+}
+
+.column-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.column-label {
+  min-width: 160px;
+}
+
+.table-scroll-container {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.virtual-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sortable-header {
+  cursor: pointer;
+}
+
+.virtual-row-spacer {
+  height: 0;
+}
+
+.virtual-row-spacer td {
+  padding: 0;
+}
+
+.virtual-row {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.virtual-cell {
+  display: table-cell;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.explorer-footer {
+  margin-top: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Chart Containers */
+.chart-container-full {
+  width: 100%;
+}
+
+.chart-section-spacing {
+  margin-top: 8px;
+}
+
+/* Time Series Lag Controls */
+.lag-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0 12px;
+}
+
+.lag-input {
+  width: 80px;
+}
+
 /* Print styles */
 @media print {
   .app-header,
