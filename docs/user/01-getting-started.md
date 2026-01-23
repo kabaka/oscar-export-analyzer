@@ -61,7 +61,17 @@ The application is organized into several views accessible from the sidebar:
 - **Event Analysis** – Includes apnea duration distributions, cluster detection, and potential false negatives.
 - **Raw Data** – Tabular view of the CSV contents with filtering and export.
 
-Use the theme toggle in the header to switch between light, dark, or system themes. A global date range filter beside the title narrows which nights are included in every view. The interface responds to window resizing and touch input for tablets.
+Use the theme toggle in the header to switch between light, dark, or system themes. A global date range filter beside the title narrows which nights are included in every view.
+
+### Mobile and Tablet Support
+
+OSCAR Export Analyzer is fully responsive and works on phones, tablets, and desktop computers:
+
+- **Mobile (phones)** – On smaller screens, the sidebar navigation becomes a hamburger menu (☰) in the top-left corner. Tap it to open the navigation drawer and select your view. Charts automatically resize to fit your screen, with optimized font sizes and touch-friendly controls.
+- **Tablet** – The layout adapts to provide more space for charts while maintaining easy navigation. All interactive elements are sized for touch input (44×44 pixel minimum targets).
+- **Desktop** – The full sidebar remains visible, and charts display at maximum size with all features accessible.
+
+All functionality is available across devices—the interface simply adapts to your screen size. Date filters, theme toggles, and chart interactions work the same way regardless of device.
 
 ## 4. Saving and Restoring Sessions
 

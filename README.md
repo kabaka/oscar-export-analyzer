@@ -30,7 +30,7 @@ The project aims to make longitudinal therapy data easy to understand. Key desig
 
 ## Architecture Overview
 
-The analyzer is implemented as a [Vite](https://vitejs.dev/) + [React](https://react.dev/) single‑page application. Parsing of large CSV files occurs in a Web Worker so the interface remains responsive. State is stored with lightweight custom hooks and may optionally persist to the browser’s `IndexedDB`. Tests are written with [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/).
+The analyzer is implemented as a [Vite](https://vitejs.dev/) + [React](https://react.dev/) single‑page application with comprehensive responsive design for mobile, tablet, and desktop devices. Parsing of large CSV files occurs in a Web Worker so the interface remains responsive. State is stored with lightweight custom hooks and may optionally persist to the browser's `IndexedDB`. Tests are written with [Vitest](https://vitest.dev/) and [Testing Library](https://testing-library.com/).
 
 ```
 ┌────────────┐   CSV Upload   ┌──────────────┐   Derived Series   ┌─────────────┐

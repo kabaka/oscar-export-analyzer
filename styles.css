@@ -17,6 +17,17 @@
   --radius: 10px;
   /* Offset equal to sticky header height; used for anchor scrolling */
   --header-offset: 58px;
+
+  /* Responsive spacing variables */
+  --spacing-unit: 4px;
+  --spacing-xs: calc(var(--spacing-unit) * 2); /* 8px */
+  --spacing-sm: calc(var(--spacing-unit) * 3); /* 12px */
+  --spacing-md: calc(var(--spacing-unit) * 4); /* 16px */
+  --spacing-lg: calc(var(--spacing-unit) * 6); /* 24px */
+  --spacing-xl: calc(var(--spacing-unit) * 8); /* 32px */
+
+  /* Touch target minimum (WCAG AAA) */
+  --touch-target-min: 44px;
 }
 
 /* Prefer dark when system is dark and no explicit override */
@@ -92,25 +103,67 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   padding: 0;
+  /* Mobile-first: 16px base font size */
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 html {
   scroll-behavior: smooth;
   scroll-padding-top: var(--header-offset);
 }
+
+/* Mobile-first container: full width with compact padding */
 .container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: auto;
-  padding: 16px 20px 28px;
-}
-h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 650;
-  letter-spacing: 0.2px;
+  padding: 12px 16px 24px;
 }
 
-/* App header */
+/* Responsive typography: Mobile-first */
+h1 {
+  margin: 1rem 0 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  font-size: 1.5rem; /* 24px mobile */
+  line-height: 1.3;
+}
+
+h2 {
+  font-size: 1.25rem; /* 20px mobile */
+  line-height: 1.4;
+  margin: 1.5rem 0 0.75rem;
+}
+
+h3 {
+  font-size: 1.125rem; /* 18px mobile */
+  line-height: 1.4;
+  margin: 1rem 0 0.5rem;
+}
+
+h4 {
+  font-size: 1rem; /* 16px mobile */
+  line-height: 1.4;
+  margin: 0.75rem 0 0.5rem;
+}
+
+p {
+  margin: 0.75rem 0;
+  line-height: 1.6;
+}
+
+ul,
+ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+  line-height: 1.6;
+}
+
+li {
+  margin: 0.5rem 0;
+}
+
+/* App header - Mobile-first responsive layout */
 .app-header {
   position: sticky;
   top: 0;
@@ -119,20 +172,32 @@ h1 {
   border-bottom: 1px solid var(--color-border-light);
   box-shadow: var(--shadow-1);
 }
+
+/* Mobile: Vertical stacking */
 .app-header .inner {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  padding: 12px 16px;
+  max-width: 100%;
 }
+
 .app-header .title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
+
+.app-header .title h1 {
+  margin: 0;
+  font-size: 1.125rem; /* Slightly smaller on mobile */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .app-header .title .badge {
   font-size: 0.7rem;
   padding: 2px 6px;
@@ -141,26 +206,31 @@ h1 {
   color: var(--color-text-muted);
   border: 1px solid var(--color-border-light);
 }
+
 .app-header .date-filter {
   display: flex;
   align-items: center;
-  gap: 4px;
-  justify-self: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
 }
-.app-header .date-filter input {
-  padding: 2px 4px;
-}
-.app-header .date-filter select {
-  padding: 2px 4px;
-}
+
+.app-header .date-filter input,
+.app-header .date-filter select,
 .app-header .date-filter button {
-  padding: 2px 6px;
+  flex: 1 1 auto;
+  min-width: 100px;
+  padding: 10px 12px; /* Larger touch targets */
+  font-size: 1rem;
+  min-height: 44px;
 }
+
 .app-header .actions {
-  justify-self: end;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
 }
 
 .app-menu {
@@ -320,7 +390,7 @@ tbody tr:last-child td {
   margin-right: 4px;
 }
 
-/* Inputs and buttons */
+/* Inputs and buttons - Mobile-first with touch targets */
 input[type='text'],
 input[type='number'],
 input[type='date'],
@@ -329,9 +399,11 @@ select {
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 10px 12px;
   outline: none;
   box-shadow: var(--shadow-1);
+  min-height: 44px;
+  font-size: 1rem;
 }
 input[type='file'] {
   color: var(--color-text);
@@ -384,12 +456,15 @@ button {
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 10px 16px;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
     transform 0.02s ease-in-out;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 1rem;
 }
 button:hover {
   background-color: color-mix(
@@ -454,7 +529,7 @@ button[disabled] {
   box-shadow: var(--shadow-2);
 }
 
-/* Table of contents */
+/* Table of contents - Mobile hidden by default, shown on tablet+ */
 .toc {
   position: sticky;
   top: var(--header-offset);
@@ -464,7 +539,7 @@ button[disabled] {
   border-radius: var(--radius);
   padding: 8px 10px;
   margin: 12px 0 18px;
-  display: flex;
+  display: none; /* Hidden on mobile */
   flex-wrap: wrap;
   gap: 8px;
   box-shadow: var(--shadow-1);
@@ -472,9 +547,12 @@ button[disabled] {
 .toc a {
   color: var(--color-link);
   text-decoration: none;
-  font-size: 0.94rem;
-  padding: 6px 10px;
+  font-size: 1rem;
+  padding: 10px 14px;
   border-radius: 8px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .toc a:hover {
   color: var(--color-link-hover);
@@ -494,18 +572,18 @@ h4[id] {
   scroll-margin-top: calc(var(--header-offset) + 8px);
 }
 
-/* Overview Dashboard metric grid and cards */
+/* Overview Dashboard metric grid and cards - Mobile-first */
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .kpi-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 16px; /* Slightly larger on mobile for touch */
   background: var(--color-kpi-bg);
   text-align: center;
   box-shadow: var(--shadow-1);
@@ -513,24 +591,30 @@ h4[id] {
 .kpi-card .title {
   font-size: 0.9rem;
   color: var(--color-text-muted);
+  margin-bottom: 8px;
 }
 .kpi-card .value {
-  font-size: 1.5rem;
+  font-size: 1.75rem; /* Larger for emphasis on mobile */
   margin: 8px 0;
+  font-weight: 600;
+}
+.kpi-card .subtitle {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
 }
 
-/* Usage Patterns charts styling */
+/* Usage Patterns charts styling - Mobile-first */
 .usage-charts > div {
   margin-bottom: 2rem;
 }
 .usage-charts-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column; /* Mobile: stacked */
   gap: 1rem;
   align-items: flex-start;
 }
 .usage-charts-grid .chart-item {
-  flex: 1 1 300px;
+  width: 100%; /* Mobile: full width */
 }
 
 .sparkline {
@@ -747,6 +831,324 @@ select:focus-visible {
   width: 80px;
 }
 
+/* ========================================
+   RESPONSIVE DESIGN: MOBILE NAVIGATION
+   ======================================== */
+
+/* Mobile Navigation Toggle (Hamburger) - Hidden on tablet+ */
+.mobile-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 1100;
+}
+
+.mobile-nav-toggle:hover {
+  background: var(--color-kpi-bg);
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 24px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 2px;
+}
+
+/* Mobile Navigation Backdrop */
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1100;
+}
+
+/* Mobile Navigation Drawer */
+.mobile-nav-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(280px, 80vw);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  box-shadow: var(--shadow-2);
+  z-index: 1200;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.mobile-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-nav-list li {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.mobile-nav-list a {
+  display: block;
+  padding: 14px 20px;
+  color: var(--color-link);
+  text-decoration: none;
+  font-size: 1rem;
+  min-height: 44px;
+}
+
+.mobile-nav-list a:hover,
+.mobile-nav-list a:active {
+  background: var(--color-kpi-bg);
+  color: var(--color-link-hover);
+}
+
+.mobile-nav-list a.active {
+  background: color-mix(in oklab, var(--color-kpi-bg) 85%, transparent);
+  color: var(--color-text);
+  font-weight: 600;
+  border-left: 4px solid var(--color-accent);
+  padding-left: 16px;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN: MEDIA QUERIES
+   ======================================== */
+
+/* Tablet: 768px - 1023px */
+@media (min-width: 768px) {
+  /* Hide mobile navigation on tablet+ */
+  .mobile-nav-toggle,
+  .mobile-nav-backdrop,
+  .mobile-nav-drawer {
+    display: none !important;
+  }
+
+  /* Show desktop TOC on tablet+ */
+  .toc {
+    display: flex;
+  }
+
+  /* Typography: slightly larger on tablet */
+  h1 {
+    font-size: 1.75rem; /* 28px */
+  }
+
+  h2 {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  h3 {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  /* Container: medium padding */
+  .container {
+    max-width: 100%;
+    padding: 16px 20px 28px;
+  }
+
+  /* Header: 2-row grid layout */
+  .app-header .inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .app-header .title {
+    grid-column: 1 / -1;
+  }
+
+  .app-header .title h1 {
+    font-size: 1.25rem;
+  }
+
+  .app-header .date-filter {
+    grid-column: 1;
+    flex: 1;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+  }
+
+  .app-header .actions {
+    grid-column: 2;
+    width: auto;
+    justify-self: end;
+  }
+
+  /* KPI cards: 2 columns on tablet */
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .kpi-card {
+    padding: 14px;
+  }
+
+  .kpi-card .value {
+    font-size: 1.5rem;
+  }
+
+  /* Usage charts: 2 columns on tablet */
+  .usage-charts-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .usage-charts-grid .chart-item {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
+
+  /* Section spacing */
+  .section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+  }
+}
+
+/* Desktop: ≥1024px */
+@media (min-width: 1024px) {
+  /* Typography: full desktop sizes */
+  h1 {
+    font-size: 2rem; /* 32px */
+  }
+
+  h2 {
+    font-size: 1.75rem; /* 28px */
+  }
+
+  h3 {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  h4 {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  /* Container: constrained width */
+  .container {
+    max-width: 1200px;
+    padding: 16px 20px 28px;
+  }
+
+  /* Header: Original 3-column layout */
+  .app-header .inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  .app-header .title {
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+
+  .app-header .date-filter {
+    grid-column: 2;
+    justify-self: center;
+    width: auto;
+  }
+
+  .app-header .date-filter input,
+  .app-header .date-filter select,
+  .app-header .date-filter button {
+    padding: 2px 4px; /* Desktop: compact controls */
+    min-height: auto;
+    font-size: 0.95rem;
+  }
+
+  .app-header .actions {
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  /* KPI cards: 4 columns on desktop */
+  .metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .kpi-card {
+    padding: 12px;
+  }
+
+  .kpi-card .value {
+    font-size: 1.5rem;
+  }
+
+  /* Usage charts: flexible columns on desktop */
+  .usage-charts-grid .chart-item {
+    flex: 1 1 300px;
+  }
+
+  /* Section spacing */
+  .section {
+    margin-bottom: 2.5rem;
+  }
+}
+
+/* Chart container responsive heights */
+.chart-container {
+  width: 100%;
+  margin-bottom: 2rem;
+  height: 300px; /* Mobile: compact */
+}
+
+@media (min-width: 768px) {
+  .chart-container {
+    height: 400px; /* Tablet: medium */
+  }
+}
+
+@media (min-width: 1024px) {
+  .chart-container {
+    height: 500px; /* Desktop: full */
+  }
+}
+
+/* Table wrapper for horizontal scroll on mobile */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+.table-wrapper table {
+  min-width: 600px; /* Force horizontal scroll on narrow viewports */
+}
+
+@media (min-width: 768px) {
+  .table-wrapper table {
+    min-width: auto;
+  }
+}
+
 /* Print styles */
 @media print {
   .app-header,
@@ -756,12 +1158,48 @@ select:focus-visible {
   .guide-inline,
   button,
   input,
-  select {
+  select,
+  .mobile-nav-toggle,
+  .mobile-nav-drawer {
     display: none !important;
+  }
+
+  /* Show desktop TOC for print */
+  .toc {
+    display: flex !important;
   }
 
   /* Force Plotly legends to print with dark text for contrast */
   .js-plotly-plot .legend text {
     fill: #0b1220 !important;
+  }
+
+  /* Reset to desktop-like layout for print */
+  .app-header .inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto;
+    padding: 10px 16px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .usage-charts-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .usage-charts-grid .chart-item {
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+
+  .table-wrapper {
+    overflow: visible;
+  }
+
+  .table-wrapper table {
+    font-size: 0.8rem;
   }
 }

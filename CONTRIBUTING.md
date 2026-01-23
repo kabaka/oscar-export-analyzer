@@ -250,6 +250,18 @@ ESLint will catch style issues:
 npm run lint
 ```
 
+### Responsive Design Guidelines
+
+When working on UI components, ensure responsive behavior:
+
+- **Test all breakpoints** – Use browser DevTools responsive mode to test mobile (<768px), tablet (768-1024px), and desktop (≥1024px)
+- **Touch targets** – All interactive elements must be ≥44×44px (WCAG AAA requirement)
+- **Use utilities** – Apply `useMediaQuery` hook for conditional rendering and `chartConfig` for responsive Plotly charts
+- **Mobile-first CSS** – Write base styles for mobile, then use `@media (min-width: ...)` for larger screens
+- **Test on devices** – When possible, verify behavior on real phones and tablets, not just DevTools
+
+See [docs/developer/architecture.md#responsive-design](docs/developer/architecture.md#responsive-design) for detailed patterns.
+
 Fix automatically:
 
 ```bash

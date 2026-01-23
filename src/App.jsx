@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import HeaderMenu from './components/HeaderMenu';
 import DateRangeControls from './components/DateRangeControls';
+import { MobileNav } from './components/MobileNav';
 import {
   DataImportModal,
   DocsModal,
@@ -313,6 +314,21 @@ export function AppShell() {
     </>
   );
 
+  const mobileNav = (
+    <MobileNav
+      sections={tocSections}
+      activeSectionId={activeSectionId}
+      onNavigate={(id) => {
+        setActiveSectionId(id);
+        // Scroll to section
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }}
+    />
+  );
+
   const summaryHasRows = !!filteredSummary?.length;
   const detailsHasRows = !!filteredDetails?.length;
 
@@ -323,6 +339,7 @@ export function AppShell() {
         header={header}
         progress={progress}
         toc={toc}
+        mobileNav={mobileNav}
       >
         {summaryHasRows && (
           <>

@@ -51,13 +51,13 @@ describe('Print Page control', () => {
     await waitFor(
       () => {
         expect(
-          screen.getByRole('button', { name: /menu/i }),
+          screen.getByRole('button', { name: /^menu$/i }),
         ).toBeInTheDocument();
       },
       { timeout: 8000 },
     );
 
-    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    const menuBtn = screen.getByRole('button', { name: /^menu$/i });
     await userEvent.click(menuBtn);
     const printItem = await screen.findByRole('menuitem', {
       name: /Print Page/i,

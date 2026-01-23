@@ -286,7 +286,201 @@ The project uses a single `guide.css` file for global styles plus small componen
 Color choices aim for WCAG AA contrast, and the `ThemeToggle` component flips between palettes. Plotly charts adopt the
 current theme automatically through the shared `chartTheme.js` utility and the `ThemedPlot` wrapper.
 
-**Example: Using ThemedPlot for Consistent Chart Theming**
+### Responsive Design
+
+The analyzer implements a mobile-first responsive design strategy that adapts to mobile phones, tablets, and desktop computers. The responsive architecture ensures all functionality remains accessible across devices while optimizing layouts and interactions for each screen size.
+
+#### Breakpoint Strategy
+
+The application uses three viewport breakpoints defined in `src/constants/breakpoints.js`:
+
+```javascript
+export const BREAKPOINTS = {
+  MOBILE: 768, // < 768px: phones
+  TABLET: 1024, // 768-1024px: tablets
+  DESKTOP: 1024, // ≥ 1024px: desktop computers
+};
+```
+
+**Design philosophy:**
+
+- **Mobile-first CSS** – Base styles target mobile devices; media queries progressively enhance for larger screens
+- **Touch-optimized** – All interactive elements meet WCAG AAA standards with 44×44px minimum touch targets
+- **Preserved desktop experience** – Desktop layout and functionality remain unchanged
+- **Progressive enhancement** – Features gracefully adapt without losing functionality
+
+#### useMediaQuery Hook
+
+The `useMediaQuery` hook provides viewport detection for conditional rendering:
+
+```javascript
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { BREAKPOINTS } from '../constants/breakpoints';
+
+export default function MyComponent() {
+  const isMobile = useMediaQuery(`(max-width: ${BREAKPOINTS.MOBILE - 1}px)`);
+  const isTablet = useMediaQuery(
+    `(min-width: ${BREAKPOINTS.MOBILE}px) and (max-width: ${BREAKPOINTS.TABLET - 1}px)`,
+  );
+  const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINTS.DESKTOP}px)`);
+
+  return (
+    <div>
+      {isMobile && <MobileNav />}
+      {!isMobile && <DesktopSidebar />}
+    </div>
+  );
+}
+```
+
+**Implementation details:**
+
+- Uses `window.matchMedia()` for efficient media query evaluation
+- Subscribes to viewport changes via `matchMedia.addEventListener('change', ...)`
+- Returns boolean indicating whether the media query matches
+- Automatically cleans up event listeners on unmount
+
+#### Responsive Chart Configuration
+
+The `chartConfig.js` utility provides device-specific Plotly configuration:
+
+```javascript
+import { getChartConfig } from '../utils/chartConfig';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { BREAKPOINTS } from '../constants/breakpoints';
+
+export default function MyChart() {
+  const isMobile = useMediaQuery(`(max-width: ${BREAKPOINTS.MOBILE - 1}px)`);
+  const chartConfig = getChartConfig(isMobile);
+
+  return (
+    <ThemedPlot
+      data={
+        [
+          /* ... */
+        ]
+      }
+      layout={{
+        ...chartConfig.layout,
+        title: 'My Chart',
+        // Override specific properties as needed
+      }}
+      config={chartConfig.config}
+    />
+  );
+}
+```
+
+**What `chartConfig` provides:**
+
+- **Responsive font sizes** – 10px mobile → 12px desktop for titles, axes, legends
+- **Adaptive margins** – Tighter margins on mobile (30-40px) → generous desktop margins (60-80px)
+- **Legend positioning** – Bottom on mobile (horizontal) → right side on desktop (vertical)
+- **Chart heights** – 300px mobile → 400px tablet → 500px desktop (via CSS classes)
+- **Touch-optimized config** – Static mode bar, simplified download options, responsive toolbar
+
+**See Also**: [src/utils/chartConfig.js](../../src/utils/chartConfig.js), [src/hooks/useMediaQuery.js](../../src/hooks/useMediaQuery.js)
+
+#### Mobile Navigation Component
+
+The `MobileNav` component provides hamburger menu navigation for mobile devices:
+
+```javascript
+import { MobileNav } from '../components/MobileNav';
+
+<MobileNav
+  sections={[
+    { id: 'overview', title: 'Overview' },
+    { id: 'usage', title: 'Usage Patterns' },
+    // ...
+  ]}
+  activeView="overview"
+  onNavigate={(sectionId) => setActiveView(sectionId)}
+/>;
+```
+
+**Features:**
+
+- Hamburger icon button in header (44×44px touch target)
+- Slide-in drawer with section links
+- Semi-transparent backdrop closes on click
+- Keyboard accessible (Escape to close)
+- Auto-closes after navigation
+- ARIA attributes for screen readers
+
+**When to use:**
+
+- Render `MobileNav` when `isMobile === true`
+- Render standard sidebar navigation when `isMobile === false`
+- Always provide the same navigation options on both
+
+#### Responsive CSS Patterns
+
+The `styles.css` file implements mobile-first responsive styles:
+
+```css
+/* Base styles for mobile */
+.app-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column on mobile */
+  gap: 1rem;
+}
+
+/* Tablet: 768px and up */
+@media (min-width: 768px) {
+  .app-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+  }
+}
+
+/* Desktop: 1024px and up */
+@media (min-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  }
+}
+```
+
+**Key responsive patterns:**
+
+- **Typography** – 16px base font on mobile (better readability), 14px desktop
+- **Touch targets** – All buttons, links, form controls ≥ 44×44px (WCAG AAA)
+- **Spacing** – Tighter padding/margins on mobile, generous on desktop
+- **Grid layouts** – 1 column mobile → 2 tablet → 4 desktop for KPI cards
+- **Chart containers** – `.chart-container-mobile`, `.chart-container-tablet`, `.chart-container-desktop`
+
+#### Testing Responsive Layouts
+
+When developing responsive features:
+
+1. **Browser DevTools** – Use responsive design mode to test breakpoints
+2. **Real devices** – Test on actual phones and tablets when possible
+3. **Touch simulation** – Enable touch simulation in DevTools
+4. **Accessibility** – Verify touch targets meet 44×44px minimum
+5. **Print preview** – Ensure print styles work across devices
+
+**Common pitfalls:**
+
+- ❌ Hardcoding pixel heights for charts (use CSS classes instead)
+- ❌ Assuming mouse hover (touch devices don't hover)
+- ❌ Touch targets < 44×44px (fails WCAG AAA)
+- ❌ Fixed positioning that breaks on mobile Safari
+- ✅ Use `useMediaQuery` for conditional rendering
+- ✅ Test with DevTools and real devices
+- ✅ Apply `chartConfig` to all Plotly charts
+
+#### ThemedPlot Usage Example
 
 ```jsx
 import React from 'react';
