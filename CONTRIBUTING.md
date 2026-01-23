@@ -1,6 +1,6 @@
 # Contributing to OSCAR Export Analyzer
 
-Welcome! We're thrilled you're interested in contributing to OSCAR Export Analyzer. This guide walks you through our development workflow, code review expectations, and agent delegation patterns. Whether you're fixing a typo or designing new visualizations, we want your contributions to feel joyful and approachable.
+Welcome! We're thrilled you're interested in contributing to OSCAR Export Analyzer. This guide walks you through our development workflow, code review expectations, and best practices. Whether you're fixing a typo or designing new visualizations, we want your contributions to feel joyful and approachable.
 
 ## Table of Contents
 
@@ -8,8 +8,6 @@ Welcome! We're thrilled you're interested in contributing to OSCAR Export Analyz
 - [Getting Started](#getting-started)
 - [Development Workflow](#development-workflow)
 - [Making Changes](#making-changes)
-- [Agent Delegation Patterns](#agent-delegation-patterns)
-- [Temporary File Guidelines](#temporary-file-guidelines)
 - [Pull Request Process](#pull-request-process)
 - [Code Style & Conventions](#code-style--conventions)
 - [Testing Guidelines](#testing-guidelines)
@@ -157,103 +155,6 @@ See [Magic Numbers Playbook](docs/magic-numbers-playbook.md) for guidance.
 
 ---
 
-## Agent Delegation Patterns
-
-OSCAR Export Analyzer includes **9 specialized GitHub Copilot agents** for coordinated development. Agents specialize in different aspects of the project and collaborate to deliver features efficiently.
-
-### The 9 Agents
-
-| Agent                         | Expertise                                                               | Delegates To                                   |
-| ----------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------- |
-| **@orchestrator-manager**     | Project coordination, task delegation, progress tracking                | All agents                                     |
-| **@frontend-developer**       | React components, hooks, component architecture, JSX                    | Testing-expert, documentation-specialist       |
-| **@ux-designer**              | User experience, accessibility, data visualization, medical UI patterns | Frontend-developer, documentation-specialist   |
-| **@testing-expert**           | Test strategy, Vitest tests, synthetic test data, coverage analysis     | Frontend-developer, data-scientist             |
-| **@data-scientist**           | Statistical analysis, algorithm validation, medical data interpretation | Debugger-rca-analyst, documentation-specialist |
-| **@documentation-specialist** | Architecture docs, user guides, code comments, JSDoc                    | Data-scientist, ux-designer                    |
-| **@security-auditor**         | Security review, privacy audits, sensitive data handling                | Debugger-rca-analyst, documentation-specialist |
-| **@adr-specialist**           | Architectural decisions, technology choices, rationale documentation    | Documentation-specialist                       |
-| **@debugger-rca-analyst**     | Root cause analysis, regression testing, debugging strategies           | Testing-expert, data-scientist                 |
-| **@readiness-reviewer**       | Pre-commit quality gate: tests, linting, scope, documentation           | All agents                                     |
-
-### When to Delegate
-
-**Multi-faceted tasks should be delegated** to specialized agents. Example workflow:
-
-> **Scenario**: Building a new chart for AHI trends with statistical overlay
-
-1. **@orchestrator-manager** – Coordinates the task across multiple agents
-2. **@ux-designer** – Designs the chart layout and interactive elements
-3. **@frontend-developer** – Implements React components and Plotly integration
-4. **@testing-expert** – Designs test strategy with synthetic test data
-5. **@data-scientist** – Validates statistical calculations
-6. **@documentation-specialist** – Updates user guides and JSDoc
-7. **@readiness-reviewer** – Enforces final quality gate before merge
-
-See [AGENTS.md](AGENTS.md) for full agent descriptions and expertise areas.
-
----
-
-## Temporary File Guidelines
-
-⚠️ **CRITICAL**: All temporary work must go to `docs/work/` or `temp/` directories—**NEVER `/tmp` or system temp paths**.
-
-### Why Local Temp Directories?
-
-- ❌ `/tmp` requires user approval to access and is outside the workspace
-- ❌ System temp paths are hard to track and may be deleted unexpectedly
-- ✅ `docs/work/` and `temp/` are gitignored and visible in the workspace
-- ✅ Local directories allow agents to coordinate cleanup
-- ✅ Work remains discoverable and maintainable
-
-### Directory Purposes
-
-**`docs/work/`** – Temporary investigation documentation
-
-- RCA reports and debugging analysis
-- Algorithm validation notes
-- Implementation planning documents
-- Test plans and coverage reports
-- Draft documentation
-
-**`temp/`** – Temporary scripts and files
-
-- One-off utility scripts
-- Test artifacts and experimental code
-- Temporary data transformation scripts
-- Build outputs not in `dist/`
-
-### Protected Health Information (PHI)
-
-**NEVER place real OSCAR CSV data or patient health information in these directories.**
-
-Protected Health Information includes:
-
-- ❌ Raw OSCAR CSV exports (even "sample" files)
-- ❌ AHI values, SpO2 readings, pressure settings, leak rates
-- ❌ Session timestamps, dates, or durations from real patients
-- ❌ Screenshots or excerpts of charts with real patient data
-
-**Safe patterns:**
-
-- ✅ Use synthetic test data from `src/test-utils/builders.js`
-- ✅ Reference data by description: "high AHI outlier case", "zero-usage session"
-- ✅ Include only metadata: "parsed 2847 rows", "found 3 clusters"
-- ✅ Document patterns: "AHI spike correlates with leak events"
-
-### Cleanup Expectations
-
-Agents must delete temporary files when work is complete:
-
-1. After investigation: Delete RCA/debugging docs from `docs/work/`
-2. After feature merge: Delete implementation notes
-3. After bug fix: Archive valuable findings to `docs/developer/reports/` or delete
-4. After experiments: Delete temporary scripts from `temp/`
-
-**The @readiness-reviewer will reject commits if these directories are not empty.**
-
----
-
 ## Pull Request Process
 
 ### Before Opening a PR
@@ -312,11 +213,8 @@ Before merging, verify:
 - ✅ **Tests pass** – `npm test -- --run` returns 0 exit code
 - ✅ **Linting clean** – `npm run lint` has no errors
 - ✅ **Build succeeds** – `npm run build` completes with no warnings
-- ✅ **Temp files cleaned** – `docs/work/` and `temp/` directories are empty
 - ✅ **Documentation updated** – Docs, JSDoc, and code comments reflect changes
 - ✅ **Reviewed** – At least one approval from a project maintainer
-
-The **@readiness-reviewer** agent enforces these checks as part of the final quality gate.
 
 ---
 
@@ -372,7 +270,7 @@ npm run lint -- --fix
 
 Place tests next to the code they test:
 
-```
+```text
 src/
   components/
     UsagePatternsCharts.jsx
@@ -515,7 +413,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) to make history
 
 ### Format
 
-```
+```text
 <type>(<scope>): <subject>
 
 <body>
@@ -594,9 +492,10 @@ OSCAR analyzer processes sleep therapy data belonging to real patients. Protecti
 
 ### Best Practices
 
-- Review the [AGENTS.md](AGENTS.md#critical-security-requirements) security requirements
-- For encryption or authentication needs, contact **@security-auditor**
-- When in doubt, ask—privacy concerns should be discussed openly
+- All data processing happens in the browser—data never leaves the user's machine
+- Never introduce features that send data to external services without explicit user consent
+- Review existing code for privacy best practices before implementing similar features
+- When in doubt, open an issue to discuss privacy concerns openly
 
 ---
 
@@ -606,8 +505,8 @@ OSCAR analyzer processes sleep therapy data belonging to real patients. Protecti
 
 - **[Developer Guide](docs/developer/)** – Setup, architecture, adding features
 - **[User Guides](docs/user/)** – Feature explanations and statistical concepts
-- **[AGENTS.md](AGENTS.md)** – Agent specialties and delegation patterns
 - **[Architecture Docs](docs/developer/architecture.md)** – System design deep-dive
+- **[Magic Numbers Playbook](docs/magic-numbers-playbook.md)** – Guidance on extracting constants
 
 ### Community
 
