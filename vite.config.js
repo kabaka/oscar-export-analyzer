@@ -26,6 +26,25 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     include: ['src/**/*.test.{js,jsx,ts,tsx}', 'styles.*.test.js'],
     testTimeout: 20000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      include: ['src/**/*.{js,jsx}'],
+      exclude: [
+        'src/**/*.test.{js,jsx}',
+        'src/setupTests.js',
+        'src/test-utils/**',
+        'src/main.jsx',
+      ],
+      all: true,
+      // Thresholds disabled for baseline measurement
+      thresholds: {
+        lines: 0,
+        functions: 0,
+        branches: 0,
+        statements: 0,
+      },
+    },
   },
   // Treat any Vite/Rollup warnings as errors to enforce clean builds
   build: {

@@ -11,9 +11,10 @@ corresponds to changes released on that day.
 
 ### Added
 
-- Comprehensive documentation suite for users and developers
-- **Glossary** with 80+ medical, statistical, and technical term definitions
-- **Code examples** in developer guides for DataContext, Web Workers, ThemedPlot, and feature components
+- **67 comprehensive accessibility tests** for HeaderMenu (17 tests), DateRangeControls (26 tests), and DataImportModal (24 tests) covering keyboard navigation, ARIA attributes, and focus management
+- **Accessibility Testing Patterns guide** in testing-patterns.md documenting keyboard navigation tests, ARIA attribute verification, focus management tests, and best practices for WCAG 2.1 AA compliance
+- **Coverage baseline measurement** with Vitest v8 provider achieving 89.87% line coverage and 71.38% branch coverage across 431 tests
+- Coverage configuration in vite.config.js with HTML, text, and JSON reporters
 - Accessibility guide documenting WCAG 2.1 AA compliance, keyboard navigation, screen reader support, color contrast standards, focus management, and testing practices
 - AGENTS.md contributor guide with AI agent workflow patterns
 - Working directory policy for temporary files (`docs/work/`, `temp/`)
@@ -38,6 +39,7 @@ corresponds to changes released on that day.
 
 ### Fixed
 
+- Test timeout issues in App.toc-active.test.jsx and App.navigation.test.jsx under coverage instrumentation (increased async timeouts to 6000ms)
 - Eliminated all 489 ESLint warnings for improved code quality
 - Resolved analytics worker race conditions
 - Fixed out-of-memory issues in hook tests

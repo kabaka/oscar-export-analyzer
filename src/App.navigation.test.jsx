@@ -56,7 +56,11 @@ describe('In-page navigation', () => {
       { timeout: 8000 },
     );
     expect(
-      await screen.findByRole('heading', { name: /Usage Patterns/i }),
+      await screen.findByRole(
+        'heading',
+        { name: /Usage Patterns/i },
+        { timeout: 6000 },
+      ),
     ).toBeInTheDocument();
 
     const overviewLink = screen.getByRole('link', { name: /Overview/i });

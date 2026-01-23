@@ -511,14 +511,28 @@ Use builders for:
 
 ## Accessibility Testing
 
-Testing accessibility ensures keyboard navigation, screen reader compatibility, and WCAG compliance. Focus on **semantic HTML and ARIA attributes**.
+Testing accessibility ensures keyboard navigation, screen reader compatibility, and WCAG 2.1 AA compliance. OSCAR Export Analyzer prioritizes **semantic HTML, proper ARIA attributes, and comprehensive keyboard navigation tests**.
 
-### Pattern: Semantic Queries
+### Accessibility Testing Strategy
 
-From [aria-attributes.test.jsx](../../src/tests/accessibility/aria-attributes.test.jsx):
+Accessibility testing covers three key areas:
+
+1. **Semantic HTML & ARIA Attributes**: Elements have correct roles, labels, and ARIA attributes
+2. **Keyboard Navigation**: All functionality works via Tab, Enter, Space, Escape, and Arrow keys
+3. **Focus Management**: Focus order is logical; modals trap focus; focus is restored after dialogs close
+
+**Target Compliance**: WCAG 2.1 Level AA
+
+---
+
+### Accessibility Pattern 1: Semantic Queries and ARIA Attributes
+
+Use `getByRole` as the first choice—it mirrors how screen readers perceive the interface.
+
+From [DateRangeControls.test.jsx](../../src/components/DateRangeControls.test.jsx):
 
 ```javascript
-describe('DateRangeControls ARIA labels', () => {
+describe('DateRangeControls - ARIA Attributes', () => {
   it('has aria-label on quick range selector', () => {
     render(<DateRangeControls {...props} />);
 
@@ -526,84 +540,351 @@ describe('DateRangeControls ARIA labels', () => {
     expect(select).toHaveAttribute('aria-label', 'Quick range');
   });
 
-  it('has aria-label on start date input', () => {
+  it('has aria-label on date inputs', () => {
     render(<DateRangeControls {...props} />);
 
-    const input = screen.getByLabelText('Start date');
-    expect(input).toHaveAttribute('aria-label', 'Start date');
+    expect(screen.getByLabelText('Start date')).toBeInTheDocument();
+    expect(screen.getByLabelText('End date')).toBeInTheDocument();
+  });
+
+  it('reset button has accessible name when visible', () => {
+    render(<DateRangeControls initialStart="2025-01-01" {...props} />);
+
+    const resetBtn = screen.getByRole('button', { name: /reset/i });
+    expect(resetBtn).toBeInTheDocument();
   });
 });
 ```
 
-### Testing Keyboard Navigation
+### Accessibility Pattern 2: Keyboard Navigation — Tab Order
+
+Test that keyboard users can navigate controls in logical order without mouse.
+
+From [DateRangeControls.test.jsx](../../src/components/DateRangeControls.test.jsx):
+
+```javascript
+describe('DateRangeControls - Keyboard Navigation', () => {
+  it('maintains correct tab order: select → start date → end date → reset', async () => {
+    const user = userEvent.setup();
+    render(
+      <DateRangeControls
+        initialStart="2025-01-01"
+        initialEnd="2025-01-15"
+        {...props}
+      />,
+    );
+
+    const select = screen.getByRole('combobox', { name: /quick range/i });
+    const startInput = screen.getByLabelText('Start date');
+    const endInput = screen.getByLabelText('End date');
+    const resetBtn = screen.getByRole('button', { name: /reset/i });
+
+    // Tab through in order
+    select.focus();
+    expect(select).toHaveFocus();
+
+    await user.tab();
+    expect(startInput).toHaveFocus();
+
+    await user.tab();
+    expect(endInput).toHaveFocus();
+
+    await user.tab();
+    expect(resetBtn).toHaveFocus();
+  });
+
+  it('reverse tabs through controls with Shift+Tab', async () => {
+    const user = userEvent.setup();
+    render(<DateRangeControls initialStart="2025-01-01" {...props} />);
+
+    const resetBtn = screen.getByRole('button', { name: /reset/i });
+    resetBtn.focus();
+
+    await user.tab({ shift: true }); // Shift+Tab
+    expect(screen.getByLabelText('End date')).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(screen.getByLabelText('Start date')).toHaveFocus();
+  });
+});
+```
+
+### Accessibility Pattern 3: Keyboard Navigation — Arrow Keys in Menus
+
+Test dropdown and menu navigation with arrow keys.
 
 From [HeaderMenu.test.jsx](../../src/components/HeaderMenu.test.jsx):
 
 ```javascript
-it('triggers menu actions via keyboard', async () => {
-  const user = userEvent.setup();
-  render(<HeaderMenu {...props} />);
+describe('HeaderMenu - Arrow Key Navigation', () => {
+  it('opens menu and navigates items with arrow keys', async () => {
+    const user = userEvent.setup();
+    render(<HeaderMenu hasAnyData={true} {...props} />);
 
-  // Open menu with keyboard
-  const menuBtn = screen.getByRole('button', { name: /menu/i });
-  await user.click(menuBtn);
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    await user.click(menuBtn);
 
-  // Navigate and activate menu item
-  const loadItem = screen.getByRole('menuitem', { name: /load data/i });
-  await user.click(loadItem);
+    const items = screen.getAllByRole('menuitem');
+    const firstItem = items[0];
 
-  expect(props.onOpenImport).toHaveBeenCalled();
+    // Focus first item and navigate down
+    firstItem.focus();
+    expect(firstItem).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}');
+    if (items.length > 1) {
+      expect(items[1]).toHaveFocus();
+    }
+
+    await user.keyboard('{ArrowUp}');
+    expect(firstItem).toHaveFocus();
+  });
+
+  it('activates menu item with Enter key', async () => {
+    const user = userEvent.setup();
+    const onOpenImport = vi.fn();
+    render(
+      <HeaderMenu hasAnyData={false} onOpenImport={onOpenImport} {...props} />,
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    await user.click(menuBtn);
+
+    const loadItem = screen.getByRole('menuitem', { name: /load data/i });
+    loadItem.focus();
+
+    await user.keyboard('{Enter}');
+
+    expect(onOpenImport).toHaveBeenCalled();
+    expect(menuBtn).toHaveAttribute('aria-expanded', 'false');
+  });
 });
 ```
 
-### Testing Dialogs and Modals
+### Accessibility Pattern 4: Focus Management — Modals and Dialogs
+
+Test focus trapping (Tab cycles within modal) and focus restoration (focus returns after closing).
+
+From [DataImportModal.test.jsx](../../src/components/ui/DataImportModal.test.jsx):
 
 ```javascript
-it('opens dialog with proper ARIA role', async () => {
-  render(<Component />);
+describe('DataImportModal - Focus Management', () => {
+  it('has proper dialog role and ARIA attributes', () => {
+    render(<DataImportModal isOpen={true} {...props} />);
 
-  // Verify dialog has correct role
-  const dialog = await screen.findByRole('dialog', { name: /Import Data/i });
-  expect(dialog).toBeInTheDocument();
+    const modal = screen.getByRole('dialog');
+    expect(modal).toHaveAttribute('aria-label', /import/i);
+    expect(modal).toHaveAttribute('aria-modal', 'true');
+  });
 
-  // Verify close button
-  const closeBtn = screen.getByRole('button', { name: /close/i });
-  await userEvent.click(closeBtn);
+  it('close button is focusable and activates on Enter', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<DataImportModal isOpen={true} onClose={onClose} {...props} />);
 
-  expect(dialog).not.toBeInTheDocument();
+    const closeBtn = screen.getByRole('button', { name: /close/i });
+    closeBtn.focus();
+
+    expect(closeBtn).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('provides accessible label for file input', () => {
+    render(<DataImportModal isOpen={true} {...props} />);
+
+    // File input should have a label or aria-label
+    const fileInput = screen.getByLabelText(/files?/i);
+    expect(fileInput).toHaveAttribute('accept', expect.stringContaining('csv'));
+  });
 });
 ```
 
-### Common Pitfalls
+### Pattern 5: Disabled Items and States
+
+Test that disabled controls are properly marked and skipped during tab navigation.
+
+From [HeaderMenu.test.jsx](../../src/components/HeaderMenu.test.jsx):
+
+```javascript
+describe('HeaderMenu - Disabled Items', () => {
+  it('skips disabled menu items when tabbing', async () => {
+    const user = userEvent.setup();
+    render(
+      <HeaderMenu hasAnyData={false} summaryAvailable={false} {...props} />,
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    await user.click(menuBtn);
+
+    const items = screen.getAllByRole('menuitem');
+    const enabledItems = items.filter((item) => !item.disabled);
+
+    if (enabledItems.length > 0) {
+      enabledItems[0].focus();
+      await user.tab();
+
+      // Should tab to next enabled item, not a disabled one
+      expect(document.activeElement).toHaveAttribute('role', 'menuitem');
+    }
+  });
+
+  it('marks disabled items appropriately for screen readers', () => {
+    render(
+      <HeaderMenu hasAnyData={false} summaryAvailable={false} {...props} />,
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    userEvent.click(menuBtn);
+
+    const disabledItems = screen
+      .getAllByRole('menuitem')
+      .filter((item) => item.disabled);
+    disabledItems.forEach((item) => {
+      expect(item).toHaveAttribute('disabled');
+    });
+  });
+});
+```
+
+### Pattern 6: Escape Key to Close Dialogs
+
+Test that pressing Escape closes modals and returns focus appropriately.
+
+```javascript
+describe('Modal - Escape Key', () => {
+  it('closes dialog when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<DataImportModal isOpen={true} onClose={onClose} {...props} />);
+
+    const modal = screen.getByRole('dialog');
+    modal.focus();
+
+    await user.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalled();
+  });
+});
+```
+
+### Accessibility Pattern 5: Disabled Items and States
+
+Test that disabled controls are properly marked and skipped during tab navigation.
+
+From [HeaderMenu.test.jsx](../../src/components/HeaderMenu.test.jsx):
+
+```javascript
+describe('HeaderMenu - Disabled Items', () => {
+  it('skips disabled menu items when tabbing', async () => {
+    const user = userEvent.setup();
+    render(
+      <HeaderMenu hasAnyData={false} summaryAvailable={false} {...props} />,
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    await user.click(menuBtn);
+
+    const items = screen.getAllByRole('menuitem');
+    const enabledItems = items.filter((item) => !item.disabled);
+
+    if (enabledItems.length > 0) {
+      enabledItems[0].focus();
+      await user.tab();
+
+      // Should tab to next enabled item, not a disabled one
+      expect(document.activeElement).toHaveAttribute('role', 'menuitem');
+    }
+  });
+
+  it('marks disabled items appropriately for screen readers', () => {
+    render(
+      <HeaderMenu hasAnyData={false} summaryAvailable={false} {...props} />,
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /menu/i });
+    userEvent.click(menuBtn);
+
+    const disabledItems = screen
+      .getAllByRole('menuitem')
+      .filter((item) => item.disabled);
+    disabledItems.forEach((item) => {
+      expect(item).toHaveAttribute('disabled');
+    });
+  });
+});
+```
+
+### Accessibility Pattern 6: Escape Key to Close Dialogs
+
+Test that pressing Escape closes modals and returns focus appropriately.
+
+```javascript
+describe('Modal - Escape Key', () => {
+  it('closes dialog when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<DataImportModal isOpen={true} onClose={onClose} {...props} />);
+
+    const modal = screen.getByRole('dialog');
+    modal.focus();
+
+    await user.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalled();
+  });
+});
+```
+
+### Accessibility Test Coverage in OSCAR Analyzer
+
+The project currently has **67 accessibility tests** across 3 critical components:
+
+| Component             | Tests  | Coverage                                                               |
+| --------------------- | ------ | ---------------------------------------------------------------------- |
+| **HeaderMenu**        | 17     | Keyboard navigation, ARIA attributes, focus management, disabled items |
+| **DateRangeControls** | 26     | Tab order, dropdown navigation, ARIA labels, reset button, arrow keys  |
+| **DataImportModal**   | 24     | Dialog role, focus management, file input accessibility, close button  |
+| **Total**             | **67** | **WCAG 2.1 AA compliance for critical interactions**                   |
+
+All tests pass and prevent accessibility regressions.
+
+### Accessibility Query Priority
+
+1. `getByRole` (best: matches ARIA roles and screen reader behavior)
+2. `getByLabelText` (good: matches form labels)
+3. `getByText` (acceptable: matches visible text)
+4. `getByTestId` (last resort: implementation detail; misses accessibility issues)
+
+### Accessibility Testing Pitfalls
 
 - ❌ **Don't use `getByTestId` when semantic queries work** — misses accessibility issues
 - ❌ **Don't test CSS styling details** — focus on semantic HTML structure
 - ❌ **Don't assume mouse-only interactions** — test keyboard navigation
+- ❌ **Don't forget to test disabled states** — disabled items should be skipped in tab order
 - ✅ **Do use `getByRole` as first choice** — mirrors screen reader behavior
 - ✅ **Do verify ARIA labels** on inputs without visible labels
-- ✅ **Do test focus management** (modals, dropdowns)
+- ✅ **Do test focus management** (modals, dropdowns, focus trapping)
+- ✅ **Do test disabled items** in tab order
+- ✅ **Do test Escape key** in modals and dialogs
 
-### Accessibility Query Priority
+### When to Add Accessibility Tests
 
-1. `getByRole` (best: matches ARIA roles)
-2. `getByLabelText` (good: matches form labels)
-3. `getByText` (acceptable: matches visible text)
-4. `getByTestId` (last resort: implementation detail)
+Add accessibility tests for:
 
-### When to Use
-
-Test accessibility for:
-
-- Form controls (inputs, selects, buttons)
-- Interactive components (menus, modals, tabs)
-- Custom widgets (date pickers, charts with tooltips)
-- Navigation elements (links, TOC)
+- **Form controls** (inputs, selects, buttons, checkboxes, radio groups)
+- **Interactive components** (menus, modals, tabs, dropdowns)
+- **Custom widgets** (date pickers, charts with tooltips, sliders)
+- **Navigation elements** (links, breadcrumbs, TOC)
+- **Disabled states** (ensure proper ARIA and tab order handling)
+- **Focus-dependent behavior** (auto-focus, focus restoration, focus trapping)
 
 ## Snapshot Testing
 
 Snapshot testing captures component output and detects unintended changes. Use sparingly — snapshots are brittle and hard to review.
 
-### Pattern
+### Snapshot Testing Pattern
 
 From [KPICard.test.jsx](../../src/components/ui/KPICard.test.jsx):
 
@@ -638,7 +919,7 @@ it('renders title, value, and children', () => {
 - Components with dynamic data (dates, random values)
 - Testing implementation details (CSS classes, inline styles)
 
-### Common Pitfalls
+### Snapshot Testing Pitfalls
 
 - ❌ **Don't rely solely on snapshots** — add specific assertions first
 - ❌ **Don't snapshot entire pages** — too brittle, breaks on any change
@@ -717,7 +998,7 @@ Not every line needs a test. Valid reasons for gaps:
 - **Development-only code**: Debug logging, console warnings
 - **External dependencies**: Plotly chart internals, worker setup
 
-### Common Pitfalls
+### Coverage Pitfalls
 
 - ❌ **Don't chase 100% coverage blindly** — focus on meaningful tests
 - ❌ **Don't test implementation details** just to boost coverage

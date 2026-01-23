@@ -83,7 +83,11 @@ describe('TOC active highlighting', () => {
 
     expect(IO._instances.length).toBe(1);
 
-    await screen.findByRole('heading', { name: /Pressure Settings/i });
+    await screen.findByRole(
+      'heading',
+      { name: /Pressure Settings/i },
+      { timeout: 6000 },
+    );
 
     // Click-based activation
     const ahiLink = screen.getByRole('link', { name: /AHI Trends/i });
