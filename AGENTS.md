@@ -204,44 +204,26 @@ The project follows [Keep a Changelog](https://keepachangelog.com/) format. Add 
 
 **Format and Workflow:**
 
-The project uses date-based versioning (YYYY-MM-DD) because main branch deploys to GitHub Pages immediately with no staging environment. Changes flow through these stages:
-
-1. **Before commit**: Add entries to `[Unreleased]` section
-2. **On commit**: Entries stay in `[Unreleased]` until a release boundary is reached
-3. **At release**: Move entries from `[Unreleased]` to a dated section (e.g., `[2026-01-23]`)
+The project uses date-based versioning (YYYY-MM-DD) because main branch deploys to GitHub Pages immediately with no staging environment. Agents add entries directly to the current date section—no separate "Unreleased" section.
 
 **Typical workflow for agents:**
-
-```markdown
-## [Unreleased]
-
-### Added
-
-- Brief description of what was added ([#123](link-to-issue-or-pr))
-```
-
-When a set of changes should be grouped as a release (e.g., end of sprint, major feature completion), the orchestrator moves `[Unreleased]` entries to a dated section:
 
 ```markdown
 ## [2026-01-23]
 
 ### Added
 
-- Accessibility guide documenting keyboard navigation and WCAG AA compliance
-- Testing patterns guide with 10 patterns and 29 code examples
-
-### Fixed
-
-- Date range filter now correctly handles sessions spanning midnight
+- Brief description of what was added ([#123](link-to-issue-or-pr))
 ```
 
 **Guidelines:**
 
-1. Add entries to `[Unreleased]` when you commit code with user-facing changes
-2. Use present tense, be concise but descriptive
-3. Include links to issues/PRs when available
-4. Don't worry about dates—that's handled during release coordination
-5. `@readiness-reviewer` will verify CHANGELOG is updated before approving
+1. When committing code with user-facing changes, add entries to the `[YYYY-MM-DD]` section for today's date
+2. If today's section doesn't exist, create it (use `date +"%Y-%m-%d"` to find today's date)
+3. Use present tense, be concise but descriptive
+4. Include links to issues/PRs when available
+5. Agents are responsible for adding CHANGELOG entries in their commits
+6. `@readiness-reviewer` will verify CHANGELOG is updated before approving
 
 For questions about what belongs in CHANGELOG, consult `@documentation-specialist`.
 

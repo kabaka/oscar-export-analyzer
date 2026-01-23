@@ -4,9 +4,10 @@ All notable changes to OSCAR Export Analyzer will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
-to track releases as they're deployed to production on the main branch.
+to track releases as they're deployed to production on the main branch. Each date section
+corresponds to changes released on that day.
 
-## [Unreleased]
+## [2026-01-23]
 
 ### Added
 
@@ -26,6 +27,7 @@ to track releases as they're deployed to production on the main branch.
 - Refactored CONTRIBUTING.md as human-focused guide with clear workflows
 - Enhanced JSDoc coverage across codebase
 - Improved clustering documentation with density metrics and FLG hysteresis explanations
+- Adopted date-based CHANGELOG workflow where agents add entries directly to current date section
 
 ### Security
 
@@ -237,7 +239,7 @@ Initial alpha release.
 - Worker thread event filtering
 - Chart responsiveness and layout issues
 
-[Unreleased]: https://github.com/kabaka/oscar-export-analyzer/compare/2026-01-21...HEAD
+[2026-01-23]: https://github.com/kabaka/oscar-export-analyzer/compare/2026-01-21...HEAD
 [2026-01-21]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/2026-01-21
 [2025-08-10]: https://github.com/kabaka/oscar-export-analyzer/compare/2025-08-09...2025-08-10
 [2025-08-09]: https://github.com/kabaka/oscar-export-analyzer/compare/2025-07-30...2025-08-09
