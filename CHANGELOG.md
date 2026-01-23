@@ -1,0 +1,244 @@
+# Changelog
+
+All notable changes to OSCAR Export Analyzer will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Comprehensive documentation suite for users and developers
+- **Glossary** with 80+ medical, statistical, and technical term definitions
+- **Code examples** in developer guides for DataContext, Web Workers, ThemedPlot, and feature components
+- Accessibility guide documenting WCAG 2.1 AA compliance, keyboard navigation, screen reader support, color contrast standards, focus management, and testing practices
+- AGENTS.md contributor guide with AI agent workflow patterns
+- Working directory policy for temporary files (`docs/work/`, `temp/`)
+- Magic numbers audit reporting system
+- Data science evaluation reports with algorithm validation
+- Copilot agent specifications for orchestrated development
+
+### Changed
+
+- Raised CSV upload limit from 50MB to 150MB for larger datasets
+- Refactored CONTRIBUTING.md as human-focused guide with clear workflows
+- Enhanced JSDoc coverage across codebase
+- Improved clustering documentation with density metrics and FLG hysteresis explanations
+
+### Security
+
+- Implemented Content Security Policy (CSP) for XSS defense
+- Added input sanitization for all worker message payloads
+- Hardened DOMPurify configuration for HTML sanitization
+- Applied secure coding practices across data handling paths
+
+### Fixed
+
+- Eliminated all 489 ESLint warnings for improved code quality
+- Resolved analytics worker race conditions
+- Fixed out-of-memory issues in hook tests
+- Improved worker flow stability and error handling
+- Fixed chart theme helper to handle null layouts gracefully
+
+## [1.0.0] - 2026-01-21
+
+Initial production release with comprehensive CPAP data analysis capabilities.
+
+### Added
+
+#### Core Features
+
+- CSV parsing for OSCAR Summary and Details exports with progress tracking
+- Web Worker architecture for responsive UI during heavy computations
+- IndexedDB session persistence with auto-save and manual save/load
+- JSON session export/import for reproducible analysis
+- Date range filtering across all visualizations
+- Cross-chart brushing for interactive data exploration
+
+#### Visualization Suite
+
+- **Overview Dashboard**: KPI cards with sparklines showing therapy metrics at a glance
+- **Usage Patterns**: Time series, histograms, box plots, STL decomposition, calendar heatmap, autocorrelation diagnostics
+- **AHI Trends**: Nightly AHI with optional OA/CA/MA stacking, change-point detection, severity bands, violin and QQ plots
+- **EPAP Analysis**: Pressure trends over time, correlation matrix, titration helper with Mann-Whitney U tests, 2D density plots
+- **Event Clusters**: Density-aware apnea cluster detection with configurable parameters, severity scoring, sortable table
+- **False Negatives**: Detection of potential unreported apnea events based on flow limitation patterns
+- **Raw Data Explorer**: Virtualized table with filtering, sorting, pivot summary, CSV export
+
+#### Statistical Analysis
+
+- Rolling averages with confidence intervals (7-day and 30-day windows)
+- LOESS smoothing for trend visualization
+- PELT-like change-point detection for identifying therapy adjustments
+- Mann-Whitney U tests with rank-biserial effect sizes for EPAP stratification
+- Kaplan-Meier survival curves for apnea event durations
+- Pearson and partial correlation analysis
+- STL decomposition (seasonal-trend decomposition using LOESS)
+- Autocorrelation (ACF) and partial autocorrelation (PACF) diagnostics
+- K-means clustering validation
+
+#### User Experience
+
+- Light/dark/system theme toggle with theme-aware charts
+- In-app documentation viewer with deep-linking to active sections
+- Print-friendly report generation (save as PDF via browser)
+- Aggregated metrics CSV export
+- Responsive design for various screen sizes
+- Keyboard navigation and accessibility features
+- Help tooltips on all charts explaining metrics and visualizations
+
+#### Developer Tools
+
+- Comprehensive test suite with Vitest and Testing Library
+- Husky pre-commit hooks for linting, testing, and building
+- GitHub Actions CI workflow for continuous integration
+- ESLint and Prettier configuration for code quality
+- Feature-first project structure for maintainability
+- Centralized constants and test fixtures
+- CLI analysis tool (`analysis.js`) for batch processing
+
+### Changed
+
+- Migrated from inline HTML/JS to modern React + Vite architecture (July 2025)
+- Refactored to feature-first directory layout for improved code organization
+- Optimized rolling calculations from O(n²) to O(n) for better performance
+- Split large chart components for better maintainability
+- Unified chart styling and theming across all visualizations
+- Enhanced bad-night tagging with multi-factor explanations (high AHI, high CA%, long clusters)
+
+### Fixed
+
+- FLG (flow limitation) threshold and boundary extension logic in clustering algorithm
+- Parsing progress bar accuracy with determinate progress tracking
+- Worker thread race conditions and cancellation handling
+- Dark mode theming consistency across all Plotly charts
+- Chart rendering issues with axis labels, titles, and legends
+- Memory leaks in virtualized table rendering
+- Date parsing for various CSV date formats
+- Statistical edge cases (empty inputs, NaN handling, tie handling in Mann-Whitney)
+
+## [0.3.0] - 2025-08-10
+
+### Added
+
+- Raw Data Explorer with virtualized table for browsing all parsed rows
+- Session persistence to IndexedDB with debounced auto-save
+- JSON export/import for sharing analysis sessions
+- Print-friendly report with aggregated metrics CSV export
+- In-app user guide modal with Markdown rendering and deep-linking
+- Analytics worker for offloading statistical computations
+- Cross-chart date range filtering
+- Date range controls in header for global filtering
+
+### Changed
+
+- Enhanced header layout with improved menu and date filter placement
+- Improved data import modal styling and user flow
+- Streamlined session persistence controls
+
+### Fixed
+
+- Sticky header scroll offset in documentation viewer
+- Session preservation when no files are loaded
+- Tooltip ID generation for deterministic testing
+
+## [0.2.0] - 2025-08-09
+
+### Added
+
+- Parameter controls for clustering algorithm tuning
+- Density-aware clustering with FLG hysteresis (separate enter/exit thresholds)
+- Severity scoring for apnea clusters
+- Sortable cluster table with CSV export
+- Bad-night tagging with detailed explanations (high AHI, outliers, high CA%, long/dense clusters)
+- Time-above-leak threshold charts when available in data
+- STL decomposition visualizations for usage and AHI trends
+- Autocorrelation and partial autocorrelation diagnostics
+- Advanced statistical functions: LOESS smoother, PELT change-point detection, Kaplan-Meier survival
+- Partial correlation analysis for multivariate relationships
+- Date-aware rolling windows with confidence intervals
+- Help tooltips on all charts with metric explanations
+
+### Changed
+
+- Improved Plotly chart theming with consistent dark/light mode support
+- Enhanced correlation matrix visualization with dark-mode friendly colors
+- Refined chart layouts with explicit axis titles and legends
+- Better handling of Plotly compatibility across versions
+
+### Fixed
+
+- Chart theme switching now forces Plotly remount for consistent rendering
+- Dark mode grid and zero-line colors improved for readability
+- Heatmap colorscales optimized for dark backgrounds
+- Violin and QQ plot theming
+
+## [0.1.0] - 2025-07-30
+
+### Added
+
+- Light/dark/system theme toggle
+- Theme-aware chart rendering for all Plotly visualizations
+- Polished UI layout with improved tables and buttons
+- Table of contents with active section highlighting via IntersectionObserver
+- Sticky header with automatic anchor scroll offset
+- LOESS regression curves on EPAP vs AHI scatter plots
+- Mann-Whitney U test with exact calculation for small samples and rank-biserial effect size
+- Improved EPAP correlation matrix with statistical significance
+
+### Changed
+
+- Refined button and input styling for better contrast and accessibility
+- Enhanced table styling with sticky headers and alternating row colors
+- Improved navigation with smooth scrolling to sections
+
+### Fixed
+
+- Plotly chart axis title rendering normalized to object format
+- Active TOC section highlighting on scroll
+- Z-index layering for sticky elements
+
+## [0.0.1] - 2025-07-14
+
+Initial alpha release.
+
+### Added
+
+- React-based web application for OSCAR CSV analysis
+- CSV parsing with PapaParse and Web Worker architecture
+- Progress bars for determinate parsing progress
+- Overview Dashboard with KPI cards and summary statistics
+- Usage Patterns charts: time series, histograms, box plots with rolling averages
+- AHI Trends charts: nightly values, change-points, severity distribution
+- EPAP Analysis: box plots, time series, scatter plots with regression
+- Apnea Event Clusters detection with configurable thresholds
+- False Negatives detection based on flow limitation patterns
+- Summary analysis with quartiles, IQR, and outlier detection
+- Interactive Plotly charts with zoom, pan, and legend controls
+- Comprehensive testing infrastructure with Vitest and Testing Library
+- Husky pre-commit hooks for code quality
+- GitHub Actions CI workflow
+- CLI tool for batch apnea cluster analysis
+- TODO.md roadmap document
+
+### Changed
+
+- Refactored from prototype to modern React/Vite structure
+- Migrated from basic charts to full Plotly interactive visualizations
+- Refined clustering algorithm to focus on Obstructive and Central Airway events
+- Optimized FLG event filtering for performance
+
+### Fixed
+
+- FLG duration threshold bug in clustering
+- Parsing progress bar with chunk-based accumulation
+- Worker thread event filtering
+- Chart responsiveness and layout issues
+
+[Unreleased]: https://github.com/kabaka/oscar-export-analyzer/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/v1.0.0
+[0.3.0]: https://github.com/kabaka/oscar-export-analyzer/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/kabaka/oscar-export-analyzer/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/kabaka/oscar-export-analyzer/compare/v0.0.1...v0.1.0
+[0.0.1]: https://github.com/kabaka/oscar-export-analyzer/releases/tag/v0.0.1

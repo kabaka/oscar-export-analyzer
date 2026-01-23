@@ -137,3 +137,15 @@ A virtualized table renders the raw Summary and Details CSV contents. Features i
 ## Interpretation Tips
 
 Visualizations are tools for discussion, not diagnosis. Always correlate trends with changes in equipment, sleep habits, and clinical guidance. Apparent improvements or deteriorations should be verified with professional evaluation.
+
+---
+
+## See Also
+
+- [Statistical Concepts](04-statistical-concepts.md) — Detailed explanations of rolling averages, LOESS smoothing, STL decomposition, and statistical testing used in charts
+- [Data Dictionary](03-data-dictionary.md) — Column definitions and units for all metrics displayed in visualizations
+- [Practical Tips](07-practical-tips.md) — How to interpret patterns and act on visualization insights
+- [Glossary](glossary.md) — Medical and statistical terminology reference
+- [Getting Started](01-getting-started.md) — Return to basics if charts aren't displaying as expected
+
+---

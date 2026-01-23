@@ -68,3 +68,14 @@ kitchen sink of utilities.
   repositories.
 
 These helpers live entirely in development and do not ship in production bundles.
+
+---
+
+## See Also
+
+- [Architecture](architecture.md) — See how these dependencies fit into the overall system design
+- [Development Setup](setup.md) — Installation and configuration for local development
+- [Testing Patterns](testing-patterns.md) — How testing libraries are used in practice
+- [Adding Features](adding-features.md) — Choosing appropriate libraries for new features
+
+---

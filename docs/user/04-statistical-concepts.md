@@ -89,3 +89,14 @@ The analyzer scans for intervals of sustained high flow limitation that lack apn
 - **Confidence** – Required peak FLG to consider the interval suspicious.
 
 A strict preset requires higher thresholds, while a lenient preset flags more potential false negatives but increases noise.
+
+---
+
+## See Also
+
+- [Visualizations and Interpretation](02-visualizations.md) — See these statistical methods applied in charts and analyses
+- [Glossary](glossary.md) — Quick reference for statistical and medical terminology
+- [Practical Tips](07-practical-tips.md) — How to use statistical insights to improve therapy outcomes
+- [FAQ](05-faq.md) — Common questions about rolling averages and statistical calculations
+
+---

@@ -25,6 +25,52 @@ src/
 When the feature involves heavy computation, consider moving the logic into a web worker under `src/workers` and using
 `useSessionManager` or a custom hook to communicate with it.
 
+**Example: Simple feature component with DataContext**
+
+```jsx
+import React from 'react';
+import { useData } from '../context/DataContext';
+import { ThemedPlot } from './ui';
+
+/**
+ * Displays a histogram of nightly AHI values.
+ */
+export default function AHIHistogram() {
+  const { filteredSummary } = useData();
+
+  // Extract AHI values, filtering out nulls
+  const ahiValues =
+    filteredSummary?.filter((row) => row.AHI != null).map((row) => row.AHI) ||
+    [];
+
+  if (ahiValues.length === 0) {
+    return <p>No AHI data available for selected date range.</p>;
+  }
+
+  return (
+    <ThemedPlot
+      data={[
+        {
+          x: ahiValues,
+          type: 'histogram',
+          nbinsx: 20,
+          name: 'AHI Distribution',
+        },
+      ]}
+      layout={{
+        title: 'AHI Distribution',
+        xaxis: { title: 'AHI (events/hour)' },
+        yaxis: { title: 'Number of Nights' },
+        height: 400,
+      }}
+      style={{ width: '100%' }}
+    />
+  );
+}
+```
+
+**See Also**: [src/context/DataContext.jsx](../../src/context/DataContext.jsx), [src/components/ui/ThemedPlot.jsx](../../src/components/ui/ThemedPlot.jsx)
+
 ### 3. Wire Up State
 
 If your component needs access to uploaded data, theme, or user parameters, tap into `DataContext` via the provided
@@ -42,6 +88,46 @@ Avoid creating new global stores unless absolutely necessary. For one‑off conf
 Expose the new component by adding a button or link in `App.jsx`'s header navigation bar and rendering it based on the
 active view. Keep the wording concise so links fit comfortably across the top. If the feature requires route parameters
 or deep linking, consider adding a URL hash and reading it from `window.location.hash`.
+
+**Example: Registering a new dashboard section in App.jsx**
+
+```jsx
+// In AppShell function, add to tocSections array:
+const tocSections = useMemo(
+  () => [
+    { id: 'overview', label: 'Overview', visible: summaryAvailable },
+    { id: 'analytics', label: 'Analytics', visible: summaryAvailable },
+    // Add your new section here:
+    { id: 'my-feature', label: 'My Feature', visible: summaryAvailable },
+    // ... other sections
+  ],
+  [summaryAvailable],
+);
+
+// Then render the section in the main content area:
+return (
+  <AppLayout
+    headerContent={/* ... */}
+    tocSections={tocSections}
+    activeSectionId={activeSectionId}
+    onNavigate={setActiveSectionId}
+  >
+    {/* Existing sections */}
+    <OverviewSection />
+    <AnalyticsSection />
+
+    {/* Your new section */}
+    <section id="my-feature" className="section">
+      <h2>My Feature</h2>
+      <AHIHistogram />
+    </section>
+
+    {/* More sections... */}
+  </AppLayout>
+);
+```
+
+**See Also**: [src/App.jsx](../../src/App.jsx), [src/app/AppLayout.jsx](../../src/app/AppLayout.jsx)
 
 ### 5. Testing
 
@@ -100,3 +186,16 @@ consider throttling updates or moving work into a web worker.
 When your pull request is ready, request a review from another contributor. A good review comment points out what is
 working well and asks clarifying questions about anything confusing. Feel free to mark sections of your PR as "ready for
 feedback" and others as "still in progress." Clear communication keeps reviews friendly and efficient.
+
+---
+
+## See Also
+
+- [Architecture](architecture.md) — Understand the system before making changes
+- [Testing Patterns](testing-patterns.md) — Comprehensive testing guide with examples
+- [Accessibility](accessibility.md) — Ensure new features are accessible to all users
+- [Development Setup](setup.md) — Get your environment configured
+- [Dependencies](dependencies.md) — Learn about available libraries and when to add new ones
+- [CLI Tool](cli-tool.md) — Extend command-line analysis capabilities
+
+---

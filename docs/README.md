@@ -30,6 +30,7 @@ Curious about the math behind AHI calculations and trend analysis?
 
 - **[Statistical Concepts](user/04-statistical-concepts.md)** — Rolling averages, Mann-Whitney U, correlation
 - **[Data Dictionary](user/03-data-dictionary.md)** — What each metric means
+- **[Glossary](user/glossary.md)** — Quick reference for all terms (medical, statistical, technical)
 - **[Practical Tips](user/07-practical-tips.md)** — Interpret trends, spot anomalies
 
 ## 📚 Complete Documentation Index
@@ -49,6 +50,7 @@ Comprehensive guides for end-users analyzing CPAP therapy data:
 | [**07 — Practical Tips**](user/07-practical-tips.md)               | Best practices for analyzing therapy data and spotting patterns             |
 | [**08 — Disclaimers**](user/08-disclaimers.md)                     | Medical disclaimers, privacy policies, intended use limitations             |
 | [**09 — Printing & Exporting**](user/09-printing-and-exporting.md) | Generate PDFs, export sessions, save CSV aggregates for spreadsheets        |
+| [**Glossary**](user/glossary.md)                                   | Comprehensive reference for medical, statistical, and technical terms       |
 
 ### Developer Guides
 

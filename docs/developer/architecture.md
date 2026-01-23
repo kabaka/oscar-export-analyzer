@@ -38,14 +38,55 @@ graph LR
 3. **Context Store** – `AppProviders` wraps the tree with `DataProvider` to expose parsed rows and filtered subsets via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.
-4. **Visualization Components** – Each feature now lives in `src/features/<feature>/`, which bundles the `Section`
-   container, local components, and colocated tests. The directory exposes a public API through `index.js` so the rest of
-   the app imports `import { OverviewSection } from '@features/overview'` style entry points. Sections pull shared
-   primitives (cards, modals, themed charts, etc.) from `src/components/ui`, keeping feature modules focused on
-   domain-specific behavior while UI atoms stay reusable.
-5. **Workers for Heavy Lifting** – Beyond CSV parsing, dedicated workers perform computationally expensive tasks such as
-   k‑means clustering of apnea events and detection of likely false negatives. Offloading work keeps the UI snappy even
-   with multi‑year datasets.
+
+**Example: Web Worker Message Passing**
+
+When offloading heavy computation to a worker (e.g., clustering algorithms), use this pattern:
+
+```javascript
+// In main thread (e.g., useAnalyticsProcessing.js):
+const worker = new Worker(
+  new URL('../workers/analytics.worker.js', import.meta.url),
+  { type: 'module' },
+);
+
+// Send work to background thread
+worker.postMessage({
+  type: 'cluster-apneas',
+  events: filteredDetails,
+  params: { algorithm: 'kmeans', k: 3 },
+});
+
+// Handle results
+worker.onmessage = (e) => {
+  if (e.data.type === 'cluster-result') {
+    setClusters(e.data.clusters);
+  }
+};
+
+// In worker (analytics.worker.js):
+self.onmessage = (e) => {
+  if (e.data.type === 'cluster-apneas') {
+    const clusters = performClustering(e.data.events, e.data.params);
+    self.postMessage({ type: 'cluster-result', clusters });
+  }
+};
+```
+
+**Worker Best Practices:**
+
+- Use structured messages with `type` field for clarity
+- Keep worker logic pure: input → computation → output (no DOM access)
+- Post progress updates for long operations: `self.postMessage({ type: 'progress', percent: 50 })`
+- Terminate workers when unmounting components: `worker.terminate()`
+
+**See Also**: [src/workers/](../../src/workers/), [src/hooks/useAnalyticsProcessing.js](../../src/hooks/useAnalyticsProcessing.js) 4. **Visualization Components** – Each feature now lives in `src/features/<feature>/`, which bundles the `Section`
+container, local components, and colocated tests. The directory exposes a public API through `index.js` so the rest of
+the app imports `import { OverviewSection } from '@features/overview'` style entry points. Sections pull shared
+primitives (cards, modals, themed charts, etc.) from `src/components/ui`, keeping feature modules focused on
+domain-specific behavior while UI atoms stay reusable. 5. **Workers for Heavy Lifting** – Beyond CSV parsing, dedicated workers perform computationally expensive tasks such as
+k‑means clustering of apnea events and detection of likely false negatives. Offloading work keeps the UI snappy even
+with multi‑year datasets.
 
 ### Component Structure
 
@@ -105,6 +146,50 @@ An `ErrorBoundary` from `react-error-boundary` wraps most charts. Should a rende
 data or a Plotly regression—the boundary displays a friendly message rather than crashing the entire app. The error is
 also logged to the console for debugging.
 
+### Using DataContext
+
+Access session data, filters, and theme settings in any component via the `useData()` hook:
+
+```jsx
+import { useData } from '../context/DataContext';
+
+export default function MyAnalysis() {
+  // Access all parsed data and filtered subsets
+  const {
+    summaryData, // All Summary CSV rows
+    detailsData, // All Details CSV rows (event-level)
+    filteredSummary, // Summary rows within active date range
+    filteredDetails, // Details rows within active date range
+    theme, // Current theme: 'system' | 'light' | 'dark'
+    setTheme, // Function to update theme
+  } = useData();
+
+  // Compute metrics from filtered data
+  const avgAHI = filteredSummary?.length
+    ? filteredSummary.reduce((sum, row) => sum + (row.AHI || 0), 0) /
+      filteredSummary.length
+    : 0;
+
+  return (
+    <div>
+      <p>Showing {filteredSummary?.length || 0} nights</p>
+      <p>Average AHI: {avgAHI.toFixed(2)} events/hour</p>
+    </div>
+  );
+}
+```
+
+**Key Patterns:**
+
+- Always use `filteredSummary` and `filteredDetails` for user-visible calculations—these respect date range filters
+- Check for null/undefined: data is `null` until CSV files are uploaded
+- Use optional chaining (`?.`) to handle empty states gracefully
+- `summaryData` and `detailsData` contain the full dataset; use for computing global statistics
+
+**See Also**: [src/context/DataContext.jsx](../../src/context/DataContext.jsx)
+
+---
+
 ### State and Persistence
 
 State management flows through several layers, with clear separation between UI state and data state:
@@ -157,6 +242,67 @@ The project uses a single `guide.css` file for global styles plus small componen
 Color choices aim for WCAG AA contrast, and the `ThemeToggle` component flips between palettes. Plotly charts adopt the
 current theme automatically through the shared `chartTheme.js` utility and the `ThemedPlot` wrapper.
 
+**Example: Using ThemedPlot for Consistent Chart Theming**
+
+```jsx
+import React from 'react';
+import { ThemedPlot } from '../components/ui';
+import { useData } from '../context/DataContext';
+
+export default function EPAPTrends() {
+  const { filteredSummary } = useData();
+
+  const dates = filteredSummary?.map((row) => row.Date) || [];
+  const epaps = filteredSummary?.map((row) => row['Median EPAP']) || [];
+
+  return (
+    <ThemedPlot
+      data={[
+        {
+          x: dates,
+          y: epaps,
+          type: 'scatter',
+          mode: 'lines+markers',
+          name: 'Median EPAP',
+          line: { width: 2 },
+        },
+      ]}
+      layout={{
+        title: 'EPAP Trends Over Time',
+        xaxis: {
+          title: 'Date',
+          type: 'date',
+        },
+        yaxis: {
+          title: 'EPAP (cmH₂O)',
+          rangemode: 'tozero',
+        },
+        height: 500,
+        hovermode: 'x unified',
+      }}
+      config={{
+        displayModeBar: true,
+        displaylogo: false,
+        toImageButtonOptions: {
+          format: 'png',
+          filename: 'epap-trends',
+        },
+      }}
+      style={{ width: '100%' }}
+    />
+  );
+}
+```
+
+**ThemedPlot Features:**
+
+- Automatically applies dark/light theme colors to background, axes, text, and grid lines
+- Remounts on theme change to ensure proper Plotly rendering
+- Passes through all standard Plotly props: `data`, `layout`, `config`, `onRelayout`, `onHover`
+- Use `style` prop to control chart container dimensions
+
+**See Also**: [src/components/ui/ThemedPlot.jsx](../../src/components/ui/ThemedPlot.jsx), [src/utils/chartTheme.js](../../src/utils/chartTheme.js)
+
 ### Testing Philosophy
 
 Tests mirror how a user interacts with the UI. Components are exercised through Testing Library by querying rendered
@@ -171,6 +317,18 @@ for easier debugging; omit them in production if bundle size is a concern.
 
 Understanding this architecture should make it easier to navigate the codebase. The [dependencies](dependencies.md)
 chapter dives into the specific libraries that support these patterns.
+
+---
+
+## See Also
+
+- [Dependencies](dependencies.md) — Detailed look at libraries that power the analyzer
+- [Adding Features](adding-features.md) — How to extend the architecture with new features
+- [Testing Patterns](testing-patterns.md) — Testing strategies for components, hooks, and workers
+- [Development Setup](setup.md) — Get the development environment running
+- [CLI Tool](cli-tool.md) — Command-line tool architecture and batch processing patterns
+
+---
 
 ### Future Directions
 

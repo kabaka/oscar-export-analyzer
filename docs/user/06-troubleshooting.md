@@ -64,4 +64,13 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 - Run `npm install` to ensure dependencies are available.
 - Execute the script with Node 20: `node analysis.js path/to/Details.csv [YYYY-MM-DD] [--algorithm=<bridged|kmeans|agglomerative>]`.
 
-If these steps do not resolve your problem, consult the project’s issue tracker and include console logs, browser version, and a description of the steps leading to the error.
+## If these steps do not resolve your problem, consult the project’s issue tracker and include console logs, browser version, and a description of the steps leading to the error.
+
+## See Also
+
+- [Getting Started](01-getting-started.md) — Review proper CSV export and file upload procedures
+- [FAQ](05-faq.md) — Quick answers to common questions
+- [Data Dictionary](03-data-dictionary.md) — Verify expected CSV column names and formats
+- [Printing and Exporting](09-printing-and-exporting.md) — Troubleshooting print and export issues
+
+---

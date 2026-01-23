@@ -18,7 +18,11 @@ codebase:
    to date.
 4. [Adding Features](adding-features.md) — conventions, testing strategies, and a gentle checklist for shepherding an
    idea from sketch to pull request.
-5. [CLI Tool](cli-tool.md) — command-line analysis tool for batch processing, scripting, and algorithm experimentation.
+5. [Testing Patterns](testing-patterns.md) — comprehensive guide to testing with Vitest and Testing Library, including
+   async patterns, Web Workers, accessibility, and synthetic test data.
+6. [Accessibility](accessibility.md) — WCAG 2.1 AA compliance, keyboard navigation, screen reader support, color
+   contrast, focus management, and accessibility testing practices.
+7. [CLI Tool](cli-tool.md) — command-line analysis tool for batch processing, scripting, and algorithm experimentation.
 
 You do not need to read these documents in order. Skim the sections that match your immediate task, then come back for
 a longer read when you are curious.
@@ -49,6 +53,19 @@ the top‑level directories:
 Browsing through `src/components` is a great way to understand how a view is assembled. Most charts share a handful of
 patterns: data flows in via context hooks, each component renders a `ThemedPlot`, and an `ErrorBoundary` catches
 surprises.
+
+---
+
+## See Also
+
+- [Development Setup](setup.md) — Get started with local development
+- [Architecture](architecture.md) — Deep dive into system design and data flow
+- [Adding Features](adding-features.md) — Step-by-step guide for contributions
+- [Testing Patterns](testing-patterns.md) — Testing conventions and best practices
+- [Accessibility](accessibility.md) — WCAG compliance and keyboard navigation
+- [User Guide](../user/01-getting-started.md) — Understand the user experience
+
+---
 
 ## Contributing Back
 

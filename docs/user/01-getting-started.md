@@ -146,3 +146,15 @@ See [06-troubleshooting.md](06-troubleshooting.md) for an extensive list of issu
 ## 9. Next Steps
 
 Once you are comfortable loading data and navigating the interface, explore the remaining chapters of the user guide to learn how to interpret specific visualizations and statistical outputs.
+
+---
+
+## See Also
+
+- [Visualizations and Interpretation](02-visualizations.md) — Detailed explanations of all charts and what they reveal about therapy quality
+- [Data Dictionary](03-data-dictionary.md) — Complete reference of CSV columns and metric definitions
+- [Troubleshooting](06-troubleshooting.md) — Solutions for common import and parsing issues
+- [Printing and Exporting](09-printing-and-exporting.md) — Save reports and export data for further analysis
+- [Disclaimers](08-disclaimers.md) — Important information about data privacy and medical use
+
+---

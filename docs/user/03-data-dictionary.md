@@ -42,3 +42,15 @@ If your exports use different headers, you can adjust parsing keys in the source
 - `src/utils/clustering.js` – Handles cluster and false‑negative detection parameters.
 
 After modifying these files, rebuild the application and update this data dictionary accordingly.
+
+---
+
+## See Also
+
+- [Visualizations and Interpretation](02-visualizations.md) — See how these metrics are visualized in charts
+- [Getting Started](01-getting-started.md#summary-csv-columns) — Overview of expected CSV columns
+- [Troubleshooting](06-troubleshooting.md) — Solutions for parsing errors and missing columns
+- [Glossary](glossary.md) — Medical and technical term definitions
+- [Statistical Concepts](04-statistical-concepts.md) — How metrics are aggregated and analyzed
+
+---

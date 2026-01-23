@@ -172,6 +172,68 @@ rm docs/work/testing/cluster-validation.md
 - Docs should be helpful and fun; avoid redundant README notes for obvious behavior.
 - Update documentation alongside code changes to keep docs accurate and engaging.
 
+### CHANGELOG.md Maintenance (Required)
+
+**All agents must update CHANGELOG.md when making user-facing or contributor-facing changes.**
+
+The project follows [Keep a Changelog](https://keepachangelog.com/) format. Add entries to the `[Unreleased]` section under the appropriate category:
+
+- **Added**: New features, visualizations, analysis capabilities, or documentation
+- **Changed**: Modifications to existing functionality, UI/UX improvements, dependency updates that change behavior
+- **Deprecated**: Features marked for removal in future versions
+- **Removed**: Deleted features or breaking changes
+- **Fixed**: Bug fixes, performance improvements, error handling
+- **Security**: Security fixes, privacy enhancements, vulnerability patches
+
+**What requires a CHANGELOG entry:**
+
+✅ New features or visualizations users interact with  
+✅ Breaking changes to data formats, APIs, or workflows  
+✅ Significant UI/UX improvements  
+✅ Performance improvements users would notice  
+✅ Bug fixes affecting user experience  
+✅ Documentation additions helping users/developers  
+✅ Security or privacy enhancements  
+✅ Dependency updates changing behavior
+
+❌ Internal refactors without user impact  
+❌ Test additions (unless documenting new coverage)  
+❌ Code organization changes  
+❌ Typo fixes in code comments  
+❌ CI/CD changes (unless affecting contributors)
+
+**Format:**
+
+```markdown
+## [Unreleased]
+
+### Added
+
+- Brief description of what was added ([#123](link-to-issue-or-pr))
+```
+
+**Workflow:**
+
+1. Make code changes and add tests
+2. Update CHANGELOG.md in the same commit
+3. Use present tense, be concise but descriptive
+4. Include link to issue/PR when available
+5. `@readiness-reviewer` will verify CHANGELOG is updated before approving
+
+**Example entry:**
+
+```markdown
+### Added
+
+- Accessibility guide documenting keyboard navigation and WCAG AA compliance
+
+### Fixed
+
+- Date range filter now correctly handles sessions spanning midnight
+```
+
+For questions about what belongs in CHANGELOG, consult `@documentation-specialist`.
+
 ## Commit & Pull Request Guidelines
 
 - Style: prefer Conventional Commits (e.g., `feat:`, `fix:`, `chore:`) as in history.

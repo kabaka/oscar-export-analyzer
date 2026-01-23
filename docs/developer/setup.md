@@ -92,6 +92,18 @@ Vite serves the optimized bundle so you can sanity‑check assets and network re
 With the basics in place, dive into the [architecture](architecture.md) chapter to understand how data flows through the
 app.
 
+---
+
+## See Also
+
+- [Architecture](architecture.md) — Understand data flow, component structure, and system design
+- [Adding Features](adding-features.md) — Step-by-step guide for implementing new visualizations or analyses
+- [Testing Patterns](testing-patterns.md) — Learn the testing conventions and run tests locally
+- [Dependencies](dependencies.md) — Tour of libraries and why they're used
+- [Accessibility](accessibility.md) — WCAG compliance and keyboard navigation requirements
+
+---
+
 ### Continuous Integration
 
 GitHub Actions runs the same lint, test, and build commands on every pull request. If the pipeline fails, check the

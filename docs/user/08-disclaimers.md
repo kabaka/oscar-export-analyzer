@@ -27,3 +27,14 @@ This software is **not** approved by regulatory agencies such as the FDA or CE f
 The software is provided “as is” without warranty of any kind. The project maintainers are not liable for damages arising from use of the analyzer or reliance on its output.
 
 By using the OSCAR Export Analyzer, you acknowledge these limitations and agree to use the tool responsibly.
+
+---
+
+## See Also
+
+- [Getting Started](01-getting-started.md) — Learn about local-first data processing and privacy protections
+- [Practical Tips](07-practical-tips.md) — How to work productively with your healthcare provider
+- [Statistical Concepts](04-statistical-concepts.md) — Understand the limitations of automated analysis
+- [FAQ](05-faq.md) — Common questions about data privacy and medical use
+
+---

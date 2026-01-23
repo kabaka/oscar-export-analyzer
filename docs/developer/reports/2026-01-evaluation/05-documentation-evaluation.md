@@ -1267,19 +1267,29 @@ export const EVENT_WINDOW_MS = 5 * MILLISECONDS_PER_SECOND;
 
 ### Medium Priority (Next Quarter)
 
-11. **Add Code Examples to Developer Guides** — Concrete snippets for common patterns
-12. **Expand Testing Documentation** — Patterns for testing hooks, workers, components
-13. **Add Accessibility Guide** — Document keyboard shortcuts, screen reader support
-14. **Add Glossary** — Centralized definitions of medical and technical terms
-15. **Create CHANGELOG.md** — Track features, fixes, breaking changes
-16. **Add Navigation Cross-References** — "See Also" sections throughout docs
+11. ✅ **Add Code Examples to Developer Guides** — Concrete snippets for common patterns _(Completed 2026-01-23)_
+12. ✅ **Expand Testing Documentation** — Patterns for testing hooks, workers, components _(Completed 2026-01-23)_
+13. ✅ **Add Accessibility Guide** — Document keyboard shortcuts, screen reader support _(Completed 2026-01-23)_
+14. ✅ **Add Glossary** — Centralized definitions of medical and technical terms _(Completed 2026-01-23)_
+15. ✅ **Create CHANGELOG.md** — Track features, fixes, breaking changes _(Completed 2026-01-23)_
+16. ✅ **Add Navigation Cross-References** — "See Also" sections throughout docs _(Completed 2026-01-23)_
+
+**Status Update (2026-01-23):** All Medium Priority items completed. Deliverables:
+
+- [CHANGELOG.md](../../../../CHANGELOG.md) — Backfilled with 6 versions, 100+ entries
+- [docs/developer/testing-patterns.md](../../testing-patterns.md) — 10 patterns, 29 code examples
+- [docs/developer/accessibility.md](../../accessibility.md) — WCAG AA compliance, keyboard shortcuts, ARIA patterns
+- [docs/user/glossary.md](../../../user/glossary.md) — 83 terms across medical, statistical, and technical domains
+- Code examples added to [adding-features.md](../../adding-features.md) and [architecture.md](../../architecture.md)
+- Cross-references added to 14 documentation files (63 new links)
+- [AGENTS.md](../../../../AGENTS.md) updated with CHANGELOG maintenance requirements
 
 ### Low Priority (As Needed)
 
-17. **Add Clinical References** — Citations for AHI categories, AASM guidelines
-18. **Add Version Metadata to Docs** — Last updated dates, applicable versions
-19. **Improve Documentation Search** — Consider hosted docs with search or search index
-20. **Add Component Testing Guide** — Dedicated testing patterns documentation
+1. **Add Clinical References** — Citations for AHI categories, AASM guidelines
+2. **Add Version Metadata to Docs** — Last updated dates, applicable versions
+3. **Improve Documentation Search** — Consider hosted docs with search or search index
+4. **Add Component Testing Guide** — Dedicated testing patterns documentation
 
 ---
 
