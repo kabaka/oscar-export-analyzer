@@ -9,6 +9,14 @@ corresponds to changes released on that day.
 
 ## 2026-01-24
 
+### Fixed
+
+- **OfflineReadyToast no longer shows before PWA installation**: Toast now only appears after user installs PWA and launches it in standalone mode, not on first browser visit. Added `window.matchMedia('(display-mode: standalone)')` check to `onOfflineReady()` callback in App.jsx to detect installed PWA before showing toast. Toast still respects localStorage flag (`offline-toast-shown`) to show only once per device. Console log remains for debugging service worker activation.
+
+### Changed
+
+- **CI bundle size limit increased to 3.2MB**: Updated from 2.6MB to accommodate PWA assets (icons: 4 PNG files at 192×192, 512×512, 512×512-maskable, 180×180 totaling ~350 KB; service worker: ~20 KB; PWA UI components). Current gzipped bundle: 3.15MB (within new limit). PWA features add ~21% to bundle size, deemed acceptable for offline capability and installability benefits.
+
 ### Added
 
 - **Progressive Web App (PWA) implementation** (Phases 1-6): Comprehensive PWA implementation providing offline capability, installability, and cross-device data portability while maintaining strict local-first privacy guarantees. Key features include:
