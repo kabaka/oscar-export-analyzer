@@ -1,25 +1,27 @@
 name: Build and Deploy Website
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-  pull_request_review:
-    types: [submitted]
+  pull_request:
+    types: [opened, synchronize]
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   deploy-preview:
-    if: github.event_name == 'pull_request_review' && github.event.review.state == 'approved'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write
       pull-requests: write
     environment:
-      name: pr-preview
+      name: pr-preview-${{ github.event.pull_request.number }}
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
@@ -29,7 +31,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: '20'
+          cache: 'npm'
 
       - name: Setup Pages
         id: pages
@@ -58,13 +61,13 @@ jobs:
             github.rest.issues.createComment({
               ...context.repo,
               issue_number: context.payload.pull_request.number,
-              body: `Preview: ${process.env.DEPLOY_URL}`
+              body: `🚀 Preview deployed: ${process.env.DEPLOY_URL}`
             });
         env:
           DEPLOY_URL: ${{ steps.deployment.outputs.page_url }}
 
   deploy-production:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -74,21 +77,19 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          ref: ${{ github.event.workflow_run.head_commit }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dist
+          path: dist/
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Project
-        run: npm run build -- --base "${{ steps.pages.outputs.base_path }}/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
@@ -98,3 +99,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Report deployment status
+        run: echo "✅ Production deployment complete for commit ${{ github.event.workflow_run.head_commit }}"
