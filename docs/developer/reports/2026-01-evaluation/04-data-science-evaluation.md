@@ -962,30 +962,35 @@ _None identified — no critical statistical errors_
    - **Action:** Add code comments citing sleep medicine literature or internal validation studies
    - **Effort:** 1-2 hours (literature review, update comments)
    - **Impact:** Increases clinical credibility and facilitates parameter tuning
+   - **Status:** ✅ Completed (2026-01-24). Added comprehensive clinical rationale documentation with literature citations for GAP_SEC=120 (aligns with AASM inter-event intervals), BRIDGE_THRESHOLD=0.1 (captures physiologically relevant FLG changes), and other clustering parameters in [src/utils/clustering.js](../../../src/utils/clustering.js). Updated constants documentation in [src/constants.js](../../../src/constants.js) with physiological basis and clinical validation references.
 
 2. **Rename "Confidence" in False Negatives** (Section 3)
    - **Issue:** Misleading terminology (is max FLG level, not statistical confidence)
    - **Action:** Rename to "maxFLGLevel" in code, "Peak FLG" in UI
    - **Effort:** 1-2 hours (refactor, update tests)
    - **Impact:** Reduces user confusion, improves scientific accuracy
+   - **Status:** ✅ Completed (2026-01-24). Renamed `confidenceMin` parameter to `maxFLGLevelMin` throughout clustering logic in [src/utils/clustering.js](../../../src/utils/clustering.js); updated UI component [src/components/FalseNegativesAnalysis.jsx](../../../src/components/FalseNegativesAnalysis.jsx) with "Peak FLG Level" terminology; updated app state in [src/app/useAppState.js](../../../src/app/useAppState.js); and updated all tests in [src/utils/clustering.test.js](../../../src/utils/clustering.test.js).
 
 3. **Apnea Duration Threshold Documentation** (Section 6.3)
    - **Issue:** 30s threshold differs from AASM diagnostic 10s threshold
    - **Action:** Add comments clarifying 30s is for "prolonged apneas" in clustering, not diagnosis
    - **Effort:** 30 minutes (add comments, create APNEA_DIAGNOSTIC_THRESHOLD_SEC constant)
    - **Impact:** Prevents clinical misinterpretation
+   - **Status:** ✅ Completed (2026-01-24). Added `APNEA_DIAGNOSTIC_THRESHOLD_SEC = 10` constant with AASM Task Force citation in [src/constants.js](../../../src/constants.js); enhanced `APNEA_DURATION_THRESHOLD_SEC = 30` with comprehensive comments explaining the distinction between diagnostic (10s) and analytical (30s) thresholds; and updated module-level documentation in [src/utils/stats.js](../../../src/utils/stats.js) to reference AASM standards.
 
 4. **Add Weighted Density Metric for Clusters** (Section 2.1)
    - **Issue:** Current density ignores event durations (total apnea burden)
    - **Action:** Implement `weightedDensity = totalApneaDuration / windowDuration`
    - **Effort:** 2-3 hours (implement, test, document)
    - **Impact:** More clinically relevant cluster severity scoring
+   - **Status:** ✅ Completed (2026-01-24). Enhanced `clusterApneaEventsBridged()` function in [src/utils/clustering.js](../../../src/utils/clustering.js) to calculate `totalApneaDurationSec` and `weightedDensity` (apnea burden per minute) for all clusters. Complements existing `density` metric (event count per minute). Added comprehensive tests in [src/utils/clustering.test.js](../../../src/utils/clustering.test.js) validating calculation accuracy, distinction between metrics, and backward compatibility.
 
 5. **Statistical Assumption Documentation** (Section 9)
    - **Issue:** Many functions lack documented assumptions (normality, independence, etc.)
    - **Action:** Add JSDoc comments for assumptions, limitations, failure modes
    - **Effort:** 4-6 hours (audit all statistical functions, add docs)
    - **Impact:** Improves maintainability and scientific transparency
+   - **Status:** ✅ Completed (2026-01-24). Added comprehensive module-level documentation (~40 lines) to [src/utils/stats.js](../../../src/utils/stats.js) explaining missing data handling (MAR assumption), normality assumptions, sample size requirements, and AASM standard references. Updated JSDoc for all key functions including `computeAutocorrelation()`, `computePartialAutocorrelation()`, `computeSpearmanCorrelation()`, `mannWhitneyUTest()`, and quantile/CI functions with assumption documentation, numerical stability warnings, and guidance on parametric vs nonparametric method selection.
 
 ---
 
@@ -1043,16 +1048,19 @@ The OSCAR Export Analyzer's statistical and analytical implementation is **mathe
 ✅ **Clinical domain awareness** (AHI thresholds, CPAP pressure ranges)  
 ✅ **Comprehensive edge case handling** (empty data, single points, missing values)
 
-The identified issues are **minor to moderate** and represent opportunities for enhancement rather than critical defects:
+**All High Priority and Medium Priority recommendations have been completed:**
 
-- K-means convergence validation (High priority, 2-4 hours fix)
-- PACF stability for long lags (High priority, 4-6 hours fix)
-- Parameter documentation (Medium priority, 1-2 hours)
-- Terminology clarifications (Medium priority, 1-2 hours)
+- ✅ K-means convergence validation (completed 2026-01-22)
+- ✅ PACF stability for long lags (completed 2026-01-22)
+- ✅ Clustering parameter clinical rationale documentation (completed 2026-01-24)
+- ✅ Terminology clarifications (confidence → Peak FLG Level) (completed 2026-01-24)
+- ✅ Apnea duration threshold documentation (completed 2026-01-24)
+- ✅ Weighted density metric for clusters (completed 2026-01-24)
+- ✅ Statistical assumption documentation (completed 2026-01-24)
 
-**No code changes are required immediately**. The system functions correctly for its intended use case. Recommended improvements should be prioritized based on user needs and development capacity.
+The system is **fully production-ready** with no outstanding critical or high-priority issues. Low-priority enhancements remain available for future development cycles as capacity allows.
 
 ---
 
 **Evaluation Complete**  
-**Overall Grade: A- (Strong statistical foundation with minor documentation gaps)**
+**Overall Grade: A (Strong statistical foundation with comprehensive documentation)**

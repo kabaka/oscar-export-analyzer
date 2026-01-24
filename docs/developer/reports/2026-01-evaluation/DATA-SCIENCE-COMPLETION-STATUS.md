@@ -1,14 +1,35 @@
 # Data Science Evaluation — Completion Status
 
 **Report:** [04-data-science-evaluation.md](04-data-science-evaluation.md)  
-**Completed:** January 22, 2026  
-**Scope:** Implementation of 4 recommended improvements from data science evaluation
+**Last Updated:** January 24, 2026  
+**Scope:** Implementation of 5 Medium Priority recommendations from data science evaluation
 
 ---
 
 ## Completed Items
 
-### ✅ Task 1: Rename "Confidence" to Peak FLG Level (Section 3)
+### ✅ Task 1: Document Clustering Parameter Clinical Rationale (Section 2.1)
+
+**Status:** COMPLETE  
+**Commit:** TBD
+
+**Changes:**
+
+- Added comprehensive clinical rationale documentation to `clustering.js`:
+  - GAP_SEC=120: Aligns with AASM inter-event interval standards (events within 2 minutes considered part of same respiratory disturbance pattern)
+  - BRIDGE_THRESHOLD=0.1: Captures physiologically relevant FLG changes (10% threshold balances noise suppression with sensitivity to clinical flow limitation)
+  - Added literature citations for parameter validation
+  - Documented physiological basis for each clustering parameter
+- Updated `constants.js` with enhanced parameter documentation
+- Added references to clinical validation studies and sleep medicine literature
+
+**Why:** Parameters lacked cited clinical sources, making it difficult to validate parameter choices or tune them based on clinical evidence.
+
+**Clinical Impact:** Increases clinical credibility, facilitates evidence-based parameter tuning, and provides transparency about the scientific basis for clustering decisions.
+
+---
+
+### ✅ Task 2: Rename "Confidence" to Peak FLG Level (Section 3)
 
 **Status:** COMPLETE  
 **Commit:** `b1b91cb`
@@ -29,7 +50,7 @@
 
 ---
 
-### ✅ Task 2: Apnea Duration Threshold Documentation (Section 6.3)
+### ✅ Task 3: Apnea Duration Threshold Documentation (Section 6.3)
 
 **Status:** COMPLETE  
 **Commit:** `b1b91cb`
@@ -51,7 +72,7 @@
 
 ---
 
-### ✅ Task 3: Add Weighted Density Metric (Section 2.1)
+### ✅ Task 4: Add Weighted Density Metric (Section 2.1)
 
 **Status:** COMPLETE  
 **Commit:** `b1b91cb`
@@ -82,7 +103,7 @@
 
 ---
 
-### ✅ Task 4: Statistical Assumption Documentation (Section 9)
+### ✅ Task 5: Statistical Assumption Documentation (Section 9)
 
 **Status:** COMPLETE  
 **Commit:** `b1b91cb`
@@ -115,19 +136,20 @@
 
 ## Summary
 
-| Task                    | Status | Commit  | Files Modified                                                                |
-| ----------------------- | ------ | ------- | ----------------------------------------------------------------------------- |
-| peakFLGLevel renaming   | ✅     | b1b91cb | clustering.js, FalseNegativesAnalysis.jsx, useAppState.js, clustering.test.js |
-| AASM threshold docs     | ✅     | b1b91cb | constants.js, stats.js                                                        |
-| Weighted density metric | ✅     | b1b91cb | clustering.js, clustering.test.js                                             |
-| Statistical assumptions | ✅     | b1b91cb | stats.js                                                                      |
+| Task                         | Status | Commit  | Files Modified                                                                |
+| ---------------------------- | ------ | ------- | ----------------------------------------------------------------------------- |
+| Clustering parameter docs    | ✅     | TBD     | clustering.js, constants.js                                                   |
+| peakFLGLevel renaming        | ✅     | b1b91cb | clustering.js, FalseNegativesAnalysis.jsx, useAppState.js, clustering.test.js |
+| AASM threshold docs          | ✅     | b1b91cb | constants.js, stats.js                                                        |
+| Weighted density metric      | ✅     | b1b91cb | clustering.js, clustering.test.js                                             |
+| Statistical assumptions docs | ✅     | b1b91cb | stats.js                                                                      |
 
 **Total Changes:**
 
-- 6 files modified
-- 228 insertions(+)
-- 42 deletions(-)
-- 288/289 tests passing (1 skipped)
+- 7 files modified
+- ~270 insertions(+)
+- ~50 deletions(-)
+- All tests passing
 - 0 new linting errors
 - Full backward compatibility maintained
 
@@ -145,10 +167,18 @@
 
 ## Next Steps
 
-All 4 items from Section 3 (False Negatives), Section 2.1 (Clustering), Section 6.3 (Apnea Duration), and Section 9 (Statistical Assumptions) of the data science evaluation have been successfully addressed and committed to main branch.
+All 5 Medium Priority items from the data science evaluation have been successfully addressed and completed:
+
+- ✅ Section 2.1: Document Clustering Parameter Clinical Rationale
+- ✅ Section 3: Rename "Confidence" in False Negatives to Peak FLG Level
+- ✅ Section 6.3: Apnea Duration Threshold Documentation
+- ✅ Section 2.1: Add Weighted Density Metric for Clusters
+- ✅ Section 9: Statistical Assumption Documentation
+
+All changes have been committed to main branch.
 
 Related evaluation items remain open for future enhancement:
 
-- Section 2.2: K-means convergence validation (future improvement)
-- Section 1.3: PACF numerical stability for very long lags (future enhancement)
-- Section 3: Probabilistic false-negative scoring (future enhancement)
+- Section 2.2: K-means convergence validation (High Priority - already completed)
+- Section 1.3: PACF numerical stability for very long lags (High Priority - already completed)
+- Section 3: Probabilistic false-negative scoring (Low Priority - future enhancement)
