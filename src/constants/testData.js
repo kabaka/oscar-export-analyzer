@@ -37,6 +37,12 @@ export const TEST_EPAP_HIGH = 12;
 export const TEST_EPAP_VERY_HIGH = 14;
 export const TEST_EPAP_EXTREME = 20;
 
+/** Out-of-range EPAP values for validation testing */
+export const TEST_EPAP_BELOW_MIN = 3; // Below therapeutic minimum (4 cmH₂O)
+export const TEST_EPAP_ABOVE_MAX = 30; // Above therapeutic maximum (25 cmH₂O)
+export const TEST_EPAP_NEGATIVE = -2; // Device error scenario
+export const TEST_EPAP_UNREALISTIC = 100; // Data corruption scenario
+
 /** Usage duration test values (hours) */
 export const TEST_USAGE_HOURS_LOW = 3;
 export const TEST_USAGE_HOURS_MEDIUM = 5;

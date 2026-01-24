@@ -672,9 +672,10 @@ describe('computeUsageRolling (date-aware)', () => {
     // CIs are present and same length
     expect(r[avgLowKey]).toHaveLength(3);
     expect(r[avgHighKey]).toHaveLength(3);
-    expect(Number.isFinite(r[avgLowKey][2])).toBe(true);
-    expect(Number.isFinite(r[avgHighKey][2])).toBe(true);
-    // Median arrays present
+    // CI bounds are NaN for single-observation windows (n=1, variance undefined)
+    expect(Number.isNaN(r[avgLowKey][2])).toBe(true);
+    expect(Number.isNaN(r[avgHighKey][2])).toBe(true);
+    // Median arrays present (median is valid even for n=1)
     expect(r[medianKey]).toHaveLength(3);
     expect(Number.isFinite(r[medianKey][2])).toBe(true);
   });

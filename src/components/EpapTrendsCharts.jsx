@@ -42,6 +42,7 @@ import {
   loessSmooth,
   runningQuantileXY,
 } from '../utils/stats';
+import { validateEPAP } from '../utils/dataValidation';
 import {
   EPAP_SPLIT_THRESHOLD,
   LOESS_SAMPLE_STEPS,
@@ -128,7 +129,9 @@ function EpapTrendsCharts({ data }) {
     const pts = data
       .map((r) => ({
         date: new Date(r['Date']),
-        epap: parseFloat(r['Median EPAP']),
+        epap: validateEPAP(parseFloat(r['Median EPAP']), {
+          date: r['Date'],
+        }),
         ahi: parseFloat(r['AHI']),
       }))
       .filter((p) => !isNaN(p.epap) && !isNaN(p.ahi))
@@ -373,11 +376,21 @@ function EpapTrendsCharts({ data }) {
   // Mann–Whitney titration helper for EPAP <7 vs ≥7 bins
   const titration = useMemo(() => {
     const low = data
-      .filter((r) => parseFloat(r['Median EPAP']) < EPAP_SPLIT_THRESHOLD)
+      .filter((r) => {
+        const epap = validateEPAP(parseFloat(r['Median EPAP']), {
+          date: r['Date'],
+        });
+        return epap < EPAP_SPLIT_THRESHOLD;
+      })
       .map((r) => parseFloat(r['AHI']))
       .filter((v) => !isNaN(v));
     const high = data
-      .filter((r) => parseFloat(r['Median EPAP']) >= EPAP_SPLIT_THRESHOLD)
+      .filter((r) => {
+        const epap = validateEPAP(parseFloat(r['Median EPAP']), {
+          date: r['Date'],
+        });
+        return epap >= EPAP_SPLIT_THRESHOLD;
+      })
       .map((r) => parseFloat(r['AHI']))
       .filter((v) => !isNaN(v));
     const res = mannWhitneyUTest(low, high);

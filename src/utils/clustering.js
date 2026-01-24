@@ -269,18 +269,58 @@ export function clusterApneaEventsKMeans(options = {}) {
   const sorted = events.slice().sort((a, b) => a.date - b.date);
   const times = sorted.map((evt) => evt.date.getTime());
   const k = Math.max(1, Math.min(sorted.length, Math.round(rawK || 1)));
-  const centroids = Array.from({ length: k }).map((_, idx) => {
-    if (k === 1) return times[0];
-    const pos = Math.floor((idx * (times.length - 1)) / Math.max(1, k - 1));
-    return times[pos];
-  });
+
+  // K-means++ initialization (Arthur & Vassilvitskii 2007)
+  // Chooses centroids that are actual data points, spread across the distribution.
+  // First centroid: random from data. Subsequent centroids: weighted by squared
+  // distance to nearest existing centroid. Improves convergence on uneven time series.
+  const centroids = [];
+  const firstIdx = Math.floor(Math.random() * times.length);
+  centroids.push(times[firstIdx]);
+
+  for (let c = 1; c < k; c++) {
+    // Compute squared distance to nearest centroid for each point
+    const distances = times.map((t) => {
+      let minDist = Infinity;
+      for (let i = 0; i < centroids.length; i++) {
+        const dist = Math.abs(t - centroids[i]);
+        if (dist < minDist) minDist = dist;
+      }
+      return minDist * minDist; // Squared distance
+    });
+
+    // Weighted random selection (probability proportional to squared distance)
+    const totalDist = distances.reduce((sum, d) => sum + d, 0);
+    if (totalDist === 0) {
+      // All remaining points coincide with existing centroids (edge case)
+      // Select any unselected point
+      const unselected = times.find((t) => !centroids.includes(t));
+      if (unselected !== undefined) {
+        centroids.push(unselected);
+      } else {
+        // All points already selected; duplicate last centroid
+        centroids.push(centroids[centroids.length - 1]);
+      }
+      continue;
+    }
+
+    let rand = Math.random() * totalDist;
+    let selectedIdx = 0;
+    for (let i = 0; i < distances.length; i++) {
+      rand -= distances[i];
+      if (rand <= 0) {
+        selectedIdx = i;
+        break;
+      }
+    }
+    centroids.push(times[selectedIdx]);
+  }
+
   const assignments = new Array(times.length).fill(0);
   const maxIterations =
     typeof maxIterationsOpt === 'number'
       ? Math.max(1, Math.floor(maxIterationsOpt))
       : CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS;
-
-  // TODO: Consider k-means++ initialization on 1D timestamps for improved stability.
 
   let iterationsUsed = 0;
   let converged = false;

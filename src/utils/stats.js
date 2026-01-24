@@ -22,6 +22,7 @@ import {
   USAGE_COMPLIANCE_THRESHOLD_HOURS,
   USAGE_STRICT_THRESHOLD_HOURS,
 } from '../constants';
+import { validateEPAP } from './dataValidation.js';
 
 /**
  * Utility functions for data parsing and statistical summaries.
@@ -108,12 +109,23 @@ export function parseDuration(s, opts = {}) {
  * - Linear interpolation reduces quantile bias vs. nearest-rank method
  * - Returns NaN for empty arrays
  *
+ * **Minimum Sample Size:**
+ * - Median (q=0.5): minimum n=2
+ * - Quartiles (q=0.25, q=0.75): minimum n=4 for distinct quartile positions
+ * - Warns if computing quartiles with n < 4 (statistically unreliable)
+ *
  * @param {number[]} arr - Numeric array (may contain NaN/Infinity; filter beforehand if needed)
  * @param {number} q - Quantile level, 0 <= q <= 1 (e.g., q=0.25 for first quartile)
  * @returns {number} Sample quantile value or NaN if array is empty
  */
 export function quantile(arr, q) {
   if (!arr.length) return NaN;
+  // Warn for quartiles with insufficient data
+  if (arr.length < 4 && (q === 0.25 || q === 0.75)) {
+    console.warn(
+      `quantile: insufficient data for quartile calculation (n=${arr.length}, minimum n=4 required for q=${q})`,
+    );
+  }
   const sorted = arr.slice().sort((a, b) => a - b);
   const pos = (sorted.length - 1) * q;
   const base = Math.floor(pos);
@@ -727,14 +739,20 @@ export function computeUsageRolling(
         const m = sum / len;
         avg[i] = m;
         // mean CI via normal approx: m ± z * s/√n
-        const variance = Math.max(
-          0,
-          (sumsq - (sum * sum) / len) / Math.max(1, len - 1),
-        );
-        const se = Math.sqrt(variance) / Math.sqrt(len);
-        const z = NORMAL_CONFIDENCE_Z;
-        avg_ci_low[i] = m - z * se;
-        avg_ci_high[i] = m + z * se;
+        // Variance is undefined for n=1; set CI to NaN if insufficient data
+        if (len < 2) {
+          avg_ci_low[i] = NaN;
+          avg_ci_high[i] = NaN;
+        } else {
+          const variance = Math.max(
+            0,
+            (sumsq - (sum * sum) / len) / Math.max(1, len - 1),
+          );
+          const se = Math.sqrt(variance) / Math.sqrt(len);
+          const z = NORMAL_CONFIDENCE_Z;
+          avg_ci_low[i] = m - z * se;
+          avg_ci_high[i] = m + z * se;
+        }
         comp4[i] = (cnt4 / len) * 100;
 
         // median and its CI via order-statistics (binomial approx)
@@ -933,7 +951,7 @@ export function computeAHITrends(data) {
 // Compute EPAP trend metrics from summary data rows
 export function computeEPAPTrends(data) {
   const epaps = data
-    .map((r) => parseFloat(r['Median EPAP']))
+    .map((r) => validateEPAP(parseFloat(r['Median EPAP']), { date: r['Date'] }))
     .filter((v) => !isNaN(v));
   let minEPAP = NaN,
     maxEPAP = NaN,
@@ -954,11 +972,11 @@ export function computeEPAPTrends(data) {
     .sort((a, b) => new Date(a['Date']) - new Date(b['Date']));
   const first30 = sortedByDate
     .slice(0, TREND_WINDOW_DAYS)
-    .map((r) => parseFloat(r['Median EPAP']))
+    .map((r) => validateEPAP(parseFloat(r['Median EPAP']), { date: r['Date'] }))
     .filter((v) => !isNaN(v));
   const last30 = sortedByDate
     .slice(-TREND_WINDOW_DAYS)
-    .map((r) => parseFloat(r['Median EPAP']))
+    .map((r) => validateEPAP(parseFloat(r['Median EPAP']), { date: r['Date'] }))
     .filter((v) => !isNaN(v));
   const avgMedianEPAPFirst30 = first30.length
     ? first30.reduce((a, b) => a + b, 0) / first30.length
@@ -967,7 +985,10 @@ export function computeEPAPTrends(data) {
     ? last30.reduce((a, b) => a + b, 0) / last30.length
     : NaN;
   const epapAhiPairs = data
-    .map((r) => [parseFloat(r['Median EPAP']), parseFloat(r['AHI'])])
+    .map((r) => [
+      validateEPAP(parseFloat(r['Median EPAP']), { date: r['Date'] }),
+      parseFloat(r['AHI']),
+    ])
     .filter(([p, a]) => !isNaN(p) && !isNaN(a));
   let corrEPAPAHI = NaN;
   if (epapAhiPairs.length > 1) {
@@ -992,11 +1013,21 @@ export function computeEPAPTrends(data) {
     corrEPAPAHI = stdEp && stdAh ? cov / (stdEp * stdAh) : NaN;
   }
   const lowGroup = data
-    .filter((r) => parseFloat(r['Median EPAP']) < EPAP_SPLIT_THRESHOLD)
+    .filter((r) => {
+      const epap = validateEPAP(parseFloat(r['Median EPAP']), {
+        date: r['Date'],
+      });
+      return epap < EPAP_SPLIT_THRESHOLD;
+    })
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
   const highGroup = data
-    .filter((r) => parseFloat(r['Median EPAP']) >= EPAP_SPLIT_THRESHOLD)
+    .filter((r) => {
+      const epap = validateEPAP(parseFloat(r['Median EPAP']), {
+        date: r['Date'],
+      });
+      return epap >= EPAP_SPLIT_THRESHOLD;
+    })
     .map((r) => parseFloat(r['AHI']))
     .filter((v) => !isNaN(v));
   const countLow = lowGroup.length;
@@ -1032,11 +1063,13 @@ export function computeEPAPTrends(data) {
 // **Statistical Assumptions:**
 // - Assumes linear relationship between variables
 // - Sensitive to outliers; not robust to non-normal distributions
-// - Requires at least 2 complete pairs (x_i, y_i)
-// - Returns NaN if fewer than 2 valid pairs, or if variance is zero
+// - Requires at least 3 complete pairs (x_i, y_i) for 1 degree of freedom
+// - Returns NaN if fewer than 3 valid pairs, or if variance is zero
 /**
  * Compute Pearson correlation coefficient between two arrays.
  * Ignores missing/non-finite values pairwise.
+ *
+ * **Minimum Sample Size:** n ≥ 3 (requires at least 1 degree of freedom for meaningful correlation)
  *
  * @param {number[]} x - First variable values
  * @param {number[]} y - Second variable values
@@ -1061,7 +1094,12 @@ export function pearson(x, y) {
     syy += yi * yi;
     sxy += xi * yi;
   }
-  if (count < 2) return NaN;
+  if (count < 3) {
+    console.warn(
+      `pearson: insufficient data (n=${count}, minimum n=3 required for correlation)`,
+    );
+    return NaN;
+  }
   const cov = (sxy - (sx * sy) / count) / count;
   const vx = (sxx - (sx * sx) / count) / count;
   const vy = (syy - (sy * sy) / count) / count;
@@ -1093,8 +1131,10 @@ export function rank(arr) {
  * - Nonparametric: makes no distributional assumptions
  * - Robust to outliers and non-linear monotonic relationships
  * - Handles ties by averaging ranks
- * - Requires at least 2 complete pairs
+ * - Requires at least 3 complete pairs (minimum n=3 for 1 degree of freedom)
  * - More conservative (lower power) than Pearson for linear data
+ *
+ * **Minimum Sample Size:** n ≥ 3 (inherited from pearson() check on ranked data)
  *
  * @param {number[]} x - First variable values
  * @param {number[]} y - Second variable values
@@ -1164,6 +1204,8 @@ export function normalCdf(z) {
  * - **Large samples (n>28)**: uses normal approximation with continuity correction
  * - **Recommended sample sizes**: n₁, n₂ ≥ 3 for acceptable power; best with n₁=n₂
  *
+ * **Minimum Sample Size:** n₁, n₂ ≥ 3 recommended for reliable inference (warns if n < 3)
+ *
  * @param {number[]} a - First sample values
  * @param {number[]} b - Second sample values
  * @returns {{ U: number, z: number, p: number, effect: number, method: string }}
@@ -1175,6 +1217,12 @@ export function mannWhitneyUTest(a, b) {
     n2 = b.length;
   if (n1 === 0 || n2 === 0)
     return { U: NaN, z: NaN, p: NaN, effect: NaN, method: 'NA' };
+  // Warn for small sample sizes (test still computes but has low power)
+  if (n1 < 3 || n2 < 3) {
+    console.warn(
+      `mannWhitneyUTest: small sample size (n1=${n1}, n2=${n2}, recommended minimum n=3 for reliable inference)`,
+    );
+  }
   // ranks on combined (average ranks for ties)
   const combined = a
     .map((v, i) => ({ v, g: 1, idx: i }))
@@ -1299,8 +1347,17 @@ function proportionCI(p, n, z = 1.96) {
   return { low: Math.max(0, center - half), high: Math.min(1, center + half) };
 }
 
-// LOESS smoothing (locally weighted linear regression) using tricube weights.
-// x, y: arrays; xs: evaluation points; alpha: bandwidth fraction (0-1)
+/**
+ * LOESS smoothing (locally weighted linear regression) using tricube weights.
+ *
+ * **Minimum Sample Size:** n ≥ 3 for meaningful smoothing (warns if n < 3)
+ *
+ * @param {number[]} x - Independent variable values
+ * @param {number[]} y - Dependent variable values
+ * @param {number[]} xs - Evaluation points for smoothed curve
+ * @param {number} [alpha=0.3] - Bandwidth fraction (0-1) controlling smoothness
+ * @returns {number[]} Smoothed y values at each evaluation point in xs
+ */
 export function loessSmooth(x, y, xs, alpha = 0.3) {
   const n = Math.min(x.length, y.length);
   if (!n || !xs?.length) return [];
@@ -1309,6 +1366,11 @@ export function loessSmooth(x, y, xs, alpha = 0.3) {
     const xi = x[i];
     const yi = y[i];
     if (isFinite(xi) && isFinite(yi)) pairs.push([xi, yi]);
+  }
+  if (pairs.length < 3) {
+    console.warn(
+      `loessSmooth: insufficient data for meaningful smoothing (n=${pairs.length}, minimum n=3 required)`,
+    );
   }
   pairs.sort((a, b) => a[0] - b[0]);
   const xsOut = xs.slice();
@@ -1413,8 +1475,17 @@ export function runningQuantileXY(x, y, xs, q = 0.5, k = 25) {
   return res;
 }
 
-// Kaplan–Meier survival for uncensored durations (all events observed)
-// Returns stepwise survival at unique event times and approximate 95% CIs (log-log Greenwood)
+/**
+ * Kaplan–Meier survival curve for uncensored durations (all events observed).
+ * Returns stepwise survival at unique event times and approximate 95% CIs (log-log Greenwood).
+ *
+ * **Minimum Sample Size:** n ≥ 2 for confidence intervals (warns if n < 2)
+ *
+ * @param {number[]} durations - Array of event times (non-negative, finite values)
+ * @param {number} [z=1.96] - Z-score for confidence interval (default 95% CI)
+ * @returns {{ times: number[], survival: number[], lower: number[], upper: number[] }}
+ *   Survival curve with CI bounds at each unique event time
+ */
 export function kmSurvival(durations, z = NORMAL_CONFIDENCE_Z) {
   const vals = (durations || [])
     .map(Number)
@@ -1422,6 +1493,11 @@ export function kmSurvival(durations, z = NORMAL_CONFIDENCE_Z) {
     .sort((a, b) => a - b);
   const n = vals.length;
   if (!n) return { times: [], survival: [], lower: [], upper: [] };
+  if (n < 2) {
+    console.warn(
+      `kmSurvival: insufficient data for confidence intervals (n=${n}, minimum n=2 required)`,
+    );
+  }
   const times = [];
   const dcount = [];
   for (let i = 0; i < n; ) {

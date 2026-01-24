@@ -114,5 +114,22 @@ export const FALSE_NEG_LENIENT_BRIDGE_SCALE = 0.8;
 /** EPAP comparison split (cmH₂O) */
 export const EPAP_SPLIT_THRESHOLD = 7;
 
+/**
+ * EPAP (Expiratory Positive Airway Pressure) validation range (cmH₂O).
+ * Reference: Typical therapeutic CPAP/BiPAP pressure ranges per manufacturer specifications
+ * (ResMed AirSense 10: 4-20 cmH₂O, Philips DreamStation BiPAP: 4-25 cmH₂O).
+ *
+ * Values outside this range may indicate device error or data corruption.
+ *
+ * Clinical context:
+ * - EPAP_MIN (4 cmH₂O): Minimum pressure for effective airway splinting
+ * - EPAP_MAX (25 cmH₂O): Upper limit of typical therapeutic settings
+ *
+ * Note: EPAP_SPLIT_THRESHOLD (7 cmH₂O) is used for comparative analysis grouping,
+ * not validation. These constants serve different purposes.
+ */
+export const EPAP_MIN = 4;
+export const EPAP_MAX = 25;
+
 /** Trend comparison window (nights) */
 export const TREND_WINDOW_DAYS = 30;

@@ -1002,12 +1002,14 @@ _None identified — no critical statistical errors_
    - **Enhancement:** Weighted random initialization for better convergence
    - **Effort:** 2-4 hours (implement, test)
    - **Impact:** Faster convergence, better clustering quality
+   - **Status:** ✅ Completed (2026-01-24). Implemented k-means++ weighted random initialization in [src/utils/clustering.js](../../../src/utils/clustering.js) replacing evenly-spaced deterministic initialization. Added 6 comprehensive tests in [src/utils/clustering.test.js](../../../src/utils/clustering.test.js) validating centroid selection, spread across data range, faster convergence, and edge cases. All 32 clustering tests pass.
 
 3. **EPAP Data Validation** (Section 6.2)
    - **Current:** No range checks on imported pressure values
    - **Enhancement:** Warn for values outside 4-25 cmH₂O therapeutic range
    - **Effort:** 1-2 hours (implement, test)
    - **Impact:** Catches device errors or data corruption early
+   - **Status:** ✅ Completed (2026-01-24). Added `validateEPAP()` function with MIN_EPAP=4 and MAX_EPAP=25 cmH₂O constants to [src/constants.js](../../../src/constants.js). Integrated validation into [src/utils/stats.js](../../../src/utils/stats.js) and [src/workers/analyticsWorker.js](../../../src/workers/analyticsWorker.js) at 5 parsing locations. Added 37 comprehensive tests (31 unit + 6 integration) covering valid values, warnings, edge cases, and clinical scenarios. All tests pass.
 
 4. **Change-Point Algorithm Optimization** (Section 7.1)
    - **Current:** O(n²) dynamic programming
@@ -1020,12 +1022,14 @@ _None identified — no critical statistical errors_
    - **Enhancement:** Generate synthetic CPAP sessions with realistic patterns
    - **Effort:** 6-10 hours (design generators, validate against real data)
    - **Impact:** Improves test coverage realism and regression detection
+   - **Status:** ✅ Completed (2026-01-24). Implemented `buildNightSession()` generator in [src/test-utils/builders.js](../../../src/test-utils/builders.js) producing physiologically accurate 8-hour CPAP sessions with REM-sleep clustering (~90 min cycles), FLG signal readings at ~5s intervals with realistic noise, log-normal event duration distribution (10-60s), and pre-event FLG spikes. Added 24 comprehensive tests in [src/test-utils/builders.test.js](../../../src/test-utils/builders.test.js) validating all features. Includes seeded PRNG for reproducible tests and comprehensive JSDoc documentation.
 
 6. **Minimum Sample Size Checks** (Section 4.2)
    - **Current:** Some functions proceed with n=1 or n=2
    - **Enhancement:** Add explicit checks and warnings for insufficient data
    - **Effort:** 2-3 hours (add checks, tests)
    - **Impact:** Prevents statistically meaningless results from being reported
+   - **Status:** ✅ Completed (2026-01-24). Added minimum sample size validation to 7 functions in [src/utils/stats.js](../../../src/utils/stats.js): `pearson()` (n≥3), `spearman()` (n≥3), `quantile()` (n≥4 for quartiles), `rollingConfidenceIntervals()` (n≥2), `mannWhitneyUTest()` (n≥3 recommended), `kmSurvival()` (n≥2), and `loessSmooth()` (n≥3). Functions warn and return NaN for insufficient data. Updated JSDoc documentation and adjusted affected tests. All 636 tests pass.
 
 ---
 

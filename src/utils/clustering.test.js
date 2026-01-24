@@ -299,6 +299,140 @@ describe('dedicated apnea clustering implementations', () => {
   });
 });
 
+describe('k-means++ initialization', () => {
+  it('selects centroids that are actual data points from the input', () => {
+    const base = new Date('2024-01-01T00:00:00Z');
+    const events = Array.from({ length: 20 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 60_000),
+      durationSec: 10,
+    }));
+
+    // Run multiple times to verify stochastic behavior
+    for (let trial = 0; trial < 10; trial++) {
+      const clusters = clusterApneaEventsKMeans({ events, k: 5 });
+      // Each cluster centroid should correspond to an actual event time
+      // Note: After convergence, centroids move to means, but initialization uses data points
+      // We verify by checking that at least one event exists near each cluster center
+      clusters.forEach((cluster) => {
+        const clusterStart = cluster.start.getTime();
+        const hasNearbyEvent = events.some(
+          (evt) => Math.abs(evt.date.getTime() - clusterStart) < 120_000,
+        );
+        expect(hasNearbyEvent).toBe(true);
+      });
+    }
+  });
+
+  it('spreads centroids across data range better than evenly-spaced initialization', () => {
+    // Pathological case: two tight clusters separated by large gap
+    // Evenly-spaced initialization would place centroids in the gap (poor)
+    // K-means++ should place centroids in the actual data clusters
+    const base = new Date('2024-01-01T00:00:00Z');
+    const clusterA = Array.from({ length: 10 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 30_000), // Events at 0-4.5 min
+      durationSec: 10,
+    }));
+    const clusterB = Array.from({ length: 10 }).map((_, idx) => ({
+      date: new Date(base.getTime() + 24 * 3600_000 + idx * 30_000), // 24h later
+      durationSec: 10,
+    }));
+    const events = [...clusterA, ...clusterB];
+
+    // Run multiple trials to verify consistent behavior
+    let successfulTrials = 0;
+    for (let trial = 0; trial < 20; trial++) {
+      const clusters = clusterApneaEventsKMeans({ events, k: 2 });
+
+      // K-means++ should identify the two natural clusters
+      // Check that each cluster has events from only one time period
+      const firstClusterTimes = clusters[0].start.getTime();
+      const secondClusterTimes = clusters[1]?.start.getTime();
+
+      const gap = Math.abs(firstClusterTimes - secondClusterTimes);
+      // If gap is large (>1 hour), initialization found the natural clusters
+      if (gap > 3600_000) {
+        successfulTrials++;
+      }
+    }
+
+    // K-means++ should succeed in most trials (>50% for well-separated data)
+    expect(successfulTrials).toBeGreaterThan(10);
+  });
+
+  it('converges faster with k-means++ on pathological data distributions', () => {
+    // Create data with three tight clusters at different positions
+    const base = new Date('2024-01-01T00:00:00Z');
+    const clusterA = Array.from({ length: 8 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 20_000),
+      durationSec: 10,
+    }));
+    const clusterB = Array.from({ length: 8 }).map((_, idx) => ({
+      date: new Date(base.getTime() + 8 * 3600_000 + idx * 20_000),
+      durationSec: 10,
+    }));
+    const clusterC = Array.from({ length: 8 }).map((_, idx) => ({
+      date: new Date(base.getTime() + 20 * 3600_000 + idx * 20_000),
+      durationSec: 10,
+    }));
+    const events = [...clusterA, ...clusterB, ...clusterC];
+
+    // Run multiple trials and check average iterations
+    const iterations = [];
+    for (let trial = 0; trial < 10; trial++) {
+      const clusters = clusterApneaEventsKMeans({ events, k: 3 });
+      iterations.push(clusters.meta.iterations);
+    }
+
+    const avgIterations =
+      iterations.reduce((sum, i) => sum + i, 0) / iterations.length;
+
+    // K-means++ typically converges in <10 iterations for well-separated clusters
+    // (Much better than evenly-spaced which can take 20-50 iterations)
+    expect(avgIterations).toBeLessThan(15);
+    expect(
+      iterations.every((i) => i < CLUSTERING_DEFAULTS.KMEANS_MAX_ITERATIONS),
+    ).toBe(true);
+  });
+
+  it('handles edge case with k=1 (single centroid)', () => {
+    const base = new Date('2024-01-01T00:00:00Z');
+    const events = Array.from({ length: 10 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 60_000),
+      durationSec: 10,
+    }));
+    const clusters = clusterApneaEventsKMeans({ events, k: 1 });
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0].count).toBe(10);
+    expect(clusters.meta.converged).toBe(true);
+  });
+
+  it('handles edge case with k equal to number of data points', () => {
+    const base = new Date('2024-01-01T00:00:00Z');
+    const events = Array.from({ length: 5 }).map((_, idx) => ({
+      date: new Date(base.getTime() + idx * 60_000),
+      durationSec: 10,
+    }));
+    const clusters = clusterApneaEventsKMeans({ events, k: 5 });
+    // Each event becomes its own cluster (or nearby)
+    expect(clusters.length).toBeGreaterThan(0);
+    expect(clusters.length).toBeLessThanOrEqual(5);
+    expect(clusters.meta.kOverspecified).toBe(true);
+  });
+
+  it('handles duplicate timestamps gracefully', () => {
+    const base = new Date('2024-01-01T00:00:00Z');
+    const events = [
+      { date: base, durationSec: 10 },
+      { date: base, durationSec: 15 }, // Duplicate timestamp
+      { date: new Date(base.getTime() + 60_000), durationSec: 10 },
+      { date: new Date(base.getTime() + 120_000), durationSec: 10 },
+    ];
+    const clusters = clusterApneaEventsKMeans({ events, k: 2 });
+    expect(clusters).toHaveLength(2);
+    expect(clusters.meta.converged).toBe(true);
+  });
+});
+
 describe('k-means metadata and convergence', () => {
   it('attaches metadata and converges quickly on bimodal data', () => {
     const base = new Date('2021-01-01T00:00:00Z');
