@@ -11,6 +11,7 @@ corresponds to changes released on that day.
 
 ### Added
 
+- **Fitbit data correlation planning**: Comprehensive planning for integrating Fitbit biometric data with CPAP sleep therapy analysis. Planning documents include: (1) data science analysis of medical correlations, statistical deep dives, and novel combinations; (2) visualization design with WCAG AA accessibility, responsive mobile UI, and professional chart concepts; (3) technical architecture spanning data acquisition (manual JSON import + Phase 2 OAuth API), IndexedDB storage, Web Worker computation pipeline, and component structure; (4) security and privacy assessment covering OAuth token lifecycle, encryption validation, GDPR/CCPA compliance, and threat models. Four detailed planning reports in `docs/developer/reports/2026-01-fitbit-planning/` with phased 20-week implementation roadmap. No code changes; planning phase complete. Fitness, respiratory rate, SpO₂, sleep stage, and HRV data enable unprecedented physiological insights into therapy efficacy.
 - **Favicon support for browser tabs**: Added favicon.svg and favicon.ico to display the OSCAR app icon in browser tabs, bookmarks, and favorites. Favicon generated from PWA app icon for consistent branding across browser and installed app experiences.
 
 ### Fixed
