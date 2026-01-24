@@ -108,11 +108,13 @@ export function AppShell() {
     },
     onOfflineReady() {
       console.log('App ready to work offline');
-      
+
       // Only show toast in installed PWA (standalone mode)
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isStandalone = window.matchMedia(
+        '(display-mode: standalone)',
+      ).matches;
       const hasSeenToast = localStorage.getItem('offline-toast-shown');
-      
+
       if (isStandalone && !hasSeenToast) {
         setShowOfflineToast(true);
         localStorage.setItem('offline-toast-shown', 'true');
