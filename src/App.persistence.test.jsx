@@ -68,10 +68,10 @@ describe('App persistence flow', () => {
       { type: 'text/csv' },
     );
     await userEvent.upload(input, [summaryFile, detailsFile]);
-    // Wait for CSV processing to complete
+    // Wait for CSV processing to complete - use getAllByText since "Median AHI" appears in multiple places
     await waitFor(
       () => {
-        expect(screen.getByText('Median AHI')).toBeInTheDocument();
+        expect(screen.getAllByText('Median AHI').length).toBeGreaterThan(0);
       },
       { timeout: 8000 },
     );

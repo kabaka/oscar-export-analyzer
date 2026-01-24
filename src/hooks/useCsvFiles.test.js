@@ -35,7 +35,7 @@ describe('useCsvFiles', () => {
     global.Worker = originalWorker;
   });
 
-  it('loads summary files, updates progress, and clears detail data', () => {
+  it('loads summary files and updates progress without clearing detail data', () => {
     const { result } = renderHook(() => useCsvFiles());
 
     act(() => {
@@ -49,7 +49,8 @@ describe('useCsvFiles', () => {
     });
 
     expect(result.current.loadingSummary).toBe(true);
-    expect(result.current.detailsData).toBeNull();
+    // Details data should NOT be cleared when loading Summary
+    expect(result.current.detailsData).toEqual([{ existing: true }]);
     expect(result.current.summaryProgressMax).toBe(20);
 
     act(() => {
@@ -374,5 +375,221 @@ describe('useCsvFiles', () => {
     expect(result.current.error).not.toMatch(/line \d+/i);
     expect(result.current.error).not.toMatch(/DateTime|Session|Event/i);
     expect(result.current.error).not.toMatch(/\d{4}-\d{2}-\d{2}/); // No dates
+  });
+
+  describe('parallel worker processing', () => {
+    it('allows simultaneous Summary and Details uploads without interference', () => {
+      const { result } = renderHook(() => useCsvFiles());
+      const summaryFile = createFile('summary.csv', 100);
+      const detailsFile = createFile('details.csv', 200);
+
+      // Upload both files simultaneously
+      act(() => {
+        result.current.onSummaryFile({ target: { files: [summaryFile] } });
+        result.current.onDetailsFile({ target: { files: [detailsFile] } });
+      });
+
+      // Both should be loading
+      expect(result.current.loadingSummary).toBe(true);
+      expect(result.current.loadingDetails).toBe(true);
+      expect(workers).toHaveLength(2);
+
+      // Progress Summary worker
+      act(() => {
+        workers[0].onmessage?.({
+          data: { workerId: workerIdFor(0), type: 'progress', cursor: 50 },
+        });
+      });
+      expect(result.current.summaryProgress).toBe(50);
+
+      // Progress Details worker
+      act(() => {
+        workers[1].onmessage?.({
+          data: { workerId: workerIdFor(1), type: 'progress', cursor: 100 },
+        });
+      });
+      expect(result.current.detailsProgress).toBe(100);
+
+      // Complete Summary worker
+      act(() => {
+        workers[0].onmessage?.({
+          data: {
+            workerId: workerIdFor(0),
+            type: 'rows',
+            rows: [{ id: 'summary-row' }],
+          },
+        });
+      });
+      act(() => {
+        workers[0].onmessage?.({
+          data: { workerId: workerIdFor(0), type: 'complete' },
+        });
+      });
+
+      // Summary should be complete, Details still loading
+      expect(result.current.loadingSummary).toBe(false);
+      expect(result.current.loadingDetails).toBe(true);
+      expect(result.current.summaryData).toEqual([{ id: 'summary-row' }]);
+
+      // Complete Details worker
+      act(() => {
+        workers[1].onmessage?.({
+          data: {
+            workerId: workerIdFor(1),
+            type: 'rows',
+            rows: [{ id: 'details-row' }],
+          },
+        });
+      });
+      act(() => {
+        workers[1].onmessage?.({
+          data: { workerId: workerIdFor(1), type: 'complete' },
+        });
+      });
+
+      // Both should be complete
+      expect(result.current.loadingSummary).toBe(false);
+      expect(result.current.loadingDetails).toBe(false);
+      expect(result.current.summaryData).toEqual([{ id: 'summary-row' }]);
+      expect(result.current.detailsData).toEqual([{ id: 'details-row' }]);
+    });
+
+    it('re-uploading Summary does not cancel Details worker', () => {
+      const { result } = renderHook(() => useCsvFiles());
+
+      // First upload Details
+      act(() => {
+        result.current.onDetailsFile({
+          target: { files: [createFile('details.csv', 200)] },
+        });
+      });
+      expect(workers).toHaveLength(1);
+
+      // Complete Details
+      act(() => {
+        workers[0].onmessage?.({
+          data: {
+            workerId: workerIdFor(0),
+            type: 'rows',
+            rows: [{ id: 'details-data' }],
+          },
+        });
+      });
+      act(() => {
+        workers[0].onmessage?.({
+          data: { workerId: workerIdFor(0), type: 'complete' },
+        });
+      });
+      expect(result.current.detailsData).toEqual([{ id: 'details-data' }]);
+
+      // Now upload Summary - should NOT affect Details data
+      act(() => {
+        result.current.onSummaryFile({
+          target: { files: [createFile('summary.csv', 100)] },
+        });
+      });
+
+      expect(result.current.detailsData).toEqual([{ id: 'details-data' }]);
+      expect(result.current.loadingSummary).toBe(true);
+      expect(workers).toHaveLength(2);
+    });
+
+    it('re-uploading Details does not cancel Summary worker', () => {
+      const { result } = renderHook(() => useCsvFiles());
+
+      // First upload Summary
+      act(() => {
+        result.current.onSummaryFile({
+          target: { files: [createFile('summary.csv', 100)] },
+        });
+      });
+      expect(workers).toHaveLength(1);
+
+      // Complete Summary
+      act(() => {
+        workers[0].onmessage?.({
+          data: {
+            workerId: workerIdFor(0),
+            type: 'rows',
+            rows: [{ id: 'summary-data' }],
+          },
+        });
+      });
+      act(() => {
+        workers[0].onmessage?.({
+          data: { workerId: workerIdFor(0), type: 'complete' },
+        });
+      });
+      expect(result.current.summaryData).toEqual([{ id: 'summary-data' }]);
+
+      // Now upload Details - should NOT affect Summary data
+      act(() => {
+        result.current.onDetailsFile({
+          target: { files: [createFile('details.csv', 200)] },
+        });
+      });
+
+      expect(result.current.summaryData).toEqual([{ id: 'summary-data' }]);
+      expect(result.current.loadingDetails).toBe(true);
+      expect(workers).toHaveLength(2);
+    });
+
+    it('cancelCurrent terminates both Summary and Details workers', () => {
+      const { result } = renderHook(() => useCsvFiles());
+
+      // Start both workers
+      act(() => {
+        result.current.onSummaryFile({
+          target: { files: [createFile('summary.csv', 100)] },
+        });
+        result.current.onDetailsFile({
+          target: { files: [createFile('details.csv', 200)] },
+        });
+      });
+
+      expect(workers).toHaveLength(2);
+      expect(result.current.loadingSummary).toBe(true);
+      expect(result.current.loadingDetails).toBe(true);
+
+      // Cancel both
+      act(() => {
+        result.current.cancelCurrent();
+      });
+
+      expect(workers[0].terminate).toHaveBeenCalledTimes(1);
+      expect(workers[1].terminate).toHaveBeenCalledTimes(1);
+      expect(result.current.loadingSummary).toBe(false);
+      expect(result.current.loadingDetails).toBe(false);
+    });
+
+    it('re-uploading Summary cancels only the previous Summary worker', () => {
+      const { result } = renderHook(() => useCsvFiles());
+
+      // Upload Summary and Details
+      act(() => {
+        result.current.onSummaryFile({
+          target: { files: [createFile('summary1.csv', 100)] },
+        });
+        result.current.onDetailsFile({
+          target: { files: [createFile('details.csv', 200)] },
+        });
+      });
+
+      expect(workers).toHaveLength(2);
+      const firstSummaryWorker = workers[0];
+      const detailsWorker = workers[1];
+
+      // Re-upload Summary
+      act(() => {
+        result.current.onSummaryFile({
+          target: { files: [createFile('summary2.csv', 150)] },
+        });
+      });
+
+      // Should have terminated only the first Summary worker
+      expect(firstSummaryWorker.terminate).toHaveBeenCalledTimes(1);
+      expect(detailsWorker.terminate).not.toHaveBeenCalled();
+      expect(workers).toHaveLength(3);
+    });
   });
 });

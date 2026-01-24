@@ -1,18 +1,17 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { ErrorBoundary } from '../../components/ui';
 import { useAppContext } from '../../app/AppProviders';
-
-const SummaryAnalysis = lazy(() => import('../../components/SummaryAnalysis'));
+import SummaryAnalysis from '../../components/SummaryAnalysis';
 
 /**
  * Feature section wrapper for comprehensive CPAP analytics.
  *
- * Lazy-loads SummaryAnalysis component with error boundary and loading fallback.
+ * Renders SummaryAnalysis component with error boundary.
  * Only renders if filtered summary data is available.
  *
  * @returns {JSX.Element | null} Analytics section or null if no data
  *
- * @see SummaryAnalysis - Main analytics component (lazy-loaded)
+ * @see SummaryAnalysis - Main analytics component
  */
 export default function AnalyticsSection() {
   const { filteredSummary, apneaClusters } = useAppContext();
@@ -24,9 +23,7 @@ export default function AnalyticsSection() {
   return (
     <div className="section">
       <ErrorBoundary>
-        <Suspense fallback={<div>Loading...</div>}>
-          <SummaryAnalysis clusters={apneaClusters} />
-        </Suspense>
+        <SummaryAnalysis clusters={apneaClusters} />
       </ErrorBoundary>
     </div>
   );

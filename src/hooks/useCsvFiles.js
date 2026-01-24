@@ -63,7 +63,13 @@ export function useCsvFiles() {
   const [detailsProgressMax, setDetailsProgressMax] = useState(0);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
-  const activeTaskRef = useRef({
+  const summaryTaskRef = useRef({
+    worker: null,
+    workerId: null,
+    setLoading: null,
+    cleanup: null,
+  });
+  const detailsTaskRef = useRef({
     worker: null,
     workerId: null,
     setLoading: null,
@@ -80,28 +86,36 @@ export function useCsvFiles() {
     return `csv-worker-${workerEpochRef.current}-${workerSeqRef.current}`;
   }, []);
 
-  const resetActiveTask = () => {
-    activeTaskRef.current = {
+  const resetTask = useCallback((taskRef) => {
+    taskRef.current = {
       worker: null,
       workerId: null,
       setLoading: null,
       cleanup: null,
     };
-  };
+  }, []);
+
+  const cancelTask = useCallback(
+    (taskRef) => {
+      const { worker, setLoading, cleanup } = taskRef.current || {};
+      if (cleanup) {
+        cleanup();
+      }
+      if (worker) {
+        worker.terminate();
+      }
+      if (setLoading) {
+        setLoading(false);
+      }
+      resetTask(taskRef);
+    },
+    [resetTask],
+  );
 
   const cancelCurrent = useCallback(() => {
-    const { worker, setLoading, cleanup } = activeTaskRef.current || {};
-    if (cleanup) {
-      cleanup();
-    }
-    if (worker) {
-      worker.terminate();
-    }
-    if (setLoading) {
-      setLoading(false);
-    }
-    resetActiveTask();
-  }, []);
+    cancelTask(summaryTaskRef);
+    cancelTask(detailsTaskRef);
+  }, [cancelTask]);
 
   useEffect(() => cancelCurrent, [cancelCurrent]);
 
@@ -120,100 +134,110 @@ export function useCsvFiles() {
    * @param {Function} setLoading - state setter for loading flag
    * @param {Function} setProgress - state setter for progress cursor
    * @param {Function} setProgressMax - state setter for progress max
+   * @param {Object} taskRef - ref object for tracking this worker
    * @param {boolean} filterEvents - if true, only retain ClearAirway, Obstructive, Mixed, FLG rows
    */
-  const handleFile =
-    (setter, setLoading, setProgress, setProgressMax, filterEvents = false) =>
-    (input, options = {}) => {
-      const file = extractFirstFile(input);
-      if (!file) return;
-      const { signal } = options || {};
+  const handleFile = useCallback(
+    (
+      setter,
+      setLoading,
+      setProgress,
+      setProgressMax,
+      taskRef,
+      filterEvents = false,
+    ) =>
+      (input, options = {}) => {
+        const file = extractFirstFile(input);
+        if (!file) return;
+        const { signal } = options || {};
 
-      cancelCurrent();
+        cancelTask(taskRef);
 
-      if (signal?.aborted) {
-        return;
-      }
-
-      const MAX_FILE_SIZE_MB = 150;
-      const SOFT_WARNING_SIZE_MB = 100;
-      const BYTES_PER_KB = 1024;
-      const KB_PER_MB = 1024;
-      const BYTES_PER_MB = BYTES_PER_KB * KB_PER_MB;
-
-      if (file.size > MAX_FILE_SIZE_MB * BYTES_PER_MB) {
-        setError(
-          `File exceeds ${MAX_FILE_SIZE_MB}MB limit. Please contact support if you need to analyze larger datasets.`,
-        );
-        setLoading(false);
-        return;
-      }
-
-      if (file.size >= SOFT_WARNING_SIZE_MB * BYTES_PER_MB) {
-        setWarning(
-          'Large file detected (over 100 MB). Parsing may take ~5 s and use ~1 GB memory. Please keep other tabs light.',
-        );
-      } else {
-        setWarning(null);
-      }
-
-      setLoading(true);
-      setError(null);
-      setProgress(0);
-      setProgressMax(file.size || 0);
-      setter([]);
-      const worker = new Worker(
-        new URL('../workers/csv.worker.js', import.meta.url),
-        { type: 'module' },
-      );
-      const workerId = createWorkerId();
-      const clearTask = () => {
-        if (activeTaskRef.current.workerId !== workerId) return;
-        const { cleanup } = activeTaskRef.current;
-        if (cleanup) cleanup();
-        resetActiveTask();
-      };
-      worker.onmessage = (ev) => {
-        const {
-          workerId: messageWorkerId,
-          type,
-          rows,
-          cursor,
-          error: msg,
-        } = ev.data || {};
-        if (activeTaskRef.current.workerId !== messageWorkerId) return;
-        if (type === 'progress') {
-          setProgress(cursor);
-        } else if (type === 'rows') {
-          setter((prev) => [...prev, ...rows]);
-        } else if (type === 'complete') {
-          setLoading(false);
-          worker.terminate();
-          clearTask();
-        } else if (type === 'error') {
-          setLoading(false);
-          setError(msg);
-          worker.terminate();
-          clearTask();
+        if (signal?.aborted) {
+          return;
         }
-      };
-      activeTaskRef.current = {
-        worker,
-        workerId,
-        setLoading,
-        cleanup: null,
-      };
-      if (signal) {
-        const onAbort = () => {
-          cancelCurrent();
+
+        const MAX_FILE_SIZE_MB = 150;
+        const SOFT_WARNING_SIZE_MB = 100;
+        const BYTES_PER_KB = 1024;
+        const KB_PER_MB = 1024;
+        const BYTES_PER_MB = BYTES_PER_KB * KB_PER_MB;
+
+        if (file.size > MAX_FILE_SIZE_MB * BYTES_PER_MB) {
+          setError(
+            `File exceeds ${MAX_FILE_SIZE_MB}MB limit. Please contact support if you need to analyze larger datasets.`,
+          );
+          setLoading(false);
+          return;
+        }
+
+        if (file.size >= SOFT_WARNING_SIZE_MB * BYTES_PER_MB) {
+          setWarning(
+            'Large file detected (over 100 MB). Parsing may take ~5 s and use ~1 GB memory. Please keep other tabs light.',
+          );
+        } else {
+          setWarning(null);
+        }
+
+        setLoading(true);
+        setError(null);
+        setProgress(0);
+        setProgressMax(file.size || 0);
+        setter([]);
+        const worker = new Worker(
+          new URL('../workers/csv.worker.js', import.meta.url),
+          { type: 'module' },
+        );
+        const workerId = createWorkerId();
+        const clearTask = () => {
+          if (taskRef.current.workerId !== workerId) return;
+          const { cleanup } = taskRef.current;
+          if (cleanup) cleanup();
+          resetTask(taskRef);
         };
-        signal.addEventListener('abort', onAbort, { once: true });
-        activeTaskRef.current.cleanup = () => {
-          signal.removeEventListener('abort', onAbort);
+        worker.onmessage = (ev) => {
+          const {
+            workerId: messageWorkerId,
+            type,
+            rows,
+            cursor,
+            error: msg,
+          } = ev.data || {};
+          if (taskRef.current.workerId !== messageWorkerId) return;
+          if (type === 'progress') {
+            setProgress(cursor);
+          } else if (type === 'rows') {
+            setter((prev) => [...prev, ...rows]);
+          } else if (type === 'complete') {
+            setLoading(false);
+            worker.terminate();
+            clearTask();
+          } else if (type === 'error') {
+            setLoading(false);
+            setError(msg);
+            worker.terminate();
+            clearTask();
+          }
         };
-      }
-      worker.postMessage({ workerId, file, filterEvents });
-    };
+        taskRef.current = {
+          worker,
+          workerId,
+          setLoading,
+          cleanup: null,
+        };
+        if (signal) {
+          const onAbort = () => {
+            cancelTask(taskRef);
+          };
+          signal.addEventListener('abort', onAbort, { once: true });
+          taskRef.current.cleanup = () => {
+            signal.removeEventListener('abort', onAbort);
+          };
+        }
+        worker.postMessage({ workerId, file, filterEvents });
+      },
+    [cancelTask, createWorkerId, resetTask],
+  );
 
   return {
     summaryData,
@@ -231,21 +255,30 @@ export function useCsvFiles() {
     setDetailsData,
     setError,
     setWarning,
-    onSummaryFile: (e, options) => {
-      setDetailsData(null);
-      handleFile(
-        setSummaryData,
-        setLoadingSummary,
-        setSummaryProgress,
-        setSummaryProgressMax,
-      )(e, options);
-    },
-    onDetailsFile: handleFile(
-      setDetailsData,
-      setLoadingDetails,
-      setDetailsProgress,
-      setDetailsProgressMax,
-      true /* filter to only apnea & FLG events */,
+    onSummaryFile: useCallback(
+      (e, options) => {
+        handleFile(
+          setSummaryData,
+          setLoadingSummary,
+          setSummaryProgress,
+          setSummaryProgressMax,
+          summaryTaskRef,
+        )(e, options);
+      },
+      [handleFile],
+    ),
+    onDetailsFile: useCallback(
+      (e, options) => {
+        handleFile(
+          setDetailsData,
+          setLoadingDetails,
+          setDetailsProgress,
+          setDetailsProgressMax,
+          detailsTaskRef,
+          true /* filter to only apnea & FLG events */,
+        )(e, options);
+      },
+      [handleFile],
     ),
     cancelCurrent,
   };

@@ -7,6 +7,13 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-01-24
+
+### Fixed
+
+- **Parallel CSV worker processing**: Fixed critical bug preventing simultaneous Summary and Details file uploads. Replaced single `activeTaskRef` in `useCsvFiles.js` with separate `summaryTaskRef` and `detailsTaskRef` to enable independent worker processing. Re-uploading Summary no longer cancels Details worker (and vice versa). `cancelCurrent()` properly terminates both workers when needed (e.g., Clear Session). Added 5 comprehensive tests for parallel worker scenarios.
+- **AnalyticsSection lazy loading failure**: Removed React.lazy() and Suspense from AnalyticsSection to fix silent rendering failure. Component now imports SummaryAnalysis directly like OverviewSection, resolving issue where Usage Patterns, AHI Trends, and Pressure Settings sections failed to render despite data being available. All chart components (UsagePatternsCharts, AhiTrendsCharts, EpapTrendsCharts) now display correctly.
+
 ## 2026-01-23
 
 ### Added
