@@ -181,7 +181,7 @@ function FalseNegativesAnalysis({ list, preset, onPresetChange }) {
             }}
             config={{ responsive: true, displaylogo: false }}
           />
-          <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and confidence; marker size scales with duration and color encodes confidence." />
+          <VizHelp text="Each dot is a potential false-negative cluster. Position shows time and peak FLG level; marker size scales with duration and color encodes peak FLG level." />
         </div>
       </div>
       <div className="cluster-table-container">

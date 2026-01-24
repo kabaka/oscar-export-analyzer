@@ -121,7 +121,7 @@ Tables list each cluster’s start time, duration, event count, and a severity s
 
 ## Potential False Negatives
 
-High flow‑limitation segments without corresponding apnea labels may represent missed events. Scatter plots map maximum FLG against duration, and tables provide timestamps and confidence levels. Review suspicious intervals in OSCAR or other software before drawing conclusions.
+High flow‑limitation segments without corresponding apnea labels may represent missed events. Scatter plots map maximum FLG against duration, and tables provide timestamps and peak FLG levels. Review suspicious intervals in OSCAR or other software before drawing conclusions.
 
 ## Raw Data Explorer
 

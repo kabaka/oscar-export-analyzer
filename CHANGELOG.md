@@ -17,6 +17,7 @@ corresponds to changes released on that day.
 
 ### Changed
 
+- **False-negative detection terminology**: Updated user documentation to consistently use "peak FLG level" instead of "confidence" when describing the false-negative detection metric. The term "confidence" was misleading since this metric is the maximum Flow Limitation Grade (FLG) reading in cmH₂O within a cluster—a physiological measurement, not a statistical confidence measure. Updated [Visualizations Guide](docs/user/02-visualizations.md) and [Statistical Concepts](docs/user/04-statistical-concepts.md) to reflect accurate terminology matching the component implementation.
 - **K-means clustering initialization**: Replaced evenly-spaced deterministic initialization with k-means++ algorithm (Arthur & Vassilvitskii 2007) in K-means clustering. Centroids now selected as actual data points with weighted random selection based on squared distance to nearest existing centroid. Improves convergence speed (~60% fewer iterations) and clustering quality on uneven time series with long gaps, common in apnea event data. Added 6 comprehensive tests validating centroid selection, spread across data range, faster convergence, and edge case handling. Note: K-means clustering is now stochastic (non-deterministic), which is standard practice in machine learning.
 
 ### Fixed

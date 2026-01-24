@@ -86,7 +86,7 @@ The analyzer scans for intervals of sustained high flow limitation that lack apn
 
 - **FLG Threshold** – Minimum flow‑limitation level.
 - **Minimum Duration** – Minimum length of the interval.
-- **Confidence** – Required peak FLG to consider the interval suspicious.
+- **Peak FLG Level** – Required peak flow limitation level to consider the interval suspicious.
 
 A strict preset requires higher thresholds, while a lenient preset flags more potential false negatives but increases noise.
 
