@@ -73,6 +73,23 @@ OSCAR Export Analyzer is fully responsive and works on phones, tablets, and desk
 
 All functionality is available across devices—the interface simply adapts to your screen size. Date filters, theme toggles, and chart interactions work the same way regardless of device.
 
+### Installing as a Progressive Web App (PWA)
+
+For the best experience, you can **install OSCAR Export Analyzer as a Progressive Web App (PWA)**. Installation provides:
+
+- ✅ **Offline access** — Work without internet after initial install
+- ✅ **Native app experience** — Full-screen interface without browser chrome
+- ✅ **Faster loading** — App resources cached for instant startup
+- ✅ **Easy access** — Launch from home screen, dock, or Start menu
+
+**Quick Install**:
+
+- **Chrome/Edge (Desktop)**: Open the header menu (☰) → Select "Install App"
+- **Safari (iOS)**: Tap Share (square with arrow) → "Add to Home Screen"
+- **Chrome (Android)**: Tap "Add to Home Screen" banner or menu option
+
+Your data remains 100% local and private—PWA installation doesn't change the privacy model. See the complete [Progressive Web App Guide](10-progressive-web-app.md) for detailed installation instructions, offline usage, and transferring data between devices.
+
 ## 4. Saving and Restoring Sessions
 
 Sessions persist automatically to `IndexedDB` so you can close and reopen the browser without reloading data. Importing a new Summary CSV replaces the previous session. Use the splash screen's **Load previous session** button or drop a session JSON file there to restore an earlier analysis. The exported JSON includes all loaded rows but excludes any personal notes you may have added.

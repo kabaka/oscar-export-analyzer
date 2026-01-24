@@ -9,6 +9,8 @@ describe('HeaderMenu', () => {
     onOpenImport: vi.fn(),
     onExportJson: vi.fn(),
     onExportCsv: vi.fn(),
+    onExportEncrypted: vi.fn(),
+    onImportEncrypted: vi.fn(),
     onClearSession: vi.fn(),
     onPrint: vi.fn(),
     onOpenGuide: vi.fn(),
@@ -29,6 +31,8 @@ describe('HeaderMenu', () => {
           onOpenImport={onOpenImport}
           onExportJson={() => {}}
           onExportCsv={() => {}}
+          onExportEncrypted={() => {}}
+          onImportEncrypted={() => {}}
           onClearSession={() => {}}
           onPrint={onPrint}
           onOpenGuide={() => {}}

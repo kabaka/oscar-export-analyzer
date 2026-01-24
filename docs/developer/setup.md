@@ -74,6 +74,31 @@ npm run preview
 
 Vite serves the optimized bundle so you can sanity‑check assets and network requests without deploying anywhere.
 
+### Testing PWA Features Locally
+
+Progressive Web App (PWA) features require a production build because the service worker is not injected during development mode:
+
+```bash
+npm run build    # Generate service worker and manifest
+npm run preview  # Serve production build with PWA features enabled
+```
+
+**Service Worker**: Open DevTools → Application → Service Workers to verify registration  
+**Manifest**: DevTools → Application → Manifest to inspect installability  
+**Install Prompt**: Visit the app 2-3 times in Chrome/Edge to trigger install prompt  
+**Offline Mode**: DevTools → Network → Offline to test offline capability
+
+**Note**: Service worker updates may be cached—use DevTools → Application → Service Workers → "Update on reload" and hard refresh (Ctrl+Shift+R) when testing changes.
+
+**Lighthouse PWA Audit**:
+
+```bash
+# In Chrome DevTools:
+# Lighthouse → Generate report → PWA audit should be 100%
+```
+
+See [PWA Architecture](architecture.md#progressive-web-app-pwa-architecture) for detailed PWA component documentation.
+
 ### Recommended Editor Setup
 
 - **VS Code** with the official ESLint and Prettier extensions keeps the editor in sync with project config.

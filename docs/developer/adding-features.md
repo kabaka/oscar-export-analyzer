@@ -187,6 +187,53 @@ When your pull request is ready, request a review from another contributor. A go
 working well and asks clarifying questions about anything confusing. Feel free to mark sections of your PR as "ready for
 feedback" and others as "still in progress." Clear communication keeps reviews friendly and efficient.
 
+### 11. PWA Considerations
+
+When adding new features to OSCAR Export Analyzer, keep Progressive Web App compatibility in mind:
+
+**Service Worker Caching**:
+
+- Static assets (JS, CSS, images) are automatically cached by the service worker
+- If you add new asset types (fonts, icons), ensure they're included in `vite.config.js` → `VitePWA.workbox.globPatterns`
+- Never cache user data (CSV files, sessions)—service worker caches only public app assets
+
+**Offline Functionality**:
+
+- Features should work offline after initial app load
+- Avoid external API calls (app is designed to run entirely client-side)
+- If you add external resources (CDN fonts, third-party scripts), ensure graceful fallbacks for offline mode
+- Test offline: `npm run build && npm run preview`, then DevTools → Network → Offline
+
+**Update Flow**:
+
+- Service worker updates happen on app launch (not during active sessions)
+- Large bundle changes trigger update notifications—user chooses when to reload
+- Avoid breaking changes to IndexedDB schema (migrations are complex)
+- Document any storage schema changes in PR description
+
+**Privacy Model**:
+
+- All data processing must remain client-side (no server calls)
+- New export features should use encryption (see `src/utils/encryption.js`)
+- Never cache PHI (Protected Health Information) in service worker
+- Document privacy implications in user guide if feature handles sensitive data
+
+**Bundle Size**:
+
+- Keep bundle impact minimal (PWA target: ≤5% increase)
+- Use code splitting for large features (`React.lazy()`)
+- Check bundle size: `npm run build` generates `stats.html`
+- Lighthouse Performance audit should remain ≥90%
+
+**Testing**:
+
+- Test PWA features in production build: `npm run build && npm run preview`
+- Verify service worker registration: DevTools → Application → Service Workers
+- Check manifest: DevTools → Application → Manifest
+- Run Lighthouse PWA audit (should be 100%)
+
+**See Also**: [PWA Architecture](architecture.md#progressive-web-app-pwa-architecture), [ADR-0002: PWA Implementation](architecture/adr/0002-progressive-web-app-implementation.md)
+
 ---
 
 ## See Also

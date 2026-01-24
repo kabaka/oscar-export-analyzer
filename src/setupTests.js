@@ -54,6 +54,21 @@ beforeAll(() => {
   }
   mirrorToWindow('MutationObserver', MockMutationObserver);
 
+  // Provide a minimal matchMedia polyfill for jsdom (needed for PWA features)
+  if (!globalThis.matchMedia || typeof globalThis.matchMedia !== 'function') {
+    const mockMatchMedia = vi.fn((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // deprecated
+      removeListener: vi.fn(), // deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    mirrorToWindow('matchMedia', mockMatchMedia);
+  }
+
   // Provide a minimal IntersectionObserver polyfill for jsdom
   if (
     !globalThis.IntersectionObserver ||

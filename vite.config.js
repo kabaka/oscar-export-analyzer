@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { VitePWA } from 'vite-plugin-pwa';
 import process from 'node:process';
 import path from 'node:path';
 
@@ -9,6 +10,71 @@ export default defineConfig({
   plugins: [
     react(),
     visualizer({ filename: 'stats.html', template: 'treemap', open: false }),
+    VitePWA({
+      registerType: 'prompt', // No auto-reload; user controls updates
+      includeAssets: ['**/*.{png,svg,ico,woff,woff2}'],
+      manifest: {
+        name: 'OSCAR Export Analyzer',
+        short_name: 'OSCAR Analyzer',
+        description:
+          'Analyze OSCAR sleep therapy data with local-first privacy',
+        theme_color: '#3498db',
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/oscar-export-analyzer/',
+        start_url: '/oscar-export-analyzer/',
+        icons: [
+          {
+            src: '/oscar-export-analyzer/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/oscar-export-analyzer/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+          {
+            src: '/oscar-export-analyzer/pwa-512x512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+        categories: ['health', 'medical', 'utilities'],
+        orientation: 'any',
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globIgnores: ['**/*.map'],
+        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // 7MB - large bundle due to Plotly
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.github\.io\/oscar-export-analyzer\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'oscar-app-shell',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 90, // 90 days
+              },
+            },
+          },
+          {
+            urlPattern: /\/oscar-export-analyzer\/$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'oscar-html',
+              networkTimeoutSeconds: 3,
+            },
+          },
+        ],
+      },
+      devOptions: {
+        enabled: true, // Enable in dev for testing
+        type: 'module',
+      },
+    }),
   ],
   resolve: {
     alias: {

@@ -9,6 +9,7 @@ OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produce
 
 - [Project Goals](#project-goals)
 - [Architecture Overview](#architecture-overview)
+- [Progressive Web App](#progressive-web-app)
 - [Installation](#installation)
 - [Development](#development)
 - [Usage Walkthrough](#usage-walkthrough)
@@ -37,6 +38,47 @@ The analyzer is implemented as a [Vite](https://vitejs.dev/) + [React](https://r
 │   Browser  │ ─────────────▶ │  Web Worker  │ ─────────────────▶ │  React UI   │
 └────────────┘                └──────────────┘                    └─────────────┘
 ```
+
+## Progressive Web App
+
+OSCAR Export Analyzer is a **Progressive Web App (PWA)** that you can install on your device for offline access and a native app-like experience.
+
+### Install the App
+
+**Desktop (Chrome/Edge)**:
+
+1. Open the app in your browser
+2. Click the header menu (☰) in the top-right
+3. Select **"Install App"**
+
+**Mobile (iOS)**:
+
+1. Open in Safari (must be Safari, not Chrome)
+2. Tap the Share button → **"Add to Home Screen"**
+
+**Mobile (Android)**:
+
+1. Open in Chrome
+2. Tap the **"Add to Home Screen"** banner
+
+### PWA Features
+
+✅ **Offline Access** — Work anywhere, even without internet  
+✅ **Native App Experience** — Full-screen interface without browser chrome  
+✅ **Faster Loading** — App resources cached for instant startup  
+✅ **Cross-Device Transfer** — Export encrypted sessions to continue analysis on another device  
+✅ **Auto-Updates** — Receive updates with your permission (non-disruptive)
+
+### Privacy Guarantee
+
+Installing the app **does not change** our privacy model:
+
+- Your CPAP data stays 100% local—never uploaded to servers
+- No automatic browser sync or cloud storage
+- You control all data transfers via encrypted export/import
+- Works fully offline after initial install
+
+For detailed installation instructions, offline usage, and cross-device workflows, see the [Progressive Web App Guide](docs/user/10-progressive-web-app.md).
 
 ## Installation
 

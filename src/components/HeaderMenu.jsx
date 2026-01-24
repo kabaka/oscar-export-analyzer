@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { InstallExplanationModal } from './InstallExplanationModal';
 
 /**
  * Top-level menu component providing access to data import, export, and session management.
@@ -7,6 +9,7 @@ import PropTypes from 'prop-types';
  * Renders a hamburger-style dropdown menu with options for:
  * - Loading CSV data (Summary and/or Details exports from OSCAR)
  * - Exporting analysis results (JSON session or CSV aggregates)
+ * - Cross-device encrypted export/import (Phase 4 PWA feature)
  * - Clearing current session and starting fresh
  * - Printing analysis (with page break settings)
  * - Opening user guide documentation
@@ -18,6 +21,8 @@ import PropTypes from 'prop-types';
  * @param {Function} props.onOpenImport - Callback to open CSV import modal
  * @param {Function} props.onExportJson - Callback to export session as JSON
  * @param {Function} props.onExportCsv - Callback to export aggregates as CSV
+ * @param {Function} props.onExportEncrypted - Callback to open encrypted export modal (Phase 4)
+ * @param {Function} props.onImportEncrypted - Callback to open encrypted import modal (Phase 4)
  * @param {Function} props.onClearSession - Callback to clear session and data
  * @param {Function} props.onPrint - Callback to print analysis
  * @param {Function} props.onOpenGuide - Callback to open guide modal
@@ -32,6 +37,8 @@ import PropTypes from 'prop-types';
  *     onOpenImport={() => setOpen(true)}
  *     onExportJson={handleExportJson}
  *     onExportCsv={handleExportCsv}
+ *     onExportEncrypted={handleExportEncrypted}
+ *     onImportEncrypted={handleImportEncrypted}
  *     onClearSession={handleClear}
  *     onPrint={handlePrint}
  *     onOpenGuide={handleGuide}
@@ -44,6 +51,8 @@ export default function HeaderMenu({
   onOpenImport,
   onExportJson,
   onExportCsv,
+  onExportEncrypted,
+  onImportEncrypted,
   onClearSession,
   onPrint,
   onOpenGuide,
@@ -52,6 +61,8 @@ export default function HeaderMenu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const { installPrompt, promptInstall, isInstalled } = useInstallPrompt();
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -64,6 +75,16 @@ export default function HeaderMenu({
   }, [open]);
 
   const close = useCallback(() => setOpen(false), []);
+
+  const handleInstallClick = () => {
+    setShowInstallModal(true);
+  };
+
+  const handleInstall = async () => {
+    await promptInstall();
+    setShowInstallModal(false);
+    close();
+  };
 
   return (
     <div className="app-menu" ref={ref}>
@@ -118,6 +139,43 @@ export default function HeaderMenu({
               Print Page
             </button>
           </div>
+
+          {/* Cross-Device Transfer Section (Phase 4 PWA) */}
+          <div
+            className="menu-section"
+            role="group"
+            aria-label="Cross-device transfer"
+          >
+            <div className="menu-section-label">Cross-Device Transfer</div>
+            <button
+              role="menuitem"
+              onClick={() => {
+                onExportEncrypted();
+                close();
+              }}
+              disabled={!hasAnyData}
+              aria-label="Export data for another device (encrypted)"
+            >
+              <span className="menu-icon" aria-hidden="true">
+                📤
+              </span>
+              Export for Another Device
+            </button>
+            <button
+              role="menuitem"
+              onClick={() => {
+                onImportEncrypted();
+                close();
+              }}
+              aria-label="Import data from another device"
+            >
+              <span className="menu-icon" aria-hidden="true">
+                📥
+              </span>
+              Import from Another Device
+            </button>
+          </div>
+
           <div className="menu-section" role="group">
             <button
               role="menuitem"
@@ -149,7 +207,36 @@ export default function HeaderMenu({
               GitHub Project
             </a>
           </div>
+
+          {/* Install App option - only shown when installable and not installed */}
+          {installPrompt && !isInstalled && (
+            <>
+              <div className="menu-divider" role="separator" />
+              <button
+                role="menuitem"
+                onClick={handleInstallClick}
+                className="menu-item menu-item-install"
+                aria-label="Install OSCAR Analyzer as standalone app for offline access"
+              >
+                <span className="menu-icon" aria-hidden="true">
+                  ✨
+                </span>
+                <span>Install App</span>
+                <span className="menu-badge" aria-hidden="true">
+                  New
+                </span>
+              </button>
+            </>
+          )}
         </div>
+      )}
+
+      {/* Install Explanation Modal */}
+      {showInstallModal && (
+        <InstallExplanationModal
+          onInstall={handleInstall}
+          onDismiss={() => setShowInstallModal(false)}
+        />
       )}
     </div>
   );
@@ -159,6 +246,8 @@ HeaderMenu.propTypes = {
   onOpenImport: PropTypes.func.isRequired,
   onExportJson: PropTypes.func.isRequired,
   onExportCsv: PropTypes.func.isRequired,
+  onExportEncrypted: PropTypes.func.isRequired,
+  onImportEncrypted: PropTypes.func.isRequired,
   onClearSession: PropTypes.func.isRequired,
   onPrint: PropTypes.func.isRequired,
   onOpenGuide: PropTypes.func.isRequired,

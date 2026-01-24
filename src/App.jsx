@@ -1,7 +1,14 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import HeaderMenu from './components/HeaderMenu';
 import DateRangeControls from './components/DateRangeControls';
 import { MobileNav } from './components/MobileNav';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { PostInstallOnboarding } from './components/PostInstallOnboarding';
+import { OfflineReadyToast } from './components/OfflineReadyToast';
+import { UpdateNotification } from './components/UpdateNotification';
+import ExportDataModal from './components/ExportDataModal';
+import ImportDataModal from './components/ImportDataModal';
 import {
   DataImportModal,
   DocsModal,
@@ -47,6 +54,17 @@ export function AppShell() {
     processing,
     importModal,
     printWarningModal,
+    exportEncryptedModal,
+    importEncryptedModal,
+    exportEncryptedLoading,
+    exportEncryptedError,
+    setExportEncryptedError,
+    importEncryptedLoading,
+    importEncryptedError,
+    setImportEncryptedError,
+    crossDeviceDetected,
+    handleEncryptedExport,
+    handleEncryptedImport,
     onSummaryFile,
     onDetailsFile,
     handleLoadSaved,
@@ -72,6 +90,59 @@ export function AppShell() {
 
   const { guideOpen, guideAnchor, openGuideForActive, closeGuide } =
     useGuideContext();
+
+  // PWA UI state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOfflineToast, setShowOfflineToast] = useState(false);
+
+  // Service worker registration and update notification
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(r) {
+      console.log('Service worker registered:', r);
+    },
+    onRegisterError(error) {
+      console.error('Service worker registration error:', error);
+    },
+    onOfflineReady() {
+      console.log('App ready to work offline');
+      const hasSeenToast = localStorage.getItem('offline-toast-shown');
+      if (!hasSeenToast) {
+        setShowOfflineToast(true);
+        localStorage.setItem('offline-toast-shown', 'true');
+      }
+    },
+  });
+
+  const handleUpdateClick = () => {
+    updateServiceWorker(true); // Force reload to apply update
+  };
+
+  const handleUpdateDismiss = () => {
+    setNeedRefresh(false);
+  };
+
+  // Listen for app installation event
+  useEffect(() => {
+    const handleAppInstalled = () => {
+      // Check if onboarding has been completed before
+      const hasCompletedOnboarding = localStorage.getItem(
+        'onboarding-completed',
+      );
+      if (!hasCompletedOnboarding) {
+        setShowOnboarding(true);
+      }
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => window.removeEventListener('appinstalled', handleAppInstalled);
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('onboarding-completed', 'true');
+  };
 
   const tocSections = useMemo(
     () => [
@@ -214,6 +285,27 @@ export function AppShell() {
         error={error}
         warning={warning}
       />
+      <ExportDataModal
+        isOpen={exportEncryptedModal.isOpen}
+        onClose={() => {
+          exportEncryptedModal.close();
+          setExportEncryptedError(null);
+        }}
+        onExport={handleEncryptedExport}
+        isExporting={exportEncryptedLoading}
+        error={exportEncryptedError}
+      />
+      <ImportDataModal
+        isOpen={importEncryptedModal.isOpen}
+        onClose={() => {
+          importEncryptedModal.close();
+          setImportEncryptedError(null);
+        }}
+        onImport={handleEncryptedImport}
+        isImporting={importEncryptedLoading}
+        error={importEncryptedError}
+        crossDevice={crossDeviceDetected}
+      />
       {error && (
         <ErrorAlert
           message={error}
@@ -240,10 +332,13 @@ export function AppShell() {
       <DateRangeControls />
       <div className="actions">
         <ThemeToggle />
+        <OfflineIndicator />
         <HeaderMenu
           onOpenImport={importModal.open}
           onExportJson={handleExportJson}
           onExportCsv={exportAggregatesCsv}
+          onExportEncrypted={exportEncryptedModal.open}
+          onImportEncrypted={importEncryptedModal.open}
           onClearSession={handleClearSession}
           onPrint={printWarningModal.open}
           onOpenGuide={openGuideForActive}
@@ -387,6 +482,22 @@ export function AppShell() {
           setPendingSave(null);
         }}
       />
+      {showOnboarding && (
+        <PostInstallOnboarding
+          onDismiss={() => setShowOnboarding(false)}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+      <OfflineReadyToast
+        show={showOfflineToast}
+        onDismiss={() => setShowOfflineToast(false)}
+      />
+      {needRefresh && (
+        <UpdateNotification
+          onUpdate={handleUpdateClick}
+          onDismiss={handleUpdateDismiss}
+        />
+      )}
     </>
   );
 }

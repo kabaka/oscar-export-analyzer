@@ -17,9 +17,10 @@ Document decisions that are:
 
 ## ADR List
 
-| ADR                                      | Title                                                 | Status   | Date       |
-| ---------------------------------------- | ----------------------------------------------------- | -------- | ---------- |
-| [0001](0001-working-directory-policy.md) | Working Directory Policy for Subagent Ephemeral Files | Accepted | 2026-01-22 |
+| ADR                                                | Title                                                 | Status   | Date       |
+| -------------------------------------------------- | ----------------------------------------------------- | -------- | ---------- |
+| [0001](0001-working-directory-policy.md)           | Working Directory Policy for Subagent Ephemeral Files | Accepted | 2026-01-22 |
+| [0002](0002-progressive-web-app-implementation.md) | Progressive Web App (PWA) Implementation              | Accepted | 2026-01-24 |
 
 ## ADR Template
 

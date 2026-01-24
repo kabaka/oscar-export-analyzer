@@ -141,3 +141,531 @@
 .drop-zone-text {
   margin: 0;
 }
+
+/* =================================================================
+   PWA-Specific Styles (Phase 2)
+   ================================================================= */
+
+/* Install Menu Item */
+.menu-item-install {
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 3px solid #3b82f6;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.menu-item-install:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.menu-item-install:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.menu-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.menu-badge {
+  background: #3b82f6;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: auto;
+  text-transform: uppercase;
+}
+
+.menu-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 8px 0;
+}
+
+/* Install Explanation Modal */
+.install-modal {
+  max-width: 600px;
+  width: 96vw;
+}
+
+.install-modal-body {
+  display: block;
+  padding: 24px;
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.install-section {
+  margin-bottom: 24px;
+}
+
+.install-section:last-child {
+  margin-bottom: 0;
+}
+
+.install-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.install-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.install-section p {
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+.install-benefits {
+  list-style: none;
+  padding-left: 0;
+  margin: 12px 0;
+}
+
+.install-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.install-check {
+  color: #10b981;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.install-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 24px 0;
+}
+
+.install-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* Post-Install Onboarding Modal */
+.onboarding-modal {
+  max-width: 580px;
+  width: 96vw;
+}
+
+.onboarding-modal-body {
+  display: block;
+  padding: 24px;
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.onboarding-section {
+  margin-bottom: 24px;
+}
+
+.onboarding-section:last-child {
+  margin-bottom: 0;
+}
+
+.onboarding-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.onboarding-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.onboarding-section p {
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+.onboarding-steps {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.onboarding-steps li {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.onboarding-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 24px 0;
+}
+
+.onboarding-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* Button Styles for Modals */
+.btn-secondary {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--color-kpi-bg);
+  border-color: var(--color-text-muted);
+}
+
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  border: none;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Offline Indicator */
+.offline-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+  cursor: help;
+  opacity: 0.6;
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.offline-indicator:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.offline-indicator.offline {
+  color: #f59e0b;
+  opacity: 1;
+}
+
+/* Dark theme overrides for offline indicator */
+[data-theme='dark'] .offline-indicator.offline {
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .offline-indicator:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Screen-reader-only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Offline Ready Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  max-width: 360px;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1000;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+.toast-success {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+[data-theme='dark'] .toast-success {
+  background: #064e3b;
+  border: 1px solid #059669;
+  color: #d1fae5;
+}
+
+.toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: currentColor;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+.toast-close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.toast-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.toast-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  color: #10b981;
+}
+
+[data-theme='dark'] .toast-icon {
+  color: #34d399;
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-message strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.toast-message p {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.toast-action {
+  align-self: flex-end;
+}
+
+.btn-toast {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: currentColor;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-toast:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.btn-toast:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+[data-theme='dark'] .btn-toast:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .toast {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+  }
+
+  .install-modal-footer,
+  .onboarding-modal-footer {
+    flex-direction: column;
+  }
+
+  .btn-secondary,
+  .btn-primary {
+    width: 100%;
+  }
+}
+
+/* Update Notification Component */
+.update-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 16px;
+  max-width: 400px;
+  z-index: 9999;
+  animation: slide-in 0.3s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-notification {
+    animation: none;
+  }
+}
+
+.update-content {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.update-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
+.update-message h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.update-message p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.update-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.update-actions .btn-secondary,
+.update-actions .btn-primary {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+/* Mobile responsiveness for update notification */
+@media (max-width: 768px) {
+  .update-notification {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+
+  .update-actions {
+    flex-direction: column;
+  }
+
+  .update-actions .btn-secondary,
+  .update-actions .btn-primary {
+    width: 100%;
+  }
+}

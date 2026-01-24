@@ -5,6 +5,11 @@ import { useAnalyticsProcessing } from '../hooks/useAnalyticsProcessing';
 import { useDateRangeFilter } from '../hooks/useDateRangeFilter';
 import { useModal } from '../hooks/useModal';
 import {
+  exportEncryptedData,
+  importEncryptedData,
+  detectCrossDeviceImport,
+} from '../utils/exportImport';
+import {
   FALSE_NEG_PEAK_FLG_LEVEL_MIN,
   FLG_BRIDGE_THRESHOLD,
   APOEA_CLUSTER_MIN_TOTAL_SEC,
@@ -111,6 +116,8 @@ export function useAppState() {
   const [rangeB, setRangeB] = useState({ start: null, end: null });
   const importModal = useModal(true);
   const printWarningModal = useModal(false);
+  const exportEncryptedModal = useModal(false);
+  const importEncryptedModal = useModal(false);
 
   // Storage consent dialog state
   const [showStorageConsent, setShowStorageConsent] = useState(false);
@@ -210,6 +217,73 @@ export function useAppState() {
     }
   }, [setDetailsData, setSummaryData]);
 
+  // Encrypted export/import state
+  const [exportEncryptedLoading, setExportEncryptedLoading] = useState(false);
+  const [exportEncryptedError, setExportEncryptedError] = useState(null);
+  const [importEncryptedLoading, setImportEncryptedLoading] = useState(false);
+  const [importEncryptedError, setImportEncryptedError] = useState(null);
+  const [crossDeviceDetected, setCrossDeviceDetected] = useState(false);
+
+  const handleEncryptedExport = useCallback(
+    async (passphrase) => {
+      setExportEncryptedLoading(true);
+      setExportEncryptedError(null);
+      try {
+        const sessionData = {
+          summaryData,
+          detailsData,
+        };
+        await exportEncryptedData(sessionData, passphrase, {
+          exportedAt: new Date().toISOString(),
+          version: '1.0',
+        });
+        exportEncryptedModal.close();
+      } catch (err) {
+        setExportEncryptedError(err);
+      } finally {
+        setExportEncryptedLoading(false);
+      }
+    },
+    [summaryData, detailsData, exportEncryptedModal],
+  );
+
+  const handleEncryptedImport = useCallback(
+    async (file, passphrase) => {
+      setImportEncryptedLoading(true);
+      setImportEncryptedError(null);
+      setCrossDeviceDetected(false);
+      try {
+        const sessionData = await importEncryptedData(file, passphrase);
+
+        // Detect cross-device import
+        const isCrossDevice = detectCrossDeviceImport(sessionData);
+        setCrossDeviceDetected(isCrossDevice);
+
+        // Load the imported session data
+        if (sessionData.summaryData) {
+          setSummaryData(sessionData.summaryData);
+        }
+        if (sessionData.detailsData) {
+          setDetailsData(sessionData.detailsData);
+        }
+
+        // Close modal after successful import (with slight delay for cross-device notification)
+        setTimeout(
+          () => {
+            importEncryptedModal.close();
+          },
+          isCrossDevice ? 2000 : 500,
+        );
+      } catch (err) {
+        setImportEncryptedError(err);
+        setCrossDeviceDetected(false);
+      } finally {
+        setImportEncryptedLoading(false);
+      }
+    },
+    [setSummaryData, setDetailsData, importEncryptedModal],
+  );
+
   const hasAnyData = !!(summaryData || detailsData);
   const summaryAvailable = !!summaryData;
 
@@ -281,6 +355,17 @@ export function useAppState() {
     setRangeB,
     importModal,
     printWarningModal,
+    exportEncryptedModal,
+    importEncryptedModal,
+    exportEncryptedLoading,
+    exportEncryptedError,
+    setExportEncryptedError,
+    importEncryptedLoading,
+    importEncryptedError,
+    setImportEncryptedError,
+    crossDeviceDetected,
+    handleEncryptedExport,
+    handleEncryptedImport,
     showStorageConsent,
     setShowStorageConsent,
     pendingSave,
