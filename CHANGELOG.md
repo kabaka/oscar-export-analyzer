@@ -9,6 +9,10 @@ corresponds to changes released on that day.
 
 ## 2026-01-24
 
+### Added
+
+- **Favicon support for browser tabs**: Added favicon.svg and favicon.ico to display the OSCAR app icon in browser tabs, bookmarks, and favorites. Favicon generated from PWA app icon for consistent branding across browser and installed app experiences.
+
 ### Fixed
 
 - **OfflineReadyToast no longer shows before PWA installation**: Toast now only appears after user installs PWA and launches it in standalone mode, not on first browser visit. Added `window.matchMedia('(display-mode: standalone)')` check to `onOfflineReady()` callback in App.jsx to detect installed PWA before showing toast. Toast still respects localStorage flag (`offline-toast-shown`) to show only once per device. Console log remains for debugging service worker activation.
