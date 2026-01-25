@@ -2,9 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import FitbitDashboard from './FitbitDashboard';
-import { CONNECTION_STATUS } from '../constants/fitbit';
-
-describe.skip('FitbitDashboard', () => {
+import { CONNECTION_STATUS } from '../../constants/fitbit';
 
 // Mock all child components
 vi.mock('./FitbitConnectionCard', () => ({

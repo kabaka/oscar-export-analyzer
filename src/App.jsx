@@ -26,6 +26,7 @@ import { RangeComparisonsSection } from './features/range-comparisons';
 import { ApneaClustersSection } from './features/apnea-clusters';
 import FalseNegativesSection from './features/false-negatives/Section';
 import RawExplorerSection from './features/raw-explorer/Section';
+import FitbitCorrelationSection from './features/fitbit-correlation/Section';
 import { setStorageConsent } from './utils/storageConsent';
 import {
   DEFAULT_HEADER_OFFSET_PX,
@@ -160,6 +161,7 @@ export function AppShell() {
       { id: 'clustered-apnea', label: 'Clusters' },
       { id: 'false-negatives', label: 'False Negatives' },
       { id: 'raw-data-explorer', label: 'Raw Data' },
+      { id: 'fitbit-correlation', label: 'Fitbit Analysis' },
     ],
     [],
   );
@@ -447,6 +449,7 @@ export function AppShell() {
             <OverviewSection />
             <AnalyticsSection />
             <RangeComparisonsSection />
+            <FitbitCorrelationSection />
           </>
         )}
         {detailsHasRows && (

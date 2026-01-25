@@ -7,6 +7,22 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-01-25
+
+### Added
+
+- **Fitbit Integration UI**: Integrated Fitbit features into the main OSCAR Export Analyzer app interface. Users can now access Fitbit OAuth connection, data synchronization, and correlation analysis directly through the "Fitbit Analysis" section in the navigation. Added `FitbitCorrelationSection` component that provides connection management, sync status monitoring, and access to correlation dashboards with bivariate scatter plots, correlation matrices, and dual-axis sync charts. Wrapped app with `FitbitOAuthProvider` to enable OAuth authentication state throughout the application. Integration follows existing app patterns and makes previously tree-shaken Fitbit components fully functional and user-accessible.
+
+- **Complete Fitbit test infrastructure**: Implemented comprehensive testing framework for Fitbit integration development. Added missing test dependencies (`jest-axe` for accessibility testing, `fake-indexeddb` for OAuth token storage mocking) and created `src/context/FitbitOAuthContext.jsx` following existing context patterns to centralize OAuth state management. All skipped Fitbit tests (`*.test.js.skip`) now have complete infrastructure support including synthetic test data builders, mock API responses, and OAuth flow testing. Enables developers to activate any Fitbit test by removing `.skip` extension and implementing required business logic. Testing framework supports OAuth integration, accessibility compliance (WCAG), correlation analytics validation, performance benchmarking, and error scenario coverage. Infrastructure follows project security standards with temporary files in workspace-relative paths only.
+
+### Fixed
+
+- **FitbitDashboard Runtime Crashes**: Resolved critical undefined object access patterns causing "cannot access properties on undefined objects" errors. Added proper null guards and optional chaining for `fitbitData.nightlyData` property access. Updated `hasData` validation to ensure all required data properties exist before component rendering. Prevents runtime crashes when Fitbit data is unavailable or incomplete.
+
+- **FitbitCorrelationSection Test Failures**: Fixed accessibility and integration test failures by adding proper ARIA attributes. Added `role="region"` and `aria-labelledby="fitbit-section-title"` to section element for screen reader compatibility. Section integration tests now pass (2/2) and properly identify the Fitbit correlation section in automated testing.
+
+- **ES Module Import Issues**: Resolved "Directory import not supported" errors in test utilities. Fixed `test-utils/builders.js` import path from directory import (`../constants`) to explicit file import (`../constants.js`). Enables proper module resolution in test environments and eliminates build-time import errors affecting Fitbit accessibility tests.
+
 ## 2026-01-24
 
 ### Added

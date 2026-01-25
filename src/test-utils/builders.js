@@ -1,4 +1,7 @@
-import { APNEA_DURATION_THRESHOLD_SEC, TREND_WINDOW_DAYS } from '../constants';
+import {
+  APNEA_DURATION_THRESHOLD_SEC,
+  TREND_WINDOW_DAYS,
+} from '../constants.js';
 
 export function buildApneaDetail({
   event = 'ClearAirway',

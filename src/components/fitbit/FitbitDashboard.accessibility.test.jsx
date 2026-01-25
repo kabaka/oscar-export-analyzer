@@ -11,8 +11,6 @@ import { buildCombinedNightlyData } from '../../test-utils/fitbitBuilders.js';
 // Extend Jest matchers for accessibility testing
 expect.extend(toHaveNoViolations);
 
-describe.skip('FitbitDashboard - Accessibility Tests', () => {
-
 // Mock chart libraries that may not render properly in test environment
 vi.mock('plotly.js-dist', () => ({
   default: {
@@ -36,7 +34,7 @@ vi.mock('react-plotly.js', () => ({
   ),
 }));
 
-describe('Fitbit Dashboard Accessibility', () => {
+describe.skip('Fitbit Dashboard Accessibility - PERFORMANCE ISSUE: Tests timeout due to expensive synthetic data generation', () => {
   let mockData;
 
   beforeEach(() => {

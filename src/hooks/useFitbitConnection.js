@@ -334,13 +334,29 @@ export function useFitbitConnection({
     hasError: status === CONNECTION_STATUS.ERROR,
     isTokenExpired: status === CONNECTION_STATUS.TOKEN_EXPIRED,
 
+    // Sync state for FitbitDashboard compatibility
+    syncState: {
+      status: status === CONNECTION_STATUS.CONNECTED ? 'idle' : 'disconnected',
+      lastSync: lastSync,
+      nextAutoSync: null, // TODO: implement auto-sync scheduling
+      autoSyncEnabled: false, // TODO: implement auto-sync toggle
+      dataMetrics: dataStats || {},
+      recentActivity: [], // TODO: implement activity tracking
+      errorMessage: error?.message || null,
+    },
+
+    // Legacy data property (for backward compatibility)
+    fitbitData: dataStats,
+
     // Actions
     checkConnection,
     refreshToken,
     syncData,
+    syncFitbitData: syncData, // Alias for backward compatibility
     disconnect,
     getUserProfile,
     updateDataStats,
     clearError,
+    clearFitbitData: disconnect, // Alias for backward compatibility
   };
 }

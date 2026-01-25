@@ -5,14 +5,14 @@ import {
   buildFitbitSpO2Data,
   buildFitbitSleepStages,
   buildCombinedNightlyData,
-} from '../fitbitBuilders.js';
+} from '../test-utils/fitbitBuilders.js';
 import {
   HR_SLEEP_MIN,
   HR_SLEEP_MAX,
   SPO2_NORMAL_MIN,
   SPO2_NORMAL_MAX,
   FITBIT_CONFIDENCE_HIGH,
-} from '../../constants/fitbit.js';
+} from '../constants/fitbit.js';
 
 describe.skip('fitbitModels', () => {
   describe('createNightlyRecord', () => {

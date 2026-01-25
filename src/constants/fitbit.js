@@ -218,6 +218,8 @@ export const CORRELATION_THRESHOLDS = {
 
 /** Chart Layout Constants */
 export const SCATTER_PLOT_HEIGHT = 400;
+export const DUAL_AXIS_CHART_HEIGHT = 500; // Height for dual-axis sync charts
+export const CORRELATION_MATRIX_HEIGHT = 450; // Height for correlation matrix heatmaps
 
 export const CORRELATION_CHART_MARGINS = {
   DEFAULT: { top: 20, right: 40, bottom: 60, left: 60 },

@@ -23,17 +23,20 @@ import { FitbitOAuthProvider } from '../../context/FitbitOAuthContext.jsx';
 global.fetch = vi.fn();
 
 // Mock window.crypto for PKCE
-global.crypto = {
-  getRandomValues: vi.fn((buffer) => {
-    for (let i = 0; i < buffer.length; i++) {
-      buffer[i] = Math.floor(Math.random() * 256);
-    }
-    return buffer;
-  }),
-  subtle: {
-    digest: vi.fn().mockResolvedValue(new ArrayBuffer(32)),
+Object.defineProperty(global, 'crypto', {
+  value: {
+    getRandomValues: vi.fn((buffer) => {
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i] = Math.floor(Math.random() * 256);
+      }
+      return buffer;
+    }),
+    subtle: {
+      digest: vi.fn().mockResolvedValue(new ArrayBuffer(32)),
+    },
   },
-};
+  writable: true,
+});
 
 describe.skip('Fitbit OAuth Integration', () => {
   let mockLocation, mockHistory;

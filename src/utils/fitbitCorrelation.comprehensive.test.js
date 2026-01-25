@@ -10,7 +10,7 @@ import {
   buildCombinedNightlyData,
   buildFitbitHeartRateData,
   buildFitbitSpO2Data,
-} from '../fitbitBuilders.js';
+} from '../test-utils/fitbitBuilders.js';
 
 describe.skip('fitbitCorrelation', () => {
   describe('computeCorrelation', () => {

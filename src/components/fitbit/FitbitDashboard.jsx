@@ -49,13 +49,14 @@ function FitbitDashboard({
   const [selectedMetricPair, setSelectedMetricPair] = useState(null);
 
   const isConnected = connectionStatus === CONNECTION_STATUS.CONNECTED;
-  const hasData = fitbitData && fitbitData.correlationData;
+  const hasData =
+    fitbitData && fitbitData.correlationData && fitbitData.nightlyData;
 
   // Auto-select most recent night on data load
   useEffect(() => {
     if (
       hasData &&
-      fitbitData.nightlyData &&
+      fitbitData?.nightlyData &&
       fitbitData.nightlyData.length > 0
     ) {
       const sortedNights = [...fitbitData.nightlyData].sort(
