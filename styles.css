@@ -1539,3 +1539,128 @@ select:focus-visible {
 .secondary-button:hover {
   background: var(--color-elevated);
 }
+
+/* Fitbit Correlation Section Styles */
+.fitbit-dashboard-container {
+  max-width: var(--max-content-width, 1200px);
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.fitbit-loading-state,
+.fitbit-error-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--color-text);
+}
+
+.fitbit-error-message {
+  color: var(--color-error, #dc3545);
+  margin-bottom: 1rem;
+}
+
+.fitbit-overview-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.fitbit-overview-section h3 {
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.fitbit-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.fitbit-metric-card {
+  background: var(--color-bg);
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.fitbit-metric-label {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fitbit-metric-value {
+  color: var(--color-text);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.fitbit-chart-section {
+  margin-bottom: 2rem;
+}
+
+.fitbit-chart-section h3 {
+  color: var(--color-text);
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.fitbit-chart-container {
+  background: var(--color-bg);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  min-height: 400px;
+}
+
+.fitbit-correlation-analysis {
+  background: var(--color-surface);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  margin-top: 1rem;
+}
+
+.fitbit-correlation-analysis h4 {
+  color: var(--color-accent);
+  margin-bottom: 0.75rem;
+}
+
+.fitbit-correlation-list {
+  list-style: none;
+  padding: 0;
+}
+
+.fitbit-correlation-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.fitbit-correlation-list li:last-child {
+  border-bottom: none;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .fitbit-dashboard-container {
+    /* Theme variables automatically handle dark mode */
+  }
+}
+
+/* Print styles */
+@media print {
+  .fitbit-dashboard-container {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  .fitbit-chart-container {
+    page-break-inside: avoid;
+  }
+}

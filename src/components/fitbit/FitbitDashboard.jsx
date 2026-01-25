@@ -84,15 +84,7 @@ function FitbitDashboard({
   };
 
   return (
-    <div
-      className={`fitbit-dashboard ${className}`}
-      style={{
-        width: '100%',
-        minHeight: '100vh',
-        backgroundColor: '#f8f9fa',
-        padding: '2rem 1rem',
-      }}
-    >
+    <div className={`fitbit-dashboard-container ${className}`}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Dashboard Header */}
         <header style={{ marginBottom: '2rem' }}>
@@ -101,7 +93,7 @@ function FitbitDashboard({
               margin: '0 0 1rem 0',
               fontSize: '2rem',
               fontWeight: 'bold',
-              color: '#212529',
+              color: 'var(--color-text)',
             }}
           >
             Fitbit + CPAP Correlation Analysis
@@ -111,7 +103,7 @@ function FitbitDashboard({
             style={{
               margin: 0,
               fontSize: '1.1em',
-              color: '#6c757d',
+              color: 'var(--color-text-muted)',
               lineHeight: 1.5,
             }}
           >
@@ -161,7 +153,7 @@ function FitbitDashboard({
           <nav
             style={{
               marginBottom: '2rem',
-              borderBottom: '1px solid #dee2e6',
+              borderBottom: '1px solid var(--color-border)',
               display: 'flex',
               gap: '2rem',
               overflowX: 'auto',
@@ -195,9 +187,12 @@ function FitbitDashboard({
                   border: 'none',
                   borderBottom:
                     activeView === tab.key
-                      ? '3px solid #007bff'
+                      ? '3px solid var(--color-accent)'
                       : '3px solid transparent',
-                  color: activeView === tab.key ? '#007bff' : '#6c757d',
+                  color:
+                    activeView === tab.key
+                      ? 'var(--color-accent)'
+                      : 'var(--color-text-muted)',
                   cursor: 'pointer',
                   fontSize: '0.95em',
                   fontWeight: activeView === tab.key ? '600' : 'normal',
@@ -295,13 +290,13 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
         <div
           style={{
             padding: '2rem',
-            backgroundColor: 'white',
+            backgroundColor: 'var(--color-surface)',
             borderRadius: '8px',
-            border: '1px solid #e9ecef',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
           }}
         >
-          <h3 style={{ margin: '0 0 1rem 0', color: '#495057' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
             📊 Analysis Summary
           </h3>
           <div
@@ -316,12 +311,14 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
                 style={{
                   fontSize: '1.5rem',
                   fontWeight: 'bold',
-                  color: '#007bff',
+                  color: 'var(--color-accent)',
                 }}
               >
                 {fitbitData.summary?.totalNights || 0}
               </div>
-              <div style={{ fontSize: '0.9em', color: '#6c757d' }}>
+              <div
+                style={{ fontSize: '0.9em', color: 'var(--color-text-muted)' }}
+              >
                 Nights Analyzed
               </div>
             </div>
@@ -330,12 +327,14 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
                 style={{
                   fontSize: '1.5rem',
                   fontWeight: 'bold',
-                  color: '#28a745',
+                  color: 'var(--color-accent)',
                 }}
               >
                 {fitbitData.summary?.strongCorrelations || 0}
               </div>
-              <div style={{ fontSize: '0.9em', color: '#6c757d' }}>
+              <div
+                style={{ fontSize: '0.9em', color: 'var(--color-text-muted)' }}
+              >
                 Strong Correlations
               </div>
             </div>
@@ -346,13 +345,13 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
         <div
           style={{
             padding: '2rem',
-            backgroundColor: 'white',
+            backgroundColor: 'var(--color-surface)',
             borderRadius: '8px',
-            border: '1px solid #e9ecef',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
           }}
         >
-          <h3 style={{ margin: '0 0 1rem 0', color: '#495057' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
             🌙 Recent Nights
           </h3>
           <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -364,15 +363,16 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
                   width: '100%',
                   padding: '0.75rem',
                   backgroundColor: 'transparent',
-                  border: '1px solid #e9ecef',
+                  border: '1px solid var(--color-border)',
                   borderRadius: '4px',
                   marginBottom: '0.5rem',
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all 0.2s ease',
+                  color: 'var(--color-text)',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f8f9fa';
+                  e.target.style.backgroundColor = 'var(--color-kpi-bg)';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.backgroundColor = 'transparent';
@@ -385,7 +385,12 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
                     day: 'numeric',
                   })}
                 </div>
-                <div style={{ fontSize: '0.85em', color: '#6c757d' }}>
+                <div
+                  style={{
+                    fontSize: '0.85em',
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
                   HR: {night.avgHeartRate}bpm • AHI: {night.ahi} • SpO2:{' '}
                   {night.minSpO2}%
                 </div>
@@ -400,13 +405,13 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
         <div
           style={{
             padding: '2rem',
-            backgroundColor: 'white',
+            backgroundColor: 'var(--color-surface)',
             borderRadius: '8px',
-            border: '1px solid #e9ecef',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
           }}
         >
-          <h3 style={{ margin: '0 0 1rem 0', color: '#495057' }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
             🔗 Correlation Preview
           </h3>
           <div style={{ height: '300px' }}>
@@ -449,8 +454,8 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: 'transparent',
-            color: '#007bff',
-            border: '1px solid #007bff',
+            color: 'var(--color-accent)',
+            border: '1px solid var(--color-accent)',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '0.9em',
@@ -460,7 +465,7 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
           ← Back to Overview
         </button>
 
-        <h2 style={{ margin: '0', color: '#495057' }}>
+        <h2 style={{ margin: '0', color: 'var(--color-text)' }}>
           Night Detail:{' '}
           {new Date(nightData.date).toLocaleDateString([], {
             weekday: 'long',
@@ -498,8 +503,8 @@ function ScatterDetailSection({
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: 'transparent',
-            color: '#007bff',
-            border: '1px solid #007bff',
+            color: 'var(--color-accent)',
+            border: '1px solid var(--color-accent)',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '0.9em',
@@ -509,7 +514,7 @@ function ScatterDetailSection({
           ← Back to Correlations
         </button>
 
-        <h2 style={{ margin: '0', color: '#495057' }}>
+        <h2 style={{ margin: '0', color: 'var(--color-text)' }}>
           {metricPair.yMetric} vs {metricPair.xMetric}
         </h2>
       </div>
@@ -534,11 +539,11 @@ function EmptyStateCard({ icon, title, description, action }) {
     <div
       style={{
         padding: '4rem 2rem',
-        backgroundColor: 'white',
+        backgroundColor: 'var(--color-surface)',
         borderRadius: '8px',
-        border: '1px solid #e9ecef',
+        border: '1px solid var(--color-border)',
         textAlign: 'center',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--shadow-2)',
       }}
     >
       <div
@@ -547,11 +552,13 @@ function EmptyStateCard({ icon, title, description, action }) {
       >
         {icon}
       </div>
-      <h3 style={{ margin: '0 0 1rem 0', color: '#495057' }}>{title}</h3>
+      <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
+        {title}
+      </h3>
       <p
         style={{
           margin: '0 0 1rem 0',
-          color: '#6c757d',
+          color: 'var(--color-text-muted)',
           fontSize: '1.1em',
           lineHeight: 1.5,
           maxWidth: '500px',
@@ -564,7 +571,7 @@ function EmptyStateCard({ icon, title, description, action }) {
       <p
         style={{
           margin: 0,
-          color: '#007bff',
+          color: 'var(--color-accent)',
           fontSize: '0.95em',
           fontWeight: '500',
         }}

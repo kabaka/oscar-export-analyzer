@@ -202,8 +202,17 @@ export function AppShell() {
   };
 
   const handleOAuthComplete = ({ success }) => {
-    // Clean up URL parameters
-    const cleanUrl = window.location.pathname + window.location.hash;
+    // Clean up URL parameters and Facebook's #_=_ hash
+    let cleanUrl = window.location.pathname;
+    let hash = window.location.hash;
+    if (hash === '#_=_') {
+      hash = ''; // Strip Facebook's OAuth artifact
+    }
+    // If we're on oauth-callback path, navigate to base URL
+    if (cleanUrl.includes('oauth-callback')) {
+      cleanUrl = window.location.origin + '/oscar-export-analyzer/';
+    }
+    cleanUrl += hash;
     window.history.replaceState({}, '', cleanUrl);
 
     // Clear passphrase from memory and hide handler
@@ -211,6 +220,7 @@ export function AppShell() {
     setActivePassphrase('');
     setShowPassphrasePrompt(false);
     setShowOauthHandler(false);
+    importModal.close();
 
     // Navigate to Fitbit section on success
     if (success) {
@@ -690,7 +700,6 @@ export function AppShell() {
             <OverviewSection />
             <AnalyticsSection />
             <RangeComparisonsSection />
-            <FitbitCorrelationSection />
           </>
         )}
         {detailsHasRows && (
@@ -698,6 +707,11 @@ export function AppShell() {
             <ApneaClustersSection />
             <FalseNegativesSection />
             <RawExplorerSection />
+          </>
+        )}
+        {summaryHasRows && (
+          <>
+            <FitbitCorrelationSection />
           </>
         )}
       </AppLayout>

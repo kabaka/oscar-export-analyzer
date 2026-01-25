@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSCAR Export Analyzer</title>
+    <script>
+      // GitHub Pages SPA redirect handler
+      // Redirects 404s to index.html with path preserved
+      const path = window.location.pathname.replace(
+        '/oscar-export-analyzer/',
+        '',
+      );
+      const redirect =
+        '/oscar-export-analyzer/' +
+        (path && path !== '/' ? '?p=' + path : '') +
+        window.location.search.slice(1) +
+        window.location.hash;
+      window.location.replace(redirect);
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

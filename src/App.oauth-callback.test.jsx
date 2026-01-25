@@ -414,4 +414,115 @@ describe('App OAuth Callback Handling', () => {
     // Should not show OAuth handler anymore
     expect(screen.queryByTestId('oauth-handler')).not.toBeInTheDocument();
   });
+
+  it('strips Facebook #_=_ hash during URL cleanup', async () => {
+    window.location.search = '?code=test-code&state=test-state';
+    window.location.hash = '#_=_'; // Facebook's OAuth artifact
+    const user = userEvent.setup();
+
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
+
+    // Enter passphrase and continue
+    const passphraseInput = screen.getByLabelText(/Passphrase:/i);
+    await user.type(passphraseInput, 'valid-passphrase-123');
+
+    const continueButton = screen.getByRole('button', { name: /Continue/i });
+    await user.click(continueButton);
+
+    // Wait for OAuth handler
+    await waitFor(() => {
+      expect(screen.getByTestId('oauth-handler')).toBeInTheDocument();
+    });
+
+    // Trigger completion
+    mockOnCompleteCallback({ success: true });
+
+    // Should clean URL without the #_=_ hash
+    await waitFor(() => {
+      expect(window.history.replaceState).toHaveBeenCalled();
+    });
+
+    // Verify #_=_ was stripped (not included in the cleaned URL)
+    const replaceStateCalls = window.history.replaceState.mock.calls;
+    const lastCall = replaceStateCalls[replaceStateCalls.length - 1];
+    expect(lastCall[2]).not.toContain('#_=_');
+  });
+
+  it('handles /oauth-callback path cleanup', async () => {
+    window.location.search = '?code=test-code&state=test-state';
+    window.location.pathname = '/oauth-callback';
+    window.location.hash = '#overview';
+    const user = userEvent.setup();
+
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
+
+    // Enter passphrase and continue
+    const passphraseInput = screen.getByLabelText(/Passphrase:/i);
+    await user.type(passphraseInput, 'valid-passphrase-123');
+
+    const continueButton = screen.getByRole('button', { name: /Continue/i });
+    await user.click(continueButton);
+
+    // Wait for OAuth handler
+    await waitFor(() => {
+      expect(screen.getByTestId('oauth-handler')).toBeInTheDocument();
+    });
+
+    // Trigger completion
+    mockOnCompleteCallback({ success: false });
+
+    // Should redirect to base URL (not /oauth-callback)
+    await waitFor(() => {
+      expect(window.history.replaceState).toHaveBeenCalled();
+    });
+
+    const replaceStateCalls = window.history.replaceState.mock.calls;
+    const lastCall = replaceStateCalls[replaceStateCalls.length - 1];
+    expect(lastCall[2]).toContain('/oscar-export-analyzer/');
+    expect(lastCall[2]).not.toContain('/oauth-callback');
+  });
+
+  it('dismisses import modal when OAuth completes', async () => {
+    window.location.search = '?code=test-code&state=test-state';
+    const user = userEvent.setup();
+
+    render(
+      <AppProviders>
+        <AppShell />
+      </AppProviders>,
+    );
+
+    // Enter passphrase and continue
+    const passphraseInput = screen.getByLabelText(/Passphrase:/i);
+    await user.type(passphraseInput, 'valid-passphrase-123');
+
+    const continueButton = screen.getByRole('button', { name: /Continue/i });
+    await user.click(continueButton);
+
+    // Wait for OAuth handler
+    await waitFor(() => {
+      expect(screen.getByTestId('oauth-handler')).toBeInTheDocument();
+    });
+
+    // Trigger successful completion
+    mockOnCompleteCallback({ success: true });
+
+    // Wait for cleanup
+    await waitFor(() => {
+      expect(window.history.replaceState).toHaveBeenCalled();
+    });
+
+    // Verify import modal is not shown after OAuth completion
+    // The DataImportModal should not be in the DOM or should be closed
+    // (Testing that importModal.close() was called implicitly through state)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

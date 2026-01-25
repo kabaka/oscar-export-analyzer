@@ -7,10 +7,16 @@
       Content Security Policy (CSP) for OSCAR Export Analyzer
       Provides defense-in-depth against XSS attacks and unauthorized resource loading.
       Designed for local-first privacy: blocks all external resources, allows only same-origin scripts.
+      
+      Exception: Fitbit API integration requires connect-src to include https://api.fitbit.com
+      for OAuth token exchange and user data synchronization. This is the only external API
+      endpoint permitted, enabling optional Fitbit correlation features while maintaining
+      strict CSP for all other resources. Fitbit OAuth redirects to our own domain and
+      do not require additional CSP permissions.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.fitbit.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
     />
     <!-- Theme colors for light and dark mode -->
     <meta
