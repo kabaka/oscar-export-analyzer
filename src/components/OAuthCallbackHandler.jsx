@@ -7,7 +7,7 @@
  * @component
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useFitbitOAuth } from '../hooks/useFitbitOAuth.js';
 import { FITBIT_ERRORS } from '../constants/fitbit.js';
 
@@ -27,8 +27,23 @@ export function OAuthCallbackHandler({
   passphrase,
   onComplete,
 }) {
+  // CRITICAL: Capture OAuth parameters BEFORE cleanup to prevent race condition
+  // useMemo runs during render phase, guaranteeing params are captured before any cleanup
+  const oauthParams = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+      code: urlParams.get('code'),
+      state: urlParams.get('state'),
+      error: urlParams.get('error'),
+      errorDescription: urlParams.get('error_description'),
+    };
+  }, []); // Empty deps - only capture on initial mount
+
   // SECURITY: Clean URL immediately on mount (synchronously) to prevent browser history capture
   // This must happen BEFORE any async processing or useEffect to avoid ?code=... in back button
+  // Now safe because params are already captured above
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') || urlParams.has('state')) {
@@ -63,12 +78,9 @@ export function OAuthCallbackHandler({
   useEffect(() => {
     const processCallback = async () => {
       try {
-        // Parse URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const state = urlParams.get('state');
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
+        // Use captured OAuth parameters instead of reading from window.location
+        // This prevents race condition where URL cleanup runs before params are read
+        const { code, state, error, errorDescription } = oauthParams || {};
 
         // Handle OAuth errors
         if (error) {
@@ -105,6 +117,7 @@ export function OAuthCallbackHandler({
   }, [
     processing,
     passphrase,
+    oauthParams,
     handleCallback,
     handleOAuthError,
     onSuccess,
