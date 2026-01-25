@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   describe,
@@ -269,9 +269,7 @@ describe('AppShell PWA handlers', () => {
       'reg',
     );
     expect(consoleError).toHaveBeenCalled();
-    await waitFor(() =>
-      expect(screen.getByTestId('offline-toast')).toBeInTheDocument(),
-    );
+    expect(await screen.findByTestId('offline-toast')).toBeInTheDocument();
     expect(localStorage.getItem('offline-toast-shown')).toBe('true');
   });
 
@@ -310,7 +308,7 @@ describe('AppShell PWA handlers', () => {
     render(<AppShell />);
 
     expect(screen.getByText(/Importing summary CSV/)).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('value', '20');
+    expect(screen.getByRole('progressbar')).toHaveValue(20);
 
     await userEvent.click(screen.getByText(/Allow storage/));
     await userEvent.click(screen.getByText(/Deny storage/));

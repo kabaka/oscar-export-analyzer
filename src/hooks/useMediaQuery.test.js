@@ -60,7 +60,6 @@ describe('useMediaQuery', () => {
 
 describe('useResponsive', () => {
   let mockMql;
-  let matchMediaSpy;
 
   beforeEach(() => {
     mockMql = {
@@ -73,9 +72,7 @@ describe('useResponsive', () => {
       window.matchMedia = vi.fn();
     }
 
-    matchMediaSpy = vi
-      .spyOn(window, 'matchMedia')
-      .mockImplementation(() => mockMql);
+    vi.spyOn(window, 'matchMedia').mockImplementation(() => mockMql);
   });
 
   afterEach(() => {

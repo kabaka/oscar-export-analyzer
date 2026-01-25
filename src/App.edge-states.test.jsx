@@ -297,7 +297,7 @@ describe('AppShell edge states', () => {
 
   it('does not show offline toast when not in standalone mode or already seen', async () => {
     window.matchMedia = vi.fn().mockReturnValue({ matches: false });
-    const firstRender = await renderApp();
+    await renderApp();
 
     await act(async () => {
       swCallbacks.onOfflineReady?.();
@@ -307,8 +307,6 @@ describe('AppShell edge states', () => {
 
     localStorage.setItem('offline-toast-shown', 'true');
     window.matchMedia = vi.fn().mockReturnValue({ matches: true });
-
-    firstRender.unmount();
 
     await renderApp();
     await act(async () => {
@@ -362,7 +360,7 @@ describe('AppShell edge states', () => {
       screen.getByText(/importing summary csv \(50%\)/i),
     ).toBeInTheDocument();
     const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toHaveAttribute('value', '50');
+    expect(progressBar).toHaveValue(50);
     expect(progressBar).toHaveAttribute('max', '100');
   });
 
@@ -380,7 +378,7 @@ describe('AppShell edge states', () => {
       screen.getByText(/importing details csv \(50%\)/i),
     ).toBeInTheDocument();
     const progressBar = screen.getByRole('progressbar');
-    expect(progressBar).toHaveAttribute('value', '25');
+    expect(progressBar).toHaveValue(25);
     expect(progressBar).toHaveAttribute('max', '50');
   });
 });

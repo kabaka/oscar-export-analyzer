@@ -59,16 +59,16 @@ describe('useAppState false-negative preset transitions', () => {
     );
 
     // Default is balanced
-    expect(screen.getByTestId('preset').textContent).toBe('balanced');
+    expect(screen.getByTestId('preset')).toHaveTextContent('balanced');
 
     await userEvent.click(screen.getByRole('button', { name: 'strict' }));
-    expect(screen.getByTestId('preset').textContent).toBe('strict');
+    expect(screen.getByTestId('preset')).toHaveTextContent('strict');
 
     await userEvent.click(screen.getByRole('button', { name: 'lenient' }));
-    expect(screen.getByTestId('preset').textContent).toBe('lenient');
+    expect(screen.getByTestId('preset')).toHaveTextContent('lenient');
 
     // Invalid value should still set fnPreset, and fnOptions memo will use balanced fallback internally
     await userEvent.click(screen.getByRole('button', { name: 'invalid' }));
-    expect(screen.getByTestId('preset').textContent).toBe('invalid');
+    expect(screen.getByTestId('preset')).toHaveTextContent('invalid');
   });
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import {
   describe,
   it,
@@ -217,7 +217,6 @@ describe('App active section tracking and observer setup', () => {
   });
 
   afterEach(() => {
-    cleanup();
     window.getComputedStyle = originalGetComputedStyle;
     window.location.hash = '';
   });
