@@ -39,7 +39,7 @@ export const FITBIT_CONFIG = {
       undefined;
     return resolveClientId(envClientId);
   },
-  redirectUri: `${globalThis.location?.origin || 'http://localhost:5173'}/oauth-callback`,
+  redirectUri: `${globalThis.location?.origin || 'http://localhost:5173'}${import.meta.env.BASE_URL}oauth-callback`,
 
   // PKCE configuration
   codeChallenge: {

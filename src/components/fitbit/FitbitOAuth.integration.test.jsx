@@ -117,9 +117,17 @@ describe.skip('Fitbit OAuth Integration', () => {
       expect(url.searchParams.get('scope')).toContain('spo2');
       expect(url.searchParams.get('scope')).toContain('sleep');
       expect(url.searchParams.get('state')).toHaveLength(32); // PKCE state
-      expect(url.searchParams.get('redirect_uri')).toBe(
-        'http://localhost:5173/oauth-callback',
-      );
+
+      // Verify redirect_uri includes BASE_URL subdirectory
+      const redirectUri = url.searchParams.get('redirect_uri');
+      expect(redirectUri).toContain('oauth-callback');
+      expect(redirectUri).toMatch(/^http:\/\/localhost:5173/);
+
+      // Should include BASE_URL path from Vite config
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      if (baseUrl !== '/') {
+        expect(redirectUri).toContain(baseUrl.replace(/\/$/, ''));
+      }
     });
 
     it('stores PKCE state in session storage', async () => {
