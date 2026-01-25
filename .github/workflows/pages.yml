@@ -78,14 +78,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_commit }}
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: build-dist
           path: dist/
-          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Pages
         id: pages
@@ -101,4 +101,4 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Report deployment status
-        run: echo "✅ Production deployment complete for commit ${{ github.event.workflow_run.head_commit }}"
+        run: echo "✅ Production deployment complete for commit ${{ github.event.workflow_run.head_sha }}"
