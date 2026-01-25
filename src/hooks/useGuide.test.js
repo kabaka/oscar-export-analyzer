@@ -27,4 +27,13 @@ describe('useGuide', () => {
     act(() => result.current.closeGuide());
     expect(result.current.guideOpen).toBe(false);
   });
+
+  it('opens a specific anchor when requested directly', () => {
+    const { result } = renderHook(() => useGuide('overview'));
+
+    act(() => result.current.openGuideWithAnchor('privacy-policy'));
+
+    expect(result.current.guideOpen).toBe(true);
+    expect(result.current.guideAnchor).toBe('privacy-policy');
+  });
 });

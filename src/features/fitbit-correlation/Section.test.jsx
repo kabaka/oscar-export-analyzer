@@ -1,67 +1,115 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { AppProviders } from '../../app/AppProviders';
-import FitbitCorrelationSection from './Section';
+import React from 'react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock the FitbitOAuth context to prevent errors during testing
+const dashboardCalls = [];
+
+const oauthState = {
+  status: 'disconnected',
+  initiateAuth: vi.fn(),
+  disconnect: vi.fn(),
+  error: null,
+  clearError: vi.fn(),
+};
+
+const connectionState = {
+  fitbitData: null,
+  syncState: 'idle',
+  syncFitbitData: vi.fn(),
+  clearFitbitData: vi.fn(),
+};
+
 vi.mock('../../context/FitbitOAuthContext', () => ({
-  useFitbitOAuthContext: () => ({
-    status: 'disconnected',
-    initiateAuth: vi.fn(),
-    disconnect: vi.fn(),
-    error: null,
-    clearError: vi.fn(),
-  }),
-  FitbitOAuthProvider: ({ children }) => children,
+  __esModule: true,
+  useFitbitOAuthContext: () => oauthState,
 }));
 
-// Mock the Fitbit connection hook
 vi.mock('../../hooks/useFitbitConnection', () => ({
-  useFitbitConnection: () => ({
-    fitbitData: null,
-    syncState: {
-      status: 'idle',
-      lastSync: null,
-      nextAutoSync: null,
-      autoSyncEnabled: false,
-      dataMetrics: {},
-      recentActivity: [],
-      errorMessage: null,
-    },
-    syncFitbitData: vi.fn(),
-    clearFitbitData: vi.fn(),
-  }),
+  __esModule: true,
+  useFitbitConnection: () => connectionState,
 }));
 
-describe('FitbitCorrelationSection Integration', () => {
-  it('renders the Fitbit correlation section', () => {
-    render(
-      <AppProviders>
-        <FitbitCorrelationSection />
-      </AppProviders>,
+vi.mock('../../components/fitbit/FitbitDashboard', () => ({
+  __esModule: true,
+  default: ({
+    fitbitData,
+    connectionStatus,
+    syncState,
+    onConnect,
+    onDisconnect,
+    onSync,
+  }) => {
+    dashboardCalls.push({ fitbitData, connectionStatus, syncState });
+    return (
+      <div data-testid="fitbit-dashboard">
+        <button onClick={onConnect}>Connect</button>
+        <button onClick={onDisconnect}>Disconnect</button>
+        <button onClick={onSync}>Sync</button>
+        <span>{connectionStatus}</span>
+        <span>{fitbitData ? 'with-data' : 'no-data'}</span>
+      </div>
     );
+  },
+}));
 
-    // Check that the section renders with proper title
-    expect(
-      screen.getByText(/Fitbit Correlation Analysis/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Connect your Fitbit account to analyze correlations/i),
-    ).toBeInTheDocument();
+import { FitbitCorrelationSection } from './Section';
+
+describe('FitbitCorrelationSection', () => {
+  beforeEach(() => {
+    dashboardCalls.length = 0;
+    oauthState.status = 'disconnected';
+    oauthState.error = null;
+    oauthState.initiateAuth = vi.fn().mockResolvedValue();
+    oauthState.disconnect = vi.fn().mockResolvedValue();
+    oauthState.clearError = vi.fn();
+    connectionState.fitbitData = null;
+    connectionState.syncState = 'idle';
+    connectionState.syncFitbitData = vi.fn().mockResolvedValue();
+    connectionState.clearFitbitData = vi.fn();
   });
 
-  it('has proper section structure', () => {
-    render(
-      <AppProviders>
-        <FitbitCorrelationSection />
-      </AppProviders>,
+  it('renders dashboard with props and forwards actions', async () => {
+    render(<FitbitCorrelationSection />);
+
+    expect(
+      screen.getByRole('heading', { name: /Fitbit Correlation Analysis/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('fitbit-dashboard')).toBeInTheDocument();
+
+    const dashboard = screen.getByTestId('fitbit-dashboard');
+    await userEvent.click(
+      within(dashboard).getByRole('button', { name: /^Connect$/i }),
+    );
+    await userEvent.click(
+      within(dashboard).getByRole('button', { name: /^Disconnect$/i }),
+    );
+    await userEvent.click(
+      within(dashboard).getByRole('button', { name: /^Sync$/i }),
     );
 
-    // Check for section element with correct id
-    const section = screen.getByRole('region', {
-      name: /Fitbit Correlation Analysis/i,
+    expect(oauthState.clearError).toHaveBeenCalled();
+    expect(oauthState.initiateAuth).toHaveBeenCalled();
+    expect(oauthState.disconnect).toHaveBeenCalled();
+    expect(connectionState.clearFitbitData).toHaveBeenCalled();
+    expect(connectionState.syncFitbitData).toHaveBeenCalled();
+    expect(dashboardCalls.at(-1)).toMatchObject({
+      fitbitData: null,
+      connectionStatus: 'disconnected',
+      syncState: 'idle',
     });
-    expect(section).toHaveAttribute('id', 'fitbit-correlation');
-    expect(section).toHaveClass('chart-section');
+  });
+
+  it('shows oauth error details when provided', async () => {
+    oauthState.error = { message: 'Boom', details: 'stack trace' };
+    connectionState.fitbitData = { sample: true };
+
+    render(<FitbitCorrelationSection />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Connection Error');
+    expect(screen.getByText(/stack trace/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText(/Dismiss/));
+    expect(oauthState.clearError).toHaveBeenCalled();
   });
 });

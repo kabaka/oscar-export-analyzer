@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  *   - guideOpen (boolean): Whether docs modal is visible
  *   - guideAnchor (string): Current documentation anchor to scroll to
  *   - openGuideForActive (Function): Open guide for current section: () => void
+ *   - openGuideWithAnchor (Function): Open guide at a specific anchor: (anchor?: string) => void
  *   - closeGuide (Function): Close docs modal: () => void
  *
  * @example
@@ -47,26 +48,32 @@ export function useGuide(activeId) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideAnchor, setGuideAnchor] = useState('');
 
-  const openGuide = useCallback((anchor = '') => {
+  const openGuideWithAnchor = useCallback((anchor = '') => {
     setGuideAnchor(anchor);
     setGuideOpen(true);
   }, []);
 
   const openGuideForActive = useCallback(() => {
     const anchor = guideMap[activeId] || '';
-    openGuide(anchor);
-  }, [activeId, guideMap, openGuide]);
+    openGuideWithAnchor(anchor);
+  }, [activeId, guideMap, openGuideWithAnchor]);
 
   const closeGuide = useCallback(() => setGuideOpen(false), []);
 
   useEffect(() => {
     const handler = (event) => {
       const anchor = event?.detail?.anchor || '';
-      openGuide(anchor);
+      openGuideWithAnchor(anchor);
     };
     window.addEventListener('open-guide', handler);
     return () => window.removeEventListener('open-guide', handler);
-  }, [openGuide]);
+  }, [openGuideWithAnchor]);
 
-  return { guideOpen, guideAnchor, openGuideForActive, closeGuide };
+  return {
+    guideOpen,
+    guideAnchor,
+    openGuideForActive,
+    openGuideWithAnchor,
+    closeGuide,
+  };
 }

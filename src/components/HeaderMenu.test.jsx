@@ -50,6 +50,19 @@ describe('HeaderMenu', () => {
       await userEvent.click(printItem);
       expect(onPrint).toHaveBeenCalled();
     });
+
+    it('opens privacy and terms at the legal anchor', async () => {
+      const user = userEvent.setup();
+      const onOpenGuide = vi.fn();
+      render(<HeaderMenu {...defaultProps} onOpenGuide={onOpenGuide} />);
+
+      await user.click(screen.getByRole('button', { name: /menu/i }));
+      await user.click(
+        screen.getByRole('menuitem', { name: /privacy and terms/i }),
+      );
+
+      expect(onOpenGuide).toHaveBeenCalledWith('privacy-policy');
+    });
   });
 
   describe('Keyboard Navigation (WCAG 2.1 2.1.1)', () => {

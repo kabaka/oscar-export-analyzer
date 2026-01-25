@@ -83,6 +83,23 @@ describe('DocsModal', () => {
     expect(document.querySelector('.doc-content table')).not.toBeNull();
   });
 
+  it('includes privacy and terms headings in the table of contents', async () => {
+    const md = '# Privacy Policy\n## Terms of Service';
+    render(<DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />);
+
+    const privacyLink = await screen.findByRole('link', {
+      name: /privacy policy/i,
+    });
+    const termsLink = await screen.findByRole('link', {
+      name: /terms of service/i,
+    });
+
+    expect(privacyLink).toHaveAttribute('href', '#privacy-policy');
+    expect(termsLink).toHaveAttribute('href', '#terms-of-service');
+    expect(document.getElementById('privacy-policy')).not.toBeNull();
+    expect(document.getElementById('terms-of-service')).not.toBeNull();
+  });
+
   it('converts internal links to anchors', async () => {
     const md = `[Next](#section)`;
     render(<DocsModal isOpen={true} onClose={() => {}} markdownSource={md} />);

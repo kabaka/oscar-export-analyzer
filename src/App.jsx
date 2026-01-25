@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import HeaderMenu from './components/HeaderMenu';
 import DateRangeControls from './components/DateRangeControls';
@@ -9,6 +9,7 @@ import { OfflineReadyToast } from './components/OfflineReadyToast';
 import { UpdateNotification } from './components/UpdateNotification';
 import ExportDataModal from './components/ExportDataModal';
 import ImportDataModal from './components/ImportDataModal';
+import AppFooter from './components/AppFooter';
 import {
   DataImportModal,
   DocsModal,
@@ -36,6 +37,19 @@ import {
   buildObserverRootMargin,
   computeTopMargin,
 } from './constants';
+
+const LEGAL_DOC_ANCHORS = new Set([
+  'privacy-terms',
+  'privacy-policy',
+  'terms-of-service',
+  'data-storage',
+  'data-retention',
+  'exports-and-sharing',
+  'fitbit-integration',
+  'warranty-disclaimer',
+  'contact',
+  'accessibility',
+]);
 
 /**
  * Top-level application shell that wires uploads, global navigation, and all feature sections.
@@ -89,8 +103,13 @@ export function AppShell() {
     setPendingSave,
   } = useAppContext();
 
-  const { guideOpen, guideAnchor, openGuideForActive, closeGuide } =
-    useGuideContext();
+  const {
+    guideOpen,
+    guideAnchor,
+    openGuideForActive,
+    openGuideWithAnchor,
+    closeGuide,
+  } = useGuideContext();
 
   // PWA UI state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -164,6 +183,20 @@ export function AppShell() {
       { id: 'fitbit-correlation', label: 'Fitbit Analysis' },
     ],
     [],
+  );
+
+  const handleOpenGuide = useCallback(
+    (anchor) => {
+      if (anchor) {
+        if (window.location.hash !== `#${anchor}`) {
+          window.location.hash = anchor;
+        }
+        openGuideWithAnchor(anchor);
+        return;
+      }
+      openGuideForActive();
+    },
+    [openGuideForActive, openGuideWithAnchor],
   );
 
   useEffect(() => {
@@ -294,6 +327,19 @@ export function AppShell() {
     };
   }, [tocSections, setActiveSectionId]);
 
+  useEffect(() => {
+    const handleHashOpen = () => {
+      const hash = (window.location.hash || '').replace('#', '');
+      if (LEGAL_DOC_ANCHORS.has(hash)) {
+        openGuideWithAnchor(hash);
+      }
+    };
+
+    handleHashOpen();
+    window.addEventListener('hashchange', handleHashOpen);
+    return () => window.removeEventListener('hashchange', handleHashOpen);
+  }, [openGuideWithAnchor]);
+
   // Intercept Ctrl+P/Cmd+P to show print warning dialog
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -385,7 +431,7 @@ export function AppShell() {
           onImportEncrypted={importEncryptedModal.open}
           onClearSession={handleClearSession}
           onPrint={printWarningModal.open}
-          onOpenGuide={openGuideForActive}
+          onOpenGuide={handleOpenGuide}
           hasAnyData={hasAnyData}
           summaryAvailable={summaryAvailable}
         />
@@ -496,6 +542,7 @@ export function AppShell() {
           </>
         )}
       </AppLayout>
+      <AppFooter onOpenDocs={handleOpenGuide} />
       <DocsModal
         isOpen={guideOpen}
         onClose={closeGuide}

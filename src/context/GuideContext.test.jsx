@@ -14,6 +14,7 @@ describe('GuideContext', () => {
       guideOpen: true,
       guideAnchor: 'test-anchor',
       openGuideForActive: () => {},
+      openGuideWithAnchor: () => {},
       closeGuide: () => {},
     };
 

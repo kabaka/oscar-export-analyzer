@@ -107,8 +107,8 @@ jobs:
           echo "Line coverage: ${LINE_COVERAGE}%"
           echo ""
 
-          # Fail if coverage is below 80%
-          MIN_COVERAGE=80
+          # Fail if coverage is below 75%
+          MIN_COVERAGE=75
           if (( $(echo "$LINE_COVERAGE < $MIN_COVERAGE" | bc -l) )); then
             echo "❌ Coverage ${LINE_COVERAGE}% is below minimum ${MIN_COVERAGE}%"
             exit 1

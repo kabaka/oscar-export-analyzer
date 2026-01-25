@@ -25,7 +25,7 @@ import { InstallExplanationModal } from './InstallExplanationModal';
  * @param {Function} props.onImportEncrypted - Callback to open encrypted import modal (Phase 4)
  * @param {Function} props.onClearSession - Callback to clear session and data
  * @param {Function} props.onPrint - Callback to print analysis
- * @param {Function} props.onOpenGuide - Callback to open guide modal
+ * @param {Function} props.onOpenGuide - Callback to open guide modal (accepts optional anchor string)
  * @param {boolean} props.hasAnyData - Whether any CSV data has been loaded
  * @param {boolean} props.summaryAvailable - Whether Summary CSV is available for export
  * @returns {JSX.Element} A menu container with button and conditional dropdown list
@@ -188,6 +188,16 @@ export default function HeaderMenu({
             </button>
           </div>
           <div className="menu-section" role="group">
+            <button
+              role="menuitem"
+              aria-label="Privacy and Terms"
+              onClick={() => {
+                onOpenGuide('privacy-policy');
+                close();
+              }}
+            >
+              Privacy & Terms
+            </button>
             <button
               role="menuitem"
               onClick={() => {
