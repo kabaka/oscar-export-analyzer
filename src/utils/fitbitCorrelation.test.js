@@ -20,7 +20,7 @@ describe('Fitbit Correlation Algorithms', () => {
 
       expect(result.correlation).toBeCloseTo(1.0, 10);
       expect(result.n).toBe(5);
-      expect(result.pValue).toBeLessThan(0.001);
+      expect(result.pValue).toBe(0);
     });
 
     it('computes perfect negative correlation', () => {
@@ -42,6 +42,18 @@ describe('Fitbit Correlation Algorithms', () => {
 
       expect(result.correlation).toBeCloseTo(1.0, 10);
       expect(result.n).toBe(5);
+    });
+
+    it('returns finite p-values for strong but imperfect correlations', () => {
+      const x = Array.from({ length: 30 }, (_, i) => i);
+      // Deterministic noise to avoid perfect monotonic ordering while keeping a strong trend
+      const y = x.map((val, idx) => val + (idx % 2 === 0 ? 2 : -2));
+
+      const result = spearmanCorrelation(x, y);
+
+      expect(Math.abs(result.correlation)).toBeGreaterThan(0.8);
+      expect(Number.isFinite(result.pValue)).toBe(true);
+      expect(result.pValue).toBeLessThan(0.001);
     });
 
     it('returns zero correlation for independent variables', () => {

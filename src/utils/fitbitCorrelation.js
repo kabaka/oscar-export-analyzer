@@ -118,10 +118,26 @@ export function spearmanCorrelation(x, y) {
   // Pearson correlation of ranks = Spearman correlation
   const correlation = pearson(ranksX, ranksY);
 
-  // Approximate t-test for significance (large sample)
   const n = validPairs.length;
-  const t = correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
-  const pValue = 2 * (1 - studentTCDF(Math.abs(t), n - 2));
+  if (!Number.isFinite(correlation)) {
+    return { correlation, n, pValue: NaN };
+  }
+
+  const absCorr = Math.abs(correlation);
+  if (absCorr >= 0.999999999) {
+    return { correlation, n, pValue: 0 };
+  }
+
+  const denom = 1 - correlation * correlation;
+  if (denom <= 0) {
+    return { correlation, n, pValue: NaN };
+  }
+
+  const t = correlation * Math.sqrt((n - 2) / denom);
+  const pValueRaw = 2 * (1 - studentTCDF(Math.abs(t), n - 2));
+  const pValue = Number.isFinite(pValueRaw)
+    ? Math.min(Math.max(pValueRaw, 0), 1)
+    : NaN;
 
   return {
     correlation,
@@ -514,24 +530,108 @@ function fitVectorAutoregression(y, x, lag) {
 // Simplified statistical distribution functions for significance testing
 
 function studentTCDF(t, df) {
-  // Simplified Student's t-distribution CDF approximation
-  // In production, would use more accurate implementation
-  if (df >= 30) {
+  if (!Number.isFinite(t) || !Number.isFinite(df) || df <= 0) {
+    return NaN;
+  }
+
+  // Normal approximation for extremely large df
+  if (df > 1e6) {
     return standardNormalCDF(t);
   }
 
-  // Very rough approximation for small df
-  const z = t / Math.sqrt(1 + (t * t) / (4 * df));
-  return standardNormalCDF(z);
+  // Regularized incomplete beta based implementation (Numerical Recipes)
+  const x = df / (df + t * t);
+  const ibeta = regularizedIncompleteBeta(x, df / 2, 0.5);
+  if (!Number.isFinite(ibeta)) {
+    return NaN;
+  }
+
+  return t >= 0 ? 1 - 0.5 * ibeta : 0.5 * ibeta;
+}
+
+function regularizedIncompleteBeta(x, a, b) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+
+  const bt = Math.exp(
+    logGamma(a + b) -
+      logGamma(a) -
+      logGamma(b) +
+      a * Math.log(x) +
+      b * Math.log(1 - x),
+  );
+
+  if (x < (a + 1) / (a + b + 2)) {
+    return (bt * betacf(a, b, x)) / a;
+  }
+  return 1 - (bt * betacf(b, a, 1 - x)) / b;
+}
+
+function betacf(a, b, x) {
+  const MAX_ITER = 200;
+  const EPS = 3e-7;
+  const FPMIN = 1e-30;
+
+  let qab = a + b;
+  let qap = a + 1;
+  let qam = a - 1;
+  let c = 1;
+  let d = 1 - (qab * x) / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
+
+  for (let m = 1; m <= MAX_ITER; m++) {
+    const m2 = 2 * m;
+    let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c;
+    if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    h *= d * c;
+
+    aa = -((a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+    d = 1 + aa * d;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c;
+    if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+
+    if (Math.abs(del - 1) < EPS) {
+      break;
+    }
+  }
+
+  return h;
+}
+
+function logGamma(z) {
+  // Lanczos approximation for log-gamma
+  const cof = [
+    76.18009172947146, -86.5053203294168, 24.01409824083091, -1.231739572450155,
+    0.001208650973866179, -0.000005395239384953,
+  ];
+
+  let x = z;
+  let y = z;
+  let tmp = z + 5.5;
+  tmp -= (z + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j = 0; j < cof.length; j++) {
+    y += 1;
+    ser += cof[j] / y;
+  }
+  return Math.log((2.50662827463 * ser) / x) - tmp;
 }
 
 function standardNormalCDF(z) {
-  // Standard normal CDF approximation using error function
   return 0.5 * (1 + erf(z / Math.sqrt(2)));
 }
 
 function erf(x) {
-  // Error function approximation (Abramowitz and Stegun)
   const a1 = 0.254829592;
   const a2 = -0.284496736;
   const a3 = 1.421413741;
@@ -540,24 +640,22 @@ function erf(x) {
   const p = 0.3275911;
 
   const sign = x >= 0 ? 1 : -1;
-  x = Math.abs(x);
+  const absX = Math.abs(x);
 
-  const t = 1.0 / (1.0 + p * x);
+  const t = 1.0 / (1.0 + p * absX);
   const y =
-    1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    1.0 -
+    ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX);
 
   return sign * y;
 }
 
 function fDistributionCDF(f, df1, df2) {
-  // Simplified F-distribution CDF - in production would use beta function
   if (f <= 0) return 0;
   if (df1 >= 30 && df2 >= 30) {
-    // Normal approximation for large degrees of freedom
     const z = (f - 1) / Math.sqrt(2 / df1 + 2 / df2);
     return standardNormalCDF(z);
   }
 
-  // Very rough approximation - would implement proper beta function in production
   return 1 - Math.exp(-f / 2);
 }

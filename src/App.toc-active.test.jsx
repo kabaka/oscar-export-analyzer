@@ -97,6 +97,22 @@ describe('TOC active highlighting', () => {
     // Intersection-based activation
     // Simulate that #pressure-settings is intersecting
     const inst = IO._instances[0];
+    const sectionIds = [
+      'overview',
+      'usage-patterns',
+      'ahi-trends',
+      'pressure-settings',
+      'apnea-characteristics',
+      'clustered-apnea',
+      'false-negatives',
+      'raw-data-explorer',
+      'fitbit-correlation',
+    ];
+    // Force geometry to stay below the fold so the observer callback must use its entries
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.getBoundingClientRect = () => ({ top: 800 });
+    });
     const pressureEl = document.getElementById('pressure-settings');
     expect(pressureEl).toBeTruthy();
     await act(async () => {

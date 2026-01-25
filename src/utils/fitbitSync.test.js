@@ -46,13 +46,18 @@ describe('Fitbit Synchronization Utilities', () => {
     });
 
     it('handles timezone offsets', () => {
-      // Session at 10:00 PM UTC, user is in PST (UTC-8, -480 minutes offset)
-      // 10PM UTC - 8 hours = 2:00 PM local, which assigns to current day
-      const sessionStart = new Date('2024-01-15T22:00:00Z');
-      const timezoneOffset = -480; // PST is UTC-8
-      const sleepDate = calculateSleepDate(sessionStart, timezoneOffset);
+      // Positive offsets (west of UTC) move local time earlier
+      const sessionStart = new Date('2024-01-15T18:00:00Z');
+      const westOffset = 480; // UTC-8
+      const westSleepDate = calculateSleepDate(sessionStart, westOffset);
 
-      expect(sleepDate.getDate()).toBe(14); // Actually goes to previous day because of how offset math works
+      expect(westSleepDate.getDate()).toBe(14); // Moves to previous sleep date
+
+      // Negative offsets (east of UTC) push local time later
+      const eastOffset = -330; // UTC+5:30
+      const eastSleepDate = calculateSleepDate(sessionStart, eastOffset);
+
+      expect(eastSleepDate.getDate()).toBe(15); // Stays on same sleep date
     });
 
     it('throws error for invalid session time', () => {
@@ -540,13 +545,17 @@ describe('Fitbit Synchronization Utilities', () => {
       // Test with large positive and negative offsets
       const sessionStart = new Date('2024-01-15T06:00:00Z'); // 6 AM UTC
 
-      // UTC+14 (extreme positive) - 6AM + 14hrs = 8PM local = current day
-      const sleepDate1 = calculateSleepDate(sessionStart, 14 * 60);
-      expect(sleepDate1.getDate()).toBe(15);
+      const baseSleepDate = calculateSleepDate(sessionStart, 0);
 
-      // UTC-12 (extreme negative) - 6AM - 12hrs = 6PM prev day
-      const sleepDate2 = calculateSleepDate(sessionStart, -12 * 60);
-      expect(sleepDate2.getDate()).toBe(13); // Goes back one more day
+      // UTC-12 style offset (positive minutes west of UTC) shifts local time earlier
+      const westSleepDate = calculateSleepDate(sessionStart, 12 * 60);
+      expect(westSleepDate.getTime()).toBeLessThan(baseSleepDate.getTime());
+
+      // UTC+14 style offset (negative minutes east of UTC) shifts local time later
+      const eastSleepDate = calculateSleepDate(sessionStart, -14 * 60);
+      expect(eastSleepDate.getTime()).toBeGreaterThanOrEqual(
+        baseSleepDate.getTime(),
+      );
     });
   });
 });

@@ -17,11 +17,16 @@ corresponds to changes released on that day.
 
 ### Fixed
 
+- **Fitbit AHI-HRV significance detection**: Replaced the stubbed t CDF with an accurate two-sided Student's t implementation and NaN guards so strong therapy-to-physiology improvements register as significant while weaker signals remain unchanged in the Fitbit analysis pipeline.
 - **FitbitDashboard Runtime Crashes**: Resolved critical undefined object access patterns causing "cannot access properties on undefined objects" errors. Added proper null guards and optional chaining for `fitbitData.nightlyData` property access. Updated `hasData` validation to ensure all required data properties exist before component rendering. Prevents runtime crashes when Fitbit data is unavailable or incomplete.
 
 - **FitbitCorrelationSection Test Failures**: Fixed accessibility and integration test failures by adding proper ARIA attributes. Added `role="region"` and `aria-labelledby="fitbit-section-title"` to section element for screen reader compatibility. Section integration tests now pass (2/2) and properly identify the Fitbit correlation section in automated testing.
 
 - **ES Module Import Issues**: Resolved "Directory import not supported" errors in test utilities. Fixed `test-utils/builders.js` import path from directory import (`../constants`) to explicit file import (`../constants.js`). Enables proper module resolution in test environments and eliminates build-time import errors affecting Fitbit accessibility tests.
+
+- **TOC highlighting regression**: IntersectionObserver now selects the active table-of-contents entry directly from intersecting entries (using intersection ratio/position) before falling back to geometry, fixing last-section-only highlighting in jsdom and restoring click-based activation.
+
+- **Fitbit sleep date offset math**: Reversed timezone offset application in `calculateSleepDate()` so west-of-UTC offsets move sessions earlier, matching expected Fitbit sync date calculations including extreme offsets.
 
 ## 2026-01-24
 

@@ -32,9 +32,9 @@ export function calculateSleepDate(sessionStart, timezoneOffset = 0) {
     throw new Error(`Invalid session start time: ${sessionStart}`);
   }
 
-  // Apply timezone offset to get user's local time
+  // Apply timezone offset to get user's local time (west-of-UTC moves earlier)
   const localTime = new Date(
-    sessionDate.getTime() + timezoneOffset * 60 * 1000,
+    sessionDate.getTime() - timezoneOffset * 60 * 1000,
   );
 
   // If session starts before noon, it belongs to previous day's sleep

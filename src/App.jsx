@@ -193,6 +193,42 @@ export function AppShell() {
       setActiveSectionId(current);
     };
 
+    const pickActiveFromEntries = (entries) => {
+      if (!entries || entries.length === 0) {
+        pickActive();
+        return;
+      }
+
+      const intersecting = entries.filter(
+        (entry) => entry.isIntersecting || entry.intersectionRatio > 0,
+      );
+      const candidates = intersecting.length ? intersecting : entries;
+
+      const best = candidates.reduce((bestEntry, entry) => {
+        if (!bestEntry) return entry;
+
+        if (entry.intersectionRatio !== bestEntry.intersectionRatio) {
+          return entry.intersectionRatio > bestEntry.intersectionRatio
+            ? entry
+            : bestEntry;
+        }
+
+        const entryTop =
+          entry.boundingClientRect?.top ?? Number.POSITIVE_INFINITY;
+        const bestTop =
+          bestEntry.boundingClientRect?.top ?? Number.POSITIVE_INFINITY;
+
+        return entryTop < bestTop ? entry : bestEntry;
+      }, null);
+
+      if (best?.target?.id) {
+        setActiveSectionId(best.target.id);
+        return;
+      }
+
+      pickActive();
+    };
+
     // Throttle implementation for scroll/resize handlers
     let lastCallTime = 0;
     let timeoutId = null;
@@ -223,8 +259,8 @@ export function AppShell() {
 
     // Use IntersectionObserver which handles its own throttling naturally
     const observer = new IntersectionObserver(
-      () => {
-        pickActive();
+      (entries) => {
+        pickActiveFromEntries(entries);
       },
       {
         root: null,
