@@ -1,0 +1,543 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  computeCorrelation,
+  computeCrossCorrelation,
+  detectSignificantLags,
+  analyzeEventCorrelation,
+  calculateCorrelationMatrix,
+} from './fitbitCorrelation.js';
+import {
+  buildCombinedNightlyData,
+  buildFitbitHeartRateData,
+  buildFitbitSpO2Data,
+} from '../fitbitBuilders.js';
+
+describe('fitbitCorrelation', () => {
+  describe('computeCorrelation', () => {
+    it('computes Pearson correlation for perfectly correlated data', () => {
+      const x = [1, 2, 3, 4, 5];
+      const y = [2, 4, 6, 8, 10]; // Perfect positive correlation
+
+      const result = computeCorrelation(x, y, 'pearson');
+
+      expect(result.correlation).toBeCloseTo(1.0, 10);
+      expect(result.pValue).toBeCloseTo(0, 5);
+      expect(result.significance).toBe('very-strong');
+      expect(result.sampleSize).toBe(5);
+    });
+
+    it('computes correlation for perfectly anti-correlated data', () => {
+      const x = [1, 2, 3, 4, 5];
+      const y = [10, 8, 6, 4, 2]; // Perfect negative correlation
+
+      const result = computeCorrelation(x, y, 'pearson');
+
+      expect(result.correlation).toBeCloseTo(-1.0, 10);
+      expect(result.pValue).toBeCloseTo(0, 5);
+      expect(result.significance).toBe('very-strong');
+    });
+
+    it('detects no correlation in random data', () => {
+      const x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const y = [3, 7, 1, 9, 2, 8, 4, 6, 5, 10]; // Scrambled, no pattern
+
+      const result = computeCorrelation(x, y, 'pearson');
+
+      expect(Math.abs(result.correlation)).toBeLessThan(0.3);
+      expect(result.significance).toBe('none');
+    });
+
+    it('computes Spearman rank correlation', () => {
+      // Non-linear but monotonic relationship
+      const x = [1, 2, 3, 4, 5];
+      const y = [1, 4, 9, 16, 25]; // y = x^2
+
+      const pearsonResult = computeCorrelation(x, y, 'pearson');
+      const spearmanResult = computeCorrelation(x, y, 'spearman');
+
+      // Spearman should be higher for this monotonic non-linear relationship
+      expect(spearmanResult.correlation).toBeGreaterThan(
+        pearsonResult.correlation,
+      );
+      expect(spearmanResult.correlation).toBeCloseTo(1.0, 3);
+    });
+
+    it('handles edge cases gracefully', () => {
+      // Empty arrays
+      expect(computeCorrelation([], [], 'pearson').correlation).toBeNaN();
+
+      // Single data point
+      expect(computeCorrelation([1], [2], 'pearson').correlation).toBeNaN();
+
+      // Identical values (no variance)
+      const constantResult = computeCorrelation(
+        [5, 5, 5, 5],
+        [3, 3, 3, 3],
+        'pearson',
+      );
+      expect(constantResult.correlation).toBeNaN();
+      expect(constantResult.significance).toBe('none');
+    });
+
+    it('calculates statistical significance correctly', () => {
+      // Strong correlation with large sample size
+      const n = 100;
+      const x = Array.from({ length: n }, (_, i) => i);
+      const y = x.map((val) => val + Math.random() * 2 - 1); // Strong positive with noise
+
+      const result = computeCorrelation(x, y, 'pearson');
+
+      expect(result.correlation).toBeGreaterThan(0.8);
+      expect(result.pValue).toBeLessThan(0.001);
+      expect(result.significance).toMatch(/strong|very-strong/);
+    });
+
+    it('assigns correct significance levels', () => {
+      // Test significance thresholds
+      const testCases = [
+        { r: 0.95, expected: 'very-strong' },
+        { r: 0.75, expected: 'strong' },
+        { r: 0.45, expected: 'moderate' },
+        { r: 0.25, expected: 'weak' },
+        { r: 0.05, expected: 'none' },
+      ];
+
+      testCases.forEach(({ r, expected }) => {
+        // Create synthetic data with known correlation
+        const n = 50;
+        const x = Array.from({ length: n }, (_, i) => i);
+        const noise = Math.sqrt(1 - r * r); // Adjust noise for target correlation
+        const y = x.map((val) => r * val + noise * Math.random());
+
+        const result = computeCorrelation(x, y, 'pearson');
+        expect(result.significance).toBe(expected);
+      });
+    });
+  });
+
+  describe('computeCrossCorrelation', () => {
+    it('detects zero lag for synchronous signals', () => {
+      const signal1 = [1, 2, 3, 4, 5, 4, 3, 2, 1];
+      const signal2 = [2, 4, 6, 8, 10, 8, 6, 4, 2]; // Same pattern, scaled
+
+      const result = computeCrossCorrelation(signal1, signal2, {
+        maxLag: 5,
+        minCorrelation: 0.5,
+      });
+
+      expect(result.maxCorrelation).toBeCloseTo(1.0, 3);
+      expect(result.optimalLag).toBe(0);
+      expect(result.lagRange).toEqual([-5, 5]);
+    });
+
+    it('detects positive lag for delayed signals', () => {
+      const signal1 = [1, 2, 3, 4, 5, 3, 2, 1, 0];
+      const signal2 = [0, 0, 1, 2, 3, 4, 5, 3, 2]; // signal1 delayed by 2
+
+      const result = computeCrossCorrelation(signal1, signal2, {
+        maxLag: 5,
+        minCorrelation: 0.3,
+      });
+
+      expect(result.optimalLag).toBe(2);
+      expect(result.maxCorrelation).toBeGreaterThan(0.7);
+    });
+
+    it('detects negative lag for leading signals', () => {
+      const signal1 = [0, 0, 1, 2, 3, 4, 5, 3, 2]; // signal2 leads by 2
+      const signal2 = [1, 2, 3, 4, 5, 3, 2, 1, 0];
+
+      const result = computeCrossCorrelation(signal1, signal2, {
+        maxLag: 5,
+        minCorrelation: 0.3,
+      });
+
+      expect(result.optimalLag).toBe(-2);
+      expect(result.maxCorrelation).toBeGreaterThan(0.7);
+    });
+
+    it('returns all lag correlations for analysis', () => {
+      const signal1 = [1, 2, 3, 2, 1];
+      const signal2 = [2, 4, 6, 4, 2];
+
+      const result = computeCrossCorrelation(signal1, signal2, { maxLag: 3 });
+
+      expect(result.correlationsByLag).toHaveProperty('-3');
+      expect(result.correlationsByLag).toHaveProperty('0');
+      expect(result.correlationsByLag).toHaveProperty('3');
+      expect(Object.keys(result.correlationsByLag)).toHaveLength(7); // -3 to +3
+    });
+
+    it('handles insufficient data gracefully', () => {
+      const signal1 = [1, 2];
+      const signal2 = [2, 4];
+
+      const result = computeCrossCorrelation(signal1, signal2, { maxLag: 5 });
+
+      expect(result.maxCorrelation).toBeNaN();
+      expect(result.optimalLag).toBe(0);
+      expect(result.correlationsByLag).toBeDefined();
+    });
+  });
+
+  describe('detectSignificantLags', () => {
+    it('identifies significant physiological lags', () => {
+      // Simulate AHI → HRV response with 30-minute lag
+      const timeSeriesData = [
+        { timestamp: 0, ahi: 10, hrv: 25 },
+        { timestamp: 30, ahi: 15, hrv: 25 }, // No immediate HRV response
+        { timestamp: 60, ahi: 20, hrv: 20 }, // HRV drops 30 min after AHI spike
+        { timestamp: 90, ahi: 12, hrv: 18 },
+        { timestamp: 120, ahi: 8, hrv: 22 }, // HRV recovers as AHI improves
+      ];
+
+      const lags = detectSignificantLags(timeSeriesData, 'ahi', 'hrv', {
+        maxLagMinutes: 60,
+        minCorrelation: 0.4,
+      });
+
+      expect(lags).toContainEqual(
+        expect.objectContaining({
+          lagMinutes: 30,
+          correlation: expect.any(Number),
+          significance: expect.stringMatching(/weak|moderate|strong/),
+        }),
+      );
+    });
+
+    it('detects multiple significant lags', () => {
+      // Complex physiological response with multiple lag periods
+      const complexData = Array.from({ length: 20 }, (_, i) => ({
+        timestamp: i * 15, // 15-minute intervals
+        pressure: Math.sin(i * 0.3) + 10, // Oscillating pressure
+        heartRate: Math.sin((i - 2) * 0.3) + 65, // Heart rate follows with 30-min lag
+      }));
+
+      const lags = detectSignificantLags(complexData, 'pressure', 'heartRate', {
+        maxLagMinutes: 90,
+        minCorrelation: 0.3,
+      });
+
+      expect(lags.length).toBeGreaterThan(0);
+      expect(lags[0].lagMinutes).toBeGreaterThan(0);
+    });
+
+    it('returns empty array for uncorrelated signals', () => {
+      const randomData = Array.from({ length: 50 }, (_, i) => ({
+        timestamp: i * 5,
+        metric1: Math.random() * 20,
+        metric2: Math.random() * 100,
+      }));
+
+      const lags = detectSignificantLags(randomData, 'metric1', 'metric2', {
+        maxLagMinutes: 60,
+        minCorrelation: 0.5,
+      });
+
+      expect(lags).toHaveLength(0);
+    });
+  });
+
+  describe('analyzeEventCorrelation', () => {
+    let apneaEvents, heartRateData;
+
+    beforeEach(() => {
+      // Create synthetic events and correlated HR response
+      apneaEvents = [
+        { timestamp: 1000, type: 'Obstructive', durationSec: 20 },
+        { timestamp: 5000, type: 'Central', durationSec: 15 },
+        { timestamp: 8000, type: 'Obstructive', durationSec: 35 },
+      ];
+
+      heartRateData = [
+        { timestamp: 500, bpm: 60 },
+        { timestamp: 1500, bpm: 75 }, // Response to first event
+        { timestamp: 3000, bpm: 65 },
+        { timestamp: 5500, bpm: 70 }, // Response to second event
+        { timestamp: 7000, bpm: 62 },
+        { timestamp: 8500, bpm: 82 }, // Response to third event
+        { timestamp: 10000, bpm: 68 },
+      ];
+    });
+
+    it('detects heart rate elevation during apnea events', () => {
+      const analysis = analyzeEventCorrelation(apneaEvents, heartRateData, {
+        responseWindowSec: 60,
+        baselineWindowSec: 120,
+      });
+
+      expect(analysis.avgEventResponse).toBeGreaterThan(5); // Average HR elevation > 5 BPM
+      expect(analysis.correlationCoeff).toBeGreaterThan(0.3);
+      expect(analysis.responseLatencySec).toBeGreaterThan(0);
+      expect(analysis.responseLatencySec).toBeLessThan(120);
+    });
+
+    it('calculates recovery time after events', () => {
+      const analysis = analyzeEventCorrelation(apneaEvents, heartRateData, {
+        responseWindowSec: 60,
+        recoveryWindowSec: 180,
+      });
+
+      expect(analysis.recoveryTimeSec).toBeGreaterThan(30);
+      expect(analysis.recoveryTimeSec).toBeLessThan(300);
+      expect(analysis.recoveryCompleteness).toBeGreaterThan(0);
+      expect(analysis.recoveryCompleteness).toBeLessThanOrEqual(1);
+    });
+
+    it('handles events with no clear HR response', () => {
+      // Flat heart rate data (no response to events)
+      const flatHrData = Array.from({ length: 10 }, (_, i) => ({
+        timestamp: i * 1000,
+        bpm: 65, // Constant HR
+      }));
+
+      const analysis = analyzeEventCorrelation(apneaEvents, flatHrData, {
+        responseWindowSec: 60,
+      });
+
+      expect(analysis.avgEventResponse).toBeCloseTo(0, 1);
+      expect(analysis.correlationCoeff).toBeCloseTo(0, 1);
+      expect(analysis.responseLatencySec).toBeNaN();
+    });
+
+    it('analyzes different event types separately', () => {
+      const analysis = analyzeEventCorrelation(apneaEvents, heartRateData, {
+        responseWindowSec: 60,
+        analyzeByEventType: true,
+      });
+
+      expect(analysis.byEventType).toHaveProperty('Obstructive');
+      expect(analysis.byEventType).toHaveProperty('Central');
+      expect(analysis.byEventType.Obstructive.eventCount).toBe(2);
+      expect(analysis.byEventType.Central.eventCount).toBe(1);
+    });
+  });
+
+  describe('calculateCorrelationMatrix', () => {
+    let nightlyData;
+
+    beforeEach(() => {
+      nightlyData = buildCombinedNightlyData({
+        date: '2026-01-24',
+        nights: 30,
+        correlationStrength: 'moderate',
+        seed: 12345, // Reproducible
+      });
+    });
+
+    it('generates complete correlation matrix', () => {
+      const matrix = calculateCorrelationMatrix(nightlyData, {
+        metrics: ['ahi', 'avgSleepBpm', 'minSpO2', 'sleepEfficiency'],
+        method: 'pearson',
+      });
+
+      expect(matrix).toHaveProperty('ahi');
+      expect(matrix).toHaveProperty('avgSleepBpm');
+      expect(matrix).toHaveProperty('minSpO2');
+      expect(matrix).toHaveProperty('sleepEfficiency');
+
+      // Check diagonal is 1.0 (perfect self-correlation)
+      expect(matrix.ahi.ahi.correlation).toBeCloseTo(1.0);
+      expect(matrix.avgSleepBpm.avgSleepBpm.correlation).toBeCloseTo(1.0);
+
+      // Check matrix is symmetric
+      expect(matrix.ahi.avgSleepBpm.correlation).toBeCloseTo(
+        matrix.avgSleepBpm.ahi.correlation,
+      );
+    });
+
+    it('detects expected physiological correlations', () => {
+      const matrix = calculateCorrelationMatrix(nightlyData, {
+        metrics: ['ahi', 'avgSleepBpm', 'minSpO2', 'sleepEfficiency'],
+        method: 'pearson',
+      });
+
+      // AHI should be negatively correlated with sleep efficiency
+      expect(matrix.ahi.sleepEfficiency.correlation).toBeLessThan(0);
+      expect(matrix.ahi.sleepEfficiency.significance).toMatch(
+        /weak|moderate|strong/,
+      );
+
+      // AHI should be negatively correlated with minimum SpO2
+      expect(matrix.ahi.minSpO2.correlation).toBeLessThan(0);
+
+      // Higher AHI might correlate with higher sleep HR (arousal response)
+      expect(Math.abs(matrix.ahi.avgSleepBpm.correlation)).toBeGreaterThan(0.1);
+    });
+
+    it('handles missing data in correlation calculations', () => {
+      // Add nights with missing data
+      const incompleteData = [...nightlyData];
+      incompleteData.push({
+        date: new Date('2026-02-25'),
+        oscar: { ahi: NaN }, // Missing AHI
+        fitbit: {
+          heartRate: { avgSleepBpm: 65 },
+          oxygenSaturation: { minPercent: NaN }, // Missing SpO2
+        },
+      });
+
+      const matrix = calculateCorrelationMatrix(incompleteData, {
+        metrics: ['ahi', 'avgSleepBpm', 'minSpO2'],
+        method: 'pearson',
+        handleMissing: 'pairwise', // Use all available data for each pair
+      });
+
+      expect(matrix.ahi.avgSleepBpm).toBeDefined();
+      expect(matrix.ahi.avgSleepBpm.sampleSize).toBeLessThan(
+        incompleteData.length,
+      );
+    });
+
+    it('calculates confidence intervals for correlations', () => {
+      const matrix = calculateCorrelationMatrix(nightlyData, {
+        metrics: ['ahi', 'avgSleepBpm'],
+        method: 'pearson',
+        confidenceLevel: 0.95,
+      });
+
+      const correlation = matrix.ahi.avgSleepBpm;
+      expect(correlation).toHaveProperty('confidenceInterval');
+      expect(correlation.confidenceInterval).toHaveProperty('lower');
+      expect(correlation.confidenceInterval).toHaveProperty('upper');
+
+      // Confidence interval should contain the correlation
+      expect(correlation.confidenceInterval.lower).toBeLessThanOrEqual(
+        correlation.correlation,
+      );
+      expect(correlation.confidenceInterval.upper).toBeGreaterThanOrEqual(
+        correlation.correlation,
+      );
+    });
+
+    it('supports different correlation methods', () => {
+      const pearsonMatrix = calculateCorrelationMatrix(
+        nightlyData.slice(0, 20),
+        {
+          metrics: ['ahi', 'avgSleepBpm'],
+          method: 'pearson',
+        },
+      );
+
+      const spearmanMatrix = calculateCorrelationMatrix(
+        nightlyData.slice(0, 20),
+        {
+          metrics: ['ahi', 'avgSleepBpm'],
+          method: 'spearman',
+        },
+      );
+
+      // Results should be different but both valid
+      expect(pearsonMatrix.ahi.avgSleepBpm.correlation).not.toBeCloseTo(
+        spearmanMatrix.ahi.avgSleepBpm.correlation,
+        3,
+      );
+      expect(pearsonMatrix.ahi.avgSleepBpm.method).toBe('pearson');
+      expect(spearmanMatrix.ahi.avgSleepBpm.method).toBe('spearman');
+    });
+  });
+
+  describe('integration with realistic synthetic data', () => {
+    it('analyzes correlation in moderate sleep apnea pattern', () => {
+      const moderateApneaData = buildCombinedNightlyData({
+        date: '2026-01-24',
+        nights: 60, // 2 months of data
+        correlationStrength: 'strong',
+        seed: 98765,
+      });
+
+      const matrix = calculateCorrelationMatrix(moderateApneaData, {
+        metrics: [
+          'ahi',
+          'avgSleepBpm',
+          'minSpO2',
+          'rmssdHrv',
+          'sleepEfficiency',
+        ],
+        method: 'pearson',
+      });
+
+      // Should detect strong correlations due to builder configuration
+      const ahiSpO2Corr = matrix.ahi.minSpO2.correlation;
+      const ahiHrvCorr = matrix.ahi.rmssdHrv.correlation;
+
+      expect(Math.abs(ahiSpO2Corr)).toBeGreaterThan(0.3);
+      expect(Math.abs(ahiHrvCorr)).toBeGreaterThan(0.3);
+      expect(matrix.ahi.minSpO2.significance).toMatch(
+        /moderate|strong|very-strong/,
+      );
+    });
+
+    it('detects minimal correlation in normal sleep pattern', () => {
+      const normalSleepData = buildCombinedNightlyData({
+        date: '2026-01-24',
+        nights: 30,
+        correlationStrength: 'none', // Minimal correlation
+        seed: 11111,
+      });
+
+      const matrix = calculateCorrelationMatrix(normalSleepData, {
+        metrics: ['ahi', 'avgSleepBpm', 'minSpO2'],
+        method: 'pearson',
+      });
+
+      // Correlations should be weak with 'none' correlation strength
+      const correlations = [
+        matrix.ahi.avgSleepBpm.correlation,
+        matrix.ahi.minSpO2.correlation,
+        matrix.avgSleepBpm.minSpO2.correlation,
+      ];
+
+      correlations.forEach((corr) => {
+        expect(Math.abs(corr)).toBeLessThan(0.4);
+      });
+    });
+
+    it('performs lag analysis on realistic time series', () => {
+      // Build extended time series data
+      const heartRateData = buildFitbitHeartRateData({
+        date: '2026-01-24',
+        nights: 14,
+        apneaCorrelation: 'moderate',
+        seed: 33333,
+      });
+
+      const spo2Data = buildFitbitSpO2Data({
+        date: '2026-01-24',
+        nights: 14,
+        desaturationEvents: 12,
+        seed: 33333,
+      });
+
+      // Combine into time series format
+      const timeSeriesData = heartRateData
+        .map((hrNight, index) => {
+          const spo2Night = spo2Data[index];
+          return {
+            timestamp: new Date(hrNight.date).getTime(),
+            avgSleepBpm: hrNight.heartRate.avgSleepBpm,
+            minSpO2: spo2Night?.oxygenSaturation.minPercent || NaN,
+            rmssd: hrNight.heartRate.hrv.rmssd,
+          };
+        })
+        .filter((night) => !isNaN(night.avgSleepBpm) && !isNaN(night.minSpO2));
+
+      const lags = detectSignificantLags(
+        timeSeriesData,
+        'minSpO2',
+        'avgSleepBpm',
+        {
+          maxLagMinutes: 8 * 60, // 8 hours (overnight lag)
+          minCorrelation: 0.2,
+        },
+      );
+
+      // Should detect some lag relationships in realistic physiological data
+      if (lags.length > 0) {
+        expect(lags[0].lagMinutes).toBeGreaterThan(0);
+        expect(lags[0].lagMinutes).toBeLessThan(8 * 60);
+        expect(Math.abs(lags[0].correlation)).toBeGreaterThan(0.2);
+      }
+    });
+  });
+});

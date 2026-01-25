@@ -20,10 +20,18 @@ graph LR
     B -->|Heavy Computation| I[Analytics Worker]
     I -->|Results| C
 
+    J[Fitbit OAuth] --> K[Fitbit API Worker]
+    K -->|Encrypted Data| C
+    K -.->|Encrypted Storage| H
+    C --> L[Correlation Analytics]
+    L --> M[Fitbit Charts]
+
     style A fill:#e1f5ff
     style C fill:#fff4e1
     style G fill:#e8f5e9
     style H fill:#f3e5f5
+    style J fill:#ff9800
+    style M fill:#ff9800
 ```
 
 **Flow breakdown:**
@@ -38,6 +46,47 @@ graph LR
 3. **Context Store** – `AppProviders` wraps the tree with `DataProvider` to expose parsed rows and filtered subsets via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.
+4. **Fitbit Integration** – Optional OAuth flow connects to Fitbit Web API via dedicated worker. All Fitbit data is encrypted using the same AES-GCM implementation as CPAP data and stored in IndexedDB. Correlation analytics run in background workers to maintain UI responsiveness.
+
+## Fitbit Integration Architecture
+
+### OAuth Flow with PKCE
+
+The Fitbit integration implements OAuth 2.0 with PKCE (Proof Key for Code Exchange) for secure authorization:
+
+```javascript
+// Security-first OAuth implementation
+class FitbitOAuth {
+  async initiateAuth() {
+    // Generate PKCE challenge to prevent authorization code interception
+    const codeVerifier = this.generateRandomString(128);
+    const codeChallenge = await this.sha256(codeVerifier);
+
+    // Store verifier in session (not localStorage for security)
+    sessionStorage.setItem('fitbit_pkce_verifier', codeVerifier);
+
+    // Redirect to Fitbit with PKCE parameters
+    const authUrl = new URL('https://www.fitbit.com/oauth2/authorize');
+    authUrl.searchParams.set('code_challenge', codeChallenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
+    // ... additional OAuth parameters
+  }
+}
+```
+
+### Data Processing Pipeline
+
+1. **API Worker**: Fitbit API calls isolated in Web Worker to prevent main thread blocking
+2. **Encryption**: All data encrypted before storage using user-provided passphrase
+3. **Correlation Engine**: Statistical analysis runs in analytics worker
+4. **Chart Integration**: Results fed to existing Plotly chart infrastructure
+
+### Security Architecture
+
+- **Local-First**: No server communication beyond OAuth and API calls
+- **Encrypted Storage**: AES-GCM with PBKDF2 key derivation (same as CPAP data)
+- **Token Security**: Access/refresh tokens encrypted and automatically rotated
+- **Scope Limitation**: OAuth limited to read-only heart rate, SpO2, and sleep data
 
 **Example: Web Worker Message Passing**
 

@@ -1084,6 +1084,254 @@ beforeEach(() => {
 });
 ```
 
+## Testing Fitbit Integration
+
+### OAuth Flow Testing
+
+The Fitbit OAuth flow requires special handling for secure authentication:
+
+```javascript
+// src/features/fitbit/__tests__/FitbitAuth.test.jsx
+describe('Fitbit OAuth Flow', () => {
+  const mockSessionStorage = {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  };
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'sessionStorage', {
+      value: mockSessionStorage,
+    });
+
+    // Mock crypto.getRandomValues for PKCE
+    Object.defineProperty(global, 'crypto', {
+      value: {
+        getRandomValues: vi.fn(() => new Uint8Array(32).fill(1)),
+        subtle: {
+          digest: vi.fn(() => Promise.resolve(new ArrayBuffer(32))),
+        },
+      },
+    });
+  });
+
+  it('initiates OAuth with PKCE parameters', async () => {
+    const mockInitiateAuth = vi.fn();
+
+    render(
+      <FitbitConnectionCard
+        connectionStatus="disconnected"
+        onConnect={mockInitiateAuth}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /connect to fitbit/i }));
+
+    expect(mockSessionStorage.setItem).toHaveBeenCalledWith(
+      'fitbit_pkce_verifier',
+      expect.any(String),
+    );
+
+    expect(mockInitiateAuth).toHaveBeenCalledWith({
+      codeChallenge: expect.any(String),
+      codeChallengeMethod: 'S256',
+      scopes: ['heartrate', 'sleep', 'oxygen_saturation'],
+    });
+  });
+
+  it('handles authorization callback securely', async () => {
+    mockSessionStorage.getItem.mockReturnValue('mock-verifier');
+
+    const mockHandleCallback = vi.fn();
+
+    render(
+      <FitbitOAuthCallback
+        authCode="mock-auth-code"
+        onSuccess={mockHandleCallback}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockHandleCallback).toHaveBeenCalled();
+      expect(mockSessionStorage.removeItem).toHaveBeenCalledWith(
+        'fitbit_pkce_verifier',
+      );
+    });
+  });
+});
+```
+
+### API Integration Testing
+
+Test Fitbit API worker patterns without making actual network requests:
+
+```javascript
+// src/features/fitbit/workers/__tests__/fitbitApi.worker.test.js
+describe('Fitbit API Worker', () => {
+  it('handles rate limiting gracefully', async () => {
+    // Mock fetch responses
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: 'success' }),
+      })
+      .mockRejectedValueOnce({ status: 429 }) // Rate limited
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: 'retry-success' }),
+      });
+
+    const worker = await import('../fitbitApi.worker.js');
+    const results = await worker.fetchWithRateLimit([
+      '/heartrate/2026-01-01',
+      '/heartrate/2026-01-02',
+      '/heartrate/2026-01-03',
+    ]);
+
+    expect(results).toHaveLength(3);
+    expect(results[1]).toBeNull(); // Rate limited request
+    expect(results[0].data).toBe('success');
+  });
+
+  it('automatically refreshes expired tokens', async () => {
+    const mockRefreshToken = vi.fn().mockResolvedValue({
+      access_token: 'new-token',
+      expires_in: 3600,
+    });
+
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 401 }) // Token expired
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: 'success-with-new-token' }),
+      });
+
+    const worker = await import('../fitbitApi.worker.js');
+    worker.refreshToken = mockRefreshToken;
+
+    const result = await worker.authenticatedRequest('/test-endpoint');
+
+    expect(mockRefreshToken).toHaveBeenCalled();
+    expect(result.data).toBe('success-with-new-token');
+  });
+});
+```
+
+### Correlation Engine Testing
+
+Test statistical calculations with synthetic data:
+
+```javascript
+// src/features/fitbit/services/__tests__/correlationEngine.test.js
+import {
+  buildCpapSession,
+  buildFitbitData,
+} from '../../../test-utils/builders.js';
+
+describe('Correlation Analytics', () => {
+  it('calculates Pearson correlation correctly', () => {
+    const engine = new CorrelationEngine();
+
+    // Perfect positive correlation
+    const x = [1, 2, 3, 4, 5];
+    const y = [2, 4, 6, 8, 10];
+
+    const r = engine.pearsonCorrelation(x, y);
+    expect(r).toBeCloseTo(1.0, 5);
+  });
+
+  it('identifies significant AHI-HRV correlations', () => {
+    const sessions = [
+      // High AHI, low HRV (poor therapy)
+      buildCpapSession({ ahi: 15.2, fitbitHrv: 18.5 }),
+      buildCpapSession({ ahi: 12.8, fitbitHrv: 21.2 }),
+      buildCpapSession({ ahi: 18.1, fitbitHrv: 16.9 }),
+
+      // Low AHI, high HRV (good therapy)
+      buildCpapSession({ ahi: 3.2, fitbitHrv: 34.7 }),
+      buildCpapSession({ ahi: 2.1, fitbitHrv: 38.2 }),
+      buildCpapSession({ ahi: 4.5, fitbitHrv: 31.5 }),
+    ];
+
+    const engine = new CorrelationEngine();
+    const results = engine.calculateCorrelations(sessions);
+
+    // Should find strong negative correlation
+    expect(results.ahi_hrv_correlation).toBeLessThan(-0.7);
+    expect(results.ahi_hrv_pvalue).toBeLessThan(0.05);
+    expect(results.effect_size).toEqual('large');
+  });
+
+  it('handles missing data gracefully', () => {
+    const sessions = [
+      buildCpapSession({ ahi: 5.2, fitbitHrv: 24.1 }),
+      buildCpapSession({ ahi: 8.7, fitbitHrv: null }), // Missing Fitbit
+      buildCpapSession({ ahi: null, fitbitHrv: 31.5 }), // Missing CPAP
+      buildCpapSession({ ahi: 3.1, fitbitHrv: 28.9 }),
+    ];
+
+    const engine = new CorrelationEngine();
+    const results = engine.calculateCorrelations(sessions);
+
+    // Should use only complete pairs (2 sessions)
+    expect(results.sample_size).toBe(2);
+    expect(results.warnings).toContain('missing_data');
+  });
+});
+```
+
+### Encryption Testing
+
+Verify that Fitbit data encryption follows the same patterns as CPAP data:
+
+```javascript
+// src/features/fitbit/services/__tests__/encryption.test.js
+describe('Fitbit Data Encryption', () => {
+  it('encrypts and decrypts Fitbit data consistently', async () => {
+    const originalData = {
+      heartRate: [
+        { time: '2026-01-24T22:30:00Z', value: 65 },
+        { time: '2026-01-24T22:31:00Z', value: 63 },
+      ],
+      sleep: { stages: { deep: 85, light: 230, rem: 95 } },
+      spO2: { average: 96.2, minimum: 93.1 },
+    };
+
+    const passphrase = 'test-passphrase-123';
+
+    const security = new FitbitDataSecurity();
+    const encrypted = await security.encryptFitbitData(
+      originalData,
+      passphrase,
+    );
+
+    expect(encrypted).toHaveProperty('encrypted');
+    expect(encrypted).toHaveProperty('salt');
+    expect(encrypted).toHaveProperty('iv');
+    expect(encrypted.encrypted).not.toContain('65'); // No plaintext leakage
+
+    const decrypted = await security.decryptFitbitData(encrypted, passphrase);
+    expect(decrypted).toEqual(originalData);
+  });
+
+  it('fails with wrong passphrase', async () => {
+    const data = { heartRate: [{ time: '2026-01-24T22:30:00Z', value: 65 }] };
+
+    const security = new FitbitDataSecurity();
+    const encrypted = await security.encryptFitbitData(
+      data,
+      'correct-passphrase',
+    );
+
+    await expect(
+      security.decryptFitbitData(encrypted, 'wrong-passphrase'),
+    ).rejects.toThrow();
+  });
+});
+```
+
 ---
 
 ## Further Reading

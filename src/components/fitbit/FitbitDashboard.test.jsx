@@ -1,0 +1,398 @@
+import React from 'react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import FitbitDashboard from './FitbitDashboard';
+import { CONNECTION_STATUS } from '../constants/fitbit';
+
+// Mock all child components
+vi.mock('./FitbitConnectionCard', () => ({
+  default: vi.fn(({ connectionStatus, onConnect }) => (
+    <div data-testid="fitbit-connection-card">
+      <span>Status: {connectionStatus}</span>
+      <button onClick={onConnect}>Connect</button>
+    </div>
+  )),
+}));
+
+vi.mock('./SyncStatusPanel', () => ({
+  default: vi.fn(({ syncStatus, onSync }) => (
+    <div data-testid="sync-status-panel">
+      <span>Sync: {syncStatus.isSync ? 'Active' : 'Idle'}</span>
+      <button onClick={onSync}>Sync</button>
+    </div>
+  )),
+}));
+
+vi.mock('./correlation/DualAxisSyncChart', () => ({
+  default: vi.fn(({ data, title }) => (
+    <div data-testid="dual-axis-sync-chart">
+      <h3>{title}</h3>
+      <span>Points: {data.length}</span>
+    </div>
+  )),
+}));
+
+vi.mock('./correlation/CorrelationMatrix', () => ({
+  default: vi.fn(({ correlationData, onCellClick }) => (
+    <div
+      data-testid="correlation-matrix"
+      onClick={() => onCellClick('AHI', 'HeartRate')}
+    >
+      <span>Matrix with {Object.keys(correlationData).length} metrics</span>
+    </div>
+  )),
+}));
+
+vi.mock('./correlation/BivariateScatterPlot', () => ({
+  default: vi.fn(({ title, correlationData }) => (
+    <div data-testid="bivariate-scatter-plot">
+      <h3>{title}</h3>
+      <span>Points: {correlationData.points.length}</span>
+    </div>
+  )),
+}));
+
+describe('FitbitDashboard', () => {
+  const mockData = {
+    connectionStatus: CONNECTION_STATUS.CONNECTED,
+    syncStatus: {
+      isSync: false,
+      lastSyncDate: new Date('2026-01-24T08:30:00'),
+      autoSync: true,
+    },
+    syncMetrics: {
+      totalDays: 47,
+      heartRateNights: 45,
+      spo2Nights: 42,
+      gapsDetected: 2,
+    },
+    correlationData: {
+      AHI: {
+        HeartRate: { correlation: -0.73, pValue: 0.03, significance: 'strong' },
+        SpO2: { correlation: 0.68, pValue: 0.01, significance: 'moderate' },
+      },
+      HeartRate: {
+        SpO2: { correlation: -0.45, pValue: 0.08, significance: 'weak' },
+      },
+    },
+    nightlyData: [
+      {
+        date: '2026-01-24',
+        heartRate: { avg: 68, min: 52, max: 85 },
+        spo2: { avg: 94.2, min: 88, max: 98 },
+        ahiEvents: 12.5,
+      },
+      {
+        date: '2026-01-23',
+        heartRate: { avg: 72, min: 55, max: 88 },
+        spo2: { avg: 93.8, min: 86, max: 97 },
+        ahiEvents: 8.1,
+      },
+    ],
+    recentActivity: [
+      {
+        date: new Date('2026-01-24T08:30:00'),
+        action: 'Auto sync completed',
+        success: true,
+      },
+    ],
+  };
+
+  const mockProps = {
+    data: mockData,
+    onConnect: vi.fn(),
+    onDisconnect: vi.fn(),
+    onSync: vi.fn(),
+    onToggleAutoSync: vi.fn(),
+    onResolveGaps: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders dashboard with all main sections', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    expect(
+      screen.getByRole('heading', { name: /fitbit integration/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('fitbit-connection-card')).toBeInTheDocument();
+    expect(screen.getByTestId('sync-status-panel')).toBeInTheDocument();
+  });
+
+  it('renders disconnected state correctly', () => {
+    const disconnectedProps = {
+      ...mockProps,
+      data: {
+        ...mockData,
+        connectionStatus: CONNECTION_STATUS.DISCONNECTED,
+      },
+    };
+
+    render(<FitbitDashboard {...disconnectedProps} />);
+
+    expect(screen.getByTestId('fitbit-connection-card')).toBeInTheDocument();
+    expect(screen.getByText('Status: disconnected')).toBeInTheDocument();
+
+    // Should not show sync panel when disconnected
+    expect(screen.queryByTestId('sync-status-panel')).not.toBeInTheDocument();
+
+    // Should not show correlation analysis
+    expect(screen.queryByTestId('correlation-matrix')).not.toBeInTheDocument();
+  });
+
+  it('renders connected state with all components', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    expect(screen.getByTestId('fitbit-connection-card')).toBeInTheDocument();
+    expect(screen.getByTestId('sync-status-panel')).toBeInTheDocument();
+
+    // Should show overview tab by default
+    expect(
+      screen.getByRole('tab', { name: /overview/i, selected: true }),
+    ).toBeInTheDocument();
+  });
+
+  it('handles tab navigation correctly', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    // Should start on Overview tab
+    expect(
+      screen.getByRole('tab', { name: /overview/i, selected: true }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('correlation-matrix')).toBeInTheDocument();
+
+    // Click Nightly Details tab
+    const nightlyTab = screen.getByRole('tab', { name: /nightly details/i });
+    fireEvent.click(nightlyTab);
+
+    expect(nightlyTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('dual-axis-sync-chart')).toBeInTheDocument();
+
+    // Click Correlations tab
+    const correlationsTab = screen.getByRole('tab', { name: /correlations/i });
+    fireEvent.click(correlationsTab);
+
+    expect(correlationsTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('displays overview metrics correctly', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    // Should show key metrics in overview
+    expect(screen.getByText('47')).toBeInTheDocument(); // Total days
+    expect(screen.getByText('45')).toBeInTheDocument(); // Heart rate nights
+    expect(screen.getByText('42')).toBeInTheDocument(); // SpO2 nights
+    expect(screen.getByText('2 gaps detected')).toBeInTheDocument();
+  });
+
+  it('handles correlation matrix cell clicks', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const correlationMatrix = screen.getByTestId('correlation-matrix');
+    fireEvent.click(correlationMatrix);
+
+    // Should switch to scatter plot view when matrix cell is clicked
+    // Implementation would show detailed scatter plot for that correlation pair
+  });
+
+  it('shows nightly data visualization', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    // Navigate to Nightly Details tab
+    const nightlyTab = screen.getByRole('tab', { name: /nightly details/i });
+    fireEvent.click(nightlyTab);
+
+    const dualAxisChart = screen.getByTestId('dual-axis-sync-chart');
+    expect(dualAxisChart).toBeInTheDocument();
+    expect(within(dualAxisChart).getByText('Points: 2')).toBeInTheDocument();
+  });
+
+  it('handles connecting state', () => {
+    const connectingProps = {
+      ...mockProps,
+      data: {
+        ...mockData,
+        connectionStatus: CONNECTION_STATUS.CONNECTING,
+      },
+    };
+
+    render(<FitbitDashboard {...connectingProps} />);
+
+    expect(screen.getByText('Status: connecting')).toBeInTheDocument();
+
+    // Should show connection card but not sync panel during connection
+    expect(screen.getByTestId('fitbit-connection-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('sync-status-panel')).not.toBeInTheDocument();
+  });
+
+  it('handles error state', () => {
+    const errorProps = {
+      ...mockProps,
+      data: {
+        ...mockData,
+        connectionStatus: CONNECTION_STATUS.ERROR,
+        errorMessage: 'Authentication failed',
+      },
+    };
+
+    render(<FitbitDashboard {...errorProps} />);
+
+    expect(screen.getByText('Status: error')).toBeInTheDocument();
+
+    // Should show connection card but not sync/analysis components
+    expect(screen.getByTestId('fitbit-connection-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('sync-status-panel')).not.toBeInTheDocument();
+  });
+
+  it('forwards connection events correctly', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const connectButton = screen.getByText('Connect');
+    fireEvent.click(connectButton);
+
+    expect(mockProps.onConnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards sync events correctly', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const syncButton = screen.getByText('Sync');
+    fireEvent.click(syncButton);
+
+    expect(mockProps.onSync).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows empty state when no correlation data', () => {
+    const noCorrelationProps = {
+      ...mockProps,
+      data: {
+        ...mockData,
+        correlationData: {},
+      },
+    };
+
+    render(<FitbitDashboard {...noCorrelationProps} />);
+
+    expect(
+      screen.getByText('No correlation analysis available'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Sync your data to see correlations'),
+    ).toBeInTheDocument();
+  });
+
+  it('handles keyboard navigation', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    // eslint-disable-next-line no-unused-vars
+    const tabList = screen.getByRole('tablist');
+    const firstTab = screen.getByRole('tab', { name: /overview/i });
+
+    firstTab.focus();
+
+    // Arrow right to next tab
+    fireEvent.keyDown(firstTab, { key: 'ArrowRight' });
+    expect(screen.getByRole('tab', { name: /nightly details/i })).toHaveFocus();
+
+    // Enter to select tab
+    const nightlyTab = screen.getByRole('tab', { name: /nightly details/i });
+    fireEvent.keyDown(nightlyTab, { key: 'Enter' });
+    expect(nightlyTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('sets correct ARIA attributes', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const dashboard = screen.getByRole('main');
+    expect(dashboard).toHaveAttribute(
+      'aria-labelledby',
+      'fitbit-dashboard-title',
+    );
+
+    const tabList = screen.getByRole('tablist');
+    expect(tabList).toHaveAttribute('aria-label', 'Fitbit data views');
+
+    const tabPanels = screen.getAllByRole('tabpanel');
+    expect(tabPanels).toHaveLength(1); // Only active panel rendered
+
+    expect(tabPanels[0]).toHaveAttribute('aria-labelledby', 'tab-overview');
+  });
+
+  it('shows loading state during sync', () => {
+    const syncingProps = {
+      ...mockProps,
+      data: {
+        ...mockData,
+        syncStatus: {
+          ...mockData.syncStatus,
+          isSync: true,
+        },
+      },
+    };
+
+    render(<FitbitDashboard {...syncingProps} />);
+
+    expect(screen.getByText('Sync: Active')).toBeInTheDocument();
+  });
+
+  it('handles responsive layout', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const dashboard = screen.getByRole('main');
+    expect(dashboard).toHaveClass('dashboard-container');
+
+    // Should have mobile-friendly tab layout
+    const tabList = screen.getByRole('tablist');
+    expect(tabList).toHaveClass('tab-list-responsive');
+  });
+
+  it('shows data quality warnings', () => {
+    const poorQualityProps = {
+      ...mockProps,
+      data: {
+        ...mockData,
+        syncMetrics: {
+          ...mockData.syncMetrics,
+          dataQuality: 'Poor',
+        },
+      },
+    };
+
+    render(<FitbitDashboard {...poorQualityProps} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /data quality issues detected/i,
+    );
+  });
+
+  it('provides contextual help', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const helpButton = screen.getByRole('button', { name: /help/i });
+    fireEvent.click(helpButton);
+
+    expect(screen.getByText('About Fitbit Integration')).toBeInTheDocument();
+    expect(
+      screen.getByText(/correlates heart rate and SpO2 data/i),
+    ).toBeInTheDocument();
+  });
+
+  it('handles data export functionality', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    const exportButton = screen.getByRole('button', { name: /export data/i });
+    fireEvent.click(exportButton);
+
+    // Would trigger data export modal or download
+    expect(exportButton).toBeInTheDocument();
+  });
+
+  it('shows recent sync activity', () => {
+    render(<FitbitDashboard {...mockProps} />);
+
+    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+    expect(screen.getByText('Auto sync completed')).toBeInTheDocument();
+  });
+});

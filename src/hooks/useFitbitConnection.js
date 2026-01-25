@@ -1,0 +1,346 @@
+/**
+ * React hook for managing Fitbit connection state and data operations.
+ *
+ * Provides high-level interface for:
+ * - Connection status monitoring
+ * - Token management and refresh
+ * - Data synchronization
+ * - Storage and encryption handling
+ *
+ * @module hooks/useFitbitConnection
+ */
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { fitbitApiClient } from '../utils/fitbitApi.js';
+import { fitbitOAuth } from '../utils/fitbitAuth.js';
+import {
+  getFitbitDataStats,
+  setSyncMetadata,
+  getSyncMetadata,
+} from '../utils/fitbitDb.js';
+import { CONNECTION_STATUS, FITBIT_ERRORS } from '../constants/fitbit.js';
+
+/**
+ * Connection management hook.
+ *
+ * @param {Object} options - Hook configuration
+ * @param {string} options.passphrase - User encryption passphrase
+ * @param {boolean} options.autoCheck - Auto-check connection on mount
+ * @returns {Object} Connection state and methods
+ */
+export function useFitbitConnection({
+  passphrase = null,
+  autoCheck = true,
+} = {}) {
+  const [status, setStatus] = useState(CONNECTION_STATUS.DISCONNECTED);
+  const [error, setError] = useState(null);
+  const [connectionInfo, setConnectionInfo] = useState(null);
+  const [dataStats, setDataStats] = useState(null);
+  const [lastSync, setLastSync] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const passphraseRef = useRef(passphrase);
+  const checkTimeoutRef = useRef(null);
+
+  // Update passphrase ref when prop changes
+  useEffect(() => {
+    passphraseRef.current = passphrase;
+    if (passphrase) {
+      fitbitApiClient.setPassphrase(passphrase);
+    }
+  }, [passphrase]);
+
+  /**
+   * Clear error state.
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  /**
+   * Update data statistics from stored data.
+   */
+  const updateDataStats = useCallback(async () => {
+    try {
+      const stats = await getFitbitDataStats();
+      setDataStats(stats);
+    } catch (err) {
+      console.error('Failed to update data stats:', err);
+    }
+  }, []);
+
+  /**
+   * Check connection status and update state.
+   */
+  const checkConnection = useCallback(async () => {
+    try {
+      const currentPassphrase = passphraseRef.current;
+      if (!currentPassphrase) {
+        setStatus(CONNECTION_STATUS.DISCONNECTED);
+        setConnectionInfo(null);
+        return false;
+      }
+
+      setError(null);
+
+      // Check if authenticated
+      const isAuthenticated =
+        await fitbitOAuth.isAuthenticated(currentPassphrase);
+
+      if (isAuthenticated) {
+        setStatus(CONNECTION_STATUS.CONNECTED);
+
+        // Get connection info
+        try {
+          const tokenManager = fitbitOAuth.getTokenManager();
+          const tokens = await tokenManager.getStoredTokens(currentPassphrase);
+
+          if (tokens) {
+            setConnectionInfo({
+              connectedAt: tokens.created_at || Date.now(),
+              expiresAt: tokens.expires_at,
+              scope: tokens.scope,
+              timeToExpiry: Math.max(0, tokens.expires_at - Date.now()),
+            });
+          }
+        } catch (infoError) {
+          console.warn('Failed to get connection info:', infoError);
+        }
+
+        // Update data stats and sync metadata
+        await updateDataStats();
+
+        const lastSyncTime = await getSyncMetadata('last_sync_time');
+        setLastSync(lastSyncTime);
+
+        return true;
+      } else {
+        setStatus(CONNECTION_STATUS.DISCONNECTED);
+        setConnectionInfo(null);
+        setDataStats(null);
+        setLastSync(null);
+        return false;
+      }
+    } catch (err) {
+      console.error('Connection check failed:', err);
+      setError({
+        type: FITBIT_ERRORS.API_ERROR,
+        message: 'Failed to check connection status',
+        details: err.message,
+      });
+      setStatus(CONNECTION_STATUS.ERROR);
+      return false;
+    }
+  }, [updateDataStats]);
+
+  /**
+   * Refresh access token manually.
+   */
+  const refreshToken = useCallback(async () => {
+    try {
+      const currentPassphrase = passphraseRef.current;
+      if (!currentPassphrase) {
+        throw new Error('Passphrase required for token refresh');
+      }
+
+      setIsRefreshing(true);
+      setError(null);
+
+      const tokenManager = fitbitOAuth.getTokenManager();
+      const newToken = await tokenManager.refreshAccessToken(currentPassphrase);
+
+      if (newToken) {
+        await checkConnection(); // Update connection info
+        return true;
+      } else {
+        throw new Error('Token refresh returned null');
+      }
+    } catch (err) {
+      console.error('Token refresh failed:', err);
+      setError({
+        type: FITBIT_ERRORS.TOKEN_REFRESH_FAILED,
+        message: 'Failed to refresh access token',
+        details: err.message,
+      });
+
+      // If refresh fails, user might need to re-authenticate
+      setStatus(CONNECTION_STATUS.TOKEN_EXPIRED);
+      return false;
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [checkConnection]);
+
+  /**
+   * Sync data from Fitbit API.
+   *
+   * @param {Object} params - Sync parameters
+   * @param {Date|string} params.startDate - Start date for sync
+   * @param {Date|string} params.endDate - End date for sync
+   * @param {Array} params.dataTypes - Data types to sync
+   * @param {Function} params.onProgress - Progress callback
+   * @returns {Promise<Object>} Sync results
+   */
+  const syncData = useCallback(
+    async ({
+      startDate,
+      endDate,
+      dataTypes = ['heartRate', 'spo2', 'sleep'],
+      onProgress,
+    }) => {
+      try {
+        const currentPassphrase = passphraseRef.current;
+        if (!currentPassphrase) {
+          throw new Error('Passphrase required for data sync');
+        }
+
+        if (status !== CONNECTION_STATUS.CONNECTED) {
+          throw new Error('Not connected to Fitbit');
+        }
+
+        setError(null);
+
+        // Ensure API client has current passphrase
+        fitbitApiClient.setPassphrase(currentPassphrase);
+
+        // Perform batch sync
+        const results = await fitbitApiClient.batchSync({
+          startDate,
+          endDate,
+          dataTypes,
+          onProgress,
+        });
+
+        // Update sync metadata
+        await setSyncMetadata('last_sync_time', Date.now());
+        await setSyncMetadata('last_sync_range', [startDate, endDate]);
+        await setSyncMetadata('last_sync_types', dataTypes);
+
+        // Update local state
+        await updateDataStats();
+        setLastSync(Date.now());
+
+        return results;
+      } catch (err) {
+        console.error('Data sync failed:', err);
+        setError({
+          type: FITBIT_ERRORS.API_ERROR,
+          message: 'Failed to sync data from Fitbit',
+          details: err.message,
+        });
+        throw err;
+      }
+    },
+    [status, updateDataStats],
+  );
+
+  /**
+   * Disconnect and clear all data.
+   */
+  const disconnect = useCallback(async () => {
+    try {
+      const currentPassphrase = passphraseRef.current;
+      if (!currentPassphrase) {
+        throw new Error('Passphrase required for disconnect');
+      }
+
+      setError(null);
+
+      const tokenManager = fitbitOAuth.getTokenManager();
+      const success = await tokenManager.revokeTokens(currentPassphrase);
+
+      if (success) {
+        setStatus(CONNECTION_STATUS.DISCONNECTED);
+        setConnectionInfo(null);
+        setDataStats(null);
+        setLastSync(null);
+      }
+
+      return success;
+    } catch (err) {
+      console.error('Disconnect failed:', err);
+      setError({
+        type: FITBIT_ERRORS.API_ERROR,
+        message: 'Failed to disconnect from Fitbit',
+        details: err.message,
+      });
+      return false;
+    }
+  }, []);
+
+  /**
+   * Get user profile from Fitbit.
+   */
+  const getUserProfile = useCallback(async () => {
+    try {
+      const currentPassphrase = passphraseRef.current;
+      if (!currentPassphrase) {
+        throw new Error('Passphrase required');
+      }
+
+      if (status !== CONNECTION_STATUS.CONNECTED) {
+        throw new Error('Not connected to Fitbit');
+      }
+
+      fitbitApiClient.setPassphrase(currentPassphrase);
+      return await fitbitApiClient.getUserProfile();
+    } catch (err) {
+      console.error('Failed to get user profile:', err);
+      throw err;
+    }
+  }, [status]);
+
+  // Auto-check connection on mount and passphrase change
+  useEffect(() => {
+    if (autoCheck && passphrase) {
+      // Debounce connection checks
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
+
+      checkTimeoutRef.current = setTimeout(() => {
+        checkConnection();
+      }, 100);
+    }
+
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
+    };
+  }, [passphrase, autoCheck, checkConnection]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    // State
+    status,
+    error,
+    connectionInfo,
+    dataStats,
+    lastSync,
+    isRefreshing,
+
+    // Computed state
+    isConnected: status === CONNECTION_STATUS.CONNECTED,
+    isDisconnected: status === CONNECTION_STATUS.DISCONNECTED,
+    hasError: status === CONNECTION_STATUS.ERROR,
+    isTokenExpired: status === CONNECTION_STATUS.TOKEN_EXPIRED,
+
+    // Actions
+    checkConnection,
+    refreshToken,
+    syncData,
+    disconnect,
+    getUserProfile,
+    updateDataStats,
+    clearError,
+  };
+}

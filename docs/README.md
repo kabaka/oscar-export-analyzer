@@ -50,20 +50,25 @@ Comprehensive guides for end-users analyzing CPAP therapy data:
 | [**07 — Practical Tips**](user/07-practical-tips.md)               | Best practices for analyzing therapy data and spotting patterns             |
 | [**08 — Disclaimers**](user/08-disclaimers.md)                     | Medical disclaimers, privacy policies, intended use limitations             |
 | [**09 — Printing & Exporting**](user/09-printing-and-exporting.md) | Generate PDFs, export sessions, save CSV aggregates for spreadsheets        |
+| [**10 — Progressive Web App**](user/10-progressive-web-app.md)     | Install as app, offline usage, cross-device session transfer                |
+| [**11 — Fitbit Integration**](user/11-fitbit-integration.md)       | Connect Fitbit devices, correlation analysis, privacy and security          |
 | [**Glossary**](user/glossary.md)                                   | Comprehensive reference for medical, statistical, and technical terms       |
 
 ### Developer Guides
 
 Technical documentation for contributors and maintainers:
 
-| Guide                                               | Description                                                                         |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [**Developer Overview**](developer/README.md)       | Philosophy, repository tour, contributing guidelines                                |
-| [**Setup**](developer/setup.md)                     | Node.js installation, dependency management, running tests and dev server           |
-| [**Architecture**](developer/architecture.md)       | System design, component hierarchy, state management, Web Workers, Mermaid diagrams |
-| [**Dependencies**](developer/dependencies.md)       | Why we use React, Vite, Plotly, Vitest, Papa Parse, and other libraries             |
-| [**Adding Features**](developer/adding-features.md) | Step-by-step guide to implementing new visualizations and analysis modules          |
-| [**CLI Tool**](developer/cli-tool.md)               | Command-line analysis tool for batch processing and scripting                       |
+| Guide                                                     | Description                                                                         |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [**Developer Overview**](developer/README.md)             | Philosophy, repository tour, contributing guidelines                                |
+| [**Setup**](developer/setup.md)                           | Node.js installation, dependency management, running tests and dev server           |
+| [**Architecture**](developer/architecture.md)             | System design, component hierarchy, state management, Web Workers, Mermaid diagrams |
+| [**Dependencies**](developer/dependencies.md)             | Why we use React, Vite, Plotly, Vitest, Papa Parse, and other libraries             |
+| [**Adding Features**](developer/adding-features.md)       | Step-by-step guide to implementing new visualizations and analysis modules          |
+| [**Testing Patterns**](developer/testing-patterns.md)     | Vitest, Testing Library, Web Workers, accessibility, synthetic test data            |
+| [**Accessibility**](developer/accessibility.md)           | WCAG 2.1 AA compliance, keyboard navigation, screen reader support                  |
+| [**Fitbit Integration**](developer/fitbit-integration.md) | OAuth flows, API patterns, correlation analytics, security architecture             |
+| [**CLI Tool**](developer/cli-tool.md)                     | Command-line analysis tool for batch processing and scripting                       |
 
 ### Specialized Documentation
 

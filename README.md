@@ -13,6 +13,7 @@ OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produce
 - [Installation](#installation)
 - [Development](#development)
 - [Usage Walkthrough](#usage-walkthrough)
+- [Fitbit Integration Setup](#fitbit-integration-setup)
 - [Feature Tour](#feature-tour)
 - [Data Privacy](#data-privacy)
 - [Troubleshooting](#troubleshooting)
@@ -122,6 +123,39 @@ Common workflows for contributors:
 6. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
 7. Sessions persist automatically to your browser's storage. Drop a saved session JSON on the splash screen or click **Load previous session** there to restore it. Use the header menu's **Export JSON** to save a portable snapshot.
 
+## Fitbit Integration Setup
+
+OSCAR Export Analyzer supports optional integration with Fitbit devices to enhance therapy analysis with physiological data. This integration adds powerful correlation capabilities while maintaining the same privacy-first approach.
+
+### Prerequisites
+
+1. **Fitbit Account**: A Fitbit account with data from a compatible device (heart rate and SpO2 capable)
+2. **Recent Data**: At least 7 nights of overlapping CPAP and Fitbit data for meaningful correlations
+3. **Secure Connection**: HTTPS-enabled browser for OAuth authentication
+
+### Quick Setup
+
+1. **Load CPAP Data First**: Import your OSCAR CSV files as usual
+2. **Connect Fitbit**: Navigate to **Settings** → **Fitbit Integration** → **Connect to Fitbit**
+3. **Authorize Access**: Complete OAuth flow (grants read-only access to heart rate, SpO2, and sleep data)
+4. **Sync Data**: Initial sync downloads up to 100 days of historical data (may take 2-3 minutes)
+5. **Explore Correlations**: New **Fitbit Correlation** dashboard appears in navigation
+
+### Privacy & Security
+
+- **Local Processing**: All Fitbit data stays on your device, same as CPAP data
+- **Encrypted Storage**: Fitbit data encrypted in browser storage using your chosen passphrase
+- **Limited Scope**: OAuth access limited to heart rate, SpO2, and sleep stage data only
+- **Revoke Anytime**: Disconnect via Settings or your Fitbit account's App Management page
+
+### Troubleshooting
+
+- **No Overlapping Data**: Ensure CPAP and Fitbit data share common nights
+- **Authorization Errors**: Clear browser cache and retry OAuth flow
+- **Slow Sync**: Large data ranges may take several minutes to process
+
+For detailed setup instructions, see [Fitbit Integration Guide](docs/user/11-fitbit-integration.md).
+
 ## Feature Tour
 
 Screenshots are temporarily unavailable and will be refreshed after the corrected SVG exports are regenerated.
@@ -137,6 +171,10 @@ Screenshots are temporarily unavailable and will be refreshed after the correcte
 ### Pressure & Correlation Analysis
 
 **Pressure & Correlation** – Investigates how exhalation pressure (EPAP) relates to AHI. Scatter plots, LOESS curves, and correlation matrices support hypothesis generation.
+
+### Fitbit Integration
+
+**Fitbit Data Correlation** – Optional integration with Fitbit devices to analyze relationships between CPAP therapy effectiveness and physiological metrics. Connect securely via OAuth to correlate heart rate variability, SpO2, sleep stages, and restlessness patterns with therapy outcomes. All Fitbit data remains local and is encrypted using the same privacy-first approach as CPAP data.
 
 ---
 

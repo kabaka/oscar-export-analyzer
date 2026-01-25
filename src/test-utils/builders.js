@@ -148,9 +148,9 @@ export function buildNightSession({
     const eventTime = new Date(sessionStartTime.getTime() + eventOffsetMs);
 
     // Sample event duration from log-normal-like distribution
-    // eslint-disable-next-line no-magic-numbers -- typical apnea duration parameters
+
     const durationBase = 20; // median duration in seconds
-    // eslint-disable-next-line no-magic-numbers -- log-normal spread parameter
+
     const durationSpread = 1.5;
     // Approximate log-normal: exp(normal) ≈ uniform^spread
     const durationSec = Math.max(

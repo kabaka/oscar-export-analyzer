@@ -1,0 +1,428 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createNightlyRecord, validateNightlyRecord } from './fitbitModels.js';
+import {
+  buildFitbitHeartRateData,
+  buildFitbitSpO2Data,
+  buildFitbitSleepStages,
+  buildCombinedNightlyData,
+} from '../fitbitBuilders.js';
+import {
+  HR_SLEEP_MIN,
+  HR_SLEEP_MAX,
+  SPO2_NORMAL_MIN,
+  SPO2_NORMAL_MAX,
+  FITBIT_CONFIDENCE_HIGH,
+} from '../../constants/fitbit.js';
+
+describe('fitbitModels', () => {
+  describe('createNightlyRecord', () => {
+    it('creates nightly record with default values', () => {
+      const record = createNightlyRecord({
+        date: '2026-01-24',
+      });
+
+      expect(record).toHaveProperty('date');
+      expect(record.date).toBeInstanceOf(Date);
+      expect(record.oscar.ahi).toBeNaN();
+      expect(record.fitbit.heartRate.restingBpm).toBeNaN();
+      expect(record.dataQuality.oscarDataComplete).toBe(false);
+    });
+
+    it('creates complete nightly record with all metrics', () => {
+      const record = createNightlyRecord({
+        date: '2026-01-24',
+        timezoneOffset: -300, // EST
+        oscar: {
+          ahi: 12.5,
+          centralAhi: 3.2,
+          obstructiveAhi: 9.3,
+          pressures: {
+            epap: 8.5,
+            ipap: 12.0,
+            meanPressure: 10.2,
+          },
+          usage: {
+            totalMinutes: 420,
+            effectiveMinutes: 405,
+            leakPercent: 8.2,
+            arousalCount: 15,
+          },
+          events: [
+            {
+              timestamp: 1706140800000,
+              type: 'Obstructive',
+              durationSec: 15.5,
+            },
+            { timestamp: 1706141400000, type: 'Central', durationSec: 22.0 },
+          ],
+        },
+        fitbit: {
+          heartRate: {
+            restingBpm: 65,
+            avgSleepBpm: 58,
+            minSleepBpm: 52,
+            maxSleepBpm: 85,
+            hrv: {
+              rmssd: 28.5,
+              lfHf: 2.1,
+              confidence: FITBIT_CONFIDENCE_HIGH,
+            },
+          },
+          oxygenSaturation: {
+            minPercent: 88.2,
+            avgPercent: 94.1,
+            variabilityCoeff: 0.025,
+            odiEstimate: 8.5,
+            measurementMinutes: 395,
+          },
+          sleepStages: {
+            totalSleepMinutes: 420,
+            lightSleepMinutes: 240,
+            deepSleepMinutes: 75,
+            remSleepMinutes: 105,
+            awakeMinutes: 30,
+            sleepEfficiency: 0.875,
+            remFragmentation: 3,
+            onsetLatencyMin: 18,
+          },
+        },
+        dataQuality: {
+          oscarDataComplete: true,
+          fitbitDataComplete: true,
+          suspiciousValues: [],
+          anomalyScore: 0.1,
+        },
+      });
+
+      // Validate structure
+      expect(record.date).toBeInstanceOf(Date);
+      expect(record.timezoneOffset).toBe(-300);
+
+      // OSCAR metrics
+      expect(record.oscar.ahi).toBe(12.5);
+      expect(record.oscar.events).toHaveLength(2);
+      expect(record.oscar.pressures.epap).toBe(8.5);
+      expect(record.oscar.usage.totalMinutes).toBe(420);
+
+      // Fitbit metrics
+      expect(record.fitbit.heartRate.avgSleepBpm).toBe(58);
+      expect(record.fitbit.heartRate.hrv.rmssd).toBe(28.5);
+      expect(record.fitbit.oxygenSaturation.minPercent).toBe(88.2);
+      expect(record.fitbit.sleepStages.sleepEfficiency).toBe(0.875);
+
+      // Data quality
+      expect(record.dataQuality.oscarDataComplete).toBe(true);
+      expect(record.dataQuality.anomalyScore).toBe(0.1);
+    });
+
+    it('handles partial data gracefully', () => {
+      const record = createNightlyRecord({
+        date: '2026-01-24',
+        oscar: { ahi: 8.2 }, // Only AHI provided
+        fitbit: {
+          heartRate: { avgSleepBpm: 62 }, // Only average HR provided
+        },
+      });
+
+      expect(record.oscar.ahi).toBe(8.2);
+      expect(record.oscar.centralAhi).toBeNaN();
+      expect(record.fitbit.heartRate.avgSleepBpm).toBe(62);
+      expect(record.fitbit.heartRate.restingBpm).toBeNaN();
+      expect(record.fitbit.oxygenSaturation.avgPercent).toBeNaN();
+    });
+
+    it('initializes correlation values as NaN', () => {
+      const record = createNightlyRecord({
+        date: '2026-01-24',
+      });
+
+      expect(record.correlations.ahiSpO2Correlation).toBeNaN();
+      expect(record.correlations.pressureHrvLag).toBeNaN();
+      expect(record.correlations.sleepStageAhi.light).toBeNaN();
+      expect(record.correlations.sleepStageAhi.deep).toBeNaN();
+      expect(record.correlations.sleepStageAhi.rem).toBeNaN();
+    });
+  });
+
+  describe('validateNightlyRecord', () => {
+    let validRecord;
+
+    beforeEach(() => {
+      validRecord = createNightlyRecord({
+        date: '2026-01-24',
+        oscar: {
+          ahi: 10.5,
+          pressures: { epap: 9.0 },
+        },
+        fitbit: {
+          heartRate: {
+            restingBpm: 68,
+            avgSleepBpm: 60,
+          },
+          oxygenSaturation: {
+            minPercent: 90.5,
+            avgPercent: 94.2,
+          },
+          sleepStages: {
+            sleepEfficiency: 0.82,
+          },
+        },
+      });
+    });
+
+    it('validates normal physiological values', () => {
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(true);
+      expect(validation.issues).toHaveLength(0);
+      expect(validation.dataQuality).toBeGreaterThan(0.8);
+    });
+
+    it('detects implausible AHI values', () => {
+      validRecord.oscar.ahi = 200; // Impossible AHI
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible AHI: 200'),
+      );
+    });
+
+    it('detects negative AHI values', () => {
+      validRecord.oscar.ahi = -5.2;
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible AHI: -5.2'),
+      );
+    });
+
+    it('detects implausible EPAP pressure', () => {
+      validRecord.oscar.pressures.epap = 30; // Too high
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible EPAP: 30 cmH2O'),
+      );
+    });
+
+    it('detects implausible heart rates', () => {
+      validRecord.fitbit.heartRate.avgSleepBpm = 200; // Tachycardia extreme
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible sleep HR: 200 bpm'),
+      );
+    });
+
+    it('detects bradycardia edge case', () => {
+      validRecord.fitbit.heartRate.avgSleepBpm = 25; // Dangerous bradycardia
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining(
+          `Implausible sleep HR: 25 bpm (expected ${HR_SLEEP_MIN}-`,
+        ),
+      );
+    });
+
+    it('detects dangerously low SpO2', () => {
+      validRecord.fitbit.oxygenSaturation.minPercent = 65; // Critical hypoxemia
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Dangerously low SpO2: 65%'),
+      );
+    });
+
+    it('detects implausibly high SpO2', () => {
+      validRecord.fitbit.oxygenSaturation.minPercent = 102; // Impossible
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible high SpO2: 102%'),
+      );
+    });
+
+    it('validates HRV ranges', () => {
+      validRecord.fitbit.heartRate.hrv = {
+        rmssd: 150, // Extremely high HRV
+        lfHf: 2.1,
+        confidence: FITBIT_CONFIDENCE_HIGH,
+      };
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible HRV: 150ms'),
+      );
+    });
+
+    it('allows NaN values without validation errors', () => {
+      validRecord.oscar.ahi = NaN;
+      validRecord.fitbit.heartRate.avgSleepBpm = NaN;
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(true);
+      expect(validation.issues).toHaveLength(0);
+    });
+
+    it('calculates data quality score based on completeness', () => {
+      // Complete record should have high quality score
+      const completeValidation = validateNightlyRecord(validRecord);
+      expect(completeValidation.dataQuality).toBeGreaterThan(0.8);
+
+      // Record with many NaN values should have lower score
+      const incompleteRecord = createNightlyRecord({
+        date: '2026-01-24',
+        oscar: { ahi: 10.0 }, // Only AHI
+        fitbit: {}, // No Fitbit data
+      });
+
+      const incompleteValidation = validateNightlyRecord(incompleteRecord);
+      expect(incompleteValidation.dataQuality).toBeLessThan(0.5);
+    });
+
+    it('detects multiple validation issues', () => {
+      validRecord.oscar.ahi = -10; // Negative AHI
+      validRecord.fitbit.heartRate.avgSleepBpm = 250; // Extreme tachycardia
+      validRecord.fitbit.oxygenSaturation.minPercent = 60; // Dangerous hypoxemia
+
+      const validation = validateNightlyRecord(validRecord);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.issues).toHaveLength(3);
+      expect(validation.issues).toContain(
+        expect.stringContaining('Negative AHI'),
+      );
+      expect(validation.issues).toContain(
+        expect.stringContaining('Implausible sleep HR'),
+      );
+      expect(validation.issues).toContain(
+        expect.stringContaining('Dangerously low SpO2'),
+      );
+    });
+  });
+
+  describe('integration with synthetic data builders', () => {
+    it('creates valid nightly records from builder data', () => {
+      const heartRateData = buildFitbitHeartRateData({
+        date: '2026-01-24',
+        nights: 1,
+        apneaCorrelation: 'moderate',
+        seed: 12345, // Reproducible
+      });
+
+      const spo2Data = buildFitbitSpO2Data({
+        date: '2026-01-24',
+        nights: 1,
+        desaturationEvents: 10,
+        seed: 12345,
+      });
+
+      const sleepData = buildFitbitSleepStages({
+        date: '2026-01-24',
+        nights: 1,
+        sleepEfficiency: 0.8,
+        seed: 12345,
+      });
+
+      const record = createNightlyRecord({
+        date: '2026-01-24',
+        fitbit: {
+          heartRate: heartRateData[0].heartRate,
+          oxygenSaturation: spo2Data[0].oxygenSaturation,
+          sleepStages: sleepData[0].sleepStages,
+        },
+      });
+
+      const validation = validateNightlyRecord(record);
+
+      expect(validation.valid).toBe(true);
+      expect(validation.issues).toHaveLength(0);
+      expect(record.fitbit.heartRate.avgSleepBpm).toBeGreaterThan(HR_SLEEP_MIN);
+      expect(record.fitbit.heartRate.avgSleepBpm).toBeLessThan(HR_SLEEP_MAX);
+      expect(record.fitbit.oxygenSaturation.minPercent).toBeGreaterThan(
+        SPO2_NORMAL_MIN - 20,
+      );
+      expect(record.fitbit.oxygenSaturation.avgPercent).toBeLessThan(
+        SPO2_NORMAL_MAX,
+      );
+    });
+
+    it('validates combined nightly data from builder', () => {
+      const combinedData = buildCombinedNightlyData({
+        date: '2026-01-24',
+        nights: 3,
+        correlationStrength: 'strong',
+        seed: 54321, // Reproducible
+      });
+
+      expect(combinedData).toHaveLength(3);
+
+      combinedData.forEach((record, index) => {
+        const validation = validateNightlyRecord(record);
+
+        expect(validation.valid).toBe(true, `Record ${index} should be valid`);
+        expect(validation.issues).toHaveLength(
+          0,
+          `Record ${index} should have no issues`,
+        );
+
+        // Check that correlation strength affects data relationships
+        if (
+          !isNaN(record.oscar.ahi) &&
+          !isNaN(record.fitbit.heartRate.avgSleepBpm)
+        ) {
+          // For strong correlation, higher AHI should trend toward higher HR
+          expect(record.oscar.ahi).toBeGreaterThan(0);
+          expect(record.fitbit.heartRate.avgSleepBpm).toBeGreaterThan(
+            HR_SLEEP_MIN,
+          );
+        }
+      });
+    });
+
+    it('handles edge case data from builders gracefully', () => {
+      const edgeCaseData = buildFitbitHeartRateData({
+        date: '2026-01-24',
+        nights: 1,
+        sleepPattern: 'bradycardia',
+        dataQuality: 'low',
+        seed: 99999,
+      });
+
+      const record = createNightlyRecord({
+        date: '2026-01-24',
+        fitbit: {
+          heartRate: edgeCaseData[0].heartRate,
+        },
+      });
+
+      // Should create record even with edge case data
+      expect(record).toBeDefined();
+      expect(record.fitbit.heartRate.avgSleepBpm).toBeGreaterThan(0);
+
+      // Validation might flag issues but shouldn't crash
+      const validation = validateNightlyRecord(record);
+      expect(validation).toHaveProperty('valid');
+      expect(validation).toHaveProperty('issues');
+      expect(validation).toHaveProperty('dataQuality');
+    });
+  });
+});

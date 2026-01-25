@@ -66,6 +66,18 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 
 ---
 
+### Fitbit Integration
+
+**Definition**: Optional connection to Fitbit devices via OAuth authentication to analyze correlations between CPAP therapy metrics and physiological data.
+
+**Context**: When enabled, the analyzer securely downloads heart rate, SpO2, and sleep stage data from Fitbit Web API. All data remains local and encrypted. Correlation analysis helps identify relationships between therapy effectiveness and cardiovascular/respiratory responses.
+
+**Related Terms**: [HRV](#hrv-heart-rate-variability), [Correlation Analysis](#correlation-analysis), [OAuth](#oauth)
+
+**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Statistical Concepts](04-statistical-concepts.md)
+
+---
+
 ### FLG (Flow Limitation)
 
 **Definition**: Partial airflow restriction detected by analyzing breath waveform shape. Reported as a numeric value between 0 (no limitation) and 1 (severe limitation).
@@ -75,6 +87,18 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 **Related Terms**: [RERA](#rera-respiratory-effort-related-arousal), [False Negatives](#false-negatives), [Hypopnea](#hypopnea)
 
 **See Also**: [False Negatives Guide](02-visualizations.md#false-negatives-analysis)
+
+---
+
+### HRV (Heart Rate Variability)
+
+**Definition**: The variation in time intervals between heartbeats, measured in milliseconds. Higher HRV typically indicates better cardiovascular health and more restorative sleep.
+
+**Context**: Available when Fitbit integration is enabled. HRV is calculated as RMSSD (Root Mean Square of Successive Differences) from minute-level heart rate data during sleep periods. Lower HRV may correlate with higher AHI or poor therapy effectiveness.
+
+**Related Terms**: [Fitbit Integration](#fitbit-integration), [Correlation Analysis](#correlation-analysis)
+
+**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Statistical Concepts](04-statistical-concepts.md)
 
 ---
 
@@ -452,6 +476,18 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 
 ---
 
+### Correlation Analysis
+
+**Definition**: Statistical method to measure the strength and direction of linear relationships between two variables, typically expressed as Pearson correlation coefficient (r) ranging from -1 to +1.
+
+**Context**: Used extensively in Fitbit integration to identify relationships between CPAP therapy metrics (AHI, pressure, usage) and physiological responses (HRV, SpO2, sleep stages). Includes significance testing (p-values) and effect size calculations for clinical interpretation.
+
+**Related Terms**: [Pearson Correlation](#pearson-correlation), [Spearman Correlation](#spearman-correlation), [P-Value](#p-value), [Effect Size](#effect-size)
+
+**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Statistical Concepts](04-statistical-concepts.md)
+
+---
+
 ### Effect Size
 
 **Definition**: A quantitative measure of the magnitude of a difference between groups, independent of sample size.
@@ -607,6 +643,18 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 **Related Terms**: [Export/Import](#exportimport), [Session](#session)
 
 **See Also**: [Getting Started](01-getting-started.md)
+
+---
+
+### OAuth (Open Authorization)
+
+**Definition**: Industry-standard protocol for secure API authorization that allows applications to access user data without exposing passwords.
+
+**Context**: Used for Fitbit integration. OAuth 2.0 with PKCE (Proof Key for Code Exchange) provides secure, time-limited access to heart rate and sleep data. Users can revoke access anytime via Fitbit account settings or analyzer Settings panel.
+
+**Related Terms**: [Fitbit Integration](#fitbit-integration), [API](#api), [Encryption](#encryption)
+
+**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Disclaimers](08-disclaimers.md)
 
 ---
 
