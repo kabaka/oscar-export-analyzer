@@ -25,6 +25,7 @@ corresponds to changes released on that day.
 
 ### Fixed
 
+- **Fitbit clientId resolution in CI**: Fixed test failure where `FITBIT_CONFIG.clientId` returned `'***'` instead of `'dev-client-id'` in CI environments. Converted `clientId` property to a lazy getter that evaluates `resolveClientId()` at runtime, preventing Vite from inlining the environment variable value during build-time constant replacement. Tests now pass consistently in both local and CI environments when `VITE_FITBIT_CLIENT_ID='***'` is set.
 - **Fitbit AHI-HRV significance detection**: Replaced the stubbed t CDF with an accurate two-sided Student's t implementation and NaN guards so strong therapy-to-physiology improvements register as significant while weaker signals remain unchanged in the Fitbit analysis pipeline.
 - **FitbitDashboard Runtime Crashes**: Resolved critical undefined object access patterns causing "cannot access properties on undefined objects" errors. Added proper null guards and optional chaining for `fitbitData.nightlyData` property access. Updated `hasData` validation to ensure all required data properties exist before component rendering. Prevents runtime crashes when Fitbit data is unavailable or incomplete.
 

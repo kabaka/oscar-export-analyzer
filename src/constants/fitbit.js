@@ -14,11 +14,6 @@
 
 const DEFAULT_CLIENT_ID = 'dev-client-id';
 
-const envClientId =
-  (typeof import.meta !== 'undefined' &&
-    import.meta.env?.VITE_FITBIT_CLIENT_ID) ||
-  undefined;
-
 const resolveClientId = (value) => {
   if (!value) return DEFAULT_CLIENT_ID;
   const trimmed = value.trim();
@@ -35,7 +30,15 @@ export const FITBIT_CONFIG = {
   revokeUrl: 'https://api.fitbit.com/oauth2/revoke',
 
   // Client configuration
-  clientId: resolveClientId(envClientId),
+  // Lazy getter ensures resolveClientId runs at runtime, not module load time
+  // This prevents Vite from inlining the env var value during build
+  get clientId() {
+    const envClientId =
+      (typeof import.meta !== 'undefined' &&
+        import.meta.env?.VITE_FITBIT_CLIENT_ID) ||
+      undefined;
+    return resolveClientId(envClientId);
+  },
   redirectUri: `${globalThis.location?.origin || 'http://localhost:5173'}/oauth-callback`,
 
   // PKCE configuration
