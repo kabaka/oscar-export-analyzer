@@ -97,6 +97,16 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     include: ['src/**/*.test.{js,jsx,ts,tsx}', 'styles.*.test.js'],
     testTimeout: 20000,
+    teardownTimeout: 30000, // Allow 30s for worker cleanup to prevent termination timeouts
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        // Note: execArgv doesn't propagate NODE_OPTIONS; use package.json scripts instead
+        // See: docs/work/debugging/RCA_vitest_worker_heap_exhaustion.md
+        maxForks: 4, // Reduce parallelism to lower memory pressure
+        minForks: 1,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
