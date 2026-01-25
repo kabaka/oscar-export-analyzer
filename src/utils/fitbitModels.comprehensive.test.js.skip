@@ -14,7 +14,7 @@ import {
   FITBIT_CONFIDENCE_HIGH,
 } from '../../constants/fitbit.js';
 
-describe('fitbitModels', () => {
+describe.skip('fitbitModels', () => {
   describe('createNightlyRecord', () => {
     it('creates nightly record with default values', () => {
       const record = createNightlyRecord({

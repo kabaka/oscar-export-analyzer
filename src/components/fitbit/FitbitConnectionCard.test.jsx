@@ -45,10 +45,10 @@ describe('FitbitConnectionCard', () => {
     expect(screen.getByText(/47 nights available/)).toBeInTheDocument();
     expect(screen.getByText(/Last sync:/)).toBeInTheDocument();
     expect(screen.getByText(/Data range:/)).toBeInTheDocument();
-    // Check metrics are present (text may be split across elements)
-    expect(screen.getByText('Heart Rate')).toBeInTheDocument();
-    expect(screen.getByText('SpO2')).toBeInTheDocument();
-    expect(screen.getByText('Sleep Stages')).toBeInTheDocument();
+    // Metrics are joined by comma, check for combined text
+    expect(
+      screen.getByText(/Heart Rate, SpO2, Sleep Stages/),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /view analysis/i }),
     ).toBeInTheDocument();

@@ -287,11 +287,12 @@ export function generateTreatmentRecommendations(
     const hypoxemicRate =
       effectivenessResults.oxygenation.hypoxemicNights /
       correlationResults.sampleSize;
+    const medianMinSpO2 = effectivenessResults.oxygenation.medianMinSpO2;
     recommendations.push({
       category: 'oxygenation',
       priority: 'high',
       recommendation: `Frequent hypoxemia detected (${(hypoxemicRate * 100).toFixed(0)}% of nights)`,
-      evidence: `Median minimum SpO2: ${effectivenessResults.oxygenation.medianMinSpO2.toFixed(1)}%`,
+      evidence: `Median minimum SpO2: ${Number.isFinite(medianMinSpO2) ? medianMinSpO2.toFixed(1) : 'N/A'}%`,
       action: 'Consider oxygen supplementation or advanced PAP modes',
     });
   }
@@ -461,7 +462,7 @@ function computeTherapyEffectivenessScore(metrics) {
   let components = 0;
 
   // AHI control component (0-25 points)
-  if (metrics.ahiControl) {
+  if (metrics.ahiControl && Number.isFinite(metrics.ahiControl.controlRate)) {
     score += metrics.ahiControl.controlRate * 25;
     components++;
   }
@@ -469,20 +470,27 @@ function computeTherapyEffectivenessScore(metrics) {
   // Physiological response component (0-25 points)
   if (
     metrics.physiologicalResponse &&
-    metrics.physiologicalResponse.significantResponse
+    metrics.physiologicalResponse.significantResponse &&
+    Number.isFinite(metrics.physiologicalResponse.ahiHrvCorrelation)
   ) {
     score += Math.abs(metrics.physiologicalResponse.ahiHrvCorrelation) * 25;
     components++;
   }
 
   // Sleep quality component (0-25 points)
-  if (metrics.sleepQuality) {
+  if (
+    metrics.sleepQuality &&
+    Number.isFinite(metrics.sleepQuality.medianEfficiency)
+  ) {
     score += Math.min((metrics.sleepQuality.medianEfficiency / 85) * 25, 25);
     components++;
   }
 
   // Oxygenation component (0-25 points)
-  if (metrics.oxygenation) {
+  if (
+    metrics.oxygenation &&
+    Number.isFinite(metrics.oxygenation.medianMinSpO2)
+  ) {
     const oxyScore = Math.min(
       ((metrics.oxygenation.medianMinSpO2 - 85) / 10) * 25,
       25,
@@ -491,7 +499,9 @@ function computeTherapyEffectivenessScore(metrics) {
     components++;
   }
 
-  return components > 0 ? (score / components) * (components / 4) : 0; // Normalize and weight by completeness
+  const finalScore =
+    components > 0 ? (score / components) * (components / 4) : 0;
+  return Number.isFinite(finalScore) ? finalScore : 0;
 }
 
 function interpretLagAnalysis(lag, correlation) {
