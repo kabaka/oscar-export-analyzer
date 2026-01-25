@@ -27,6 +27,16 @@ export function OAuthCallbackHandler({
   passphrase,
   onComplete,
 }) {
+  // SECURITY: Clean URL immediately on mount (synchronously) to prevent browser history capture
+  // This must happen BEFORE any async processing or useEffect to avoid ?code=... in back button
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('code') || urlParams.has('state')) {
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }
+
   const [processing, setProcessing] = useState(true);
   const [result, setResult] = useState(null);
 

@@ -171,10 +171,25 @@ class TokenManager {
         passphrase,
       );
 
+      // SECURITY: Validate expires_at to prevent MITM manipulation
+      const expiresAt = encrypted.metadata.expires_at;
+      const MAX_TOKEN_LIFETIME = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
+
+      if (
+        typeof expiresAt !== 'number' ||
+        !isFinite(expiresAt) ||
+        expiresAt <= Date.now() ||
+        expiresAt > Date.now() + MAX_TOKEN_LIFETIME
+      ) {
+        console.error('Invalid token expiry detected:', expiresAt);
+        this.memoryCache = null;
+        throw new Error('Invalid token expiry - possible security issue');
+      }
+
       // Update memory cache
       this.memoryCache = {
         ...decrypted,
-        expires_at: encrypted.metadata.expires_at,
+        expires_at: expiresAt,
         cached_at: Date.now(),
       };
       this.passphrase = passphrase;
