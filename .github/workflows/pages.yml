@@ -86,6 +86,7 @@ jobs:
           name: build-dist
           path: dist/
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Setup Pages
         id: pages
