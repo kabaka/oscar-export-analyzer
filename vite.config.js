@@ -5,6 +5,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 import process from 'node:process';
 import path from 'node:path';
 
+const ghPagesRuntimePattern =
+  /^https:\/\/[a-z0-9-]+\.github\.io\/oscar-export-analyzer\/.*$/i;
+
+export const GH_PAGES_RUNTIME_PATTERN = ghPagesRuntimePattern;
+
 export default defineConfig({
   base: process.env.BASE_URL || '/oscar-export-analyzer/',
   plugins: [
@@ -50,7 +55,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // 7MB - large bundle due to Plotly
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.github\.io\/oscar-export-analyzer\/.*/i,
+            urlPattern: ghPagesRuntimePattern,
             handler: 'CacheFirst',
             options: {
               cacheName: 'oscar-app-shell',

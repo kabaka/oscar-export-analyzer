@@ -920,7 +920,7 @@ describe.skip('Fitbit Integration Error Scenarios', () => {
 
       // Inject potentially malicious content
       maliciousData[0].oscar.events[0].type =
-        '<script>alert("XSS")</script>Obstructive';
+        '<SCRIPT>alert("XSS")</SCRIPT>Obstructive';
 
       render(
         <FitbitDashboard
@@ -935,11 +935,36 @@ describe.skip('Fitbit Integration Error Scenarios', () => {
       );
 
       // Should not execute script or render raw HTML
-      const eventElements = screen.queryAllByText(/script|alert/i);
-      eventElements.forEach((element) => {
-        expect(element).not.toHaveTextContent(/<script>/);
-        expect(element.innerHTML).not.toContain('<script>');
+      expect(screen.queryByText(/script/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/alert\(/i)).not.toBeInTheDocument();
+    });
+
+    it('strips uppercase script payloads before rendering', () => {
+      const maliciousData = buildCombinedNightlyData({
+        date: '2026-01-24',
+        nights: 1,
+        correlationStrength: 'moderate',
+        seed: 99991,
       });
+
+      maliciousData[0].oscar.events[0].type =
+        '<SCRIPT>alert("XSS")</SCRIPT>Central Apnea';
+
+      render(
+        <FitbitDashboard
+          fitbitData={maliciousData}
+          connectionStatus="connected"
+          syncState={{ status: 'idle' }}
+          onConnect={vi.fn()}
+          onDisconnect={vi.fn()}
+          onSync={vi.fn()}
+          onCorrelationAnalysis={vi.fn()}
+        />,
+      );
+
+      const pageText = document.body.textContent || '';
+      expect(pageText).not.toMatch(/<\s*script/i);
+      expect(pageText).not.toMatch(/alert\("xss"\)/i);
     });
   });
 });

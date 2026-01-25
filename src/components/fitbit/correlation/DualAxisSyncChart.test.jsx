@@ -217,4 +217,27 @@ describe('DualAxisSyncChart', () => {
     expect(summary).toHaveClass('sr-only');
     expect(summary).toHaveAttribute('role', 'region');
   });
+
+  it('strips script tags from event labels regardless of casing', () => {
+    const maliciousData = {
+      ...mockNightData,
+      ahiEvents: [
+        {
+          ...mockNightData.ahiEvents[0],
+          type: '<SCRIPT>alert("xss")</SCRIPT>Obstructive',
+        },
+      ],
+    };
+
+    render(<DualAxisSyncChart title="Sanitized Chart" data={maliciousData} />);
+
+    const chartData = screen.getByTestId('chart-data');
+    const parsedData = JSON.parse(chartData.textContent);
+    const ahiTrace = parsedData.data.find(
+      (trace) => trace.name === 'AHI Events',
+    );
+
+    expect(ahiTrace.text[0]).toBe('Obstructive');
+    expect(ahiTrace.text[0]).not.toMatch(/script/i);
+  });
 });

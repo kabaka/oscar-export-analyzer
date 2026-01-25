@@ -36,6 +36,13 @@ corresponds to changes released on that day.
 
 - **Fitbit sleep date offset math**: Reversed timezone offset application in `calculateSleepDate()` so west-of-UTC offsets move sessions earlier, matching expected Fitbit sync date calculations including extreme offsets.
 
+### Security
+
+- **AHI event label sanitization**: Strip script tags with a case-insensitive filter before rendering Plotly hover text to close an XSS gap when event labels contain uppercase `<SCRIPT>` payloads.
+- **Mock token entropy**: Replace Math.random-based mock OAuth tokens with crypto-backed randomness so test tokens mirror production entropy expectations.
+- **PWA cache scope tightening**: Limit Workbox GitHub Pages cache matching to the official `*.github.io/oscar-export-analyzer` host pattern to prevent caching external domains.
+- **Fitbit client ID defaulting**: Normalize placeholder `VITE_FITBIT_CLIENT_ID` values to the non-secret `dev-client-id` used in tests and local development.
+
 ## 2026-01-24
 
 ### Added

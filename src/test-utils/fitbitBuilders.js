@@ -16,6 +16,27 @@ import {
   FITBIT_CONFIDENCE_MEDIUM,
   FITBIT_CONFIDENCE_LOW,
 } from '../constants/fitbit.js';
+import { webcrypto as nodeCrypto } from 'node:crypto';
+
+const cryptoSource =
+  (typeof globalThis.crypto !== 'undefined' && globalThis.crypto) || nodeCrypto;
+
+const randomTokenSegment = (length = 12) => {
+  if (typeof cryptoSource?.randomUUID === 'function') {
+    return cryptoSource.randomUUID().replace(/-/g, '').slice(0, length);
+  }
+
+  if (typeof cryptoSource?.getRandomValues === 'function') {
+    const byteCount = Math.ceil(length / 2);
+    const bytes = new Uint8Array(byteCount);
+    cryptoSource.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'))
+      .join('')
+      .slice(0, length);
+  }
+
+  throw new Error('Secure random generator unavailable');
+};
 
 /**
  * Generate synthetic Fitbit heart rate data with realistic patterns.
@@ -537,11 +558,9 @@ export function buildMockOAuthTokens({
   ); // ±1 hour or +N hours
 
   return {
-    access_token:
-      'mock_access_token_' + Math.random().toString(36).substr(2, 9),
-    refresh_token:
-      'mock_refresh_token_' + Math.random().toString(36).substr(2, 9),
-    user_id: 'mock_user_' + Math.random().toString(36).substr(2, 6),
+    access_token: `mock_access_token_${randomTokenSegment(24)}`,
+    refresh_token: `mock_refresh_token_${randomTokenSegment(24)}`,
+    user_id: `mock_user_${randomTokenSegment(12)}`,
     scope: 'heartrate spo2 sleep profile',
     token_type: 'Bearer',
     expires_in: expired ? -3600 : expiresInHours * 3600,

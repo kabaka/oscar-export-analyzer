@@ -12,6 +12,13 @@ import {
   CORRELATION_CHART_MARGINS,
 } from '../../../constants/fitbit';
 
+const SCRIPT_TAG_REGEX = /<\s*script\b[^>]*>([\s\S]*?)<\s*\/\s*script\s*>/gi;
+
+const sanitizeLabel = (value) => {
+  if (typeof value !== 'string') return value;
+  return value.replace(SCRIPT_TAG_REGEX, '').trim();
+};
+
 /**
  * Dual-axis chart showing temporal alignment between CPAP metrics and Fitbit data.
  *
@@ -148,7 +155,9 @@ function DualAxisSyncChart({
     if (ahiEvents && ahiEvents.length > 0) {
       const eventTimes = ahiEvents.map((event) => event.time);
       const eventSeverities = ahiEvents.map((event) => event.severity || 5);
-      const eventTypes = ahiEvents.map((event) => event.type || 'Event');
+      const eventTypes = ahiEvents.map((event) =>
+        sanitizeLabel(event.type || 'Event'),
+      );
       const eventDurations = ahiEvents.map((event) => event.duration || 10);
 
       traces.push({

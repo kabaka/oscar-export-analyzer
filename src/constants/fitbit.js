@@ -11,6 +11,23 @@
  * Fitbit OAuth 2.0 configuration.
  * Uses Authorization Code flow with PKCE for security.
  */
+
+const DEFAULT_CLIENT_ID = 'dev-client-id';
+
+const envClientId =
+  (typeof import.meta !== 'undefined' &&
+    import.meta.env?.VITE_FITBIT_CLIENT_ID) ||
+  undefined;
+
+const resolveClientId = (value) => {
+  if (!value) return DEFAULT_CLIENT_ID;
+  const trimmed = value.trim();
+  if (trimmed === '***' || trimmed === 'your-fitbit-client-id') {
+    return DEFAULT_CLIENT_ID;
+  }
+  return trimmed;
+};
+
 export const FITBIT_CONFIG = {
   // OAuth endpoints
   authUrl: 'https://www.fitbit.com/oauth2/authorize',
@@ -18,10 +35,7 @@ export const FITBIT_CONFIG = {
   revokeUrl: 'https://api.fitbit.com/oauth2/revoke',
 
   // Client configuration
-  clientId:
-    (typeof import.meta !== 'undefined' &&
-      import.meta.env?.VITE_FITBIT_CLIENT_ID) ||
-    'dev-client-id',
+  clientId: resolveClientId(envClientId),
   redirectUri: `${globalThis.location?.origin || 'http://localhost:5173'}/oauth-callback`,
 
   // PKCE configuration
