@@ -2,26 +2,122 @@
 
 ## Custom Copilot Agents
 
-OSCAR Export Analyzer includes **9 specialized GitHub Copilot agents** for development workflows. When completing tasks that could be delegated, use these agents as subagents; they coordinate development, testing, documentation, analysis, and quality assurance.
+OSCAR Export Analyzer includes **10 specialized GitHub Copilot agents** for development workflows. When completing tasks that could be delegated, use these agents as subagents; they coordinate development, testing, documentation, analysis, and quality assurance.
 
 **Agents** (in `.github/agents/`):
 
 - `@orchestrator-manager` — Coordinate projects, delegate tasks, track progress across workflows
 - `@frontend-developer` — Build React/JSX components, hooks, component architecture
 - `@ux-designer` — Design user experiences, accessibility, data visualization, medical UI patterns
-- `@testing-expert` — Design test strategy, write Vitest tests, synthetic test data, coverage
+- `@testing-expert` — Design test strategy, write Vitest/Playwright tests, E2E automation, synthetic test data
 - `@data-scientist` — Statistical analysis, algorithm validation, medical data interpretation
 - `@documentation-specialist` — Write and maintain documentation, guides, architecture docs, code comments
 - `@security-auditor` — Audit security, privacy, sensitive health data handling (local-first privacy)
 - `@adr-specialist` — Document architectural decisions, technology choices, rationale
 - `@debugger-rca-analyst` — Determine root cause through rigorous testing and analysis
 - `@readiness-reviewer` — Pre-commit quality gate: tests pass, linting clean, scope complete, docs updated
+- `@code-quality-enforcer` — Enforce consistency, DRY principles, architecture adherence, code style (NEW)
 
 **Documentation**:
 
 - [**Individual Agent Details**](.github/agents/*.agent.md) — Full agent descriptions, expertise, and patterns
+- [**Agent Review Synthesis**](docs/work/agent-reviews/SYNTHESIS-recommendations.md) — Comprehensive analysis of gaps and improvements (2026-01-26)
 - **Delegation Model**: Always delegate — use multiple agents for complex work. See orchestrator-manager for patterns.
 - **Quality Bar**: All tests pass, linting clean, documentation updated, no sensitive data committed.
+- **Verification**: Never accept incomplete work. Follow up on agent progress; re-delegate if blocked or incomplete.
+
+---
+
+## New in January 2026: Enhanced Testing & Quality Enforcement
+
+### @testing-expert Extended: Playwright E2E Testing
+
+`@testing-expert` now includes full **Playwright browser automation** capabilities:
+
+- **E2E testing**: Real browser automation for critical user flows
+- **Visual regression**: Baseline comparison for charts, layouts, dark mode, responsive breakpoints
+- **Cross-browser testing**: Chrome, Firefox, Safari validation
+- **Automation**: Screenshot generation for README, automated visual validation, PDF rendering tests
+- **Documentation automation**: Synthetic testing post-deployment for rollback decisions (future enhancement)
+
+**When to use**: CSV uploads, print/PDF, PWA installation, chart interactions, Fitbit OAuth, large file stress tests
+
+### @code-quality-enforcer (NEW): Consistency Guardian
+
+New specialized agent focused on codebase consistency and architectural adherence:
+
+- **DRY enforcement**: Detects duplicate code, common patterns that should be shared
+- **Architecture adherence**: Ensures similar components follow same patterns
+- **File organization**: Validates proper directory structure, consistent naming
+- **Code smells**: Identifies long functions, unclear abstractions, tight coupling
+- **Documentation hygiene**: Checks comment formatting, JSDoc completeness, outdated docs
+- **Authority**: Blocks merge until consistency issues are fixed (not just suggestions)
+
+**Workflow**: Code-quality-enforcer runs FIRST → then readiness-reviewer runs SECOND
+
+---
+
+## Improved Verification & Coordination Patterns
+
+### Orchestrator Improvements (2026-01-26)
+
+Based on comprehensive self-review, @orchestrator-manager now enforces:
+
+1. **Strict work verification** — Never accept incomplete delegations. Use checklist:
+   - [ ] All acceptance criteria met?
+   - [ ] Tests passing? (full suite, not partial)
+   - [ ] Linting clean? (no errors OR warnings)
+   - [ ] CHANGELOG updated?
+   - [ ] Temporary files cleaned up?
+   - [ ] Documentation updated?
+   - [ ] Edge cases handled?
+
+2. **Pre-delegation context gathering** — Read 1-2 key files before delegating
+   - Provides specific file references, patterns, constraints upfront
+   - Saves agents 15-30 minutes of re-investigation
+
+3. **Multi-agent role clarity** — Explicit assignment in delegation:
+   - "frontend-developer: implement. testing-expert: design test strategy. ux-designer: validate accessibility"
+   - Not "all three: make this feature"
+
+4. **Quality verification before readiness-reviewer** — Check:
+   - Test completeness (edge cases, error scenarios, not just happy path)
+   - Code patterns (follows established patterns, naming, state management)
+   - Documentation (actually helpful, not placeholder)
+
+5. **Risk communication upfront** — Always flag:
+   - Security/algorithm dependencies (might need early review)
+   - Platform unknowns (might affect timeline)
+   - Blocking dependencies (can't parallelize certain work)
+
+6. **Boundary enforcement** — Strictly delegate:
+   - ❌ Stop: running `npm test`, `npm run lint`, `npm run build` yourself
+   - ✅ Delegate: all code changes, test fixes, build validation to appropriate agents
+
+7. **Check-in pattern** — For long-running work (>30 min):
+   - Expect status update halfway through
+   - Explicit "COMPLETE: [work] meets [criteria]" confirmation
+
+### Two-Stage Review Workflow (Readiness-Reviewer + Code-Quality-Enforcer)
+
+**Sequence**:
+
+1. Developer/agent submits code
+2. **@code-quality-enforcer reviews** for consistency, DRY, architecture, code quality
+   - Blocks merge on real issues (DRY violations, pattern inconsistency, code smells)
+   - Requests changes on improvements (naming, style, documentation)
+3. **@readiness-reviewer reviews** for merge readiness
+   - Validates tests pass, linting clean, scope complete
+   - Checks working directories empty, documentation updated
+   - Does final scope validation and security scan
+4. **Code merged** with high quality confidence
+
+**Why this order?**
+
+- Quality fixes often easier than test failures
+- Quality review may request refactors that need re-testing
+- Readiness-reviewer gets cleaner code to validate
+- Developers see consistency feedback before formal gate
 
 ---
 
