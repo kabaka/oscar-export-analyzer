@@ -28,6 +28,7 @@ export function FitbitConnectionCard({
   passphrase = null,
   onConnectionChange = null,
   onError = null,
+  onConnect = null,
   showDataPreview = true,
   variant = 'card',
 }) {
@@ -83,7 +84,15 @@ export function FitbitConnectionCard({
     try {
       clearOAuthError();
       clearConnectionError();
+      // If parent supplied an `onConnect` handler (e.g. the section/dashboard),
+      // delegate initiation to it. This allows the parent to control OAuth
+      // initiation and prompt for a passphrase when the callback arrives.
+      if (onConnect) {
+        await onConnect();
+        return;
+      }
 
+      // Fallback to local initiation which requires a passphrase to be set.
       if (!passphrase) {
         throw new Error('Encryption passphrase required for secure connection');
       }
@@ -289,7 +298,7 @@ export function FitbitConnectionCard({
           <button
             type="button"
             onClick={handleConnect}
-            disabled={isLoading || !passphrase}
+            disabled={isLoading}
             className="primary-button"
             aria-describedby="security-notice"
           >
