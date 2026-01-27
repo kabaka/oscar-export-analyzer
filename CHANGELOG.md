@@ -7,6 +7,12 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-01-27
+
+### Changed
+
+- **Unified Fitbit connection UI**: Consolidated duplicate `FitbitConnectionCard` components into single theme-aware implementation. Deleted old component (`src/components/fitbit/FitbitConnectionCard.jsx`) with hardcoded inline styles that broke dark mode. Updated remaining component styling to use consistent CSS variables (`--color-elevated`, `--color-text`, `--color-border-light`, `--color-kpi-bg`) for proper theme support. Enhanced layout with centered max-width (600px), improved security notice readability, and accessible button sizing (44px minimum touch targets). Updated all imports to reference unified component location. Fixes dual-panel rendering and theme inconsistency issues where Fitbit card appeared with unreadable light-gray text on dark theme.
+
 ## 2026-01-25
 
 ### Added

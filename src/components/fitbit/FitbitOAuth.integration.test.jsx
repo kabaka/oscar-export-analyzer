@@ -137,7 +137,7 @@ describe.skip('Fitbit OAuth Integration', () => {
         await initiateAuth();
       });
 
-      const storedState = sessionStorage.getItem('fitbit_oauth_state');
+      const storedState = localStorage.getItem('fitbit_oauth_state');
       expect(storedState).toBeTruthy();
       expect(storedState).toHaveLength(32);
     });
@@ -148,12 +148,12 @@ describe.skip('Fitbit OAuth Integration', () => {
       await act(async () => {
         await initiateAuth();
       });
-      const firstState = sessionStorage.getItem('fitbit_oauth_state');
+      const firstState = localStorage.getItem('fitbit_oauth_state');
 
       await act(async () => {
         await initiateAuth();
       });
-      const secondState = sessionStorage.getItem('fitbit_oauth_state');
+      const secondState = localStorage.getItem('fitbit_oauth_state');
 
       expect(firstState).not.toBe(secondState);
     });
@@ -199,7 +199,7 @@ describe.skip('Fitbit OAuth Integration', () => {
 
       // Set up OAuth callback URL
       mockLocation.search = '?code=mock_auth_code&state=valid_state';
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>
@@ -239,7 +239,7 @@ describe.skip('Fitbit OAuth Integration', () => {
       };
 
       // Store different state than callback provides
-      sessionStorage.setItem('fitbit_oauth_state', 'expected_state');
+      localStorage.setItem('fitbit_oauth_state', 'expected_state');
 
       render(
         <FitbitOAuthProvider>
@@ -287,7 +287,7 @@ describe.skip('Fitbit OAuth Integration', () => {
         );
       };
 
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>
@@ -322,7 +322,7 @@ describe.skip('Fitbit OAuth Integration', () => {
         );
       };
 
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>
@@ -369,7 +369,7 @@ describe.skip('Fitbit OAuth Integration', () => {
         );
       };
 
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>
@@ -701,7 +701,7 @@ describe.skip('Fitbit OAuth Integration', () => {
           return <span data-testid="error">{error}</span>;
         };
 
-        sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+        localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
         const { unmount } = render(
           <FitbitOAuthProvider>
@@ -747,7 +747,7 @@ describe.skip('Fitbit OAuth Integration', () => {
       );
 
       // Trigger error
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
       const { handleCallback } = useFitbitOAuth();
       await act(async () => {
         await handleCallback('test_code', 'valid_state');
@@ -805,7 +805,7 @@ describe.skip('Fitbit OAuth Integration', () => {
       expect(screen.getByTestId('user')).toHaveTextContent('None');
 
       // Verify session storage is cleared
-      expect(sessionStorage.getItem('fitbit_oauth_state')).toBeNull();
+      expect(localStorage.getItem('fitbit_oauth_state')).toBeNull();
     });
 
     it('does not store tokens in localStorage or sessionStorage', async () => {
@@ -833,7 +833,7 @@ describe.skip('Fitbit OAuth Integration', () => {
         );
       };
 
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>

@@ -19,7 +19,6 @@ This guide covers the technical implementation of OSCAR's Fitbit integration, in
 ```
 src/features/fitbit/
 ├── components/
-│   ├── FitbitConnectionCard.jsx       # OAuth connection UI
 │   ├── FitbitCorrelationCharts.jsx    # Correlation visualizations
 │   ├── FitbitDataSyncStatus.jsx       # Sync progress and status
 │   └── FitbitSettingsPanel.jsx        # Configuration and disconnect
@@ -49,6 +48,37 @@ src/features/fitbit/
 
 ## OAuth Implementation
 
+### OAuth State Persistence: localStorage vs sessionStorage
+
+**Critical Design Decision**: The OAuth implementation uses `localStorage` (not `sessionStorage`) for PKCE state persistence.
+
+**Rationale**:
+
+- **Cross-redirect persistence**: OAuth redirects to Fitbit's domain and back, which clears `sessionStorage` in many browsers
+- **Security trade-off**: While `sessionStorage` is more secure (auto-clears on tab close), it prevents OAuth from working at all
+- **Mitigation**: State and verifier are cleaned up immediately after successful callback validation
+- **Alternative considered**: Backend state storage was rejected to maintain local-first architecture
+
+**Implementation**:
+
+```javascript
+// Generate state during auth initiation
+localStorage.setItem('fitbit_oauth_state', state);
+localStorage.setItem('fitbit_pkce_verifier', codeVerifier);
+
+// Validate on callback
+const storedState = localStorage.getItem('fitbit_oauth_state');
+if (storedState !== receivedState) {
+  throw new Error('OAuth state mismatch - possible CSRF attack');
+}
+
+// Clean up immediately after validation
+localStorage.removeItem('fitbit_oauth_state');
+localStorage.removeItem('fitbit_pkce_verifier');
+```
+
+**Testing Implications**: E2E tests must simulate the redirect by manually populating localStorage before callback handling.
+
 ### PKCE Security Pattern
 
 The OAuth implementation uses PKCE (Proof Key for Code Exchange) to prevent authorization code interception:
@@ -67,8 +97,9 @@ class FitbitOAuth {
     const codeVerifier = this.generateCodeVerifier();
     const codeChallenge = await this.generateCodeChallenge(codeVerifier);
 
-    // Store verifier securely (session storage, not localStorage)
-    sessionStorage.setItem('fitbit_pkce_verifier', codeVerifier);
+    // Store verifier securely (localStorage, not sessionStorage)
+    // Changed from sessionStorage to localStorage to persist across OAuth redirects
+    localStorage.setItem('fitbit_pkce_verifier', codeVerifier);
 
     const authUrl = new URL('https://www.fitbit.com/oauth2/authorize');
     authUrl.searchParams.set('client_id', this.clientId);
@@ -108,7 +139,7 @@ class FitbitOAuth {
 ```javascript
 // Token exchange and secure storage
 async handleAuthCallback(authorizationCode) {
-  const codeVerifier = sessionStorage.getItem('fitbit_pkce_verifier');
+  const codeVerifier = localStorage.getItem('fitbit_pkce_verifier');
   if (!codeVerifier) {
     throw new Error('PKCE verification failed - potential security issue');
   }
@@ -141,7 +172,7 @@ async handleAuthCallback(authorizationCode) {
     return tokens;
   } finally {
     // Always clean up PKCE verifier
-    sessionStorage.removeItem('fitbit_pkce_verifier');
+    localStorage.removeItem('fitbit_pkce_verifier');
   }
 }
 ```

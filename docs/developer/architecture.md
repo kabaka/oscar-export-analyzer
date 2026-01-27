@@ -62,8 +62,9 @@ class FitbitOAuth {
     const codeVerifier = this.generateRandomString(128);
     const codeChallenge = await this.sha256(codeVerifier);
 
-    // Store verifier in session (not localStorage for security)
-    sessionStorage.setItem('fitbit_pkce_verifier', codeVerifier);
+    // Store verifier in localStorage (not sessionStorage)
+    // localStorage persists across OAuth redirect, sessionStorage does not
+    localStorage.setItem('fitbit_pkce_verifier', codeVerifier);
 
     // Redirect to Fitbit with PKCE parameters
     const authUrl = new URL('https://www.fitbit.com/oauth2/authorize');

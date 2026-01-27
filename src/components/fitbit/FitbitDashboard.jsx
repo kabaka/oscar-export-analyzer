@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import FitbitConnectionCard from './FitbitConnectionCard';
+import FitbitConnectionCard from '../FitbitConnectionCard.jsx';
 import SyncStatusPanel from './SyncStatusPanel';
 import DualAxisSyncChart from './correlation/DualAxisSyncChart';
 import CorrelationMatrix from './correlation/CorrelationMatrix';

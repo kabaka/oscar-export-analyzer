@@ -105,9 +105,11 @@ Before connecting Fitbit:
 
 #### 4. Verify Connection
 
-1. **Fitbit Correlations** appears in navigation menu
-2. Connection status shows "Connected" with last sync date
+1. **Fitbit Analysis** appears in navigation menu
+2. Connection status shows "Connected" with last sync date in a single, unified dashboard
 3. Data preview displays available nights and metrics
+
+**Note**: The interface uses a single, theme-aware connection panel that adapts to both light and dark modes for consistent readability.
 
 ### Setting Up Encryption (Recommended)
 
@@ -201,12 +203,14 @@ Each visualization includes statistical context:
 
 **"OAuth authorization failed"**
 
-- Clear browser cache and cookies
-- Disable browser extensions that block redirects
 - Ensure you're using HTTPS (required for OAuth)
 - Try different browser or private/incognito mode
+- Disable browser extensions that block redirects
+- If issue persists after trying above steps, check browser console for specific error messages
 
-**"No data available"**
+**Note**: The "Invalid OAuth state" error that affected earlier versions has been fixed in the current release through improved state persistence.
+
+\*\*"No data available"
 
 - Verify Fitbit device recorded data on nights with CPAP use
 - Check Fitbit app sync status (device → app → web dashboard)

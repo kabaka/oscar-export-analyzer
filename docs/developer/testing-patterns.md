@@ -1219,6 +1219,300 @@ describe('Fitbit API Worker', () => {
 });
 ```
 
+## Testing Fitbit OAuth Flow (E2E)
+
+The Fitbit OAuth integration requires comprehensive end-to-end testing to validate the complete authorization flow, including state persistence, CSRF protection, PKCE verification, and token encryption.
+
+### Critical Test: localStorage State Persistence
+
+The most important test validates that OAuth state persists across redirects. This addresses the critical bug where `sessionStorage` was cleared during cross-domain navigation.
+
+From [src/components/fitbit/FitbitOAuth.e2e.test.jsx](../../src/components/fitbit/FitbitOAuth.e2e.test.jsx):
+
+```javascript
+describe('Fitbit OAuth E2E Flow', () => {
+  it('persists OAuth state in localStorage across simulated redirect', async () => {
+    // ===== CRITICAL TEST =====
+    // This validates the sessionStorage → localStorage fix
+    // The bug: state was in sessionStorage, cleared on redirect
+    // The fix: state is in localStorage, survives redirect
+
+    const TestComponent = () => {
+      const { initiateAuth, handleCallback, status } = useFitbitOAuth();
+      return (
+        <div>
+          <button onClick={initiateAuth}>Connect</button>
+          <span data-testid="status">{status}</span>
+        </div>
+      );
+    };
+
+    render(
+      <FitbitOAuthProvider>
+        <TestComponent />
+      </FitbitOAuthProvider>,
+    );
+
+    // User clicks "Connect to Fitbit"
+    fireEvent.click(screen.getByRole('button', { name: /connect/i }));
+
+    // Verify state stored in localStorage
+    const storedState = localStorage.getItem('fitbit_oauth_state');
+    const storedVerifier = localStorage.getItem('fitbit_pkce_verifier');
+    expect(storedState).toBeTruthy();
+    expect(storedVerifier).toBeTruthy();
+
+    // Simulate redirect to Fitbit (clears sessionStorage, preserves localStorage)
+    // In real browser, cross-domain redirect clears sessionStorage but not localStorage
+
+    // Simulate return from Fitbit with authorization code
+    const returnUrl = new URL(window.location.href);
+    returnUrl.searchParams.set('code', 'mock-auth-code');
+    returnUrl.searchParams.set('state', storedState);
+    window.history.pushState({}, '', returnUrl);
+
+    // OAuth callback handler should retrieve state from localStorage
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent(/connected/i);
+    });
+
+    // State should be cleaned up after successful validation
+    expect(localStorage.getItem('fitbit_oauth_state')).toBeNull();
+    expect(localStorage.getItem('fitbit_pkce_verifier')).toBeNull();
+  });
+});
+```
+
+### OAuth Test Utilities
+
+Use [src/test-utils/oauthTestHelpers.js](../../src/test-utils/oauthTestHelpers.js) for consistent test setup:
+
+```javascript
+import {
+  setupOAuthMockEnvironment,
+  simulateOAuthCallback,
+  mockTokenExchange,
+  clearOAuthState,
+} from '../../test-utils/oauthTestHelpers.js';
+
+beforeEach(() => {
+  // Setup mock environment (crypto, fetch, storage)
+  mockEnv = setupOAuthMockEnvironment();
+
+  // Mock fetch for token exchange
+  global.fetch = mockTokenExchange({ success: true });
+});
+
+afterEach(() => {
+  // Clean up after tests
+  clearOAuthState();
+  mockEnv.clearStorage();
+});
+```
+
+### Testing CSRF Protection
+
+```javascript
+it('rejects callback with invalid state (CSRF protection)', async () => {
+  const { initiateAuth, handleCallback } = renderOAuthFlow();
+
+  // Initiate auth (stores valid state)
+  await initiateAuth();
+  const validState = localStorage.getItem('fitbit_oauth_state');
+
+  // Attacker tries to inject different state
+  const attackUrl = new URL(window.location.href);
+  attackUrl.searchParams.set('code', 'malicious-code');
+  attackUrl.searchParams.set(
+    'state',
+    'invalid-state-different-from-' + validState,
+  );
+
+  window.history.pushState({}, '', attackUrl);
+
+  // Should reject callback
+  await waitFor(() => {
+    expect(screen.getByRole('alert')).toHaveTextContent(/invalid.*state|csrf/i);
+  });
+
+  // State should be cleared for security
+  expect(localStorage.getItem('fitbit_oauth_state')).toBeNull();
+  expect(localStorage.getItem('fitbit_pkce_verifier')).toBeNull();
+});
+```
+
+### Testing PKCE Flow
+
+```javascript
+it('validates PKCE code verifier/challenge flow', async () => {
+  // Mock crypto for deterministic PKCE values
+  const mockCrypto = mockCryptoSubtle({ deterministic: true });
+  Object.defineProperty(global, 'crypto', {
+    value: mockCrypto,
+    writable: true,
+    configurable: true,
+  });
+
+  const { initiateAuth } = renderOAuthFlow();
+  await initiateAuth();
+
+  const storedVerifier = localStorage.getItem('fitbit_pkce_verifier');
+  expect(storedVerifier).toHaveLength(128); // PKCE spec requirement
+
+  // Verify verifier is Base64URL format
+  expect(storedVerifier).toMatch(/^[A-Za-z0-9_-]+$/);
+
+  // Verify challenge was derived from verifier
+  const authUrl = mockEnv.getLastRedirectUrl();
+  const challenge = new URL(authUrl).searchParams.get('code_challenge');
+  expect(challenge).toBeTruthy();
+  expect(challenge).toMatch(/^[A-Za-z0-9_-]+$/); // Base64URL format
+});
+```
+
+### Testing Token Encryption
+
+```javascript
+it('encrypts tokens before storage', async () => {
+  const mockTokenResponse = {
+    access_token: 'sensitive-access-token',
+    refresh_token: 'sensitive-refresh-token',
+    expires_in: 3600,
+    user_id: 'ABC123',
+  };
+
+  global.fetch = mockTokenExchange({
+    success: true,
+    response: mockTokenResponse,
+  });
+
+  // Complete OAuth flow with passphrase
+  await simulateCompleteOAuthFlow({ passphrase: 'test-passphrase' });
+
+  // Check IndexedDB storage
+  const db = await openDB('OscarFitbitData');
+  const storedTokens = await db.get('fitbitTokens', 'current');
+
+  // Tokens should be encrypted, not plaintext
+  expect(storedTokens.encrypted).toBeTruthy();
+  expect(storedTokens.salt).toBeTruthy();
+  expect(storedTokens.iv).toBeTruthy();
+
+  // Verify no plaintext token leakage
+  const storedJson = JSON.stringify(storedTokens);
+  expect(storedJson).not.toContain('sensitive-access-token');
+  expect(storedJson).not.toContain('sensitive-refresh-token');
+});
+```
+
+### Testing Error Scenarios
+
+```javascript
+describe('OAuth Error Handling', () => {
+  it('handles user denial gracefully', async () => {
+    // Simulate user clicking "Deny" on Fitbit authorization page
+    const errorUrl = new URL(window.location.href);
+    errorUrl.searchParams.set('error', 'access_denied');
+    errorUrl.searchParams.set('error_description', 'User denied access');
+    window.history.pushState({}, '', errorUrl);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /access denied|user denied/i,
+      );
+    });
+
+    // Should clean up state even on error
+    expect(localStorage.getItem('fitbit_oauth_state')).toBeNull();
+  });
+
+  it('handles network failures during token exchange', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    await simulateOAuthCallback({
+      code: 'valid-code',
+      state: 'valid-state',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/network.*error/i);
+    });
+  });
+
+  it('handles expired authorization codes', async () => {
+    global.fetch = mockTokenExchange({
+      success: false,
+      status: 400,
+      error: 'invalid_grant',
+      error_description: 'Authorization code expired',
+    });
+
+    await simulateOAuthCallback({
+      code: 'expired-code',
+      state: 'valid-state',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/expired|invalid/i);
+    });
+  });
+});
+```
+
+### Key Testing Patterns
+
+**✅ DO:**
+
+- Test localStorage persistence (critical for OAuth to work)
+- Mock `crypto.subtle` for deterministic PKCE values
+- Use `fake-indexeddb` for token storage tests
+- Test CSRF protection with invalid state
+- Verify token encryption before storage
+- Test all error scenarios (denial, network, expired codes)
+- Clean up OAuth state after each test
+
+**❌ DON'T:**
+
+- Use sessionStorage for OAuth state (breaks on redirect)
+- Test with real Fitbit API credentials
+- Skip error scenario tests
+- Mock OAuth components without testing integration
+- Leave OAuth state in storage after tests
+- Assume crypto.getRandomValues produces consistent values
+
+### Running OAuth Tests
+
+```bash
+# Run all Fitbit OAuth tests
+npm test -- src/components/fitbit/FitbitOAuth.e2e.test.jsx
+
+# Run with coverage
+npm run test:coverage -- src/components/fitbit/
+
+# Watch mode for development
+npm test -- --watch FitbitOAuth
+```
+
+### Debugging OAuth Tests
+
+Common issues and solutions:
+
+**"OAuth state is null"**: Ensure `localStorage` mock is properly set up in `beforeEach`
+
+**"crypto.subtle is not a function"**: Mock crypto with `mockCryptoSubtle()` helper
+
+**"IndexedDB not found"**: Import `fake-indexeddb/auto` at top of test file
+
+**"fetch is not defined"**: Mock `global.fetch` before initiating OAuth
+
+**See Also**:
+
+- [src/components/fitbit/FitbitOAuth.e2e.test.jsx](../../src/components/fitbit/FitbitOAuth.e2e.test.jsx) — Complete E2E test suite (14 comprehensive tests)
+- [src/test-utils/oauthTestHelpers.js](../../src/test-utils/oauthTestHelpers.js) — OAuth testing utilities and mocks
+- [src/utils/fitbitAuth.js](../../src/utils/fitbitAuth.js) — OAuth implementation with localStorage persistence
+
+## Testing Fitbit Data Analytics
+
 ### Correlation Engine Testing
 
 Test statistical calculations with synthetic data:

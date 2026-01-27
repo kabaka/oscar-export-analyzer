@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import FitbitDashboard from '../../components/fitbit/FitbitDashboard.jsx';
-import FitbitConnectionCard from '../../components/fitbit/FitbitConnectionCard.jsx';
+import FitbitConnectionCard from '../FitbitConnectionCard.jsx';
 import CorrelationMatrix from '../../components/fitbit/correlation/CorrelationMatrix.jsx';
 import { buildCombinedNightlyData } from '../../test-utils/fitbitBuilders.js';
 

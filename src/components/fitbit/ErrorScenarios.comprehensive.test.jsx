@@ -104,7 +104,7 @@ describe.skip('Fitbit Integration Error Scenarios', () => {
         );
       };
 
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>
@@ -222,7 +222,7 @@ describe.skip('Fitbit Integration Error Scenarios', () => {
         return <span data-testid="error">{error}</span>;
       };
 
-      sessionStorage.setItem('fitbit_oauth_state', 'valid_state');
+      localStorage.setItem('fitbit_oauth_state', 'valid_state');
 
       render(
         <FitbitOAuthProvider>

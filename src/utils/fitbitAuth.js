@@ -70,9 +70,9 @@ class OAuthState {
     );
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    // Store temporarily in sessionStorage (cleared after callback)
-    sessionStorage.setItem(this.stateKey, state);
-    sessionStorage.setItem(this.verifierKey, codeVerifier);
+    // Store temporarily in localStorage (cleared after callback)
+    localStorage.setItem(this.stateKey, state);
+    localStorage.setItem(this.verifierKey, codeVerifier);
 
     return { state, codeChallenge };
   }
@@ -84,12 +84,12 @@ class OAuthState {
    * @returns {string|null} PKCE code verifier or null if invalid
    */
   validateCallback(receivedState) {
-    const storedState = sessionStorage.getItem(this.stateKey);
-    const codeVerifier = sessionStorage.getItem(this.verifierKey);
+    const storedState = localStorage.getItem(this.stateKey);
+    const codeVerifier = localStorage.getItem(this.verifierKey);
 
     // Clear stored values
-    sessionStorage.removeItem(this.stateKey);
-    sessionStorage.removeItem(this.verifierKey);
+    localStorage.removeItem(this.stateKey);
+    localStorage.removeItem(this.verifierKey);
 
     if (!storedState || storedState !== receivedState) {
       console.error('OAuth state mismatch - possible CSRF attack');
