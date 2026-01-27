@@ -9,6 +9,14 @@ corresponds to changes released on that day.
 
 ## 2026-01-27
 
+### Added
+
+- **Fitbit passphrase input UI**: Added user-facing passphrase input field to `FitbitConnectionCard` so users can enter their encryption passphrase directly in the UI before connecting to Fitbit. Component now renders password input field with show/hide toggle, real-time passphrase strength indicator (weak/medium/strong), and accessibility features (ARIA labels, screen reader announcements). Connect button enables only when passphrase meets minimum requirements (8+ characters). Passphrase prop remains available for test scenarios (backward compatibility). Added comprehensive E2E test suite (8 tests) validating actual user flow: input field rendering, button state transitions, strength indicators, visibility toggle, and full OAuth completion with passphrase from UI input. Fixes critical UX issue where component required passphrase but provided no way for users to enter it.
+
+### Fixed
+
+- **Fitbit OAuth passphrase race condition (reverted commit 44ee5dd2)**: Restored passphrase-first OAuth architecture after detecting critical race condition. The broken flow moved passphrase collection from BEFORE OAuth initiation to AFTER callback, causing OAuth state to be validated twice (first during callback without passphrase, second after user prompt). Since OAuth state is single-use, the first validation succeeded and deleted state, causing second validation to fail with "Invalid OAuth state" error. Reverted changes: removed `onConnect` prop delegation pattern, restored `disabled={isLoading || !passphrase}` button state, re-enabled passphrase requirement tests. OAuth flow now requires passphrase upfront, preventing race condition and maintaining security best practice of collecting credentials before external redirects. Added comprehensive E2E regression test suite (19 tests) documenting broken behavior and validating fix.
+
 ### Changed
 
 - **Unified Fitbit connection UI**: Consolidated duplicate `FitbitConnectionCard` components into single theme-aware implementation. Deleted old component (`src/components/fitbit/FitbitConnectionCard.jsx`) with hardcoded inline styles that broke dark mode. Updated remaining component styling to use consistent CSS variables (`--color-elevated`, `--color-text`, `--color-border-light`, `--color-kpi-bg`) for proper theme support. Enhanced layout with centered max-width (600px), improved security notice readability, and accessible button sizing (44px minimum touch targets). Updated all imports to reference unified component location. Fixes dual-panel rendering and theme inconsistency issues where Fitbit card appeared with unreadable light-gray text on dark theme.

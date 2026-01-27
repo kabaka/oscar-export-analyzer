@@ -62,21 +62,42 @@ describe('FitbitConnectionCard', () => {
     ).toBeInTheDocument();
   });
 
-  // FIXME: disabled for now
-  // it('disables connect button when no passphrase provided', () => {
-  //   render(<FitbitConnectionCard passphrase={null} />);
-
-  //   const connectButton = screen.getByRole('button', {
-  //     name: /Connect to Fitbit/,
-  //   });
-  //   expect(connectButton).toBeDisabled();
-  // });
-
-  it('shows setup notice when no passphrase', () => {
+  it('disables connect button when no passphrase provided', () => {
     render(<FitbitConnectionCard passphrase={null} />);
 
-    expect(screen.getByText(/Setup Required/)).toBeInTheDocument();
-    expect(screen.getByText(/Enable data encryption/)).toBeInTheDocument();
+    const connectButton = screen.getByRole('button', {
+      name: /Connect to Fitbit/,
+    });
+    expect(connectButton).toBeDisabled();
+  });
+
+  it('renders passphrase input when no passphrase prop', () => {
+    render(<FitbitConnectionCard />);
+
+    // Should render passphrase input field
+    expect(screen.getByLabelText(/encryption passphrase/i)).toBeInTheDocument();
+
+    // Should render show/hide toggle
+    expect(screen.getByLabelText(/show passphrase/i)).toBeInTheDocument();
+
+    // Should render help text
+    expect(screen.getByText(/enter a strong passphrase/i)).toBeInTheDocument();
+  });
+
+  it('does not render passphrase input when passphrase prop provided', () => {
+    render(<FitbitConnectionCard passphrase="test-passphrase" />);
+
+    // Should NOT render passphrase input (provided via prop for tests)
+    expect(
+      screen.queryByLabelText(/encryption passphrase/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not show setup notice when passphrase input available', () => {
+    render(<FitbitConnectionCard />);
+
+    // Should NOT show setup notice (user can enter passphrase via input)
+    expect(screen.queryByText(/Setup Required/)).not.toBeInTheDocument();
   });
 
   it('expands security details when info button clicked', async () => {

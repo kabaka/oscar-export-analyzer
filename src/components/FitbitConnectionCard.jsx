@@ -14,10 +14,37 @@ import FitbitStatusIndicator from './FitbitStatusIndicator.jsx';
 import { CONNECTION_STATUS, MVP_SCOPES } from '../constants/fitbit.js';
 
 /**
+ * Calculate passphrase strength.
+ * @param {string} pass - Passphrase to evaluate
+ * @returns {'weak'|'medium'|'strong'} Strength level
+ */
+const getPassphraseStrength = (pass) => {
+  if (!pass || pass.length < 8) return 'weak';
+  if (pass.length < 12) return 'medium';
+
+  // Check for variety: uppercase, lowercase, numbers, symbols
+  const hasUppercase = /[A-Z]/.test(pass);
+  const hasLowercase = /[a-z]/.test(pass);
+  const hasNumbers = /[0-9]/.test(pass);
+  const hasSymbols = /[^A-Za-z0-9]/.test(pass);
+
+  const varietyCount = [
+    hasUppercase,
+    hasLowercase,
+    hasNumbers,
+    hasSymbols,
+  ].filter(Boolean).length;
+
+  if (pass.length >= 16 && varietyCount >= 3) return 'strong';
+  if (pass.length >= 12 && varietyCount >= 2) return 'medium';
+  return 'medium';
+};
+
+/**
  * Fitbit connection card component.
  *
  * @param {Object} props - Component props
- * @param {string} props.passphrase - User encryption passphrase
+ * @param {string|null} props.passphrase - Optional user encryption passphrase (for tests)
  * @param {Function} props.onConnectionChange - Callback when connection status changes
  * @param {Function} props.onError - Error callback
  * @param {boolean} props.showDataPreview - Whether to show data preview when connected
@@ -28,12 +55,20 @@ export function FitbitConnectionCard({
   passphrase = null,
   onConnectionChange = null,
   onError = null,
-  onConnect = null,
   showDataPreview = true,
   variant = 'card',
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
+
+  // Internal passphrase state (used when passphrase prop not provided)
+  const [internalPassphrase, setInternalPassphrase] = useState('');
+  const [showPassphrase, setShowPassphrase] = useState(false);
+
+  // Use prop passphrase if provided (for tests), otherwise use internal state
+  const effectivePassphrase =
+    passphrase !== null ? passphrase : internalPassphrase;
+  const passphraseStrength = getPassphraseStrength(effectivePassphrase);
 
   // OAuth flow management
   const {
@@ -70,8 +105,8 @@ export function FitbitConnectionCard({
     disconnect,
     clearError: clearConnectionError,
   } = useFitbitConnection({
-    passphrase,
-    autoCheck: !!passphrase,
+    passphrase: effectivePassphrase,
+    autoCheck: !!effectivePassphrase,
   });
 
   // Combined status and error
@@ -84,17 +119,11 @@ export function FitbitConnectionCard({
     try {
       clearOAuthError();
       clearConnectionError();
-      // If parent supplied an `onConnect` handler (e.g. the section/dashboard),
-      // delegate initiation to it. This allows the parent to control OAuth
-      // initiation and prompt for a passphrase when the callback arrives.
-      if (onConnect) {
-        await onConnect();
-        return;
-      }
 
-      // Fallback to local initiation which requires a passphrase to be set.
-      if (!passphrase) {
-        throw new Error('Encryption passphrase required for secure connection');
+      if (!effectivePassphrase || effectivePassphrase.length < 8) {
+        throw new Error(
+          'Encryption passphrase required (minimum 8 characters)',
+        );
       }
 
       await initiateAuth({ scopes: MVP_SCOPES });
@@ -244,6 +273,89 @@ export function FitbitConnectionCard({
   );
 
   /**
+   * Render passphrase input UI (only when passphrase not provided as prop).
+   */
+  const renderPassphraseInput = () => {
+    // Don't render if passphrase provided via prop (test mode)
+    if (passphrase !== null) return null;
+
+    // Don't render if already connected
+    if (currentStatus === CONNECTION_STATUS.CONNECTED) return null;
+
+    const strengthColors = {
+      weak: '#dc3545',
+      medium: '#ffc107',
+      strong: '#28a745',
+    };
+
+    const strengthLabels = {
+      weak: 'Weak',
+      medium: 'Medium',
+      strong: 'Strong',
+    };
+
+    return (
+      <div className="passphrase-input-section">
+        <label htmlFor="fitbit-passphrase" className="passphrase-label">
+          Encryption Passphrase
+          <span className="required-indicator" aria-label="required">
+            *
+          </span>
+        </label>
+
+        <div className="passphrase-input-wrapper">
+          <input
+            id="fitbit-passphrase"
+            type={showPassphrase ? 'text' : 'password'}
+            value={internalPassphrase}
+            onChange={(e) => setInternalPassphrase(e.target.value)}
+            placeholder="Enter strong passphrase (min 8 characters)"
+            className="passphrase-input"
+            aria-describedby="passphrase-help passphrase-strength"
+            aria-required="true"
+            autoComplete="off"
+            disabled={isLoading}
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassphrase(!showPassphrase)}
+            className="passphrase-toggle"
+            aria-label={showPassphrase ? 'Hide passphrase' : 'Show passphrase'}
+            tabIndex={0}
+          >
+            {showPassphrase ? '👁️' : '👁️‍🗨️'}
+          </button>
+        </div>
+
+        {internalPassphrase.length > 0 && (
+          <div
+            id="passphrase-strength"
+            className="passphrase-strength"
+            style={{ color: strengthColors[passphraseStrength] }}
+            role="status"
+            aria-live="polite"
+          >
+            Strength: <strong>{strengthLabels[passphraseStrength]}</strong>
+            {passphraseStrength === 'weak' && internalPassphrase.length < 8 && (
+              <span className="strength-hint"> (minimum 8 characters)</span>
+            )}
+          </div>
+        )}
+
+        <p id="passphrase-help" className="passphrase-help">
+          Enter a strong passphrase to encrypt your Fitbit tokens. This keeps
+          your data secure on your device.
+          <span className="sr-only">
+            Requirements: Minimum 8 characters. Recommended: 12+ characters with
+            mixed case, numbers, and symbols for strong protection.
+          </span>
+        </p>
+      </div>
+    );
+  };
+
+  /**
    * Render action buttons based on connection state.
    */
   const renderActions = () => {
@@ -293,14 +405,18 @@ export function FitbitConnectionCard({
         </div>
       );
     } else {
+      // Check if passphrase is valid (at least 8 characters)
+      const isPassphraseValid =
+        effectivePassphrase && effectivePassphrase.length >= 8;
+
       return (
         <div className="action-buttons disconnected">
           <button
             type="button"
             onClick={handleConnect}
-            disabled={isLoading}
+            disabled={isLoading || !isPassphraseValid}
             className="primary-button"
-            aria-describedby="security-notice"
+            aria-describedby="security-notice passphrase-help"
           >
             {isLoading ? 'Connecting...' : 'Connect to Fitbit'}
           </button>
@@ -350,6 +466,9 @@ export function FitbitConnectionCard({
         {currentStatus === CONNECTION_STATUS.CONNECTED && renderDataPreview()}
 
         {currentStatus !== CONNECTION_STATUS.CONNECTED &&
+          renderPassphraseInput()}
+
+        {currentStatus !== CONNECTION_STATUS.CONNECTED &&
           renderSecurityNotice()}
 
         {currentError && (
@@ -358,15 +477,6 @@ export function FitbitConnectionCard({
             {currentError.type && (
               <p className="error-type">Error: {currentError.type}</p>
             )}
-          </div>
-        )}
-
-        {!passphrase && currentStatus === CONNECTION_STATUS.DISCONNECTED && (
-          <div className="setup-notice" role="alert">
-            <p>
-              <strong>Setup Required:</strong> Enable data encryption in
-              settings before connecting to Fitbit for secure token storage.
-            </p>
           </div>
         )}
       </div>
