@@ -27,6 +27,21 @@ export function OAuthCallbackHandler({
   passphrase,
   onComplete,
 }) {
+  // FIX: Retrieve passphrase from sessionStorage if not provided as prop.
+  // The passphrase is stored by initiateAuth when user clicks "Connect to Fitbit".
+  // This ensures we have the passphrase for token encryption without requiring
+  // a secondary passphrase prompt, preventing the double-validation race condition.
+  const effectivePassphrase = useMemo(() => {
+    if (passphrase) {
+      return passphrase;
+    }
+    // Retrieve from sessionStorage (set by useFitbitOAuth.initiateAuth)
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('fitbit_oauth_passphrase');
+    }
+    return null;
+  }, [passphrase]);
+
   // CRITICAL: Capture OAuth parameters BEFORE cleanup to prevent race condition
   // useMemo runs during render phase, guaranteeing params are captured before any cleanup
   const oauthParams = useMemo(() => {
@@ -44,9 +59,14 @@ export function OAuthCallbackHandler({
   // SECURITY: Clean URL immediately on mount (synchronously) to prevent browser history capture
   // This must happen BEFORE any async processing or useEffect to avoid ?code=... in back button
   // Now safe because params are already captured above
+  // Also clean error parameters (?error=...&error_description=...) to prevent sensitive info leakage
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('code') || urlParams.has('state')) {
+    if (
+      urlParams.has('code') ||
+      urlParams.has('state') ||
+      urlParams.has('error')
+    ) {
       const cleanUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, '', cleanUrl);
     }
@@ -89,9 +109,13 @@ export function OAuthCallbackHandler({
         }
 
         // Handle successful authorization
-        if (code && state && passphrase) {
-          await handleCallback(code, state, passphrase);
-        } else if (code && state && !passphrase) {
+        if (code && state && effectivePassphrase) {
+          await handleCallback(code, state, effectivePassphrase);
+          // Clear passphrase from sessionStorage after successful callback
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('fitbit_oauth_passphrase');
+          }
+        } else if (code && state && !effectivePassphrase) {
           throw new Error('Encryption passphrase required');
         } else {
           throw new Error('Missing authorization parameters');
@@ -105,9 +129,9 @@ export function OAuthCallbackHandler({
       }
     };
 
-    if (processing && passphrase) {
+    if (processing && effectivePassphrase) {
       processCallback();
-    } else if (processing && !passphrase) {
+    } else if (processing && !effectivePassphrase) {
       // Wait for passphrase to be provided
       setResult({
         type: 'waiting',
@@ -116,7 +140,7 @@ export function OAuthCallbackHandler({
     }
   }, [
     processing,
-    passphrase,
+    effectivePassphrase,
     oauthParams,
     handleCallback,
     handleOAuthError,

@@ -10,6 +10,11 @@ data/
 .DS_Store
 Thumbs.db
 
+# Playwright E2E test artifacts
+test-results/
+.auth/
+/tests/e2e/.auth/
+
 # Subagent working directories (ephemeral files, never commit)
 docs/work/
 temp/

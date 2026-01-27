@@ -66,22 +66,28 @@ export function mockOAuthErrorResponse(errorType, description) {
 }
 
 /**
- * Setup localStorage with OAuth state for callback tests.
+ * Setup sessionStorage with OAuth state for callback tests.
+ * Creates state object with timestamp for timeout validation.
  *
  * @param {string} state - OAuth state parameter
  * @param {string} verifier - PKCE code verifier
+ * @param {number} ageMs - Optional age in milliseconds (default: 0, current time)
  */
-export function setupOAuthState(state, verifier) {
-  localStorage.setItem('fitbit_oauth_state', state);
-  localStorage.setItem('fitbit_pkce_verifier', verifier);
+export function setupOAuthState(state, verifier, ageMs = 0) {
+  const stateData = {
+    value: state,
+    createdAt: Date.now() - ageMs,
+  };
+  sessionStorage.setItem('fitbit_oauth_state', JSON.stringify(stateData));
+  sessionStorage.setItem('fitbit_pkce_verifier', verifier);
 }
 
 /**
- * Clear OAuth state from localStorage.
+ * Clear OAuth state from sessionStorage.
  */
 export function clearOAuthState() {
-  localStorage.removeItem('fitbit_oauth_state');
-  localStorage.removeItem('fitbit_pkce_verifier');
+  sessionStorage.removeItem('fitbit_oauth_state');
+  sessionStorage.removeItem('fitbit_pkce_verifier');
 }
 
 /**
@@ -233,11 +239,14 @@ export function mockFitbitAPI(endpoint, mockData) {
  * This simulates the behavior when browser navigates away and back.
  */
 export function simulateRedirect() {
-  // Browser clears sessionStorage on cross-origin navigation
-  sessionStorage.clear();
-
-  // localStorage persists (this is what the fix relies on)
-  // window.location properties are preserved by our mock
+  // For same-origin OAuth callback (redirect from Fitbit back to our app),
+  // sessionStorage persists within the same tab. It only clears on tab close
+  // or navigation to a different origin domain.
+  //
+  // Since OAuth callback returns to same origin, sessionStorage is preserved.
+  // This matches real browser behavior for OAuth 2.0 flows.
+  //
+  // Note: window.location properties are preserved by our mock
 }
 
 /**

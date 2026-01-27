@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import HeaderMenu from './components/HeaderMenu';
 import DateRangeControls from './components/DateRangeControls';
@@ -127,14 +121,9 @@ export function AppShell() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.has('code') && urlParams.has('state');
   }, []);
-  const oauthPassphraseRef = useRef('');
-  const [activePassphrase, setActivePassphrase] = useState('');
-  const [isPassphraseValid, setIsPassphraseValid] = useState(false);
-  const [hasPassphraseInput, setHasPassphraseInput] = useState(false);
-  const [showPassphrasePrompt, setShowPassphrasePrompt] =
-    useState(isOAuthCallback);
-  const [showOauthHandler, setShowOauthHandler] = useState(false);
-  const [showOauthPassphrase, setShowOauthPassphrase] = useState(false);
+  // FIX: Show OAuth handler immediately when callback detected.
+  // The passphrase is already available from sessionStorage (set by FitbitConnectionCard).
+  const [showOauthHandler, setShowOauthHandler] = useState(isOAuthCallback);
 
   // Service worker registration and update notification
   const {
@@ -215,10 +204,10 @@ export function AppShell() {
     cleanUrl += hash;
     window.history.replaceState({}, '', cleanUrl);
 
-    // Clear passphrase from memory and hide handler
-    oauthPassphraseRef.current = '';
-    setActivePassphrase('');
-    setShowPassphrasePrompt(false);
+    // Clear passphrase from sessionStorage and hide handler
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('fitbit_oauth_passphrase');
+    }
     setShowOauthHandler(false);
     importModal.close();
 
@@ -418,99 +407,6 @@ export function AppShell() {
 
   const beforeHeader = (
     <>
-      {showPassphrasePrompt && (
-        <div className="modal-backdrop" style={{ zIndex: 10000 }}>
-          <div
-            className="modal oauth-passphrase-modal"
-            role="dialog"
-            aria-labelledby="oauth-passphrase-title"
-          >
-            <div className="modal-header">
-              <h2 id="oauth-passphrase-title">
-                Encryption Passphrase Required
-              </h2>
-            </div>
-            <div className="modal-body">
-              <p>
-                To securely connect your Fitbit account, please enter your
-                encryption passphrase.
-              </p>
-              <p className="help-text">
-                This passphrase is used to encrypt your Fitbit tokens locally.
-              </p>
-              <div className="form-group">
-                <label htmlFor="oauth-passphrase-input">Passphrase:</label>
-                <div className="passphrase-input-group">
-                  <input
-                    id="oauth-passphrase-input"
-                    type={showOauthPassphrase ? 'text' : 'password'}
-                    onChange={(e) => {
-                      oauthPassphraseRef.current = e.target.value;
-                      setHasPassphraseInput(e.target.value.length > 0);
-                      setIsPassphraseValid(e.target.value.length >= 8);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && isPassphraseValid) {
-                        setActivePassphrase(oauthPassphraseRef.current);
-                        setShowPassphrasePrompt(false);
-                        setShowOauthHandler(true);
-                      }
-                    }}
-                    placeholder="Enter passphrase (min 8 characters)"
-                    autoFocus
-                    className="passphrase-input"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowOauthPassphrase(!showOauthPassphrase)}
-                    className="toggle-passphrase-btn"
-                    aria-label={
-                      showOauthPassphrase
-                        ? 'Hide passphrase'
-                        : 'Show passphrase'
-                    }
-                  >
-                    {showOauthPassphrase ? '👁️' : '👁️‍🗨️'}
-                  </button>
-                </div>
-                {hasPassphraseInput && !isPassphraseValid && (
-                  <p className="validation-message">
-                    Passphrase must be at least 8 characters
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                onClick={() => {
-                  // Cancel OAuth flow
-                  window.history.replaceState({}, '', window.location.pathname);
-                  setShowPassphrasePrompt(false);
-                  oauthPassphraseRef.current = '';
-                  setIsPassphraseValid(false);
-                  setHasPassphraseInput(false);
-                }}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActivePassphrase(oauthPassphraseRef.current);
-                  setShowPassphrasePrompt(false);
-                  setShowOauthHandler(true);
-                }}
-                disabled={!isPassphraseValid}
-                className="btn-primary"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <DataImportModal
         isOpen={importModal.isOpen}
         onClose={importModal.close}
@@ -670,13 +566,12 @@ export function AppShell() {
   const detailsHasRows = !!filteredDetails?.length;
 
   // If OAuth callback is being processed, show handler instead of normal app UI
-  if (isOAuthCallback && showOauthHandler && !showPassphrasePrompt) {
+  if (isOAuthCallback && showOauthHandler) {
     return (
       <>
         {beforeHeader}
         <div className="oauth-callback-container">
           <OAuthCallbackHandler
-            passphrase={activePassphrase}
             onSuccess={handleOAuthSuccess}
             onError={handleOAuthError}
             onComplete={handleOAuthComplete}

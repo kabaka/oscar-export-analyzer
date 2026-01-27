@@ -126,7 +126,12 @@ export function FitbitConnectionCard({
         );
       }
 
-      await initiateAuth({ scopes: MVP_SCOPES });
+      // FIX: Pass passphrase to initiateAuth so it can be stored for OAuth callback.
+      // This ensures passphrase is available when user is redirected back from Fitbit.
+      await initiateAuth({
+        scopes: MVP_SCOPES,
+        passphrase: effectivePassphrase,
+      });
     } catch (error) {
       console.error('Failed to initiate Fitbit connection:', error);
       if (onError) onError(error);

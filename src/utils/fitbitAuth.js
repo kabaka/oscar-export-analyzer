@@ -51,11 +51,16 @@ async function generateCodeChallenge(codeVerifier) {
 
 /**
  * OAuth state management for CSRF protection.
+ * Security improvements:
+ * - State stored in sessionStorage (cleared on tab close) instead of localStorage
+ * - State validity enforced with 5-minute timeout to prevent indefinite validity
+ * - Timestamp included with state to validate freshness on callback
  */
 class OAuthState {
   constructor() {
     this.stateKey = 'fitbit_oauth_state';
     this.verifierKey = 'fitbit_pkce_verifier';
+    this.STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
   }
 
   /**
@@ -70,29 +75,59 @@ class OAuthState {
     );
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    // Store temporarily in localStorage (cleared after callback)
-    localStorage.setItem(this.stateKey, state);
-    localStorage.setItem(this.verifierKey, codeVerifier);
+    // Store in sessionStorage (per-tab, cleared when tab closes) with timestamp for timeout validation
+    // Security: sessionStorage is cleared on tab close, reducing XSS attack window
+    const stateData = {
+      value: state,
+      createdAt: Date.now(),
+    };
+    sessionStorage.setItem(this.stateKey, JSON.stringify(stateData));
+    sessionStorage.setItem(this.verifierKey, codeVerifier);
 
     return { state, codeChallenge };
   }
 
   /**
    * Validate OAuth callback state and retrieve PKCE verifier.
+   * Enforces state timeout (5 minutes) to prevent indefinite validity.
    *
    * @param {string} receivedState - State from OAuth callback
    * @returns {string|null} PKCE code verifier or null if invalid
    */
   validateCallback(receivedState) {
-    const storedState = localStorage.getItem(this.stateKey);
-    const codeVerifier = localStorage.getItem(this.verifierKey);
+    let stateData = null;
+    try {
+      const stored = sessionStorage.getItem(this.stateKey);
+      stateData = stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('Failed to parse OAuth state:', e);
+      stateData = null;
+    }
 
-    // Clear stored values
-    localStorage.removeItem(this.stateKey);
-    localStorage.removeItem(this.verifierKey);
+    const codeVerifier = sessionStorage.getItem(this.verifierKey);
 
-    if (!storedState || storedState !== receivedState) {
+    // Clear stored values immediately
+    sessionStorage.removeItem(this.stateKey);
+    sessionStorage.removeItem(this.verifierKey);
+
+    // Validate state exists
+    if (!stateData || !stateData.value) {
       console.error('OAuth state mismatch - possible CSRF attack');
+      return null;
+    }
+
+    // Validate state matches (exact comparison)
+    if (stateData.value !== receivedState) {
+      console.error('OAuth state mismatch - possible CSRF attack');
+      return null;
+    }
+
+    // Validate state timeout (must be less than 5 minutes old)
+    const ageMs = Date.now() - stateData.createdAt;
+    if (ageMs > this.STATE_TIMEOUT_MS) {
+      console.error(
+        `OAuth state expired. Age: ${Math.round(ageMs / 1000)}s, Max: ${this.STATE_TIMEOUT_MS / 1000}s`,
+      );
       return null;
     }
 
@@ -454,3 +489,6 @@ export class FitbitOAuth {
 
 // Export singleton instance
 export const fitbitOAuth = new FitbitOAuth();
+
+// Export OAuthState class for testing timeout validation logic
+export { OAuthState };

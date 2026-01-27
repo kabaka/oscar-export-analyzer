@@ -44,16 +44,25 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
    *
    * @param {Object} params - Authorization parameters
    * @param {Array} params.scopes - OAuth scopes (defaults to MVP_SCOPES)
+   * @param {string} params.passphrase - User encryption passphrase for token storage
    * @returns {Promise<void>}
    */
   const initiateAuth = useCallback(
-    async ({ scopes = MVP_SCOPES } = {}) => {
+    async ({ scopes = MVP_SCOPES, passphrase = null } = {}) => {
       try {
         setIsLoading(true);
         setError(null);
         setStatus(CONNECTION_STATUS.CONNECTING);
 
         const authUrl = await fitbitOAuth.initiateAuth(scopes);
+
+        // Store passphrase temporarily in sessionStorage for OAuth callback handler to retrieve.
+        // This is the same pattern used for OAuth state: single-use, cleared after callback.
+        // FIX: Store passphrase BEFORE redirect so it's available when OAuth callback occurs.
+        // This prevents the double-validation race condition.
+        if (passphrase) {
+          sessionStorage.setItem('fitbit_oauth_passphrase', passphrase);
+        }
 
         // Redirect to Fitbit authorization
         window.location.href = authUrl;
