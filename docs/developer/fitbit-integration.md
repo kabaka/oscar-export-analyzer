@@ -48,49 +48,67 @@ src/features/fitbit/
 
 ## OAuth Implementation
 
-### OAuth State Persistence: sessionStorage with localStorage backup
+sessionStorage.setItem('fitbit_pkce_verifier', codeVerifier);
+sessionStorage.removeItem('fitbit_pkce_verifier');
 
-**Critical Design Decision**: OAuth state is stored in `sessionStorage` for security, with a short-lived `localStorage` backup to survive cross-origin redirects in browsers that clear sessionStorage.
+### OAuth State & Passphrase Restoration: sessionStorage with localStorage backup
+
+**Critical Design Decision**: Both OAuth state and the user's encryption passphrase are stored in `sessionStorage` for security, with a short-lived `localStorage` backup to survive cross-origin redirects in browsers that clear sessionStorage.
 
 **Rationale**:
 
 - **Security-first default**: `sessionStorage` auto-clears on tab close and reduces XSS exposure
-- **Cross-redirect resilience**: Some browsers clear sessionStorage during OAuth redirects; a backup prevents "Invalid OAuth state"
+- **Cross-redirect resilience**: Some browsers clear sessionStorage during OAuth redirects; a backup prevents "Invalid OAuth state" and lost passphrase
+- **Automatic passphrase restoration**: After OAuth, the passphrase is restored automatically from sessionStorage (or localStorage backup if needed), so users do not need to re-enter it after redirect
 - **Mitigation**: Backup keys are cleared immediately after validation (success or failure)
 - **Alternative considered**: Backend state storage was rejected to maintain local-first architecture
 
 **Implementation**:
 
 ```javascript
-// Generate state during auth initiation
+// During auth initiation
 sessionStorage.setItem('fitbit_oauth_state', JSON.stringify(stateData));
 sessionStorage.setItem('fitbit_pkce_verifier', codeVerifier);
+sessionStorage.setItem('oscar_passphrase', userPassphrase); // Store passphrase for restoration
 
 // Backup for redirect resilience (cleared after callback)
 localStorage.setItem('fitbit_oauth_state_backup', JSON.stringify(stateData));
 localStorage.setItem('fitbit_pkce_verifier_backup', codeVerifier);
+localStorage.setItem('oscar_passphrase_backup', userPassphrase);
 
-// Validate on callback (sessionStorage first, backup if missing/mismatched)
+// On callback (restore passphrase and state)
 const sessionState = sessionStorage.getItem('fitbit_oauth_state');
 const backupState = localStorage.getItem('fitbit_oauth_state_backup');
-
 let stateData = sessionState ? JSON.parse(sessionState) : null;
 if (!stateData?.value || stateData.value !== receivedState) {
   stateData = backupState ? JSON.parse(backupState) : null;
 }
-
+const passphrase =
+  sessionStorage.getItem('oscar_passphrase') ||
+  localStorage.getItem('oscar_passphrase_backup');
 if (!stateData?.value || stateData.value !== receivedState) {
   throw new Error('OAuth state mismatch - possible CSRF attack');
+}
+if (!passphrase) {
+  throw new Error(
+    'Passphrase missing after OAuth redirect. Check sessionStorage/localStorage.',
+  );
 }
 
 // Clean up immediately after validation
 sessionStorage.removeItem('fitbit_oauth_state');
 sessionStorage.removeItem('fitbit_pkce_verifier');
+sessionStorage.removeItem('oscar_passphrase');
 localStorage.removeItem('fitbit_oauth_state_backup');
 localStorage.removeItem('fitbit_pkce_verifier_backup');
+localStorage.removeItem('oscar_passphrase_backup');
 ```
 
-**Testing Implications**: E2E tests should verify sessionStorage persistence and the localStorage fallback path for redirect resilience.
+**Testing Implications**: E2E tests should verify sessionStorage persistence, localStorage fallback, and automatic passphrase restoration after OAuth redirect.
+
+**Troubleshooting**:
+
+- If users are unexpectedly prompted for their passphrase after OAuth, check that sessionStorage/localStorage are not being cleared or blocked by browser privacy settings or extensions.
 
 ### IndexedDB Schema Alignment (Sessions + Fitbit)
 

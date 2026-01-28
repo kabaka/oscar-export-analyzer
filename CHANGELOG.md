@@ -2,7 +2,7 @@
 
 ### Fixed
 
-- Fitbit OAuth flow now opens the import modal after successful connection, ensures the Fitbit section reflects the connected state, and does not prompt for passphrase again if tokens are present. Session state is preserved except for the passphrase key. ([#fitbit-oauth-flow-fix])
+- Fitbit OAuth flow now restores the encryption passphrase automatically from sessionStorage after OAuth redirect, so users do not need to re-enter it. The Fitbit section now correctly reflects the connected state and displays charts/data if tokens and passphrase are present. Session state is preserved except for the passphrase key, which is cleared after use. Documentation and troubleshooting guides updated. ([#fitbit-oauth-flow-fix])
 
 # Changelog
 

@@ -96,12 +96,14 @@ Before connecting Fitbit:
    - Sleep stages and duration
 4. Click **Allow** to grant access
 
-#### 3. Initial Data Sync
+#### 3. Automatic Passphrase Restoration (New)
 
-1. Return to OSCAR analyzer (automatic redirect)
-2. Data sync begins automatically
-3. Progress indicator shows download status
-4. **Be patient**: Initial sync may take 2-5 minutes for 100 days of data
+1. After Fitbit authorization, you are redirected back to OSCAR analyzer.
+2. **Your encryption passphrase is now restored automatically from sessionStorage.**
+   - You do **not** need to re-enter your passphrase after OAuth redirect (unless you have cleared browser session data).
+3. Data sync begins automatically.
+4. Progress indicator shows download status.
+5. **Be patient**: Initial sync may take 2-5 minutes for 100 days of data.
 
 #### 4. Verify Connection
 
@@ -208,9 +210,12 @@ Each visualization includes statistical context:
 - Disable browser extensions that block redirects
 - If issue persists after trying above steps, check browser console for specific error messages
 
-**Note**: The "Invalid OAuth state" error that affected earlier versions has been fixed in the current release through improved state persistence.
+**"Invalid OAuth state"**
 
-\*\*"No data available"
+- This error should be rare in current versions. If it occurs, your browser may have cleared sessionStorage or blocked localStorage during the OAuth redirect.
+- Try reconnecting with browser privacy settings relaxed, or avoid clearing session data during the process.
+
+**"No data available"**
 
 - Verify Fitbit device recorded data on nights with CPAP use
 - Check Fitbit app sync status (device → app → web dashboard)
@@ -257,6 +262,13 @@ Each visualization includes statistical context:
 - Consider exporting data for analysis in other tools
 
 ## Data Limitations
+
+### Passphrase & Session Storage
+
+**Automatic Restoration:**
+
+- After OAuth, your passphrase is restored automatically from sessionStorage. You do not need to re-enter it unless session data was cleared.
+- If connection fails or you are unexpectedly prompted for your passphrase, check that your browser allows sessionStorage and that you have not cleared session data.
 
 ### Fitbit Device Limitations
 

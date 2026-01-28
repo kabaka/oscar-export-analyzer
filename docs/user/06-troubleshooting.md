@@ -54,6 +54,17 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 
 ## Miscellaneous
 
+### Fitbit OAuth: Passphrase or Session Issues
+
+**Problem:** After connecting Fitbit, you are unexpectedly prompted to re-enter your encryption passphrase, or connection fails with a session error.
+
+**Solutions:**
+
+- Ensure your browser allows `sessionStorage` and `localStorage` (not cleared by privacy settings or extensions).
+- Do not clear browser session data during the OAuth process.
+- Try reconnecting with privacy settings relaxed or in a different browser.
+- If the problem persists, check the [Fitbit Integration Guide](11-fitbit-integration.md#troubleshooting) for more details.
+
 ### Printed report misses charts
 
 - The browser’s print dialog may omit background graphics. Enable “Print backgrounds” or “Background graphics” in print settings.

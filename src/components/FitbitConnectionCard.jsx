@@ -65,6 +65,20 @@ export function FitbitConnectionCard({
   const [internalPassphrase, setInternalPassphrase] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false);
 
+  // Restore passphrase from sessionStorage after OAuth redirect
+  React.useEffect(() => {
+    if (passphrase === null && !internalPassphrase) {
+      const restored =
+        sessionStorage.getItem('fitbit_session_passphrase') ||
+        sessionStorage.getItem('fitbit_oauth_passphrase');
+      if (restored) {
+        setInternalPassphrase(restored);
+        sessionStorage.removeItem('fitbit_session_passphrase');
+        sessionStorage.removeItem('fitbit_oauth_passphrase');
+      }
+    }
+  }, [passphrase, internalPassphrase]);
+
   // Use prop passphrase if provided (for tests), otherwise use internal state
   const effectivePassphrase =
     passphrase !== null ? passphrase : internalPassphrase;
