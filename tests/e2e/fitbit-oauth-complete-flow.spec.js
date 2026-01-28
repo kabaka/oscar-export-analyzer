@@ -197,6 +197,21 @@ function captureConsoleErrors(page) {
   return errors;
 }
 
+async function dismissStorageConsent(page) {
+  const consentDialog = page.getByRole('alertdialog', {
+    name: /save data to this browser/i,
+  });
+  if (await consentDialog.isVisible().catch(() => false)) {
+    const askLater = page.getByRole('button', { name: /ask me later/i });
+    if (await askLater.isVisible().catch(() => false)) {
+      await askLater.click();
+    } else {
+      await page.getByRole('button', { name: /don't save/i }).click();
+    }
+    await expect(consentDialog).toBeHidden({ timeout: 5000 });
+  }
+}
+
 test('completes Fitbit OAuth flow with passphrase entry', async ({
   page,
 }, testInfo) => {
@@ -216,20 +231,10 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   await seedSessionData(page);
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await waitForSeedResult(page);
-
-  const consentDialog = page.getByRole('dialog', {
-    name: /save data to this browser/i,
-  });
-  if (await consentDialog.isVisible().catch(() => false)) {
-    const askLater = page.getByRole('button', { name: /ask me later/i });
-    if (await askLater.isVisible().catch(() => false)) {
-      await askLater.click();
-    } else {
-      await page.getByRole('button', { name: /don't save/i }).click();
-    }
-  }
+  await dismissStorageConsent(page);
 
   await loadSavedSession(page);
+  await dismissStorageConsent(page);
   await page.locator('#fitbit-correlation').scrollIntoViewIfNeeded();
 
   const passphraseInput = page.getByLabel('Encryption Passphrase');
@@ -240,6 +245,8 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
     name: /connect to fitbit/i,
   });
   await expect(connectButton).toBeEnabled({ timeout: 5000 });
+
+  await dismissStorageConsent(page);
 
   const authorizeRequestPromise = page.waitForRequest('**/oauth2/authorize**');
   const tokenRequestPromise = page.waitForRequest('**/oauth2/token');
