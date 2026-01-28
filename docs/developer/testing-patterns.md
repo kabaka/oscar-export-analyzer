@@ -509,6 +509,66 @@ Use builders for:
 - Statistical calculation tests (coordinate with `@data-scientist` for validation)
 - Edge case testing (zero values, extremes, missing data)
 
+## Playwright E2E: Modal Dismissal Patterns (WebKit Workaround)
+
+### Background
+
+When running Playwright E2E tests, dismissing modals (such as storage consent dialogs) can be unreliable in WebKit due to animation timing and focus quirks. WebKit sometimes fails to register modal dismissal if the click occurs before the animation completes, or if the modal is not fully attached/detached in the DOM.
+
+### Pattern: Robust Modal Dismissal (WebKit)
+
+**Workaround:**
+
+- Use `click({ force: browserName === 'webkit' })` to ensure the click is registered even if the modal is partially obscured or animating.
+- After clicking, add a short `waitForTimeout(150)` (or similar) to allow the modal's exit animation to finish before asserting it is hidden.
+- Use both `toBeHidden({ timeout: 5000 })` and, for WebKit, `waitForSelector('[role="alertdialog"]', { state: 'detached', timeout: 5000 })` to confirm the modal is fully removed from the DOM.
+
+**Example:**
+
+```js
+async function dismissStorageConsent(page, browserName) {
+  const consentDialog = page.getByRole('alertdialog', {
+    name: /save data to this browser/i,
+  });
+  if (await consentDialog.isVisible().catch(() => false)) {
+    const askLater = page.getByRole('button', { name: /ask me later/i });
+    if (await askLater.isVisible().catch(() => false)) {
+      await askLater.click({ force: browserName === 'webkit' });
+    } else {
+      await page
+        .getByRole('button', { name: /don't save/i })
+        .click({ force: browserName === 'webkit' });
+    }
+    // WebKit workaround: wait for animation/frame before asserting hidden
+    if (browserName === 'webkit') {
+      await page.waitForTimeout(150); // allow modal animation to finish
+    }
+    await expect(consentDialog).toBeHidden({ timeout: 5000 });
+    // Extra: on WebKit, double-check with waitForSelector
+    if (browserName === 'webkit') {
+      await page.waitForSelector('[role="alertdialog"]', {
+        state: 'detached',
+        timeout: 5000,
+      });
+    }
+  }
+}
+```
+
+**Best Practices:**
+
+- Always use `force: browserName === 'webkit'` for modal dismissal clicks in WebKit.
+- Wait for both hidden and detached states before proceeding with assertions.
+- Add a short timeout after click to allow for animation completion.
+- Avoid relying solely on visibility; check DOM detachment for full reliability.
+- Apply this pattern to any modal/dialog dismissal in Playwright E2E tests targeting WebKit.
+
+**See Also:**
+
+- [tests/e2e/fitbit-oauth-complete-flow.spec.js](../../tests/e2e/fitbit-oauth-complete-flow.spec.js) — Example usage in OAuth E2E flow
+
+---
+
 ## Accessibility Testing
 
 Testing accessibility ensures keyboard navigation, screen reader compatibility, and WCAG 2.1 AA compliance. OSCAR Export Analyzer prioritizes **semantic HTML, proper ARIA attributes, and comprehensive keyboard navigation tests**.

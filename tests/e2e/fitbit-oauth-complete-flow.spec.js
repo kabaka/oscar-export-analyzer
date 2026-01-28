@@ -197,23 +197,37 @@ function captureConsoleErrors(page) {
   return errors;
 }
 
-async function dismissStorageConsent(page) {
+async function dismissStorageConsent(page, browserName) {
   const consentDialog = page.getByRole('alertdialog', {
     name: /save data to this browser/i,
   });
   if (await consentDialog.isVisible().catch(() => false)) {
     const askLater = page.getByRole('button', { name: /ask me later/i });
     if (await askLater.isVisible().catch(() => false)) {
-      await askLater.click();
+      await askLater.click({ force: browserName === 'webkit' });
     } else {
-      await page.getByRole('button', { name: /don't save/i }).click();
+      await page
+        .getByRole('button', { name: /don't save/i })
+        .click({ force: browserName === 'webkit' });
+    }
+    // WebKit workaround: wait for animation/frame before asserting hidden
+    if (browserName === 'webkit') {
+      await page.waitForTimeout(150); // allow modal animation to finish
     }
     await expect(consentDialog).toBeHidden({ timeout: 5000 });
+    // Extra: on WebKit, double-check with waitForSelector
+    if (browserName === 'webkit') {
+      await page.waitForSelector('[role="alertdialog"]', {
+        state: 'detached',
+        timeout: 5000,
+      });
+    }
   }
 }
 
 test('completes Fitbit OAuth flow with passphrase entry', async ({
   page,
+  browserName,
 }, testInfo) => {
   const baseUrl =
     testInfo?.project?.use?.baseURL || process.env.BASE_URL || DEFAULT_BASE_URL;
@@ -231,10 +245,10 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   await seedSessionData(page);
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await waitForSeedResult(page);
-  await dismissStorageConsent(page);
+  await dismissStorageConsent(page, browserName);
 
   await loadSavedSession(page);
-  await dismissStorageConsent(page);
+  await dismissStorageConsent(page, browserName);
   await page.locator('#fitbit-correlation').scrollIntoViewIfNeeded();
 
   const passphraseInput = page.getByLabel('Encryption Passphrase');
@@ -246,7 +260,7 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   });
   await expect(connectButton).toBeEnabled({ timeout: 5000 });
 
-  await dismissStorageConsent(page);
+  await dismissStorageConsent(page, browserName);
 
   const authorizeRequestPromise = page.waitForRequest('**/oauth2/authorize**');
   const tokenRequestPromise = page.waitForRequest('**/oauth2/token');
