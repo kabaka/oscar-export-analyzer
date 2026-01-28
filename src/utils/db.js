@@ -1,19 +1,11 @@
 // Minimal IndexedDB wrapper for saving the last session locally.
-const DB_NAME = 'oscar_app';
-const DB_VERSION = 1;
+// Uses the shared Fitbit-aware DB initializer to keep schema versions in sync.
+import { openFitbitDb } from './fitbitDb.js';
+
 const STORE = 'sessions';
 
-function openDb() {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') return resolve(null);
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+async function openDb() {
+  return openFitbitDb();
 }
 
 export async function putLastSession(session) {

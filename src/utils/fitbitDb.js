@@ -27,7 +27,7 @@ const SYNC_METADATA_STORE = 'sync_metadata';
 export function openFitbitDb() {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
-      console.warn('IndexedDB not available - Fitbit features disabled');
+      console.warn('IndexedDB not available - persistence disabled');
       return resolve(null);
     }
 

@@ -24,12 +24,19 @@ export default defineConfig({
   reporter: [['html'], ['list']],
   use: {
     baseURL:
-      process.env.BASE_URL || 'http://localhost:5173/oscar-export-analyzer/',
+      process.env.BASE_URL || 'http://127.0.0.1:4173/oscar-export-analyzer/',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 10000,
     navigationTimeout: 30000,
+  },
+  webServer: {
+    command:
+      'VITE_DISABLE_SW=true npm run build && VITE_DISABLE_SW=true npm run preview -- --host 127.0.0.1 --port 4173',
+    url: 'http://127.0.0.1:4173/oscar-export-analyzer/',
+    reuseExistingServer: false,
+    timeout: 120000,
   },
   projects: [
     {
@@ -42,7 +49,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], bypassCSP: true },
     },
   ],
   timeout: 60000,

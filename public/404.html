@@ -11,11 +11,15 @@
         '/oscar-export-analyzer/',
         '',
       );
-      const redirect =
-        '/oscar-export-analyzer/' +
-        (path && path !== '/' ? '?p=' + path : '') +
-        window.location.search.slice(1) +
-        window.location.hash;
+      const search = window.location.search
+        ? window.location.search.slice(1)
+        : '';
+      const base = '/oscar-export-analyzer/';
+      const hasPath = path && path !== '/';
+      const query = [hasPath ? 'p=' + encodeURIComponent(path) : '', search]
+        .filter(Boolean)
+        .join('&');
+      const redirect = base + (query ? '?' + query : '') + window.location.hash;
       window.location.replace(redirect);
     </script>
   </head>

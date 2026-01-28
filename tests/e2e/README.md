@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains **end-to-end browser automation tests** using Playwright that validate critical user flows in OSCAR Export Analyzer. These tests run in real browsers (Chrome, Firefox, Safari) and test features like CSV uploads, data filtering, chart rendering, OAuth flows, and PWA installation.
+This directory contains **end-to-end browser automation tests** using Playwright that validate critical user flows in OSCAR Export Analyzer. These tests run in real browsers (Chrome, Firefox, Safari) and test features like OAuth flows and core UI interactions.
 
 **Key principle**: E2E tests exercise **actual user flows**, not component-level bypasses. This prevents scenarios where tests pass but real users fail.
 
@@ -12,7 +12,6 @@ This directory contains **end-to-end browser automation tests** using Playwright
 
 - Node.js ≥ 20.19.0
 - Dev dependencies installed: `npm install`
-- Dev server running: `npm run dev` (separate terminal)
 
 ### Commands
 
@@ -45,10 +44,7 @@ npx playwright show-report
 
 ```
 tests/e2e/
-├── fitbit-oauth-complete-flow.spec.js    # Fitbit OAuth + UI passphrase entry
-├── csv-upload-workflow.spec.js           # (future) CSV upload and parsing
-├── charting-interactions.spec.js         # (future) Chart rendering and interactions
-├── print-export.spec.js                  # (future) Print/PDF functionality
+├── fitbit-oauth-complete-flow.spec.js    # Fitbit OAuth full user flow
 └── README.md                              # This file
 ```
 
@@ -78,51 +74,22 @@ test('descriptive test name', async ({ page }) => {
 
 The `fitbit-oauth-complete-flow.spec.js` test validates the **entire Fitbit OAuth flow as users experience it**:
 
-1. **UI passphrase entry** — User types passphrase into a visible text input field (NOT component-level mock)
+1. **UI passphrase entry** — User types passphrase into the visible input field
 2. **OAuth state management** — State is generated, stored, and validated correctly
 3. **OAuth redirect flow** — Browser navigates to Fitbit, then back with authorization code
 4. **State validation** — No "Invalid OAuth state" or CSRF errors
-5. **Data persistence** — IndexedDB retains OSCAR session data after OAuth completes
-6. **Error handling** — State mismatches are detected; passphrase validation works
+5. **Token persistence** — IndexedDB stores encrypted Fitbit tokens after OAuth completes
 
-### Test Scenarios
-
-#### Primary Flow: Complete OAuth with Passphrase Entry
+### Test Scenario
 
 ```javascript
-test('Complete Fitbit OAuth flow with UI passphrase entry', async ({
-  page,
-}) => {
-  // User navigates to app
-  // User types passphrase into UI field (real interaction)
-  // User clicks "Connect to Fitbit" button
-  // App initiates OAuth redirect to Fitbit
-  // We simulate Fitbit redirect back with authorization code
-  // OAuth callback processes code + state without errors
-  // IndexedDB persists session data
-  // ✅ Test passes: passphrase was entered via UI, state validated, data persisted
-});
-```
-
-#### Error Case: OAuth State Mismatch
-
-```javascript
-test('OAuth state mismatch detection', async ({ page }) => {
-  // App stores state X in localStorage
-  // OAuth callback attempts to complete with state Y
-  // App detects state mismatch and rejects
-  // Error message appears in UI or console
-  // ✅ Test passes: CSRF attack was prevented
-});
-```
-
-#### Validation: Passphrase Required
-
-```javascript
-test('Passphrase required validation', async ({ page }) => {
-  // User tries to click "Connect to Fitbit" WITHOUT entering passphrase
-  // Button is disabled OR error message appears
-  // ✅ Test passes: cannot connect without passphrase
+test('completes Fitbit OAuth flow with passphrase entry', async ({ page }) => {
+  // User loads app and restores saved session
+  // User types passphrase into UI field
+  // User clicks "Connect to Fitbit"
+  // Fitbit redirect is simulated back with code + state
+  // OAuth callback completes without state errors
+  // Encrypted tokens are stored in IndexedDB
 });
 ```
 
@@ -152,31 +119,44 @@ This prevents "tests pass, users fail" scenarios.
 
 We don't actually redirect to Fitbit's servers (which require real user authorization). Instead:
 
-1. **Setup** — Generate valid OAuth state and PKCE code verifier in localStorage
-2. **Intercept** — Route requests to `https://www.fitbit.com/**` to prevent external navigation
-3. **Simulate callback** — Navigate app to callback URL with mock authorization code
-4. **Verify** — Assert that OAuth processing succeeds with mocked code + state
+1. **Setup** — User enters passphrase and initiates OAuth in the UI
+2. **Intercept** — Capture the Fitbit authorize request, extract its `state`
+3. **Redirect** — Fulfill the authorize request with a 302 back to `/oauth-callback?code=...&state=...`
+4. **Simulate GitHub Pages redirect** — Fulfill `/oauth-callback` with `404.html` so the SPA redirect logic runs
+5. **Verify** — Assert that OAuth processing succeeds without state mismatch errors
 
 ```javascript
-// Generate state and code verifier
-const state = crypto.randomBytes(32).toString('hex');
-const codeVerifier = crypto.randomBytes(64).toString('base64url');
+// Intercept Fitbit authorize and redirect back to callback
+let oauthState;
+await page.route('**/oauth2/authorize**', async (route) => {
+  const url = new URL(route.request().url());
+  oauthState = url.searchParams.get('state');
+  await route.fulfill({
+    status: 302,
+    headers: {
+      location: `${BASE_URL}oauth-callback?code=mock-code&state=${oauthState}`,
+    },
+  });
+});
 
-// Store in localStorage (what initiateAuth does)
-await page.evaluate(
-  (s, v) => {
-    localStorage.setItem('fitbit_oauth_state', s);
-    localStorage.setItem('fitbit_pkce_verifier', v);
-  },
-  state,
-  codeVerifier,
+// Simulate GitHub Pages 404 handler for /oauth-callback
+await page.route('**/oauth-callback**', (route) =>
+  route.fulfill({
+    status: 404,
+    contentType: 'text/html',
+    body: fourOhFourHtml,
+  }),
 );
 
-// Intercept Fitbit redirect
-await page.route('https://www.fitbit.com/**', (route) => route.abort());
-
-// Simulate callback
-await page.goto(`${BASE_URL}#?code=mock-code&state=${state}`);
+// Mock token exchange with CORS headers so browser fetch resolves
+await page.route('https://api.fitbit.com/oauth2/token', (route) =>
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: { 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify(mockTokenResponse),
+  }),
+);
 ```
 
 ## Debugging Tests
@@ -221,13 +201,13 @@ npx playwright test --headed 2>&1 | grep -i "e2e test"
 
 **"Navigation to X timed out"**
 
-- Dev server isn't running (`npm run dev`)
+- Preview server isn't running (Playwright starts it automatically)
 - URL is wrong (check BASE_URL in test)
 - Network request is slow
 
 **"State mismatch" error**
 
-- localStorage was cleared between steps
+- sessionStorage was cleared between steps
 - State wasn't stored before OAuth redirect
 - Callback used different state parameter
 
@@ -235,10 +215,10 @@ npx playwright test --headed 2>&1 | grep -i "e2e test"
 
 See `playwright.config.js` for:
 
-- **baseURL** — Defaults to `http://localhost:5173/oscar-export-analyzer/`
+- **baseURL** — Defaults to `http://127.0.0.1:4173/oscar-export-analyzer/`
 - **timeout** — 60 seconds per test; 15 seconds for assertions
 - **retries** — 2 retries in CI; 0 locally
-- **webServer** — Automatically starts `npm run dev` before tests
+- **webServer** — Automatically runs `npm run build` and `npm run preview` with `VITE_DISABLE_SW=true`
 - **projects** — Tests run in Chromium, Firefox, and WebKit
 - **reporter** — HTML report in `test-results/playwright/`
 
@@ -247,6 +227,9 @@ See `playwright.config.js` for:
 ```bash
 # Use custom base URL
 BASE_URL="http://localhost:3000/" npm run test:e2e
+
+# Disable service worker registration (useful for custom preview setups)
+VITE_DISABLE_SW=true npm run test:e2e
 
 # Run in CI (enforces retries, no preview server reuse)
 CI=true npm run test:e2e
@@ -312,7 +295,7 @@ test.describe('Feature Name', () => {
   test('specific user scenario', async ({ page }) => {
     // Setup
     const BASE_URL =
-      process.env.BASE_URL || 'http://localhost:5173/oscar-export-analyzer/';
+      process.env.BASE_URL || 'http://127.0.0.1:4173/oscar-export-analyzer/';
     await page.goto(BASE_URL);
 
     // User actions
@@ -359,9 +342,9 @@ await page.locator('input[type="password"]').first();
 ### State Not Persisting
 
 ```javascript
-// Verify localStorage/sessionStorage is set
+// Verify sessionStorage is set
 const state = await page.evaluate(() =>
-  localStorage.getItem('fitbit_oauth_state'),
+  sessionStorage.getItem('fitbit_oauth_state'),
 );
 console.log('OAuth state:', state);
 

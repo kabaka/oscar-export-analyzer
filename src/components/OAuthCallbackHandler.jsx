@@ -7,7 +7,7 @@
  * @component
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useFitbitOAuth } from '../hooks/useFitbitOAuth.js';
 import { FITBIT_ERRORS } from '../constants/fitbit.js';
 
@@ -74,6 +74,7 @@ export function OAuthCallbackHandler({
 
   const [processing, setProcessing] = useState(true);
   const [result, setResult] = useState(null);
+  const hasProcessedRef = useRef(false);
 
   const {
     handleCallback,
@@ -129,7 +130,9 @@ export function OAuthCallbackHandler({
       }
     };
 
-    if (processing && effectivePassphrase) {
+    if (processing && (effectivePassphrase || oauthParams?.error)) {
+      if (hasProcessedRef.current) return;
+      hasProcessedRef.current = true;
       processCallback();
     } else if (processing && !effectivePassphrase) {
       // Wait for passphrase to be provided

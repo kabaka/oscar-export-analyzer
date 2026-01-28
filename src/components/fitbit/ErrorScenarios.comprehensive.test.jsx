@@ -5,6 +5,7 @@ import {
   buildMockFitbitApiResponse,
   buildCombinedNightlyData,
 } from '../../test-utils/fitbitBuilders.js';
+import { setupOAuthState } from '../../test-utils/oauthTestHelpers.js';
 import { FitbitOAuthProvider } from '../../context/FitbitOAuthContext.jsx';
 import FitbitDashboard from '../../components/fitbit/FitbitDashboard.jsx';
 import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.js';
@@ -104,7 +105,7 @@ describe.skip('Fitbit Integration Error Scenarios', () => {
         );
       };
 
-      localStorage.setItem('fitbit_oauth_state', 'valid_state');
+      setupOAuthState('valid_state');
 
       render(
         <FitbitOAuthProvider>
@@ -222,7 +223,7 @@ describe.skip('Fitbit Integration Error Scenarios', () => {
         return <span data-testid="error">{error}</span>;
       };
 
-      localStorage.setItem('fitbit_oauth_state', 'valid_state');
+      setupOAuthState('valid_state');
 
       render(
         <FitbitOAuthProvider>

@@ -52,7 +52,7 @@ async function generateCodeChallenge(codeVerifier) {
 /**
  * OAuth state management for CSRF protection.
  * Security improvements:
- * - State stored in sessionStorage (cleared on tab close) instead of localStorage
+ * - State stored in sessionStorage with a short-lived localStorage backup for redirects
  * - State validity enforced with 5-minute timeout to prevent indefinite validity
  * - Timestamp included with state to validate freshness on callback
  */
@@ -60,6 +60,8 @@ class OAuthState {
   constructor() {
     this.stateKey = 'fitbit_oauth_state';
     this.verifierKey = 'fitbit_pkce_verifier';
+    this.backupStateKey = 'fitbit_oauth_state_backup';
+    this.backupVerifierKey = 'fitbit_pkce_verifier_backup';
     this.STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
   }
 
@@ -84,6 +86,11 @@ class OAuthState {
     sessionStorage.setItem(this.stateKey, JSON.stringify(stateData));
     sessionStorage.setItem(this.verifierKey, codeVerifier);
 
+    // Backup in localStorage to survive cross-origin OAuth redirects in some browsers.
+    // Cleared on callback validation to minimize exposure window.
+    localStorage.setItem(this.backupStateKey, JSON.stringify(stateData));
+    localStorage.setItem(this.backupVerifierKey, codeVerifier);
+
     return { state, codeChallenge };
   }
 
@@ -96,6 +103,9 @@ class OAuthState {
    */
   validateCallback(receivedState) {
     let stateData = null;
+    let codeVerifier = null;
+    let usedBackup = false;
+
     try {
       const stored = sessionStorage.getItem(this.stateKey);
       stateData = stored ? JSON.parse(stored) : null;
@@ -104,11 +114,34 @@ class OAuthState {
       stateData = null;
     }
 
-    const codeVerifier = sessionStorage.getItem(this.verifierKey);
+    codeVerifier = sessionStorage.getItem(this.verifierKey);
+
+    const hasSessionState = !!stateData?.value && !!codeVerifier;
+
+    const loadBackup = () => {
+      try {
+        const backupStored = localStorage.getItem(this.backupStateKey);
+        stateData = backupStored ? JSON.parse(backupStored) : null;
+      } catch (e) {
+        console.error('Failed to parse OAuth state backup:', e);
+        stateData = null;
+      }
+      codeVerifier = localStorage.getItem(this.backupVerifierKey);
+      usedBackup = !!stateData?.value && !!codeVerifier;
+    };
+
+    if (!hasSessionState) {
+      loadBackup();
+    } else if (stateData.value !== receivedState) {
+      // Session state mismatch: try localStorage backup before failing.
+      loadBackup();
+    }
 
     // Clear stored values immediately
     sessionStorage.removeItem(this.stateKey);
     sessionStorage.removeItem(this.verifierKey);
+    localStorage.removeItem(this.backupStateKey);
+    localStorage.removeItem(this.backupVerifierKey);
 
     // Validate state exists
     if (!stateData || !stateData.value) {
@@ -129,6 +162,12 @@ class OAuthState {
         `OAuth state expired. Age: ${Math.round(ageMs / 1000)}s, Max: ${this.STATE_TIMEOUT_MS / 1000}s`,
       );
       return null;
+    }
+
+    if (usedBackup) {
+      console.warn(
+        'OAuth state restored from localStorage backup after redirect',
+      );
     }
 
     return codeVerifier;

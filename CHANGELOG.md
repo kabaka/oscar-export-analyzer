@@ -7,6 +7,23 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-01-28
+
+### Added
+
+- Added a Playwright E2E test that exercises the full Fitbit OAuth flow (passphrase entry, redirect, callback, token storage) and wired Playwright into CI.
+
+### Changed
+
+- E2E configuration now runs against a preview build on port 4173 to mirror production routing; E2E documentation updated accordingly.
+
+### Fixed
+
+- OAuth callback now accepts state from sessionStorage with a localStorage backup for redirect resilience, preventing false "Invalid OAuth state" errors.
+- OAuth callback handler retrieves the passphrase from sessionStorage and handles error callbacks without requiring a second prompt.
+- GitHub Pages 404 redirect now preserves OAuth query parameters when routing `/oauth-callback`.
+- Session persistence uses the Fitbit-aware IndexedDB schema so Fitbit token storage succeeds after OAuth completes.
+
 ## 2026-01-27
 
 ### Added
@@ -15,10 +32,17 @@ corresponds to changes released on that day.
 
 - **Fitbit passphrase input UI**: Added user-facing passphrase input field to `FitbitConnectionCard` so users can enter their encryption passphrase directly in the UI before connecting to Fitbit. Component now renders password input field with show/hide toggle, real-time passphrase strength indicator (weak/medium/strong), and accessibility features (ARIA labels, screen reader announcements). Connect button enables only when passphrase meets minimum requirements (8+ characters). Passphrase prop remains available for test scenarios (backward compatibility). Added comprehensive E2E test suite (8 tests) validating actual user flow: input field rendering, button state transitions, strength indicators, visibility toggle, and full OAuth completion with passphrase from UI input. Fixes critical UX issue where component required passphrase but provided no way for users to enter it.
 
+- **GitHub Pages OAuth redirect E2E coverage**: Added Playwright coverage and documentation updates to simulate the GitHub Pages 404 handler for `/oauth-callback`, ensuring OAuth query parameters survive the redirect and the flow is validated end-to-end.
+
 ### Fixed
 
+- **Fitbit OAuth state persistence across redirects**: Added a short-lived localStorage backup (`fitbit_oauth_state_backup`, `fitbit_pkce_verifier_backup`) for OAuth state and PKCE verifier when sessionStorage is cleared during cross-origin redirects. Callback validation now falls back to the backup and clears both storages after use, preventing "Invalid OAuth state" errors while keeping the exposure window minimal.
+- **OAuth state validation fallback on mismatch**: When sessionStorage contains stale state values, OAuth callback validation now checks the localStorage backup before rejecting, preventing false "Invalid OAuth state" failures during redirects.
+- **IndexedDB schema alignment for Fitbit tokens**: Session storage now uses the shared Fitbit-aware IndexedDB initializer (schema v2) so `fitbit_tokens`/`fitbit_data` stores exist before token storage. Prevents OAuth completion from hanging or failing with `NotFoundError` when older session DB connections are open.
 - **Fitbit OAuth E2E tests migration to sessionStorage**: Updated Playwright E2E tests (`tests/e2e/fitbit-oauth-complete-flow.spec.js`) to validate OAuth flow with sessionStorage state management instead of deprecated localStorage. Migrated 4 test scenarios: (1) Complete OAuth flow with UI passphrase entry, (2) OAuth state mismatch detection, (3) Passphrase required validation, (4) Passphrase persistence through callback. Changes: (1) `setupOAuthState()` now stores state as `{ value, createdAt: Date.now() }` object in sessionStorage, (2) State mismatch test creates proper state object with timestamp, (3) All assertions verify sessionStorage instead of localStorage, (4) Test isolation maintained—each test cleans up own sessionStorage. Aligns E2E tests with security hardening that moved OAuth state from localStorage (indefinite persistence, XSS-vulnerable) to sessionStorage (tab-scoped, cleared on close). Tests validate state timeout enforcement (5-minute validity window) during OAuth callback validation. No changes to OAuth implementation—tests now validate actual security improvements.
 - **Fitbit OAuth unit tests migration to sessionStorage**: Fixed 7 E2E test failures in `src/components/fitbit/FitbitOAuth.e2e.test.jsx` caused by localStorage→sessionStorage migration. Replaced all `localStorage.getItem('fitbit_oauth_state')` calls with `sessionStorage.getItem()` (36 replacements). Updated state object expectations from plain string to `{value, createdAt}` structure—tests now parse JSON and access `stateData.value` when comparing OAuth state values. Fixed `simulateRedirect()` helper to preserve sessionStorage (same-origin behavior) instead of clearing it. Corrected sessionStorage mock on line 1209 to call `sessionStorage` instead of `localStorage`. Updated test name from "localStorage Fix" to "State Persistence with sessionStorage". All 27 tests pass consistently (verified 2 runs). Tests validate: state stored with timestamp, NOT in localStorage (security), state persists through same-origin redirect, 5-minute timeout validation. No implementation changes—only test expectations aligned with current sessionStorage architecture.
+- **GitHub Pages OAuth callback redirect preserves query parameters**: Fixed the SPA `public/404.html` redirect so OAuth callback query parameters (`code`, `state`, errors) are preserved correctly when GitHub Pages routes `/oauth-callback` through the 404 handler. The redirect now merges path and search params with proper `&` handling, preventing malformed query strings and failed Fitbit OAuth callbacks.
+- **Fitbit OAuth error callbacks render handler UI**: Treat OAuth callbacks with `?error=` params as callback flows so users see the error state instead of being dropped into the main app without feedback.
 
 - **Fitbit OAuth security hardening (XSS/CSRF protections)**: Applied three critical security improvements to OAuth implementation based on security audit findings:
   1. **State storage moved from localStorage to sessionStorage**: OAuth state now stored in `sessionStorage` (per-tab, cleared on tab close) instead of `localStorage` (accessible to XSS scripts indefinitely). Reduces XSS attack window from days to minutes. Implemented in `OAuthState.generateState()` and `validateCallback()`. Updated test helper `setupOAuthState()` to create state objects with timestamp for timeout validation.

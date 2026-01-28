@@ -29,9 +29,9 @@ describe('useFitbitOAuth', () => {
     fitbitMocks.handleCallbackMock.mockReset();
     fitbitMocks.isAuthenticatedMock.mockReset();
     fitbitMocks.revokeTokensMock.mockReset();
-    // Allow tests to set window.location.href
+    // Allow tests to set window.location.assign
     delete window.location;
-    window.location = { href: '' };
+    window.location = { href: '', assign: vi.fn() };
   });
 
   it('initiates OAuth flow and redirects to Fitbit', async () => {
@@ -46,7 +46,9 @@ describe('useFitbitOAuth', () => {
 
     expect(fitbitMocks.initiateAuthMock).toHaveBeenCalledWith(['profile']);
     expect(result.current.status).toBe(CONNECTION_STATUS.CONNECTING);
-    expect(window.location.href).toBe('https://fitbit.example/auth');
+    expect(window.location.assign).toHaveBeenCalledWith(
+      'https://fitbit.example/auth',
+    );
   });
 
   it('captures initiation errors and surfaces them', async () => {

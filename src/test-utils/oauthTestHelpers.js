@@ -80,6 +80,8 @@ export function setupOAuthState(state, verifier, ageMs = 0) {
   };
   sessionStorage.setItem('fitbit_oauth_state', JSON.stringify(stateData));
   sessionStorage.setItem('fitbit_pkce_verifier', verifier);
+  localStorage.setItem('fitbit_oauth_state_backup', JSON.stringify(stateData));
+  localStorage.setItem('fitbit_pkce_verifier_backup', verifier);
 }
 
 /**
@@ -88,6 +90,8 @@ export function setupOAuthState(state, verifier, ageMs = 0) {
 export function clearOAuthState() {
   sessionStorage.removeItem('fitbit_oauth_state');
   sessionStorage.removeItem('fitbit_pkce_verifier');
+  localStorage.removeItem('fitbit_oauth_state_backup');
+  localStorage.removeItem('fitbit_pkce_verifier_backup');
 }
 
 /**
@@ -303,13 +307,34 @@ export function setupOAuthMockEnvironment({ onLocationChange = null } = {}) {
     href: 'http://localhost:5173/',
   };
 
+  const applyUrl = (url) => {
+    const parsed = new URL(url, mockLocation.origin);
+    mockLocation.origin = parsed.origin;
+    mockLocation.pathname = parsed.pathname;
+    mockLocation.search = parsed.search;
+    mockLocation.hash = parsed.hash;
+    mockLocation.href = parsed.toString();
+  };
+
+  mockLocation.assign = (url) => {
+    applyUrl(url);
+    if (onLocationChange) onLocationChange(mockLocation.href);
+  };
+
+  mockLocation.replace = (url) => {
+    applyUrl(url);
+    if (onLocationChange) onLocationChange(mockLocation.href);
+  };
+
   Object.defineProperty(window, 'location', {
     value: new Proxy(mockLocation, {
       set: (target, prop, value) => {
-        target[prop] = value;
-        if (prop === 'href' && onLocationChange) {
-          onLocationChange(value);
+        if (prop === 'href') {
+          applyUrl(value);
+          if (onLocationChange) onLocationChange(mockLocation.href);
+          return true;
         }
+        target[prop] = value;
         return true;
       },
     }),

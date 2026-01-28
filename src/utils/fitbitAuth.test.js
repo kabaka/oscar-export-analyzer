@@ -12,12 +12,14 @@ describe('OAuthState', () => {
   beforeEach(() => {
     // Clear sessionStorage before each test
     sessionStorage.clear();
+    localStorage.clear();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
     // Clean up after each test
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   describe('generateState', () => {
@@ -32,15 +34,21 @@ describe('OAuthState', () => {
       expect(state.length).toBeGreaterThan(20);
     });
 
-    it('stores state and verifier in sessionStorage', async () => {
+    it('stores state and verifier in sessionStorage (with localStorage backup)', async () => {
       const oauthState = new OAuthState();
       await oauthState.generateState();
 
       const stored = sessionStorage.getItem('fitbit_oauth_state');
       const verifier = sessionStorage.getItem('fitbit_pkce_verifier');
+      const backupStored = localStorage.getItem('fitbit_oauth_state_backup');
+      const backupVerifier = localStorage.getItem(
+        'fitbit_pkce_verifier_backup',
+      );
 
       expect(stored).toBeTruthy();
       expect(verifier).toBeTruthy();
+      expect(backupStored).toBeTruthy();
+      expect(backupVerifier).toBeTruthy();
     });
 
     it('stores state with timestamp for timeout validation', async () => {
@@ -90,12 +98,44 @@ describe('OAuthState', () => {
       expect(verifier).toBeNull();
     });
 
+    it('falls back to localStorage when sessionStorage state mismatches', async () => {
+      const oauthState = new OAuthState();
+      const { state } = await oauthState.generateState();
+      const backupStateRaw = localStorage.getItem('fitbit_oauth_state_backup');
+      const backupVerifier = localStorage.getItem(
+        'fitbit_pkce_verifier_backup',
+      );
+
+      sessionStorage.setItem(
+        'fitbit_oauth_state',
+        JSON.stringify({ value: 'stale_state', createdAt: Date.now() }),
+      );
+      sessionStorage.setItem('fitbit_pkce_verifier', 'stale_verifier');
+
+      const verifier = oauthState.validateCallback(state);
+
+      expect(backupStateRaw).toBeTruthy();
+      expect(backupVerifier).toBeTruthy();
+      expect(verifier).toBeTruthy();
+    });
+
     it('returns null for missing state', () => {
       const oauthState = new OAuthState();
 
       const verifier = oauthState.validateCallback('any_state');
 
       expect(verifier).toBeNull();
+    });
+
+    it('falls back to localStorage when sessionStorage is cleared', async () => {
+      const oauthState = new OAuthState();
+      const { state } = await oauthState.generateState();
+
+      sessionStorage.clear();
+
+      const verifier = oauthState.validateCallback(state);
+
+      expect(verifier).toBeTruthy();
     });
 
     it('clears state from sessionStorage after validation', async () => {
@@ -140,16 +180,19 @@ describe('OAuthState', () => {
 
     it('accepts state exactly at 5 minutes (boundary test)', async () => {
       const oauthState = new OAuthState();
+      const now = Date.now();
+      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now);
       const { state } = await oauthState.generateState();
 
       // Manually set state to be exactly 5 minutes old
       const stateData = JSON.parse(
         sessionStorage.getItem('fitbit_oauth_state'),
       );
-      stateData.createdAt = Date.now() - 5 * 60 * 1000; // Exactly 5 minutes ago
+      stateData.createdAt = now - 5 * 60 * 1000; // Exactly 5 minutes ago
       sessionStorage.setItem('fitbit_oauth_state', JSON.stringify(stateData));
 
       const verifier = oauthState.validateCallback(state);
+      nowSpy.mockRestore();
 
       // Should be accepted (boundary case: exactly 5 minutes is still valid)
       expect(verifier).toBeTruthy();
@@ -216,12 +259,12 @@ describe('OAuthState', () => {
   });
 
   describe('security properties', () => {
-    it('uses sessionStorage not localStorage', async () => {
+    it('stores localStorage backup for cross-origin redirect resilience', async () => {
       const oauthState = new OAuthState();
       await oauthState.generateState();
 
       expect(sessionStorage.getItem('fitbit_oauth_state')).toBeTruthy();
-      expect(localStorage.getItem('fitbit_oauth_state')).toBeNull();
+      expect(localStorage.getItem('fitbit_oauth_state_backup')).toBeTruthy();
     });
 
     it('enforces exact state matching (not substring)', async () => {
@@ -240,11 +283,15 @@ describe('OAuthState', () => {
 
       expect(sessionStorage.getItem('fitbit_oauth_state')).toBeTruthy();
       expect(sessionStorage.getItem('fitbit_pkce_verifier')).toBeTruthy();
+      expect(localStorage.getItem('fitbit_oauth_state_backup')).toBeTruthy();
+      expect(localStorage.getItem('fitbit_pkce_verifier_backup')).toBeTruthy();
 
       oauthState.validateCallback(state);
 
       expect(sessionStorage.getItem('fitbit_oauth_state')).toBeNull();
       expect(sessionStorage.getItem('fitbit_pkce_verifier')).toBeNull();
+      expect(localStorage.getItem('fitbit_oauth_state_backup')).toBeNull();
+      expect(localStorage.getItem('fitbit_pkce_verifier_backup')).toBeNull();
     });
 
     it('clears both state and verifier on validation failure', () => {
@@ -258,11 +305,21 @@ describe('OAuthState', () => {
         }),
       );
       sessionStorage.setItem('fitbit_pkce_verifier', 'test_verifier');
+      localStorage.setItem(
+        'fitbit_oauth_state_backup',
+        JSON.stringify({
+          value: 'stored_state',
+          createdAt: Date.now(),
+        }),
+      );
+      localStorage.setItem('fitbit_pkce_verifier_backup', 'test_verifier');
 
       oauthState.validateCallback('wrong_state');
 
       expect(sessionStorage.getItem('fitbit_oauth_state')).toBeNull();
       expect(sessionStorage.getItem('fitbit_pkce_verifier')).toBeNull();
+      expect(localStorage.getItem('fitbit_oauth_state_backup')).toBeNull();
+      expect(localStorage.getItem('fitbit_pkce_verifier_backup')).toBeNull();
     });
   });
 });

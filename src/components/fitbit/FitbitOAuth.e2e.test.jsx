@@ -135,9 +135,9 @@ describe('Fitbit OAuth E2E Flow', () => {
       expect(storedVerifier.length).toBeGreaterThan(40);
       expect(typeof stateData.createdAt).toBe('number');
 
-      // CRITICAL: Verify NOT in localStorage (security improvement)
-      expect(localStorage.getItem('fitbit_oauth_state')).toBeNull();
-      expect(localStorage.getItem('fitbit_pkce_verifier')).toBeNull();
+      // Backup stored in localStorage to survive cross-origin redirects
+      expect(localStorage.getItem('fitbit_oauth_state_backup')).toBeTruthy();
+      expect(localStorage.getItem('fitbit_pkce_verifier_backup')).toBeTruthy();
 
       // ===== SIMULATE REDIRECT =====
       // Note: sessionStorage persists within same-origin navigation (same tab)

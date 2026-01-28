@@ -65,7 +65,7 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
         }
 
         // Redirect to Fitbit authorization
-        window.location.href = authUrl;
+        window.location.assign(authUrl);
       } catch (err) {
         console.error('OAuth initiation failed:', err);
         setError({

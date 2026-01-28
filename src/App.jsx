@@ -119,7 +119,9 @@ export function AppShell() {
   // OAuth callback detection
   const isOAuthCallback = useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.has('code') && urlParams.has('state');
+    const hasAuthParams = urlParams.has('code') && urlParams.has('state');
+    const hasError = urlParams.has('error');
+    return hasAuthParams || hasError;
   }, []);
   // FIX: Show OAuth handler immediately when callback detected.
   // The passphrase is already available from sessionStorage (set by FitbitConnectionCard).
