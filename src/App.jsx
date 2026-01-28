@@ -211,7 +211,9 @@ export function AppShell() {
       sessionStorage.removeItem('fitbit_oauth_passphrase');
     }
     setShowOauthHandler(false);
-    importModal.close();
+
+    // Always open import modal after OAuth, so user can import or reload data
+    importModal.open();
 
     // Navigate to Fitbit section on success
     if (success) {

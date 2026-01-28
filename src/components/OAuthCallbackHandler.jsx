@@ -112,8 +112,17 @@ export function OAuthCallbackHandler({
         // Handle successful authorization
         if (code && state && effectivePassphrase) {
           await handleCallback(code, state, effectivePassphrase);
-          // Clear passphrase from sessionStorage after successful callback
+          // Persist passphrase for this session so users can sync immediately after OAuth.
           if (typeof window !== 'undefined') {
+            const storedPassphrase = sessionStorage.getItem(
+              'fitbit_oauth_passphrase',
+            );
+            if (storedPassphrase) {
+              sessionStorage.setItem(
+                'fitbit_session_passphrase',
+                storedPassphrase,
+              );
+            }
             sessionStorage.removeItem('fitbit_oauth_passphrase');
           }
         } else if (code && state && !effectivePassphrase) {

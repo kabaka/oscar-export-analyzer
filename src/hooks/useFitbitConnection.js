@@ -292,29 +292,50 @@ export function useFitbitConnection({
 
   // Auto-check connection on mount and passphrase change
   useEffect(() => {
-    if (autoCheck && passphrase) {
-      // Debounce connection checks
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
+    // On mount or passphrase change, check connection if:
+    // - autoCheck is true AND (passphrase is present OR tokens are present in IndexedDB)
+    let cancelled = false;
+    async function checkIfTokens() {
+      if (autoCheck) {
+        let shouldCheck = !!passphrase;
+        if (!shouldCheck) {
+          // Check if tokens exist in IndexedDB (fitbit_tokens.current)
+          try {
+            const db = await window.indexedDB.open('fitbit_tokens');
+            if (db.result && db.result.objectStoreNames.contains('current')) {
+              const tx = db.result.transaction('current', 'readonly');
+              const store = tx.objectStore('current');
+              const req = store.get('access_token');
+              req.onsuccess = function () {
+                if (req.result && !cancelled) {
+                  checkConnection();
+                }
+              };
+            }
+          } catch {
+            // Ignore errors, fallback to normal flow
+          }
+        } else {
+          checkConnection();
+        }
       }
-
-      checkTimeoutRef.current = setTimeout(() => {
-        checkConnection();
-      }, 100);
     }
-
+    checkIfTokens();
+    const timeout = checkTimeoutRef.current;
     return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
+      cancelled = true;
+      if (timeout) {
+        clearTimeout(timeout);
       }
     };
   }, [passphrase, autoCheck, checkConnection]);
 
   // Cleanup on unmount
   useEffect(() => {
+    const timeout = checkTimeoutRef.current;
     return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
+      if (timeout) {
+        clearTimeout(timeout);
       }
     };
   }, []);

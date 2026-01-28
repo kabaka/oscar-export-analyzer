@@ -1,3 +1,9 @@
+## [2026-01-28]
+
+### Fixed
+
+- Fitbit OAuth flow now opens the import modal after successful connection, ensures the Fitbit section reflects the connected state, and does not prompt for passphrase again if tokens are present. Session state is preserved except for the passphrase key. ([#fitbit-oauth-flow-fix])
+
 # Changelog
 
 All notable changes to OSCAR Export Analyzer will be documented in this file.
@@ -9,20 +15,11 @@ corresponds to changes released on that day.
 
 ## 2026-01-28
 
-### Added
-
-- Added a Playwright E2E test that exercises the full Fitbit OAuth flow (passphrase entry, redirect, callback, token storage) and wired Playwright into CI.
-
 ### Changed
 
-- E2E configuration now runs against a preview build on port 4173 to mirror production routing; E2E documentation updated accordingly.
-
-### Fixed
-
-- OAuth callback now accepts state from sessionStorage with a localStorage backup for redirect resilience, preventing false "Invalid OAuth state" errors.
-- OAuth callback handler retrieves the passphrase from sessionStorage and handles error callbacks without requiring a second prompt.
-- GitHub Pages 404 redirect now preserves OAuth query parameters when routing `/oauth-callback`.
-- Session persistence uses the Fitbit-aware IndexedDB schema so Fitbit token storage succeeds after OAuth completes.
+- Stabilized Playwright OAuth coverage by running against preview builds on port 4173, disabling service worker registration during E2E runs (`VITE_DISABLE_SW=true`), and aligning test helpers with the configured base URL. Improves WebKit reliability without affecting production behavior.
+- Added a dedicated PWA registration manager that can be disabled via `VITE_DISABLE_SW` for test environments, preventing service worker TLS/CORS issues in headless browsers.
+- Updated E2E testing documentation to reflect preview server usage and the `VITE_DISABLE_SW` opt-out.
 
 ## 2026-01-27
 
