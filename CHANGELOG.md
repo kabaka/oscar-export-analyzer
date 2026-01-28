@@ -1,9 +1,3 @@
-## [2026-01-28]
-
-### Fixed
-
-- Fitbit OAuth flow now restores the encryption passphrase automatically from sessionStorage after OAuth redirect, so users do not need to re-enter it. The Fitbit section now correctly reflects the connected state and displays charts/data if tokens and passphrase are present. Session state is preserved except for the passphrase key, which is cleared after use. Documentation and troubleshooting guides updated. ([#fitbit-oauth-flow-fix])
-
 # Changelog
 
 All notable changes to OSCAR Export Analyzer will be documented in this file.
@@ -20,6 +14,10 @@ corresponds to changes released on that day.
 - Stabilized Playwright OAuth coverage by running against preview builds on port 4173, disabling service worker registration during E2E runs (`VITE_DISABLE_SW=true`), and aligning test helpers with the configured base URL. Improves WebKit reliability without affecting production behavior.
 - Added a dedicated PWA registration manager that can be disabled via `VITE_DISABLE_SW` for test environments, preventing service worker TLS/CORS issues in headless browsers.
 - Updated E2E testing documentation to reflect preview server usage and the `VITE_DISABLE_SW` opt-out.
+
+### Fixed
+
+- Fitbit OAuth flow now restores the encryption passphrase automatically from sessionStorage after OAuth redirect, so users do not need to re-enter it. The Fitbit section now correctly reflects the connected state and displays charts/data if tokens and passphrase are present. Session state is preserved except for the passphrase key, which is cleared after use. Documentation and troubleshooting guides updated. ([#fitbit-oauth-flow-fix])
 
 ## 2026-01-27
 
