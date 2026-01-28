@@ -1,3 +1,18 @@
+// Helper to safely access Vite env vars in both Vite and Vitest
+function getMetaEnv() {
+  // Vitest injects globalThis.__vitest_worker__?.metaEnv
+  if (
+    typeof globalThis !== 'undefined' &&
+    globalThis.__vitest_worker__?.metaEnv
+  ) {
+    return globalThis.__vitest_worker__.metaEnv;
+  }
+  // Vite/Browser: import.meta.env
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return import.meta.env;
+  }
+  return {};
+}
 /**
  * Fitbit API configuration and constants.
  *
@@ -33,19 +48,27 @@ export const FITBIT_CONFIG = {
   // Lazy getter ensures resolveClientId runs at runtime, not module load time
   // This prevents Vite from inlining the env var value during build
   get clientId() {
+    const env = getMetaEnv();
     const envClientId =
-      (typeof import.meta !== 'undefined' &&
-        import.meta.env?.VITE_FITBIT_CLIENT_ID) ||
-      undefined;
+      typeof env.VITE_FITBIT_CLIENT_ID !== 'undefined'
+        ? env.VITE_FITBIT_CLIENT_ID
+        : undefined;
     return resolveClientId(envClientId);
   },
-  redirectUri: `${globalThis.location?.origin || 'http://localhost:5173'}${import.meta.env.BASE_URL}oauth-callback`,
+  redirectUri: `${globalThis.location?.origin || 'http://localhost:5173'}${(function () {
+    const env = getMetaEnv();
+    return typeof env.BASE_URL !== 'undefined' ? env.BASE_URL : '/';
+  })()}oauth-callback`,
 
   // PKCE configuration
   codeChallenge: {
     method: 'S256', // SHA256
     length: 128, // Code verifier length (43-128 chars)
   },
+
+  // OAuth state management
+  stateTimeoutMs: 5 * 60 * 1000, // 5 minutes
+  stateLength: 32, // OAuth state string length
 
   // Token configuration
   tokenBufferSeconds: 5, // Refresh token 5 seconds before expiry
@@ -150,7 +173,11 @@ export const FITBIT_ERRORS = {
   API_RATE_LIMITED: 'api_rate_limited',
   API_ERROR: 'api_error',
   NETWORK_ERROR: 'network_error',
-  ENCRYPTION_ERROR: 'encryption_error',
+  ENCRYPTION_ERROR: {
+    code: 'encryption_error',
+    message:
+      'Encryption passphrase required or invalid. Please enter your passphrase to continue.',
+  },
 };
 
 /**

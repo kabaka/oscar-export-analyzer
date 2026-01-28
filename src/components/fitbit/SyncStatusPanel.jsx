@@ -50,7 +50,7 @@ function SyncStatusPanel({
   nextAutoSync,
   autoSyncEnabled,
   dataMetrics,
-  recentActivity,
+  recentActivity = [],
   onSyncNow,
   onAutoSyncToggle,
   onViewHistory,
@@ -219,14 +219,16 @@ function SyncStatusPanel({
             Heart Rate
           </div>
           <div style={{ fontWeight: 'bold', color: '#495057' }}>
-            ✓ {dataMetrics.heartRate.nights} nights
+            ✓ {dataMetrics?.heartRate?.nights ?? 0} nights
           </div>
           <div style={{ fontSize: '0.8em', color: '#6c757d' }}>
             Last:{' '}
-            {dataMetrics.heartRate.lastDate.toLocaleDateString([], {
-              month: 'short',
-              day: 'numeric',
-            })}
+            {dataMetrics?.heartRate?.lastDate
+              ? dataMetrics.heartRate.lastDate.toLocaleDateString([], {
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : 'N/A'}
           </div>
         </div>
 
@@ -241,14 +243,16 @@ function SyncStatusPanel({
             Sleep Stages
           </div>
           <div style={{ fontWeight: 'bold', color: '#495057' }}>
-            ✓ {dataMetrics.sleepStages.nights} nights
+            ✓ {dataMetrics?.sleepStages?.nights ?? 0} nights
           </div>
           <div style={{ fontSize: '0.8em', color: '#6c757d' }}>
             Last:{' '}
-            {dataMetrics.sleepStages.lastDate.toLocaleDateString([], {
-              month: 'short',
-              day: 'numeric',
-            })}
+            {dataMetrics?.sleepStages?.lastDate
+              ? dataMetrics.sleepStages.lastDate.toLocaleDateString([], {
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : 'N/A'}
           </div>
         </div>
 
@@ -263,14 +267,16 @@ function SyncStatusPanel({
             SpO2
           </div>
           <div style={{ fontWeight: 'bold', color: '#495057' }}>
-            ✓ {dataMetrics.spO2.nights} nights
+            ✓ {dataMetrics?.spO2?.nights ?? 0} nights
           </div>
           <div style={{ fontSize: '0.8em', color: '#6c757d' }}>
             Last:{' '}
-            {dataMetrics.spO2.lastDate.toLocaleDateString([], {
-              month: 'short',
-              day: 'numeric',
-            })}
+            {dataMetrics?.spO2?.lastDate
+              ? dataMetrics.spO2.lastDate.toLocaleDateString([], {
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : 'N/A'}
           </div>
         </div>
       </div>

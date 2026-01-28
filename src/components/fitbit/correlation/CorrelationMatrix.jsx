@@ -265,7 +265,10 @@ function CorrelationMatrix({
   }
 
   return (
-    <div className={`correlation-matrix-container ${className}`}>
+    <div
+      className={`correlation-matrix-container ${className}`}
+      data-testid="correlation-matrix"
+    >
       {/* Chart accessibility summary */}
       <div
         id="correlation-matrix-summary"

@@ -11,10 +11,9 @@ const mirrorToWindow = (name, value) => {
   }
 };
 
-// Mock localStorage - complete implementation with all methods
-const localStorageMock = (() => {
+// Mock localStorage/sessionStorage - complete implementation with all methods
+const makeStorageMock = () => {
   let store = {};
-
   return {
     getItem: (key) => store[key] ?? null,
     setItem: (key, value) => {
@@ -34,11 +33,15 @@ const localStorageMock = (() => {
       return keys[index] ?? null;
     },
   };
-})();
+};
+
+const localStorageMock = makeStorageMock();
+const sessionStorageMock = makeStorageMock();
 
 beforeAll(() => {
-  // Apply localStorage mock to window and global
+  // Apply localStorage/sessionStorage mocks to window and global
   mirrorToWindow('localStorage', localStorageMock);
+  mirrorToWindow('sessionStorage', sessionStorageMock);
 
   // Provide a minimal MutationObserver polyfill for jsdom and expose it on window
   class MockMutationObserver {
@@ -129,9 +132,10 @@ beforeAll(() => {
   }
 });
 
-// Reset localStorage before each test
+// Reset localStorage/sessionStorage before each test
 beforeEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 // Also mock Plotly charts to simplify component tests

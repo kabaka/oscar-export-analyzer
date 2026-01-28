@@ -1,3 +1,44 @@
+## Fitbit OAuth E2E Cross-Browser Patterns
+
+### Modal Dismissal (WebKit)
+
+- WebKit (Safari) sometimes fails to dismiss modals due to animation timing or focus issues.
+- Use `force: browserName === 'webkit'` on `.click()` for modal buttons.
+- Add `await page.waitForTimeout(150)` after click (WebKit only).
+- Assert modal is hidden with `toBeHidden({ timeout: 5000 })`.
+- For WebKit, double-check with `waitForSelector(..., { state: 'detached' })`.
+
+Example:
+
+```js
+if (browserName === 'webkit') {
+  await page.waitForTimeout(150);
+  await page.waitForSelector('[role="alertdialog"]', {
+    state: 'detached',
+    timeout: 5000,
+  });
+}
+```
+
+### Async Navigation & OAuth Redirects
+
+- Use `waitForRequest` for both `/oauth2/authorize` and `/oauth2/token`.
+- Use `waitForURL(/oauth-callback|p=oauth-callback/, { timeout: 15000 })` to ensure navigation completes.
+- Use `waitForFunction` to assert hash navigation after OAuth completes.
+
+### Console Error Capture
+
+- Capture both `console.error` and `pageerror` events to assert no "Invalid OAuth state" errors.
+
+### Route Interception
+
+- Intercept Fitbit endpoints and simulate 404 for `/oauth-callback` to match GitHub Pages behavior.
+- Use HTML meta refresh for WebKit to simulate redirect.
+
+### Coordination
+
+- These patterns are now permanent documentation (see [fitbit-integration.md](fitbit-integration.md#e2e-playwright-cross-browser-patterns)).
+
 # Testing Patterns Guide
 
 ## Introduction

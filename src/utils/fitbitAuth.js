@@ -62,7 +62,10 @@ class OAuthState {
     this.verifierKey = 'fitbit_pkce_verifier';
     this.backupStateKey = 'fitbit_oauth_state_backup';
     this.backupVerifierKey = 'fitbit_pkce_verifier_backup';
-    this.STATE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+    /**
+     * State timeout in milliseconds (5 minutes, from FITBIT_CONFIG)
+     */
+    this.STATE_TIMEOUT_MS = FITBIT_CONFIG.stateTimeoutMs || 5 * 60 * 1000;
   }
 
   /**
@@ -71,7 +74,8 @@ class OAuthState {
    * @returns {Promise<{state: string, codeChallenge: string}>}
    */
   async generateState() {
-    const state = generateRandomString(32);
+    // Use centralized magic numbers from constants
+    const state = generateRandomString(FITBIT_CONFIG.stateLength || 32);
     const codeVerifier = generateRandomString(
       FITBIT_CONFIG.codeChallenge.length,
     );
@@ -155,7 +159,7 @@ class OAuthState {
       return null;
     }
 
-    // Validate state timeout (must be less than 5 minutes old)
+    // Validate state timeout (must be less than FITBIT_CONFIG.stateTimeoutMs old)
     const ageMs = Date.now() - stateData.createdAt;
     if (ageMs > this.STATE_TIMEOUT_MS) {
       console.error(
@@ -215,7 +219,13 @@ class TokenManager {
       return success;
     } catch (error) {
       console.error('Token storage failed:', error);
-      throw new Error(FITBIT_ERRORS.ENCRYPTION_ERROR);
+      throw {
+        code: 'encryption_error',
+        type: 'encryption',
+        message:
+          'Encryption passphrase required to complete Fitbit connection.',
+        details: error?.message || error,
+      };
     }
   }
 
@@ -272,7 +282,13 @@ class TokenManager {
     } catch (error) {
       console.error('Token decryption failed:', error);
       this.memoryCache = null;
-      throw new Error(FITBIT_ERRORS.ENCRYPTION_ERROR);
+      throw {
+        code: 'encryption_error',
+        type: 'encryption',
+        message:
+          'Encryption passphrase required to complete Fitbit connection.',
+        details: error?.message || error,
+      };
     }
   }
 
@@ -457,14 +473,24 @@ export class FitbitOAuth {
    * @param {string} authorizationCode - Authorization code from callback
    * @param {string} state - State parameter from callback
    * @param {string} passphrase - User encryption passphrase
+   * @param {string} [codeVerifier] - PKCE code verifier (optional, if already retrieved)
    * @returns {Promise<Object>} Token data
    */
-  async handleCallback(authorizationCode, state, passphrase) {
+  async handleCallback(authorizationCode, state, passphrase, codeVerifier) {
     try {
-      // Validate state and get PKCE verifier
-      const codeVerifier = this.oauthState.validateCallback(state);
-      if (!codeVerifier) {
-        throw new Error('Invalid OAuth state');
+      // Use provided codeVerifier, or retrieve if not provided
+      let verifier = codeVerifier;
+      if (!verifier) {
+        verifier = this.oauthState.validateCallback(state);
+        if (!verifier) {
+          throw {
+            code: 'invalid_state',
+            type: 'state',
+            message:
+              'OAuth state mismatch or expired. Please try connecting again.',
+            details: 'PKCE code verifier missing or state invalid',
+          };
+        }
       }
 
       // Exchange authorization code for tokens
@@ -478,7 +504,7 @@ export class FitbitOAuth {
           grant_type: 'authorization_code',
           code: authorizationCode,
           redirect_uri: FITBIT_CONFIG.redirectUri,
-          code_verifier: codeVerifier,
+          code_verifier: verifier,
         }),
       });
 

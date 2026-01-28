@@ -24,7 +24,7 @@ import 'fake-indexeddb/auto';
 // Components under test
 import { FitbitConnectionCard } from '../FitbitConnectionCard.jsx';
 import { FitbitOAuthProvider } from '../../context/FitbitOAuthContext.jsx';
-import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.js';
+import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.jsx';
 
 // Test utilities
 import {
@@ -417,7 +417,10 @@ describe('Fitbit OAuth E2E Flow', () => {
         errorElement = screen.queryByTestId('error');
         expect(errorElement).toBeInTheDocument();
       });
-      expect(errorElement).toHaveTextContent(/cancelled|invalid/i);
+      // Expect the actual error message for state mismatch
+      expect(errorElement).toHaveTextContent(
+        'OAuth state mismatch or expired. Please try connecting again.',
+      );
 
       // Verify status is ERROR, not CONNECTED
       const statusElement = screen.getByTestId('status');

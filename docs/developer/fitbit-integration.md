@@ -53,7 +53,7 @@ sessionStorage.removeItem('fitbit_pkce_verifier');
 
 ### OAuth State & Passphrase Restoration: sessionStorage with localStorage backup
 
-**Critical Design Decision**: Both OAuth state and the user's encryption passphrase are stored in `sessionStorage` for security, with a short-lived `localStorage` backup to survive cross-origin redirects in browsers that clear sessionStorage.
+**Critical Design Decision**: Both OAuth state and the user's encryption passphrase are stored in `sessionStorage` for security, with a short-lived `localStorage` backup to survive cross-origin redirects in browsers that clear sessionStorage. After OAuth, the passphrase is restored automatically from sessionStorage or the backup, so users do not need to re-enter it unless storage is cleared or blocked.
 
 **Rationale**:
 
@@ -63,7 +63,13 @@ sessionStorage.removeItem('fitbit_pkce_verifier');
 - **Mitigation**: Backup keys are cleared immediately after validation (success or failure)
 - **Alternative considered**: Backend state storage was rejected to maintain local-first architecture
 
-**Implementation**:
+sessionStorage.removeItem('fitbit_pkce_verifier');
+sessionStorage.removeItem('oscar_passphrase');
+localStorage.removeItem('fitbit_oauth_state_backup');
+localStorage.removeItem('fitbit_pkce_verifier_backup');
+localStorage.removeItem('oscar_passphrase_backup');
+
+**Implementation:**
 
 ```javascript
 // During auth initiation
@@ -104,11 +110,54 @@ localStorage.removeItem('fitbit_pkce_verifier_backup');
 localStorage.removeItem('oscar_passphrase_backup');
 ```
 
-**Testing Implications**: E2E tests should verify sessionStorage persistence, localStorage fallback, and automatic passphrase restoration after OAuth redirect.
+**Testing Implications:**
 
-**Troubleshooting**:
+- E2E tests should verify sessionStorage persistence, localStorage fallback, and automatic passphrase restoration after OAuth redirect.
+- See [E2E Playwright Cross-Browser Patterns](testing-patterns.md#fitbit-oauth-e2e-cross-browser) for modal and redirect handling.
+
+**Troubleshooting:**
 
 - If users are unexpectedly prompted for their passphrase after OAuth, check that sessionStorage/localStorage are not being cleared or blocked by browser privacy settings or extensions.
+
+## RCA: OAuth Passphrase Restoration (Permanent Record)
+
+### Symptom
+
+- After successful Fitbit OAuth, app remained 'Not connected' due to passphrase removal before connection check.
+
+### Root Cause
+
+- Passphrase was removed from sessionStorage before connection/data hooks could use it to decrypt tokens and update state.
+
+### Resolution
+
+- Passphrase is now restored automatically after OAuth, and connection/data hooks re-check state before cleanup.
+
+### See also
+
+- [User Guide: Troubleshooting](../user/11-fitbit-integration.md#troubleshooting)
+
+## E2E Playwright Cross-Browser Patterns (Permanent Record)
+
+### Modal Dismissal (WebKit)
+
+- WebKit requires explicit CSS and timing for modal dismissal. See [fitbit-oauth-e2e-cross-browser.md] for workaround patterns.
+
+### Async Navigation & OAuth Redirects
+
+- Use `waitForRequest` and `waitForURL` to ensure navigation completes after OAuth.
+
+### Console Error Capture
+
+- Capture both `console.error` and `pageerror` to assert no "Invalid OAuth state" errors.
+
+### Route Interception
+
+- Intercept Fitbit endpoints and simulate 404 for `/oauth-callback` to match GitHub Pages behavior.
+
+### Coordination
+
+- Patterns promoted from temporary docs in `docs/work/testing/fitbit-oauth-e2e-cross-browser.md`.
 
 ### IndexedDB Schema Alignment (Sessions + Fitbit)
 

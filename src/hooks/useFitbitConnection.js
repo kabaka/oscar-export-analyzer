@@ -18,7 +18,8 @@ import {
   setSyncMetadata,
   getSyncMetadata,
 } from '../utils/fitbitDb.js';
-import { CONNECTION_STATUS, FITBIT_ERRORS } from '../constants/fitbit.js';
+import { CONNECTION_STATUS } from '../constants/fitbit.js';
+import { FITBIT_ERRORS } from '../constants/fitbitErrors.js';
 
 /**
  * Connection management hook.
@@ -124,8 +125,11 @@ export function useFitbitConnection({
     } catch (err) {
       console.error('Connection check failed:', err);
       setError({
-        type: FITBIT_ERRORS.API_ERROR,
-        message: 'Failed to check connection status',
+        code: FITBIT_ERRORS.API_ERROR.code || 'api_error',
+        type: 'api',
+        message:
+          FITBIT_ERRORS.API_ERROR.message ||
+          'Failed to check connection status',
         details: err.message,
       });
       setStatus(CONNECTION_STATUS.ERROR);
@@ -158,8 +162,11 @@ export function useFitbitConnection({
     } catch (err) {
       console.error('Token refresh failed:', err);
       setError({
-        type: FITBIT_ERRORS.TOKEN_REFRESH_FAILED,
-        message: 'Failed to refresh access token',
+        code: FITBIT_ERRORS.TOKEN_EXPIRED.code || 'token_expired',
+        type: 'token',
+        message:
+          FITBIT_ERRORS.TOKEN_EXPIRED.message ||
+          'Failed to refresh access token',
         details: err.message,
       });
 
@@ -224,8 +231,11 @@ export function useFitbitConnection({
       } catch (err) {
         console.error('Data sync failed:', err);
         setError({
-          type: FITBIT_ERRORS.API_ERROR,
-          message: 'Failed to sync data from Fitbit',
+          code: FITBIT_ERRORS.API_ERROR.code || 'api_error',
+          type: 'api',
+          message:
+            FITBIT_ERRORS.API_ERROR.message ||
+            'Failed to sync data from Fitbit',
           details: err.message,
         });
         throw err;
@@ -260,8 +270,10 @@ export function useFitbitConnection({
     } catch (err) {
       console.error('Disconnect failed:', err);
       setError({
-        type: FITBIT_ERRORS.API_ERROR,
-        message: 'Failed to disconnect from Fitbit',
+        code: FITBIT_ERRORS.API_ERROR.code || 'api_error',
+        type: 'api',
+        message:
+          FITBIT_ERRORS.API_ERROR.message || 'Failed to disconnect from Fitbit',
         details: err.message,
       });
       return false;

@@ -8,15 +8,16 @@
  */
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.js';
-import { FITBIT_ERRORS } from '../constants/fitbit.js';
+import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
+import { FITBIT_ERRORS } from '../constants/fitbitErrors.js';
 
 /**
  * OAuth callback handler component.
+ * Handles Fitbit OAuth redirect, processes authorization codes, errors, and updates connection state.
  *
  * @param {Object} props - Component props
  * @param {Function} props.onSuccess - Success callback with token data
- * @param {Function} props.onError - Error callback
+ * @param {Function} props.onError - Error callback (receives FITBIT_ERRORS object)
  * @param {string} props.passphrase - User encryption passphrase
  * @param {Function} props.onComplete - Called when processing complete (success or error)
  * @returns {JSX.Element} Callback handler UI
@@ -123,7 +124,7 @@ export function OAuthCallbackHandler({
                 storedPassphrase,
               );
             }
-            sessionStorage.removeItem('fitbit_oauth_passphrase');
+            // Do NOT remove 'fitbit_oauth_passphrase' here; defer until app state is updated (see App.jsx)
           }
         } else if (code && state && !effectivePassphrase) {
           throw new Error('Encryption passphrase required');

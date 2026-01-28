@@ -14,9 +14,9 @@ import OAuthCallbackHandler from './OAuthCallbackHandler.jsx';
 import '../test-utils/fitbitMocks.js';
 
 // Mock hooks
-vi.mock('../hooks/useFitbitOAuth.js');
+vi.mock('../hooks/useFitbitOAuth.jsx');
 
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.js';
+import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
 
 describe.skip('OAuthCallbackHandler', () => {
   const mockHandleCallback = vi.fn();
@@ -165,6 +165,7 @@ describe.skip('OAuthCallbackHandler', () => {
       handleCallback: mockHandleCallback,
       handleOAuthError: mockHandleOAuthError,
       error: {
+        code: 'oauth_error',
         message: 'Authentication failed',
         type: 'oauth_error',
       },

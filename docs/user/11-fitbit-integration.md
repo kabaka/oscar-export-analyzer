@@ -98,9 +98,10 @@ Before connecting Fitbit:
 
 #### 3. Automatic Passphrase Restoration (New)
 
-1. After Fitbit authorization, you are redirected back to OSCAR analyzer.
-2. **Your encryption passphrase is now restored automatically from sessionStorage.**
-   - You do **not** need to re-enter your passphrase after OAuth redirect (unless you have cleared browser session data).
+1. After Fitbit authorization, you are redirected back to OSCAR Export Analyzer.
+2. **Your encryption passphrase is restored automatically from sessionStorage or a secure localStorage backup.**
+   - You do **not** need to re-enter your passphrase after OAuth redirect unless you have cleared browser session data or blocked localStorage/sessionStorage.
+   - If the app prompts for your passphrase after OAuth, check your browser privacy settings and ensure sessionStorage/localStorage are not being cleared or blocked by extensions.
 3. Data sync begins automatically.
 4. Progress indicator shows download status.
 5. **Be patient**: Initial sync may take 2-5 minutes for 100 days of data.
@@ -267,8 +268,8 @@ Each visualization includes statistical context:
 
 **Automatic Restoration:**
 
-- After OAuth, your passphrase is restored automatically from sessionStorage. You do not need to re-enter it unless session data was cleared.
-- If connection fails or you are unexpectedly prompted for your passphrase, check that your browser allows sessionStorage and that you have not cleared session data.
+- After OAuth, your passphrase is restored automatically from sessionStorage or a secure localStorage backup. You do not need to re-enter it unless session data was cleared or browser privacy settings/extensions block storage.
+- If connection fails or you are unexpectedly prompted for your passphrase, check that your browser allows sessionStorage/localStorage and that you have not cleared session data.
 
 ### Fitbit Device Limitations
 

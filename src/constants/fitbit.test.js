@@ -83,7 +83,20 @@ describe('Fitbit Constants', () => {
 
       // import.meta.env.BASE_URL in tests should be '/' or a path like '/oscar-export-analyzer/'
       // The redirect_uri should include this base path
-      const baseUrl = import.meta.env.BASE_URL || '/';
+      function getMetaEnv() {
+        if (
+          typeof globalThis !== 'undefined' &&
+          globalThis.__vitest_worker__?.metaEnv
+        ) {
+          return globalThis.__vitest_worker__.metaEnv;
+        }
+        if (typeof import.meta !== 'undefined' && import.meta.env) {
+          return import.meta.env;
+        }
+        return {};
+      }
+      const env = getMetaEnv();
+      const baseUrl = typeof env.BASE_URL !== 'undefined' ? env.BASE_URL : '/';
 
       // Parse the redirect_uri to check pathname structure
       const urlObj = new URL(redirectUri);

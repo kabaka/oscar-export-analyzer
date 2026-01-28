@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.js';
+import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
 import { useFitbitConnection } from '../hooks/useFitbitConnection.js';
 import FitbitStatusIndicator from './FitbitStatusIndicator.jsx';
 import { CONNECTION_STATUS, MVP_SCOPES } from '../constants/fitbit.js';

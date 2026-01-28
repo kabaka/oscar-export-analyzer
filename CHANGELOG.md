@@ -15,6 +15,14 @@ corresponds to changes released on that day.
 - Added a dedicated PWA registration manager that can be disabled via `VITE_DISABLE_SW` for test environments, preventing service worker TLS/CORS issues in headless browsers.
 - Updated E2E testing documentation to reflect preview server usage and the `VITE_DISABLE_SW` opt-out.
 
+### Added
+
+- **Fitbit OAuth flow improvements:**
+  - Automatic passphrase restoration after OAuth redirect (no need to re-enter passphrase unless storage is cleared)
+  - Unified, theme-aware connection UI
+  - Enhanced troubleshooting and privacy documentation for OAuth and passphrase handling
+  - Promoted RCA and E2E cross-browser patterns to permanent documentation ([docs/user/11-fitbit-integration.md], [docs/developer/fitbit-integration.md], [docs/developer/testing-patterns.md])
+
 ### Fixed
 
 - Fitbit OAuth flow now restores the encryption passphrase automatically from sessionStorage after OAuth redirect, so users do not need to re-enter it. The Fitbit section now correctly reflects the connected state and displays charts/data if tokens and passphrase are present. Session state is preserved except for the passphrase key, which is cleared after use. Documentation and troubleshooting guides updated. ([#fitbit-oauth-flow-fix])

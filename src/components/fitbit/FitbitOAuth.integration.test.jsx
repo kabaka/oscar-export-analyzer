@@ -16,7 +16,7 @@ import {
 import 'fake-indexeddb/auto';
 
 // Component under test - OAuth integration
-import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.js';
+import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.jsx';
 import { FitbitOAuthProvider } from '../../context/FitbitOAuthContext.jsx';
 
 // Mock fetch for API calls
@@ -132,7 +132,20 @@ describe.skip('Fitbit OAuth Integration', () => {
       expect(redirectUri).toMatch(/^http:\/\/localhost:5173/);
 
       // Should include BASE_URL path from Vite config
-      const baseUrl = import.meta.env.BASE_URL || '/';
+      function getMetaEnv() {
+        if (
+          typeof globalThis !== 'undefined' &&
+          globalThis.__vitest_worker__?.metaEnv
+        ) {
+          return globalThis.__vitest_worker__.metaEnv;
+        }
+        if (typeof import.meta !== 'undefined' && import.meta.env) {
+          return import.meta.env;
+        }
+        return {};
+      }
+      const env = getMetaEnv();
+      const baseUrl = typeof env.BASE_URL !== 'undefined' ? env.BASE_URL : '/';
       if (baseUrl !== '/') {
         expect(redirectUri).toContain(baseUrl.replace(/\/$/, ''));
       }

@@ -8,7 +8,7 @@ import FitbitConnectionCard from './FitbitConnectionCard.jsx';
 import { CONNECTION_STATUS } from '../constants/fitbit.js';
 
 // Mock hooks
-vi.mock('../hooks/useFitbitOAuth.js', () => ({
+vi.mock('../hooks/useFitbitOAuth.jsx', () => ({
   useFitbitOAuth: vi.fn(() => ({
     initiateAuth: vi.fn(),
     status: CONNECTION_STATUS.DISCONNECTED,

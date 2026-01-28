@@ -206,11 +206,13 @@ export function AppShell() {
     cleanUrl += hash;
     window.history.replaceState({}, '', cleanUrl);
 
-    // Clear passphrase from sessionStorage and hide handler
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('fitbit_oauth_passphrase');
-    }
+    // Hide handler first, then remove passphrase after UI is ready
     setShowOauthHandler(false);
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('fitbit_oauth_passphrase');
+      }
+    }, 250); // Delay to ensure hooks/components have time to use it
 
     // Always open import modal after OAuth, so user can import or reload data
     importModal.open();

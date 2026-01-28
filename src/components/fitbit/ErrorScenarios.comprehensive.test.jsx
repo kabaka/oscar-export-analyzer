@@ -8,7 +8,7 @@ import {
 import { setupOAuthState } from '../../test-utils/oauthTestHelpers.js';
 import { FitbitOAuthProvider } from '../../context/FitbitOAuthContext.jsx';
 import FitbitDashboard from '../../components/fitbit/FitbitDashboard.jsx';
-import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.js';
+import { useFitbitOAuth } from '../../hooks/useFitbitOAuth.jsx';
 import { fitbitApi } from '../../utils/fitbitApi.js';
 import { fitbitSync } from '../../utils/fitbitSync.js';
 

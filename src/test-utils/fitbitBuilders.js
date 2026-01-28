@@ -553,9 +553,8 @@ export function buildMockOAuthTokens({
   expiresInHours = 8,
 } = {}) {
   const now = new Date();
-  const expiresAt = new Date(
-    now.getTime() + (expired ? -3600000 : expiresInHours * 3600000),
-  ); // ±1 hour or +N hours
+  const expiresAt =
+    now.getTime() + (expired ? -3600000 : expiresInHours * 3600000); // ms timestamp
 
   return {
     access_token: `mock_access_token_${randomTokenSegment(24)}`,
@@ -564,7 +563,8 @@ export function buildMockOAuthTokens({
     scope: 'heartrate spo2 sleep profile',
     token_type: 'Bearer',
     expires_in: expired ? -3600 : expiresInHours * 3600,
-    expires_at: expiresAt.toISOString(),
+    expires_at: expiresAt, // number (timestamp)
+    created_at: now.getTime(),
   };
 }
 

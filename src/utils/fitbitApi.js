@@ -121,13 +121,23 @@ class FitbitHttpClient {
             delay: delay * RATE_LIMITS.backoffMultiplier,
           });
         }
-        throw new Error(FITBIT_ERRORS.API_RATE_LIMITED);
+        throw {
+          code: 'api_rate_limited',
+          type: 'api',
+          message: 'API rate limit exceeded',
+          details: 'HTTP 429 Too Many Requests',
+        };
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error(`API request failed: ${response.status}`, errorData);
-        throw new Error(FITBIT_ERRORS.API_ERROR);
+        throw {
+          code: 'api_error',
+          type: 'api',
+          message: 'API request failed',
+          details: errorData?.error || response.statusText,
+        };
       }
 
       return await response.json();
@@ -200,14 +210,25 @@ export class FitbitApiClient {
    */
   async getAccessToken() {
     if (!this.passphrase) {
-      throw new Error('Passphrase required for token access');
+      throw {
+        code: 'encryption_error',
+        type: 'encryption',
+        message:
+          'Encryption passphrase required to complete Fitbit connection.',
+        details: 'Passphrase required for token access',
+      };
     }
 
     const token = await fitbitOAuth
       .getTokenManager()
       .getValidAccessToken(this.passphrase);
     if (!token) {
-      throw new Error('Authentication required');
+      throw {
+        code: 'authentication_required',
+        type: 'auth',
+        message: 'Authentication required',
+        details: 'No valid token found',
+      };
     }
 
     return token;
@@ -373,7 +394,12 @@ export class FitbitApiClient {
               data = await this.getHrvRange(startDate, endDate);
               break;
             default:
-              throw new Error(`Unsupported data type: ${dataType}`);
+              throw {
+                code: 'unsupported_data_type',
+                type: 'api',
+                message: `Unsupported data type: ${dataType}`,
+                details: dataType,
+              };
           }
 
           results[dataType] = data;

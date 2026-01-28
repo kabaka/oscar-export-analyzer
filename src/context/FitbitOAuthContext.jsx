@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.js';
+import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
 
 const FitbitOAuthContext = createContext(null);
 
