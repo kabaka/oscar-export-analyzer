@@ -68,6 +68,7 @@ export function useSessionManager({
   setDetailsData,
   onNeedConsent,
 }) {
+  const SESSION_PERSIST_DEBOUNCE_MS = 500; // Debounce timeout (ms) for session persistence
   useEffect(() => {
     if (!summaryData && !detailsData) return;
     const timer = setTimeout(() => {
@@ -98,7 +99,7 @@ export function useSessionManager({
         putLastSession(session).catch(() => {});
       }
       // If consent === false (denied), skip save silently
-    }, 500); // eslint-disable-line no-magic-numbers -- debounce timeout (ms) for session persistence
+    }, SESSION_PERSIST_DEBOUNCE_MS); // debounce timeout (ms) for session persistence
     return () => clearTimeout(timer);
   }, [
     summaryData,

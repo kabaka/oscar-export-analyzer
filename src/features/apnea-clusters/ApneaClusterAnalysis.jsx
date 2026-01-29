@@ -1,3 +1,7 @@
+// Chart layout constants
+const MIN_CHART_HEIGHT_PX = 200; // Minimum chart height in px
+const EVENT_HEIGHT_PX = 30; // Height per event in px
+const CHART_PADDING_PX = 100; // Padding for chart in px
 import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -165,9 +169,11 @@ function ApneaClusterAnalysis({ clusters, params, onParamChange, details }) {
                 xaxis: { type: 'date', title: 'Event Start Time' },
                 yaxis: { title: 'Event #' },
                 margin: { l: 80, r: 20, t: 40, b: 40 },
+                // Chart height: at least MIN_CHART_HEIGHT_PX, or enough for all events (EVENT_HEIGHT_PX per event + CHART_PADDING_PX)
                 height: Math.max(
-                  200, // eslint-disable-line no-magic-numbers -- min 200px base height for chart
-                  sorted[selected].events.length * 30 + 100, // eslint-disable-line no-magic-numbers -- 30px per event + 100px padding
+                  MIN_CHART_HEIGHT_PX,
+                  sorted[selected].events.length * EVENT_HEIGHT_PX +
+                    CHART_PADDING_PX,
                 ),
               }}
               config={{ displayModeBar: false }}

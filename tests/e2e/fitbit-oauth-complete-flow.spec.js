@@ -30,6 +30,7 @@ const MOCK_TOKEN_RESPONSE = {
 };
 
 async function seedSessionData(page) {
+  // Seed with synthetic CPAP summary and synthetic Fitbit data in the structure expected by the app
   const session = {
     version: 1,
     savedAt: new Date().toISOString(),
@@ -47,12 +48,69 @@ async function seedSessionData(page) {
       },
     ],
     detailsData: [],
+    fitbitData: {
+      nightlyData: [
+        {
+          date: '2021-01-01',
+          avgHeartRate: 65,
+          ahi: 2,
+          minSpO2: 95,
+          heartRate: [65, 66, 64, 65],
+          spO2: [95, 96, 95, 94],
+          ahiEvents: [
+            {
+              time: '2021-01-01T23:00:00Z',
+              type: 'Obstructive',
+              severity: 8,
+              duration: 15,
+            },
+          ],
+          timestamps: [
+            '2021-01-01T22:00:00Z',
+            '2021-01-01T23:00:00Z',
+            '2021-01-01T23:30:00Z',
+            '2021-01-01T23:59:00Z',
+          ],
+          sleepStages: ['LIGHT', 'DEEP', 'REM', 'WAKE'],
+          sleepStart: '2021-01-01T22:00:00Z',
+          sleepEnd: '2021-01-01T23:59:00Z',
+        },
+      ],
+      correlationData: {
+        metrics: ['Heart Rate', 'AHI'],
+        correlations: [
+          [1, 0.7],
+          [0.7, 1],
+        ],
+        pValues: [
+          [0, 0.01],
+          [0.01, 0],
+        ],
+        sampleSize: 1,
+      },
+      summary: { totalNights: 1, strongCorrelations: 1 },
+      scatterData: {
+        xValues: [65],
+        yValues: [2],
+        dateLabels: ['2021-01-01'],
+        statistics: {
+          correlation: 0.7,
+          pValue: 0.01,
+          rSquared: 0.49,
+          slope: 0.2,
+          intercept: 0,
+        },
+        regressionLine: { x: [65], y: [2] },
+        outliers: [],
+      },
+    },
   };
 
   await page.addInitScript((seed) => {
     const DB_NAME = 'oscar_app';
     const DB_VERSION = 2;
     const STORE = 'sessions';
+    const FITBIT_STORE = 'fitbit_data';
 
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
@@ -63,8 +121,8 @@ async function seedSessionData(page) {
       if (!db.objectStoreNames.contains('fitbit_tokens')) {
         db.createObjectStore('fitbit_tokens', { keyPath: 'id' });
       }
-      if (!db.objectStoreNames.contains('fitbit_data')) {
-        db.createObjectStore('fitbit_data', {
+      if (!db.objectStoreNames.contains(FITBIT_STORE)) {
+        db.createObjectStore(FITBIT_STORE, {
           keyPath: 'id',
           autoIncrement: true,
         });
@@ -75,10 +133,25 @@ async function seedSessionData(page) {
     };
     request.onsuccess = () => {
       const db = request.result;
+      // Seed session
       const tx = db.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).put(seed, 'last');
       tx.oncomplete = () => {
-        localStorage.setItem('oscar_seed_ready', 'true');
+        // Also seed fitbit_data store with nightlyData if present
+        if (seed.fitbitData && seed.fitbitData.nightlyData) {
+          const fitbitTx = db.transaction(FITBIT_STORE, 'readwrite');
+          seed.fitbitData.nightlyData.forEach((night, idx) => {
+            fitbitTx.objectStore(FITBIT_STORE).put({ ...night, id: idx + 1 });
+          });
+          fitbitTx.oncomplete = () => {
+            localStorage.setItem('oscar_seed_ready', 'true');
+          };
+          fitbitTx.onerror = () => {
+            localStorage.setItem('oscar_seed_ready', 'error');
+          };
+        } else {
+          localStorage.setItem('oscar_seed_ready', 'true');
+        }
       };
       tx.onerror = () => {
         localStorage.setItem('oscar_seed_ready', 'error');
@@ -248,8 +321,8 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   await dismissStorageConsent(page, browserName);
 
   await loadSavedSession(page);
+  // Extra: ensure modal is dismissed before proceeding
   await dismissStorageConsent(page, browserName);
-  await page.locator('#fitbit-correlation').scrollIntoViewIfNeeded();
 
   const passphraseInput = page.getByLabel('Encryption Passphrase');
   await expect(passphraseInput).toBeVisible({ timeout: 5000 });
@@ -260,11 +333,16 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   });
   await expect(connectButton).toBeEnabled({ timeout: 5000 });
 
+  // Dismiss any storage consent modal that may block the button
   await dismissStorageConsent(page, browserName);
 
+  // Wait for Connect to Fitbit button to be enabled and visible
+  await expect(connectButton).toBeEnabled({ timeout: 5000 });
+  await expect(connectButton).toBeVisible({ timeout: 5000 });
+
+  // Start OAuth flow
   const authorizeRequestPromise = page.waitForRequest('**/oauth2/authorize**');
   const tokenRequestPromise = page.waitForRequest('**/oauth2/token');
-
   await connectButton.click();
 
   const authorizeRequest = await authorizeRequestPromise;
@@ -276,11 +354,15 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   await page.waitForURL(/oauth-callback|p=oauth-callback/, { timeout: 15000 });
   await tokenRequestPromise;
 
-  await page.waitForFunction(
-    () => window.location.hash === '#fitbit-correlation',
-    null,
-    { timeout: 15000 },
+  // Wait for dashboard to be visible after OAuth
+  await page.waitForSelector('#fitbit-correlation', { timeout: 15000 });
+
+  // Now check for the recent night button
+  const recentNightDate = '2021-01-01';
+  const recentNightButton = page.getByTestId(
+    `recent-night-btn-${recentNightDate}`,
   );
+  await expect(recentNightButton).toBeVisible({ timeout: 5000 });
 
   const stateErrors = consoleErrors.filter((err) =>
     err.toLowerCase().includes('invalid oauth state'),

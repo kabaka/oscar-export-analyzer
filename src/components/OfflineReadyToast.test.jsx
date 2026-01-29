@@ -149,6 +149,7 @@ describe('OfflineReadyToast', () => {
 
     unmount();
 
+    // eslint-disable-next-line no-magic-numbers -- test simulates 8s auto-dismiss
     vi.advanceTimersByTime(8000);
 
     expect(onDismiss).not.toHaveBeenCalled();

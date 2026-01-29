@@ -97,8 +97,9 @@ export default function DocsModal({
     if (!markdown) return { html: '', toc: [] };
 
     const headingComponents = {};
-    // eslint-disable-next-line no-magic-numbers -- HTML supports heading levels h1–h6 (canonical limit)
-    for (let level = 1; level <= 6; level++) {
+    const MIN_HEADING_LEVEL = 1;
+    const MAX_HEADING_LEVEL = 6; // HTML supports heading levels h1–h6 (canonical limit)
+    for (let level = MIN_HEADING_LEVEL; level <= MAX_HEADING_LEVEL; level++) {
       const Tag = `h${level}`;
       // eslint-disable-next-line react/display-name
       headingComponents[Tag] = (props) => {
@@ -179,25 +180,30 @@ export default function DocsModal({
         <div className="modal-body">
           <aside className="doc-toc" aria-label="Guide sections">
             <ul>
-              {parsed.toc
-                // eslint-disable-next-line no-magic-numbers -- filter to main heading levels (h1–h2) for ToC readability
-                .filter((h) => h.level <= 2)
-                .map((h) => (
-                  <li key={h.id} className={`level-${h.level}`}>
-                    <a
-                      href={`#${h.id}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const el = contentRef.current?.querySelector(
-                          `#${CSS.escape(h.id)}`,
-                        );
-                        el?.scrollIntoView({ block: 'start' });
-                      }}
-                    >
-                      {h.text}
-                    </a>
-                  </li>
-                ))}
+              {(() => {
+                const MAIN_TOC_HEADING_LEVEL = 2; // Only show h1–h2 in ToC for readability
+                return (
+                  parsed.toc
+                    // Only show main heading levels (h1–h2) for ToC readability
+                    .filter((h) => h.level <= MAIN_TOC_HEADING_LEVEL)
+                    .map((h) => (
+                      <li key={h.id} className={`level-${h.level}`}>
+                        <a
+                          href={`#${h.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const el = contentRef.current?.querySelector(
+                              `#${CSS.escape(h.id)}`,
+                            );
+                            el?.scrollIntoView({ block: 'start' });
+                          }}
+                        >
+                          {h.text}
+                        </a>
+                      </li>
+                    ))
+                );
+              })()}
             </ul>
           </aside>
           <article

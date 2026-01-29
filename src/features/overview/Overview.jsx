@@ -26,8 +26,8 @@ import { useData } from '../../context/DataContext';
  * @returns {JSX.Element | null} SVG sparkline or null if < 2 data points
  */
 function Sparkline({ data, width = 100, height = 30 }) {
-  // eslint-disable-next-line no-magic-numbers -- minimum 2 points needed to draw a line chart
-  if (!data || data.length < 2) {
+  const MIN_POINTS_FOR_LINE_CHART = 2; // Minimum 2 points needed to draw a line chart
+  if (!data || data.length < MIN_POINTS_FOR_LINE_CHART) {
     return null;
   }
   const max = Math.max(...data);

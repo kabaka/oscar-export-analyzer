@@ -33,10 +33,14 @@ vi.mock('./hooks/useCsvFiles', () => ({
     summaryData,
     detailsData,
     loadingSummary: false,
+    // eslint-disable-next-line no-magic-numbers -- test data
     summaryProgress: 0,
+    // eslint-disable-next-line no-magic-numbers -- test data
     summaryProgressMax: 0,
     loadingDetails: false,
+    // eslint-disable-next-line no-magic-numbers -- test data
     detailsProgress: 0,
+    // eslint-disable-next-line no-magic-numbers -- test data
     detailsProgressMax: 0,
     onSummaryFile: vi.fn(),
     onDetailsFile: vi.fn(),
@@ -122,6 +126,7 @@ describe('App fallback analytics', () => {
       () => {
         expect(analytics.finalizeClusters).toHaveBeenCalled();
       },
+      // eslint-disable-next-line no-magic-numbers -- test simulates 8s timeout
       { timeout: 8000 },
     );
     expect(workerInstances.length).toBeGreaterThan(0);

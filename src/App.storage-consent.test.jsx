@@ -16,10 +16,14 @@ vi.mock('./app/AppProviders', () => ({
   __esModule: true,
   useAppContext: () => ({
     loadingSummary: false,
+    // eslint-disable-next-line no-magic-numbers -- test data
     summaryProgress: 0,
+    // eslint-disable-next-line no-magic-numbers -- test data
     summaryProgressMax: 0,
     loadingDetails: false,
+    // eslint-disable-next-line no-magic-numbers -- test data
     detailsProgress: 0,
+    // eslint-disable-next-line no-magic-numbers -- test data
     detailsProgressMax: 0,
     importModal: { isOpen: false, open: vi.fn(), close: vi.fn() },
     printWarningModal: { isOpen: false, open: vi.fn(), close: vi.fn() },
@@ -53,6 +57,7 @@ vi.mock('./app/AppProviders', () => ({
     filteredDetails: null,
     // Add date filter fields used by DateRangeControls
     dateFilter: { start: null, end: null },
+    // eslint-disable-next-line no-magic-numbers -- test data
     formatDate: (d) => (d ? '2024-01-01' : ''),
     selectCustomRange: vi.fn(),
     resetDateFilter: vi.fn(),

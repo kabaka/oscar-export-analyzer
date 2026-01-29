@@ -18,10 +18,14 @@ const createModal = () => ({ isOpen: false, open: vi.fn(), close: vi.fn() });
 
 const createContext = (overrides = {}) => ({
   loadingSummary: false,
+  // eslint-disable-next-line no-magic-numbers -- test data
   summaryProgress: 0,
+  // eslint-disable-next-line no-magic-numbers -- test data
   summaryProgressMax: 0,
   loadingDetails: false,
+  // eslint-disable-next-line no-magic-numbers -- test data
   detailsProgress: 0,
+  // eslint-disable-next-line no-magic-numbers -- test data
   detailsProgressMax: 0,
   processing: false,
   importModal: createModal(),
@@ -295,7 +299,9 @@ describe('AppShell PWA handlers', () => {
     const setPendingSave = vi.fn();
     mockContext = createContext({
       loadingSummary: true,
+      // eslint-disable-next-line no-magic-numbers -- test simulates 20% progress
       summaryProgress: 20,
+      // eslint-disable-next-line no-magic-numbers -- test simulates 100% max
       summaryProgressMax: 100,
       showStorageConsent: true,
       pendingSave,
@@ -308,6 +314,7 @@ describe('AppShell PWA handlers', () => {
     render(<AppShell />);
 
     expect(screen.getByText(/Importing summary CSV/)).toBeInTheDocument();
+    // eslint-disable-next-line no-magic-numbers -- test simulates 20% progress
     expect(screen.getByRole('progressbar')).toHaveValue(20);
 
     await userEvent.click(screen.getByText(/Allow storage/));

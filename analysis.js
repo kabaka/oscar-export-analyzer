@@ -55,8 +55,9 @@ async function run(detailFilePath, targetDateStr, opts = {}) {
       continue;
     }
     const cols = line.split(',');
-    // eslint-disable-next-line no-magic-numbers -- CSV expected format: [timestamp, ignored, event, value, ...]
-    if (cols.length < 4) continue;
+    // CSV expected format: [timestamp, ignored, event, value, ...]
+    if (cols.length < CSV_MIN_COLS) continue;
+    const CSV_MIN_COLS = 4; // Minimum columns for expected CSV format: [timestamp, ignored, event, value, ...]
     const tm = cols[0];
     if (!tm.startsWith(targetDateStr)) continue;
     // parse DateTime string as UTC
@@ -163,11 +164,13 @@ async function main() {
   const args = process.argv;
   const positionals = [];
   const flags = {};
-  // eslint-disable-next-line no-magic-numbers -- skip node (0) and script path (1)
-  for (const arg of args.slice(2)) {
+  const ARGV_SKIP_COUNT = 2; // Skip node and script path in process.argv
+  const ARG_PREFIX_LEN = 2; // Length of "--" prefix for CLI flags
+  // Skip node (0) and script path (1)
+  for (const arg of args.slice(ARGV_SKIP_COUNT)) {
     if (arg.startsWith('--')) {
-      // eslint-disable-next-line no-magic-numbers -- skip "--" prefix (2 chars)
-      const [rawKey, rawVal] = arg.slice(2).split('=');
+      // Skip "--" prefix (2 chars)
+      const [rawKey, rawVal] = arg.slice(ARG_PREFIX_LEN).split('=');
       const key = rawKey.trim();
       const value = rawVal === undefined ? true : rawVal.trim();
       flags[key] = value;

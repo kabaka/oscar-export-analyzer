@@ -170,11 +170,9 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
         onSync={vi.fn()}
       />,
     );
-    // Simulate clicking the first recent night to show the chart
-    const nightButtons = screen.getAllByRole('button');
-    // Only click recent night button if present
-    const recentNightButton = nightButtons.find((btn) =>
-      /Tue, Jan 27HR: 65bpm • AHI: 10 • SpO2: 95%/.test(btn.textContent),
+    // Simulate clicking the most recent night to show the chart
+    const recentNightButton = screen.queryByTestId(
+      'recent-night-btn-2026-01-28',
     );
     if (recentNightButton) {
       fireEvent.click(recentNightButton);
@@ -204,12 +202,11 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
         onSync={vi.fn()}
       />,
     );
-    // Simulate clicking the first recent night to show the chart
-    const nightButtons = screen.getAllByRole('button');
-    const recentNightButton = nightButtons.find((btn) =>
-      /Tue, Jan 27HR: 65bpm • AHI: 10 • SpO2: 95%/.test(btn.textContent),
+    // Simulate clicking the most recent night to show the chart
+    const recentNightButton = screen.queryByTestId(
+      'recent-night-btn-2026-01-28',
     );
-    expect(recentNightButton).toBeDefined();
+    expect(recentNightButton).toBeInTheDocument();
     fireEvent.click(recentNightButton);
     // Should render chart in nightly-detail view
     expect(screen.getByTestId('dual-axis-sync-chart')).toBeInTheDocument();

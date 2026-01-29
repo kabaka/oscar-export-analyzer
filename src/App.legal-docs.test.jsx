@@ -17,10 +17,14 @@ vi.mock('./app/AppProviders', () => {
   const noop = vi.fn();
   const baseContext = {
     loadingSummary: false,
+    // eslint-disable-next-line no-magic-numbers -- test data
     summaryProgress: 0,
+    // eslint-disable-next-line no-magic-numbers -- test data
     summaryProgressMax: 0,
     loadingDetails: false,
+    // eslint-disable-next-line no-magic-numbers -- test data
     detailsProgress: 0,
+    // eslint-disable-next-line no-magic-numbers -- test data
     detailsProgressMax: 0,
     processing: false,
     importModal: createModal(),

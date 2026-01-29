@@ -28,12 +28,14 @@ describe('Header import progress', () => {
         // Use Promise.resolve for proper async handling
         Promise.resolve().then(() => {
           this.onmessage?.({
+            // eslint-disable-next-line no-magic-numbers -- test simulates 50% progress
             data: { workerId, type: 'progress', cursor: 50 },
           });
         });
         Promise.resolve().then(() => {
           setTimeout(() => {
             this.onmessage?.({
+              // eslint-disable-next-line no-magic-numbers -- test simulates 50% progress
               data: { workerId, type: 'rows', rows: [], cursor: 50 },
             });
             this.onmessage?.({ data: { workerId, type: 'complete' } });
@@ -73,6 +75,7 @@ describe('Header import progress', () => {
           within(header).queryByText(/Importing summary CSV/i),
         ).not.toBeInTheDocument();
       },
+      // eslint-disable-next-line no-magic-numbers -- test simulates 8s timeout
       { timeout: 8000 },
     );
   });

@@ -21,10 +21,14 @@ const createModal = () => ({ isOpen: false, open: vi.fn(), close: vi.fn() });
 
 const createContext = (overrides = {}) => ({
   loadingSummary: false,
+  // eslint-disable-next-line no-magic-numbers -- test data
   summaryProgress: 0,
+  // eslint-disable-next-line no-magic-numbers -- test data
   summaryProgressMax: 0,
   loadingDetails: false,
+  // eslint-disable-next-line no-magic-numbers -- test data
   detailsProgress: 0,
+  // eslint-disable-next-line no-magic-numbers -- test data
   detailsProgressMax: 0,
   processing: false,
   importModal: createModal(),
@@ -350,7 +354,9 @@ describe('AppShell edge states', () => {
   it('renders summary import progress with percentage', async () => {
     mockContext = createContext({
       loadingSummary: true,
+      // eslint-disable-next-line no-magic-numbers -- test simulates 50% progress
       summaryProgress: 50,
+      // eslint-disable-next-line no-magic-numbers -- test simulates 100% max
       summaryProgressMax: 100,
     });
 
@@ -360,7 +366,9 @@ describe('AppShell edge states', () => {
       screen.getByText(/importing summary csv \(50%\)/i),
     ).toBeInTheDocument();
     const progressBar = screen.getByRole('progressbar');
+    // eslint-disable-next-line no-magic-numbers -- test simulates 50% progress
     expect(progressBar).toHaveValue(50);
+    // eslint-disable-next-line no-magic-numbers -- test simulates 100% max
     expect(progressBar).toHaveAttribute('max', '100');
   });
 
@@ -368,7 +376,9 @@ describe('AppShell edge states', () => {
     mockContext = createContext({
       filteredSummary: [{ id: 1 }],
       loadingDetails: true,
+      // eslint-disable-next-line no-magic-numbers -- test simulates 25% progress
       detailsProgress: 25,
+      // eslint-disable-next-line no-magic-numbers -- test simulates 50% max
       detailsProgressMax: 50,
     });
 
@@ -378,7 +388,9 @@ describe('AppShell edge states', () => {
       screen.getByText(/importing details csv \(50%\)/i),
     ).toBeInTheDocument();
     const progressBar = screen.getByRole('progressbar');
+    // eslint-disable-next-line no-magic-numbers -- test simulates 25% progress
     expect(progressBar).toHaveValue(25);
+    // eslint-disable-next-line no-magic-numbers -- test simulates 50% max
     expect(progressBar).toHaveAttribute('max', '50');
   });
 });

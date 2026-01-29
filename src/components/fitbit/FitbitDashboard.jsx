@@ -398,6 +398,7 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
             {recentNights.map((night) => (
               <button
                 key={night.date}
+                data-testid={`recent-night-btn-${night.date}`}
                 onClick={() => onNightSelect(night)}
                 style={{
                   width: '100%',

@@ -34,6 +34,7 @@ describe('Header date filter', () => {
     const startInput = screen.getByLabelText(/start date/i);
     const endInput = screen.getByLabelText(/end date/i);
 
+    // eslint-disable-next-line no-magic-numbers -- test simulates 7-day preset
     fireEvent.change(presetSelect, { target: { value: '7' } });
     // Accept timezone variance in date calculations
     const startVal7 = startInput.value;
@@ -41,10 +42,12 @@ describe('Header date filter', () => {
     const endValue = endInput.value;
     expect(['2023-01-09', '2023-01-10']).toContain(endValue);
 
+    // eslint-disable-next-line no-magic-numbers -- test simulates 14-day preset
     fireEvent.change(presetSelect, { target: { value: '14' } });
     const startVal14 = startInput.value;
     expect(['2022-12-27', '2022-12-26', '2022-12-28']).toContain(startVal14);
 
+    // eslint-disable-next-line no-magic-numbers -- test simulates 365-day preset
     fireEvent.change(presetSelect, { target: { value: '365' } });
     const startVal365 = startInput.value;
     expect(['2022-01-10', '2022-01-09', '2022-01-11']).toContain(startVal365);
