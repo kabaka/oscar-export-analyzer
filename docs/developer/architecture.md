@@ -1,3 +1,9 @@
+#### Passphrase Security Model (Fitbit OAuth)
+
+The user's encryption passphrase is stored in `sessionStorage` (and a short-lived backup in `localStorage`) only for the duration of the OAuth redirect. After OAuth, the app restores the passphrase automatically if possible. If session/local storage is cleared or blocked, the user must re-enter it. The passphrase is never persisted long-term, written to disk, or stored in cookies.
+
+This model minimizes risk of compromise and preserves privacy, even if a device is compromised after the session. For full rationale and implementation details, see [Fitbit Integration — Developer Guide](fitbit-integration.md#passphrase-security-model).
+
 ## Architecture
 
 At heart the analyzer is a single‑page application powered by [React](https://react.dev/) and bundled with

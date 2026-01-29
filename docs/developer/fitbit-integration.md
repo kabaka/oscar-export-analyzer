@@ -48,6 +48,30 @@ src/features/fitbit/
 
 ## OAuth Implementation
 
+### Passphrase Security Model
+
+**Summary:**
+
+- The user's encryption passphrase is stored in `sessionStorage` (and a short-lived backup in `localStorage`) only for the duration of the OAuth redirect.
+- After OAuth, the app restores the passphrase automatically if possible. If session/local storage is cleared or blocked, the user must re-enter it.
+- The passphrase is never persisted long-term, written to disk, or stored in cookies.
+
+**Security rationale:**
+
+- This approach minimizes the risk of compromise from malware, browser exploits, or shared computers.
+- Even if a device is compromised after the session, the passphrase is not recoverable from storage.
+- Backend or server-side storage was rejected to maintain a local-first, privacy-preserving architecture.
+
+**Expected UX:**
+
+- If session/local storage is intact, the user is reconnected automatically after OAuth and data sync begins.
+- If storage was cleared or blocked, the user is prompted to re-enter their passphrase to complete the connection.
+- Repeated prompts or connection errors indicate privacy settings or extensions are interfering with storage.
+
+**Troubleshooting:**
+
+- See [User Guide: Troubleshooting](../user/11-fitbit-integration.md#troubleshooting) for user-facing guidance and solutions.
+
 sessionStorage.setItem('fitbit_pkce_verifier', codeVerifier);
 sessionStorage.removeItem('fitbit_pkce_verifier');
 

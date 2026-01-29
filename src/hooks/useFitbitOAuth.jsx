@@ -12,8 +12,13 @@
 
 import { useState, useCallback } from 'react';
 import { fitbitOAuth } from '../utils/fitbitAuth.js';
-import { CONNECTION_STATUS, MVP_SCOPES } from '../constants/fitbit.js';
+import {
+  CONNECTION_STATUS,
+  MVP_SCOPES,
+  FITBIT_OAUTH_STORAGE_KEYS,
+} from '../constants/fitbit.js';
 import { FITBIT_ERRORS } from '../constants/fitbitErrors.js';
+import { buildOAuthError } from '../utils/fitbitOAuth.js';
 
 /**
  * OAuth flow management hook.
@@ -73,18 +78,16 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
 
         // Store passphrase temporarily in sessionStorage for OAuth callback handler to retrieve.
         if (passphrase) {
-          sessionStorage.setItem('fitbit_oauth_passphrase', passphrase);
+          sessionStorage.setItem(
+            FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE,
+            passphrase,
+          );
         }
 
         window.location.assign(authUrl);
       } catch (err) {
         // Always use FITBIT_ERRORS.OAUTH_ERROR structure
-        const errorObj = {
-          code: FITBIT_ERRORS.OAUTH_ERROR.code,
-          type: FITBIT_ERRORS.OAUTH_ERROR.type,
-          message: FITBIT_ERRORS.OAUTH_ERROR.message,
-          details: err?.message || err,
-        };
+        const errorObj = buildOAuthError('oauth_error', err?.message || err);
         setError(errorObj);
         setStatus(CONNECTION_STATUS.ERROR);
         setIsLoading(false);
@@ -130,12 +133,10 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
         setStatus(CONNECTION_STATUS.CONNECTING);
 
         if (!authorizationCode || !state) {
-          const errorObj = {
-            code: FITBIT_ERRORS.INVALID_STATE.code,
-            type: 'state',
-            message: FITBIT_ERRORS.INVALID_STATE.message,
-            details: 'Missing authorization parameters',
-          };
+          const errorObj = buildOAuthError(
+            'invalid_state',
+            'Missing authorization parameters',
+          );
           setError(errorObj);
           setStatus(CONNECTION_STATUS.ERROR);
           setIsLoading(false);
@@ -144,20 +145,10 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
         }
 
         if (!passphrase) {
-          const fallback = {
-            code: 'encryption_error',
-            type: 'encryption',
-            message:
-              'Encryption passphrase required to complete Fitbit connection.',
-            details: 'Encryption passphrase required',
-          };
           const encryptionError = {
-            ...(FITBIT_ERRORS?.ENCRYPTION_ERROR || fallback),
-            code: FITBIT_ERRORS?.ENCRYPTION_ERROR?.code || fallback.code,
-            type: FITBIT_ERRORS?.ENCRYPTION_ERROR?.type || fallback.type,
-            message:
-              FITBIT_ERRORS?.ENCRYPTION_ERROR?.message || fallback.message,
-            details: fallback.details,
+            code: 'encryption_error',
+            message: 'Encryption passphrase required',
+            type: 'encryption_error',
           };
           setError(encryptionError);
           setStatus(CONNECTION_STATUS.ERROR);
@@ -171,12 +162,10 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
         if (!verifier) {
           verifier = fitbitOAuth.oauthState.validateCallback(state);
           if (!verifier) {
-            const errorObj = {
-              code: FITBIT_ERRORS.INVALID_STATE.code,
-              type: 'state',
-              message: FITBIT_ERRORS.INVALID_STATE.message,
-              details: 'OAuth state invalid or expired',
-            };
+            const errorObj = buildOAuthError(
+              'invalid_state',
+              'OAuth state invalid or expired',
+            );
             setError(errorObj);
             setStatus(CONNECTION_STATUS.ERROR);
             setIsLoading(false);
@@ -201,43 +190,18 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
         return tokenData;
       } catch (err) {
         console.error('OAuth callback failed:', err);
-        let errorObj = {
-          code: FITBIT_ERRORS.UNKNOWN.code || 'unknown_error',
-          type: 'fitbit',
-          message: FITBIT_ERRORS.UNKNOWN.message,
-          details: err?.message || err,
-        };
-        if (err?.code && FITBIT_ERRORS[err.code]) {
+        let errorObj;
+        if (err?.code === 'encryption_error') {
           errorObj = {
-            code: FITBIT_ERRORS[err.code].code || err.code,
-            type: FITBIT_ERRORS[err.code].type || 'fitbit',
-            message: FITBIT_ERRORS[err.code].message,
-            details: err?.message || err,
+            code: 'encryption_error',
+            message: err?.message || 'Encryption passphrase required',
+            type: 'encryption_error',
           };
-        } else if (
-          err?.message &&
-          /state|csrf|cancelled|invalid/i.test(err.message)
-        ) {
-          errorObj = {
-            code: FITBIT_ERRORS.INVALID_STATE.code || 'invalid_state',
-            type: 'state',
-            message: FITBIT_ERRORS.INVALID_STATE.message,
-            details: err?.message || err,
-          };
-        } else if (err?.message && /denied/i.test(err.message)) {
-          errorObj = {
-            code: FITBIT_ERRORS.OAUTH_DENIED.code || 'oauth_denied',
-            type: 'oauth',
-            message: FITBIT_ERRORS.OAUTH_DENIED.message,
-            details: err?.message || err,
-          };
-        } else if (err?.message && /passphrase|encryption/i.test(err.message)) {
-          errorObj = {
-            code: FITBIT_ERRORS.ENCRYPTION_ERROR.code || 'encryption_error',
-            type: 'encryption',
-            message: FITBIT_ERRORS.ENCRYPTION_ERROR.message,
-            details: err?.message || err,
-          };
+        } else {
+          errorObj = buildOAuthError(
+            err?.code || 'unknown_error',
+            err?.message || err,
+          );
         }
         setError(errorObj);
         setStatus(CONNECTION_STATUS.ERROR);
@@ -336,33 +300,18 @@ export function useFitbitOAuth({ onSuccess, onError } = {}) {
    * @param {string} errorCode - Error code from OAuth callback
    * @param {string} errorDescription - Error description
    */
+  /**
+   * Handle OAuth errors from URL parameters using shared error builder.
+   * @param {string} errorCode - Error code from OAuth callback
+   * @param {string} errorDescription - Error description
+   */
   const handleOAuthError = useCallback(
     (errorCode, errorDescription) => {
-      let message = 'Authentication failed';
-
-      switch (errorCode) {
-        case 'access_denied':
-          message = 'Access was denied by user';
-          break;
-        case 'invalid_request':
-          message = 'Invalid authentication request';
-          break;
-        case 'unsupported_response_type':
-          message = 'Unsupported authentication method';
-          break;
-        default:
-          message = errorDescription || 'Unknown authentication error';
-      }
-
-      setError({
-        type: FITBIT_ERRORS.OAUTH_ERROR,
-        message,
-        details: `${errorCode}: ${errorDescription}`,
-      });
+      const errorObj = buildOAuthError(errorCode, errorDescription);
+      setError(errorObj);
       setStatus(CONNECTION_STATUS.ERROR);
-
       if (onError) {
-        onError(new Error(message));
+        onError(errorObj);
       }
     },
     [onError],

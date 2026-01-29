@@ -56,14 +56,22 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 
 ### Fitbit OAuth: Passphrase or Session Issues
 
-**Problem:** After connecting Fitbit, you are unexpectedly prompted to re-enter your encryption passphrase, or connection fails with a session error.
+#### Problem
 
-**Solutions:**
+After connecting Fitbit, you are unexpectedly prompted to re-enter your encryption passphrase, or connection fails with a session error.
+
+#### Why this happens
+
+- The app restores your passphrase automatically after OAuth using sessionStorage or a secure localStorage backup.
+- If session/local storage is cleared (by privacy settings, incognito mode, or extensions), you must re-enter your passphrase to complete the connection.
+
+#### Solutions
 
 - Ensure your browser allows `sessionStorage` and `localStorage` (not cleared by privacy settings or extensions).
 - Do not clear browser session data during the OAuth process.
 - Try reconnecting with privacy settings relaxed or in a different browser.
-- If the problem persists, check the [Fitbit Integration Guide](11-fitbit-integration.md#troubleshooting) for more details.
+- If you use incognito/private mode, you may need to re-enter your passphrase every time.
+- If the problem persists, check the [Fitbit Integration Guide](11-fitbit-integration.md#troubleshooting) for more details and security rationale.
 
 ### Printed report misses charts
 

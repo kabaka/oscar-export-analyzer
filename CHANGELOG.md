@@ -1,7 +1,13 @@
 # Changelog
 
-All notable changes to OSCAR Export Analyzer will be documented in this file.
+## [2026-01-28]
 
+### Fixed
+
+- Fitbit dashboard now prompts for passphrase (FitbitConnectionCard) if tokens exist but passphrase is missing, instead of rendering chart components. This prevents user confusion and enforces correct authentication flow.
+- Encryption/passphrase errors in Fitbit OAuth now use type 'encryption_error' (not 'oauth'), improving error handling and test clarity.
+
+All notable changes to OSCAR Export Analyzer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section

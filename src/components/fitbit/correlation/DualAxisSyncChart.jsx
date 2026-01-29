@@ -299,7 +299,10 @@ function DualAxisSyncChart({
   }
 
   return (
-    <div className={`dual-axis-chart-container ${className}`}>
+    <div
+      className={`dual-axis-chart-container ${className}`}
+      data-testid="dual-axis-sync-chart"
+    >
       {/* Chart accessibility summary */}
       <div
         id="dual-axis-chart-summary"

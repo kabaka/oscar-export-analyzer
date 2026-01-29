@@ -48,6 +48,7 @@ vi.mock('../../components/fitbit/FitbitDashboard', () => ({
         <button onClick={onSync}>Sync</button>
         <span>{connectionStatus}</span>
         <span>{fitbitData ? 'with-data' : 'no-data'}</span>
+        {fitbitData && <div data-testid="dual-axis-sync-chart">Mock Chart</div>}
       </div>
     );
   },

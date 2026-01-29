@@ -474,7 +474,7 @@ input[type='file']::-webkit-file-upload-button {
 }
 input[type='file']::file-selector-button:hover,
 input[type='file']::-webkit-file-upload-button:hover {
-  background: color-mix(
+  /* background: color-mix(
     in oklab,
     var(--color-kpi-bg) 70%,
     var(--color-accent) 30%
@@ -483,13 +483,15 @@ input[type='file']::-webkit-file-upload-button:hover {
     in oklab,
     var(--color-border) 60%,
     var(--color-accent) 40%
-  );
+  ); */
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 input:focus,
 select:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px
-    color-mix(in oklab, var(--color-accent) 20%, transparent);
+  /* box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-accent) 20%, transparent); */
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 /* Modern button styles (neutral by default, accessible in dark) */
 button {
@@ -508,7 +510,7 @@ button {
   font-size: 1rem;
 }
 button:hover {
-  background-color: color-mix(
+  /* background-color: color-mix(
     in oklab,
     var(--color-kpi-bg) 70%,
     var(--color-accent) 30%
@@ -517,7 +519,9 @@ button:hover {
     in oklab,
     var(--color-border) 60%,
     var(--color-accent) 40%
-  );
+  ); */
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 button:active {
   transform: translateY(1px);
@@ -534,11 +538,12 @@ button[disabled] {
     var(--color-surface)
   );
   color: var(--color-text);
-  border-color: color-mix(
+  /* border-color: color-mix(
     in oklab,
     var(--color-border) 60%,
     var(--color-accent) 40%
-  );
+  ); */
+  border-color: var(--color-accent);
 }
 .btn-primary:hover {
   background: color-mix(
@@ -546,11 +551,12 @@ button[disabled] {
     var(--color-accent) 40%,
     var(--color-surface)
   );
-  border-color: color-mix(
+  /* border-color: color-mix(
     in oklab,
     var(--color-border) 40%,
     var(--color-accent) 60%
-  );
+  ); */
+  border-color: var(--color-accent);
 }
 .btn-ghost {
   background: transparent;
@@ -715,7 +721,8 @@ h4[id] {
   box-shadow: var(--shadow-1);
 }
 .viz-help:focus {
-  outline: 2px solid color-mix(in oklab, var(--color-link) 35%, transparent);
+  /* outline: 2px solid color-mix(in oklab, var(--color-link) 35%, transparent); */
+  outline: 2px solid var(--color-link);
 }
 .viz-tooltip {
   position: absolute;
@@ -747,7 +754,8 @@ h4[id] {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--color-accent) 40%, transparent);
+  /* outline: 2px solid color-mix(in oklab, var(--color-accent) 40%, transparent); */
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 /* Alert and Message Styling */
@@ -1119,7 +1127,7 @@ select:focus-visible {
   .app-header .date-filter select,
   .app-header .date-filter button {
     padding: 2px 4px; /* Desktop: compact controls */
-    min-height: auto;
+    min-height: 0;
     font-size: 0.95rem;
   }
 
@@ -1176,7 +1184,7 @@ select:focus-visible {
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  /* -webkit-overflow-scrolling: touch; */
   margin-bottom: 1rem;
 }
 

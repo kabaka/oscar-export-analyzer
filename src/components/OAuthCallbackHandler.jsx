@@ -10,6 +10,11 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
 import { FITBIT_ERRORS } from '../constants/fitbitErrors.js';
+import {
+  parseOAuthCallbackParams,
+  buildOAuthError,
+} from '../utils/fitbitOAuth.js';
+import { FITBIT_OAUTH_STORAGE_KEYS } from '../constants/fitbit.js';
 
 /**
  * OAuth callback handler component.
@@ -38,7 +43,7 @@ export function OAuthCallbackHandler({
     }
     // Retrieve from sessionStorage (set by useFitbitOAuth.initiateAuth)
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('fitbit_oauth_passphrase');
+      return sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE);
     }
     return null;
   }, [passphrase]);
@@ -47,14 +52,7 @@ export function OAuthCallbackHandler({
   // useMemo runs during render phase, guaranteeing params are captured before any cleanup
   const oauthParams = useMemo(() => {
     if (typeof window === 'undefined') return null;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    return {
-      code: urlParams.get('code'),
-      state: urlParams.get('state'),
-      error: urlParams.get('error'),
-      errorDescription: urlParams.get('error_description'),
-    };
+    return parseOAuthCallbackParams(window.location);
   }, []); // Empty deps - only capture on initial mount
 
   // SECURITY: Clean URL immediately on mount (synchronously) to prevent browser history capture
@@ -116,27 +114,84 @@ export function OAuthCallbackHandler({
           // Persist passphrase for this session so users can sync immediately after OAuth.
           if (typeof window !== 'undefined') {
             const storedPassphrase = sessionStorage.getItem(
-              'fitbit_oauth_passphrase',
+              FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE,
             );
             if (storedPassphrase) {
               sessionStorage.setItem(
-                'fitbit_session_passphrase',
+                FITBIT_OAUTH_STORAGE_KEYS.SESSION_PASSPHRASE,
                 storedPassphrase,
               );
             }
             // Do NOT remove 'fitbit_oauth_passphrase' here; defer until app state is updated (see App.jsx)
           }
         } else if (code && state && !effectivePassphrase) {
+          // Check if fitbit tokens exist (user completed OAuth, but passphrase missing)
+          let hasTokens = false;
+          try {
+            if (typeof window !== 'undefined') {
+              // Check for presence of fitbit tokens in local/session storage (implementation may vary)
+              // Try both sessionStorage and localStorage for robustness
+              hasTokens = !!(
+                sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS) ||
+                localStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS)
+              );
+            }
+          } catch {
+            // Ignore storage access errors (non-blocking)
+          }
+          if (hasTokens) {
+            setResult({
+              type: 'error',
+              error: {
+                message:
+                  'Please re-enter your passphrase to complete Fitbit connection.',
+                details:
+                  'Fitbit tokens found, but passphrase is missing. For security, please re-enter your passphrase to decrypt and complete the connection.',
+                type: 'encryption',
+              },
+            });
+            setProcessing(false);
+            if (onError)
+              onError({
+                message:
+                  'Please re-enter your passphrase to complete Fitbit connection.',
+                details:
+                  'Fitbit tokens found, but passphrase is missing. For security, please re-enter your passphrase to decrypt and complete the connection.',
+                type: 'encryption',
+              });
+            if (onComplete)
+              onComplete({
+                success: false,
+                error: {
+                  message:
+                    'Please re-enter your passphrase to complete Fitbit connection.',
+                  details:
+                    'Fitbit tokens found, but passphrase is missing. For security, please re-enter your passphrase to decrypt and complete the connection.',
+                  type: 'encryption',
+                },
+              });
+            return;
+          }
           throw new Error('Encryption passphrase required');
         } else {
           throw new Error('Missing authorization parameters');
         }
       } catch (err) {
         console.error('OAuth callback processing failed:', err);
-        setResult({ type: 'error', error: err });
+        // If error is an OAuth error, standardize it
+        let errorObj = err;
+        if (oauthParams?.error) {
+          errorObj = buildOAuthError(
+            oauthParams.error,
+            oauthParams.errorDescription,
+          );
+        }
+        setResult({ type: 'error', error: errorObj });
         setProcessing(false);
         if (onError) onError(err);
         if (onComplete) onComplete({ success: false, error: err });
+      } finally {
+        // Empty finally block to satisfy ESLint rule
       }
     };
 

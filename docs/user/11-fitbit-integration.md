@@ -52,7 +52,7 @@ The Fitbit integration maintains OSCAR's privacy-first approach:
 - ✅ **No tracking** – No analytics, cookies, or behavioral monitoring
 - ✅ **Full transparency** – Open source code available for security audit
 
-### OAuth Security
+### OAuth Security & Passphrase Handling
 
 The connection process uses industry-standard OAuth 2.0 with PKCE:
 
@@ -60,11 +60,26 @@ The connection process uses industry-standard OAuth 2.0 with PKCE:
 - **Temporary authorization**: Tokens automatically expire and refresh
 - **Revocable access**: Disconnect anytime via Settings or Fitbit account management
 
-### Data Retention
+#### Passphrase Security Model
 
-- **Automatic cleanup**: Fitbit data purged when you clear CPAP session
-- **Manual control**: Delete Fitbit data independently via Settings
-- **Browser isolation**: Private/incognito mode provides temporary analysis
+- **Your encryption passphrase is never stored long-term.**
+- During OAuth, the app saves your passphrase in `sessionStorage` (and a short-lived backup in `localStorage`) to survive the redirect.
+- After OAuth, the app restores your passphrase automatically if possible. If session data is cleared or blocked, you must re-enter it.
+- **Why?** This protects your privacy: even if someone gains access to your device later, they cannot decrypt your data without your passphrase.
+- **Tip:** Do not use browser settings or extensions that clear session/local storage during the OAuth process.
+
+**Security rationale:**
+
+- The passphrase is only kept in memory or temporary storage for the duration of your session and OAuth redirect. This minimizes the risk of compromise from malware, browser exploits, or shared computers.
+- The app never writes your passphrase to disk, cookies, or permanent storage.
+
+**Expected UX after OAuth:**
+
+- If session/local storage is intact, you will be reconnected automatically and data sync will begin.
+- If storage was cleared or blocked, you will be prompted to re-enter your passphrase to complete the connection.
+- If you see repeated prompts or connection errors, check your browser privacy settings and disable extensions that block storage.
+
+See [Troubleshooting](#troubleshooting) for more help.
 
 ## Setup Instructions
 
@@ -99,12 +114,12 @@ Before connecting Fitbit:
 #### 3. Automatic Passphrase Restoration (New)
 
 1. After Fitbit authorization, you are redirected back to OSCAR Export Analyzer.
-2. **Your encryption passphrase is restored automatically from sessionStorage or a secure localStorage backup.**
-   - You do **not** need to re-enter your passphrase after OAuth redirect unless you have cleared browser session data or blocked localStorage/sessionStorage.
-   - If the app prompts for your passphrase after OAuth, check your browser privacy settings and ensure sessionStorage/localStorage are not being cleared or blocked by extensions.
-3. Data sync begins automatically.
-4. Progress indicator shows download status.
-5. **Be patient**: Initial sync may take 2-5 minutes for 100 days of data.
+2. The app attempts to restore your encryption passphrase from sessionStorage or a secure localStorage backup.
+   - **If successful:** You do not need to re-enter your passphrase. Data sync begins automatically.
+   - **If not:** You will be prompted to re-enter your passphrase. This is required if you cleared browser session data, used incognito mode, or have privacy extensions that block storage.
+   - **Troubleshooting:** If you see repeated prompts, check your browser privacy settings and disable extensions that block session/local storage.
+3. Progress indicator shows download status.
+4. **Be patient**: Initial sync may take 2-5 minutes for 100 days of data.
 
 #### 4. Verify Connection
 

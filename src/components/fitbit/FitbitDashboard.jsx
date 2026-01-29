@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import FitbitConnectionCard from '../FitbitConnectionCard.jsx';
+import { FITBIT_OAUTH_STORAGE_KEYS } from '../../constants/fitbit.js';
 import SyncStatusPanel from './SyncStatusPanel';
 import DualAxisSyncChart from './correlation/DualAxisSyncChart';
 import CorrelationMatrix from './correlation/CorrelationMatrix';
@@ -52,6 +53,21 @@ function FitbitDashboard({
   const hasData =
     fitbitData && fitbitData.correlationData && fitbitData.nightlyData;
 
+  // Check if tokens exist but passphrase is missing (for passphrase prompt)
+  let tokensExist = false;
+  if (typeof window !== 'undefined') {
+    try {
+      const tokenStr =
+        sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS) ||
+        localStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS);
+      tokensExist = !!tokenStr;
+    } catch {
+      // ignore storage access errors
+    }
+  }
+  const passphraseMissing =
+    !sessionStorage.getItem('fitbit_session_passphrase') && tokensExist;
+
   // Auto-select most recent night on data load
   useEffect(() => {
     if (
@@ -83,8 +99,31 @@ function FitbitDashboard({
     if (view !== 'scatter-detail') setSelectedMetricPair(null);
   };
 
+  // If tokens exist but passphrase is missing, always show connection card (prompt for passphrase)
+  if (passphraseMissing) {
+    return (
+      <div
+        className={`fitbit-dashboard-container ${className}`}
+        data-testid="fitbit-dashboard-container"
+      >
+        <section style={{ marginBottom: '3rem' }}>
+          <FitbitConnectionCard
+            connectionStatus={connectionStatus}
+            onConnect={onConnect}
+            onDisconnect={onDisconnect}
+            errorMessage={syncState.errorMessage}
+            data-testid="fitbit-connection-card"
+          />
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div className={`fitbit-dashboard-container ${className}`}>
+    <div
+      className={`fitbit-dashboard-container ${className}`}
+      data-testid="fitbit-dashboard-container"
+    >
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Dashboard Header */}
         <header style={{ marginBottom: '2rem' }}>
@@ -120,6 +159,7 @@ function FitbitDashboard({
               onConnect={onConnect}
               onDisconnect={onDisconnect}
               errorMessage={syncState.errorMessage}
+              data-testid="fitbit-connection-card"
             />
           </section>
         )}

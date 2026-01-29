@@ -249,6 +249,7 @@ function CorrelationMatrix({
           borderRadius: '8px',
           backgroundColor: '#f9f9f9',
         }}
+        data-testid="correlation-matrix"
       >
         <div
           className="empty-state"

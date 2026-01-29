@@ -459,6 +459,7 @@ export function FitbitConnectionCard({
       role="region"
       aria-labelledby="fitbit-card-title"
       aria-describedby="fitbit-card-description"
+      data-testid="fitbit-connection-card"
     >
       <header className="card-header">
         {renderFitbitLogo()}

@@ -1,4 +1,9 @@
 /**
+ * Tests for Fitbit OAuth utility functions: parseOAuthCallbackParams, buildOAuthError.
+ *
+ * Ensures correct parsing of callback parameters and error object construction.
+ */
+/**
  * Tests for fitbitOAuth.js utility (state/token logic)
  */
 import { describe, it, expect } from 'vitest';

@@ -1,3 +1,26 @@
+/**
+ * Storage keys for Fitbit OAuth flow (session/localStorage).
+ *
+ * Centralizes all magic strings for storage access in OAuth and token management.
+ *
+ * @typedef {Object} FITBIT_OAUTH_STORAGE_KEYS
+ * @property {string} STATE - Key for OAuth state (sessionStorage)
+ * @property {string} PKCE_VERIFIER - Key for PKCE code verifier (sessionStorage)
+ * @property {string} STATE_BACKUP - Backup key for OAuth state (localStorage)
+ * @property {string} PKCE_VERIFIER_BACKUP - Backup key for PKCE verifier (localStorage)
+ * @property {string} PASSPHRASE - Key for encryption passphrase (sessionStorage)
+ * @property {string} SESSION_PASSPHRASE - Key for session passphrase (sessionStorage)
+ * @property {string} TOKENS - Key for Fitbit tokens (session/localStorage)
+ */
+export const FITBIT_OAUTH_STORAGE_KEYS = {
+  STATE: 'fitbit_oauth_state',
+  PKCE_VERIFIER: 'fitbit_pkce_verifier',
+  STATE_BACKUP: 'fitbit_oauth_state_backup',
+  PKCE_VERIFIER_BACKUP: 'fitbit_pkce_verifier_backup',
+  PASSPHRASE: 'fitbit_oauth_passphrase',
+  SESSION_PASSPHRASE: 'fitbit_session_passphrase',
+  TOKENS: 'fitbit_tokens',
+};
 // Helper to safely access Vite env vars in both Vite and Vitest
 function getMetaEnv() {
   // Vitest injects globalThis.__vitest_worker__?.metaEnv
