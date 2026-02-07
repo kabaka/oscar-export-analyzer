@@ -20,6 +20,7 @@ import {
 } from '../utils/fitbitDb.js';
 import { CONNECTION_STATUS } from '../constants/fitbit.js';
 import { FITBIT_ERRORS } from '../constants/fitbitErrors.js';
+import { parseSyncResults } from '../utils/fitbitHeartRateParser.js';
 
 /**
  * Connection management hook.
@@ -37,6 +38,7 @@ export function useFitbitConnection({
   const [error, setError] = useState(null);
   const [connectionInfo, setConnectionInfo] = useState(null);
   const [dataStats, setDataStats] = useState(null);
+  const [syncedData, setSyncedData] = useState(null);
   const [lastSync, setLastSync] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -228,6 +230,10 @@ export function useFitbitConnection({
           onProgress,
         });
 
+        // Parse and store synced data in React state
+        const parsed = parseSyncResults(results);
+        setSyncedData(parsed);
+
         // Update sync metadata
         await setSyncMetadata('last_sync_time', Date.now());
         await setSyncMetadata('last_sync_range', [syncStartDate, syncEndDate]);
@@ -368,6 +374,7 @@ export function useFitbitConnection({
     error,
     connectionInfo,
     dataStats,
+    syncedData,
     lastSync,
     isRefreshing,
 
@@ -388,8 +395,8 @@ export function useFitbitConnection({
       errorMessage: error?.message || null,
     },
 
-    // Legacy data property (for backward compatibility)
-    fitbitData: dataStats,
+    // Fitbit data: synced heart rate data takes precedence, falls back to IndexedDB stats
+    fitbitData: syncedData || dataStats,
 
     // Actions
     checkConnection,

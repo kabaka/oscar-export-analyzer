@@ -7,6 +7,7 @@ import DualAxisSyncChart from './correlation/DualAxisSyncChart';
 import CorrelationMatrix from './correlation/CorrelationMatrix';
 import BivariateScatterPlot from './correlation/BivariateScatterPlot';
 import { CONNECTION_STATUS } from '../../constants/fitbit';
+import { computeHeartRateSummary } from '../../utils/fitbitHeartRateParser';
 
 /**
  * Main dashboard for Fitbit integration and correlation analysis.
@@ -52,6 +53,11 @@ function FitbitDashboard({
   const isConnected = connectionStatus === CONNECTION_STATUS.CONNECTED;
   const hasData =
     fitbitData && fitbitData.correlationData && fitbitData.nightlyData;
+  const hasSyncedHeartRateData =
+    fitbitData &&
+    fitbitData.heartRateData &&
+    fitbitData.heartRateData.length > 0;
+  const hasAnyData = hasData || hasSyncedHeartRateData;
 
   // Async check for tokens in IndexedDB (tokens are stored there, not sessionStorage/localStorage)
   const [tokensExist, setTokensExist] = useState(false);
@@ -301,13 +307,18 @@ function FitbitDashboard({
             />
           )}
 
-          {isConnected && !hasData && (
+          {isConnected && !hasAnyData && (
             <EmptyStateCard
               icon="🔄"
               title="Sync Your Data"
               description="Synchronize your Fitbit data to begin correlation analysis with your CPAP metrics."
               action="Click 'Sync Now' above to begin"
             />
+          )}
+
+          {/* Synced Heart Rate Data (when no full correlation data yet) */}
+          {isConnected && hasSyncedHeartRateData && !hasData && (
+            <HeartRateDataSection heartRateData={fitbitData.heartRateData} />
           )}
         </main>
       </div>
@@ -628,12 +639,298 @@ function EmptyStateCard({ icon, title, description, action }) {
   );
 }
 
+/**
+ * Display synced heart rate data when full correlation data isn't available yet.
+ * Shows resting heart rate time series and summary statistics.
+ */
+function HeartRateDataSection({ heartRateData }) {
+  const summary = computeHeartRateSummary(heartRateData);
+
+  return (
+    <div
+      className="heart-rate-data-section"
+      data-testid="heart-rate-data-section"
+    >
+      {/* Summary Stats */}
+      <div
+        style={{
+          display: 'grid',
+          gap: '1.5rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          marginBottom: '2rem',
+        }}
+      >
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.85em',
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Days Synced
+          </div>
+          <div
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: 'var(--color-accent)',
+            }}
+          >
+            {summary.totalDays}
+          </div>
+        </div>
+
+        {summary.avgRestingHR != null && (
+          <div
+            style={{
+              padding: '1.5rem',
+              backgroundColor: 'var(--color-surface)',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-2)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.85em',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.5rem',
+              }}
+            >
+              Avg Resting HR
+            </div>
+            <div
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                color: 'var(--color-accent)',
+              }}
+            >
+              {summary.avgRestingHR} bpm
+            </div>
+          </div>
+        )}
+
+        {summary.minRestingHR != null && summary.maxRestingHR != null && (
+          <div
+            style={{
+              padding: '1.5rem',
+              backgroundColor: 'var(--color-surface)',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-2)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.85em',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.5rem',
+              }}
+            >
+              HR Range
+            </div>
+            <div
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                color: 'var(--color-accent)',
+              }}
+            >
+              {summary.minRestingHR}–{summary.maxRestingHR} bpm
+            </div>
+          </div>
+        )}
+
+        {summary.dateRange && (
+          <div
+            style={{
+              padding: '1.5rem',
+              backgroundColor: 'var(--color-surface)',
+              borderRadius: '8px',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-2)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.85em',
+                color: 'var(--color-text-muted)',
+                marginBottom: '0.5rem',
+              }}
+            >
+              Date Range
+            </div>
+            <div
+              style={{
+                fontSize: '1rem',
+                fontWeight: 'bold',
+                color: 'var(--color-accent)',
+              }}
+            >
+              {summary.dateRange.start} — {summary.dateRange.end}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Daily Heart Rate Table */}
+      <div
+        style={{
+          padding: '2rem',
+          backgroundColor: 'var(--color-surface)',
+          borderRadius: '8px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-2)',
+        }}
+      >
+        <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
+          <span aria-hidden="true" style={{ marginRight: '0.5rem' }}>
+            ❤️
+          </span>
+          Resting Heart Rate by Day
+        </h3>
+
+        <div
+          style={{ overflowX: 'auto' }}
+          role="table"
+          aria-label="Daily resting heart rate data"
+        >
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '0.95em',
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  style={{
+                    textAlign: 'left',
+                    padding: '0.75rem',
+                    borderBottom: '2px solid var(--color-border)',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: '600',
+                  }}
+                >
+                  Date
+                </th>
+                <th
+                  scope="col"
+                  style={{
+                    textAlign: 'right',
+                    padding: '0.75rem',
+                    borderBottom: '2px solid var(--color-border)',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: '600',
+                  }}
+                >
+                  Resting HR (bpm)
+                </th>
+                <th
+                  scope="col"
+                  style={{
+                    textAlign: 'right',
+                    padding: '0.75rem',
+                    borderBottom: '2px solid var(--color-border)',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: '600',
+                  }}
+                >
+                  Heart Rate Zones
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {heartRateData.map((day) => (
+                <tr key={day.date}>
+                  <td
+                    style={{
+                      padding: '0.75rem',
+                      borderBottom: '1px solid var(--color-border)',
+                      color: 'var(--color-text)',
+                    }}
+                  >
+                    {new Date(day.date + 'T00:00:00').toLocaleDateString([], {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </td>
+                  <td
+                    style={{
+                      padding: '0.75rem',
+                      borderBottom: '1px solid var(--color-border)',
+                      textAlign: 'right',
+                      color: 'var(--color-text)',
+                      fontWeight: '500',
+                    }}
+                  >
+                    {day.restingHeartRate != null ? day.restingHeartRate : '—'}
+                  </td>
+                  <td
+                    style={{
+                      padding: '0.75rem',
+                      borderBottom: '1px solid var(--color-border)',
+                      textAlign: 'right',
+                      color: 'var(--color-text-muted)',
+                      fontSize: '0.85em',
+                    }}
+                  >
+                    {day.heartRateZones.length > 0
+                      ? day.heartRateZones
+                          .filter((z) => z.minutes > 0)
+                          .map((z) => `${z.name}: ${z.minutes}m`)
+                          .join(', ')
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p
+          style={{
+            marginTop: '1rem',
+            fontSize: '0.85em',
+            color: 'var(--color-text-muted)',
+            fontStyle: 'italic',
+          }}
+        >
+          Heart rate data synced from Fitbit. Upload OSCAR data to enable
+          correlation analysis between CPAP metrics and heart rate trends.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 FitbitDashboard.propTypes = {
   fitbitData: PropTypes.shape({
     nightlyData: PropTypes.arrayOf(PropTypes.object),
     correlationData: PropTypes.object,
     scatterData: PropTypes.object,
     summary: PropTypes.object,
+    heartRateData: PropTypes.arrayOf(
+      PropTypes.shape({
+        date: PropTypes.string.isRequired,
+        restingHeartRate: PropTypes.number,
+        heartRateZones: PropTypes.array,
+      }),
+    ),
   }),
   connectionStatus: PropTypes.oneOf(Object.values(CONNECTION_STATUS))
     .isRequired,
@@ -680,6 +977,16 @@ EmptyStateCard.propTypes = {
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
   action: PropTypes.string.isRequired,
+};
+
+HeartRateDataSection.propTypes = {
+  heartRateData: PropTypes.arrayOf(
+    PropTypes.shape({
+      date: PropTypes.string.isRequired,
+      restingHeartRate: PropTypes.number,
+      heartRateZones: PropTypes.array,
+    }),
+  ).isRequired,
 };
 
 export default FitbitDashboard;

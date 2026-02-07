@@ -8,6 +8,10 @@ corresponds to changes released on that day.
 
 ## 2026-02-07
 
+### Added
+
+- **Heart rate data display after Fitbit sync**: Synced resting heart rate data now appears in the Fitbit dashboard with summary statistics (average, min, max, date range) and a daily data table. Previously, synced data was fetched but silently discarded — the full sync-to-display pipeline is now connected.
+
 ### Changed
 
 - **Fitbit sync limited to heart rate only**: Disabled SpO2 and sleep data sync due to [Fitbit API CORS limitations](https://community.fitbit.com/t5/Web-API-Development/Known-Issue-HRV-and-BR-Intraday-data-endpoint-returns-403-for-personal/td-p/5806264) that prevent browser-based apps from accessing these endpoints. Heart rate correlation remains fully functional. SpO2 and sleep scopes are still requested during OAuth (for future CORS proxy support) but not actively synced.

@@ -152,4 +152,103 @@ describe('useFitbitConnection', () => {
     expect(result.current.status).not.toBe(CONNECTION_STATUS.DISCONNECTED);
     expect(result.current.status).toBe(CONNECTION_STATUS.CONNECTED);
   });
+
+  it('stores parsed heart rate data in syncedData and fitbitData after sync', async () => {
+    mockFns.isAuthenticated.mockResolvedValue(true);
+    mockFns.getStoredTokens.mockResolvedValue({
+      access_token: 'mock_access_token',
+      refresh_token: 'mock_refresh_token',
+      expires_at: Date.now() + 100000,
+      scope: 'heartrate sleep',
+      created_at: Date.now() - 10000,
+      token_type: 'Bearer',
+      user_id: 'mock_user_id',
+    });
+
+    // Simulate the real Fitbit API response format
+    mockFns.batchSync.mockResolvedValue({
+      heartRate: {
+        'activities-heart': [
+          {
+            dateTime: '2026-01-08',
+            value: {
+              restingHeartRate: 68,
+              heartRateZones: [
+                {
+                  name: 'Out of Range',
+                  minutes: 1439,
+                  caloriesOut: 1200,
+                  min: 30,
+                  max: 100,
+                },
+              ],
+            },
+          },
+          {
+            dateTime: '2026-01-09',
+            value: {
+              restingHeartRate: 70,
+              heartRateZones: [],
+            },
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useFitbitConnection({ passphrase: 'test', autoCheck: false }),
+    );
+
+    // Connect first
+    await act(async () => {
+      await result.current.checkConnection();
+    });
+    expect(result.current.status).toBe(CONNECTION_STATUS.CONNECTED);
+
+    // Sync data
+    await act(async () => {
+      await result.current.syncFitbitData();
+    });
+
+    // Verify syncedData is populated with parsed heart rate data
+    expect(result.current.syncedData).toBeTruthy();
+    expect(result.current.syncedData.heartRateData).toHaveLength(2);
+    expect(result.current.syncedData.heartRateData[0]).toMatchObject({
+      date: '2026-01-08',
+      restingHeartRate: 68,
+    });
+    expect(result.current.syncedData.heartRateData[1]).toMatchObject({
+      date: '2026-01-09',
+      restingHeartRate: 70,
+    });
+
+    // Verify fitbitData includes the synced data
+    expect(result.current.fitbitData).toBeTruthy();
+    expect(result.current.fitbitData.heartRateData).toHaveLength(2);
+  });
+
+  it('fitbitData falls back to dataStats when no synced data', async () => {
+    mockFns.isAuthenticated.mockResolvedValue(true);
+    mockFns.getStoredTokens.mockResolvedValue({
+      access_token: 'mock_access_token',
+      refresh_token: 'mock_refresh_token',
+      expires_at: Date.now() + 100000,
+      scope: 'heartrate',
+      created_at: Date.now() - 10000,
+      token_type: 'Bearer',
+      user_id: 'mock_user_id',
+    });
+
+    const { result } = renderHook(() =>
+      useFitbitConnection({ passphrase: 'test', autoCheck: false }),
+    );
+
+    await act(async () => {
+      await result.current.checkConnection();
+    });
+
+    // Before sync, fitbitData should be dataStats (from mocked getFitbitDataStats)
+    expect(result.current.syncedData).toBeNull();
+    expect(result.current.fitbitData).toEqual({ nights: 2 });
+  });
 });
