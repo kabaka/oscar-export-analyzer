@@ -11,11 +11,17 @@ corresponds to changes released on that day.
 ### Added
 
 - **Heart rate data display after Fitbit sync**: Synced resting heart rate data now appears in the Fitbit dashboard with summary statistics (average, min, max, date range) and a daily data table. Previously, synced data was fetched but silently discarded — the full sync-to-display pipeline is now connected.
+- **Full OSCAR-Fitbit correlation analysis pipeline**: Automatically correlates CPAP therapy data with Fitbit resting heart rate when both data sources are loaded — no manual trigger needed
+- **`useFitbitAnalysis` hook**: Connects the analysis pipeline to the React UI, running `analyzeOscarFitbitIntegration()` via `useMemo` when OSCAR + Fitbit data are both available
+- **Three resting heart rate correlation pairs**: AHI↔resting HR, usage↔resting HR, and leak rate↔resting HR now included in correlation analysis
+- **Dashboard correlation views**: Dashboard now shows correlation overview, nightly detail, and scatter analysis views when analysis data is available
 
 ### Changed
 
 - **Fitbit sync limited to heart rate only**: Disabled SpO2 and sleep data sync due to [Fitbit API CORS limitations](https://community.fitbit.com/t5/Web-API-Development/Known-Issue-HRV-and-BR-Intraday-data-endpoint-returns-403-for-personal/td-p/5806264) that prevent browser-based apps from accessing these endpoints. Heart rate correlation remains fully functional. SpO2 and sleep scopes are still requested during OAuth (for future CORS proxy support) but not actively synced.
 - Added clear user-facing note in the Fitbit Correlation section explaining the CORS limitation with a link to the Fitbit community post.
+- **Fitbit data alignment supports HR-only sync mode**: `validateAlignment` now accepts `restingBpm` as alternative to `avgSleepBpm` and skips overlap validation in HR-only mode (no sleep duration data required)
+- **`onCorrelationAnalysis` prop now optional**: `FitbitDashboard` no longer requires a manual correlation trigger since analysis runs automatically
 
 ### Fixed
 
@@ -24,6 +30,7 @@ corresponds to changes released on that day.
   - **batchSync concurrency bug**: Fixed broken concurrency control where all API requests fired simultaneously (`.map(async ...)` starts all promises immediately). Requests are now properly batched per `maxConcurrentRequests` setting.
   - **CORS error diagnostics**: Improved error messages when Fitbit returns CORS-masked permission errors to explain the browser-based access limitation instead of showing generic network errors.
   - **SpO2 endpoint format**: Fixed malformed SpO2 endpoint URLs with invalid `/all` suffix — updated to match current Fitbit Web API v1 specification.
+- **`QUARTILE_MEDIAN` build blocker in `fitbitAnalysis.js`**: Fixed pre-existing build issue where `QUARTILE_MEDIAN` was imported from a non-existent export — now defined locally
 
 ## 2026-02-06
 

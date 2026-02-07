@@ -199,28 +199,46 @@ export function validateAlignment(oscarRecord, fitbitRecord) {
     validation.errors.push('Missing OSCAR AHI data');
   }
 
-  if (!fitbitRecord.fitbit?.heartRate?.avgSleepBpm) {
+  // Accept restingBpm as alternative heart rate metric (HR-only sync mode)
+  const hasHeartRate =
+    fitbitRecord.fitbit?.heartRate?.avgSleepBpm ||
+    fitbitRecord.fitbit?.heartRate?.restingBpm;
+  if (!hasHeartRate) {
     validation.fitbitComplete = false;
     validation.errors.push('Missing Fitbit heart rate data');
   }
 
   // Validate duration overlap
-  const durationDiff = Math.abs(oscarDuration - fitbitDurationHours);
-  validation.timeDifference = durationDiff;
-  validation.overlapHours = Math.min(oscarDuration, fitbitDurationHours);
+  // When Fitbit sleep data is unavailable (HR-only mode), use OSCAR duration
+  const hasFitbitSleepData = fitbitSleep > 0;
+  if (hasFitbitSleepData) {
+    const durationDiff = Math.abs(oscarDuration - fitbitDurationHours);
+    validation.timeDifference = durationDiff;
+    validation.overlapHours = Math.min(oscarDuration, fitbitDurationHours);
 
-  if (durationDiff > 2) {
-    // >2 hours difference
-    validation.warnings.push(
-      `Large duration mismatch: OSCAR ${oscarDuration.toFixed(1)}h vs Fitbit ${fitbitDurationHours.toFixed(1)}h`,
-    );
-  }
+    if (durationDiff > 2) {
+      // >2 hours difference
+      validation.warnings.push(
+        `Large duration mismatch: OSCAR ${oscarDuration.toFixed(1)}h vs Fitbit ${fitbitDurationHours.toFixed(1)}h`,
+      );
+    }
 
-  if (validation.overlapHours < MIN_OVERLAP_HOURS) {
-    validation.errors.push(
-      `Insufficient overlap: ${validation.overlapHours.toFixed(1)}h (minimum ${MIN_OVERLAP_HOURS}h)`,
-    );
-    validation.valid = false;
+    if (validation.overlapHours < MIN_OVERLAP_HOURS) {
+      validation.errors.push(
+        `Insufficient overlap: ${validation.overlapHours.toFixed(1)}h (minimum ${MIN_OVERLAP_HOURS}h)`,
+      );
+      validation.valid = false;
+    }
+  } else {
+    // HR-only mode: date-based matching, use OSCAR duration as basis
+    validation.timeDifference = 0;
+    validation.overlapHours = oscarDuration;
+
+    if (oscarDuration > 0 && oscarDuration < MIN_OVERLAP_HOURS) {
+      validation.warnings.push(
+        `Short OSCAR session: ${oscarDuration.toFixed(1)}h`,
+      );
+    }
   }
 
   // Check for zero usage (non-therapy night)
@@ -228,7 +246,7 @@ export function validateAlignment(oscarRecord, fitbitRecord) {
     validation.warnings.push('Zero OSCAR usage - possible non-therapy night');
   }
 
-  if (fitbitDurationHours === 0) {
+  if (hasFitbitSleepData && fitbitDurationHours === 0) {
     validation.warnings.push('Zero Fitbit sleep - possible missing data');
   }
 

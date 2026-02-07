@@ -2,6 +2,8 @@ import React from 'react';
 import FitbitDashboard from '../../components/fitbit/FitbitDashboard';
 import { useFitbitOAuthContext } from '../../context/FitbitOAuthContext';
 import { useFitbitConnection } from '../../hooks/useFitbitConnection';
+import { useFitbitAnalysis } from '../../hooks/useFitbitAnalysis';
+import { useData } from '../../context/DataContext';
 
 /**
  * Fitbit correlation analysis section for the main OSCAR app.
@@ -9,11 +11,15 @@ import { useFitbitConnection } from '../../hooks/useFitbitConnection';
  * Provides Fitbit OAuth connection management, data synchronization,
  * and correlation analysis between CPAP and Fitbit data.
  *
- * Only rendered when OSCAR data is available for correlation.
+ * When both OSCAR CSV data and Fitbit heart rate data are available,
+ * automatically runs the full correlation analysis pipeline and
+ * populates the dashboard with insights.
  *
  * @returns {JSX.Element} Fitbit correlation analysis section
  */
 export function FitbitCorrelationSection() {
+  const { filteredSummary } = useData();
+
   const {
     status: connectionStatus,
     initiateAuth,
@@ -23,8 +29,18 @@ export function FitbitCorrelationSection() {
     passphrase,
   } = useFitbitOAuthContext();
 
-  const { fitbitData, syncState, syncFitbitData, clearFitbitData } =
-    useFitbitConnection({ passphrase });
+  const {
+    fitbitData: rawFitbitData,
+    syncState,
+    syncFitbitData,
+    clearFitbitData,
+  } = useFitbitConnection({ passphrase });
+
+  // Run correlation analysis when both OSCAR and Fitbit data are available
+  const { analysisData } = useFitbitAnalysis({
+    oscarData: filteredSummary,
+    fitbitSyncedData: rawFitbitData,
+  });
 
   const handleConnect = async () => {
     try {
@@ -89,7 +105,7 @@ export function FitbitCorrelationSection() {
       </div>
 
       <FitbitDashboard
-        fitbitData={fitbitData}
+        fitbitData={analysisData}
         connectionStatus={connectionStatus}
         syncState={syncState}
         onConnect={handleConnect}

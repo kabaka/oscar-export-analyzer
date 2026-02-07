@@ -946,7 +946,7 @@ FitbitDashboard.propTypes = {
   onConnect: PropTypes.func.isRequired,
   onDisconnect: PropTypes.func.isRequired,
   onSync: PropTypes.func.isRequired,
-  onCorrelationAnalysis: PropTypes.func.isRequired,
+  onCorrelationAnalysis: PropTypes.func,
   className: PropTypes.string,
 };
 

@@ -15,7 +15,10 @@ import {
   spearmanCorrelation,
   crossCorrelation,
 } from './fitbitCorrelation.js';
-import { pearson, quantile, QUARTILE_MEDIAN } from './stats.js';
+import { pearson, quantile } from './stats.js';
+
+/** Quantile for median calculation (q = 0.5) */
+const QUARTILE_MEDIAN = 0.5;
 
 /**
  * Main analysis pipeline for OSCAR-Fitbit integration.

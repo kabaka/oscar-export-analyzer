@@ -20,6 +20,12 @@ const connectionState = {
   clearFitbitData: vi.fn(),
 };
 
+const analysisState = {
+  analysisData: { heartRateData: [] },
+  hasAnalysis: false,
+  analysisError: null,
+};
+
 vi.mock('../../context/FitbitOAuthContext', () => ({
   __esModule: true,
   useFitbitOAuthContext: () => oauthState,
@@ -28,6 +34,16 @@ vi.mock('../../context/FitbitOAuthContext', () => ({
 vi.mock('../../hooks/useFitbitConnection', () => ({
   __esModule: true,
   useFitbitConnection: () => connectionState,
+}));
+
+vi.mock('../../hooks/useFitbitAnalysis', () => ({
+  __esModule: true,
+  useFitbitAnalysis: () => analysisState,
+}));
+
+vi.mock('../../context/DataContext', () => ({
+  __esModule: true,
+  useData: () => ({ filteredSummary: null }),
 }));
 
 vi.mock('../../components/fitbit/FitbitDashboard', () => ({
@@ -68,6 +84,9 @@ describe('FitbitCorrelationSection', () => {
     connectionState.syncState = 'idle';
     connectionState.syncFitbitData = vi.fn().mockResolvedValue();
     connectionState.clearFitbitData = vi.fn();
+    analysisState.analysisData = { heartRateData: [] };
+    analysisState.hasAnalysis = false;
+    analysisState.analysisError = null;
   });
 
   it('renders dashboard with props and forwards actions', async () => {
@@ -94,11 +113,20 @@ describe('FitbitCorrelationSection', () => {
     expect(oauthState.disconnect).toHaveBeenCalled();
     expect(connectionState.clearFitbitData).toHaveBeenCalled();
     expect(connectionState.syncFitbitData).toHaveBeenCalled();
-    expect(dashboardCalls.at(-1)).toMatchObject({
-      fitbitData: null,
-      connectionStatus: 'disconnected',
-      syncState: 'idle',
-    });
+  });
+
+  it('passes analysisData to dashboard as fitbitData', () => {
+    analysisState.analysisData = {
+      heartRateData: [
+        { date: '2026-01-08', restingHeartRate: 68, heartRateZones: [] },
+      ],
+    };
+
+    render(<FitbitCorrelationSection />);
+
+    const lastCall = dashboardCalls.at(-1);
+    expect(lastCall.fitbitData).toEqual(analysisState.analysisData);
+    expect(lastCall.connectionStatus).toBe('disconnected');
   });
 
   it('shows oauth error details when provided', async () => {

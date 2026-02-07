@@ -425,6 +425,27 @@ export function computeOscarFitbitCorrelations(records) {
       expected: 'negative',
       clinical: 'Leak-Sleep Efficiency (leaks disrupt sleep)',
     },
+
+    // Resting heart rate correlations (available with basic Fitbit daily summary)
+    {
+      x: 'ahi',
+      y: 'restingHR',
+      expected: 'positive',
+      clinical: 'AHI-Resting HR (apnea severity impacts cardiac recovery)',
+    },
+    {
+      x: 'usage',
+      y: 'restingHR',
+      expected: 'negative',
+      clinical:
+        'Usage-Resting HR (therapy duration improves resting heart rate)',
+    },
+    {
+      x: 'leakPercent',
+      y: 'restingHR',
+      expected: 'positive',
+      clinical: 'Leak-Resting HR (mask leaks reduce therapy cardiac benefit)',
+    },
   ];
 
   const results = {};
