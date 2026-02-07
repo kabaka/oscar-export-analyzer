@@ -194,8 +194,18 @@ export function useFitbitConnection({
       endDate,
       dataTypes = ['heartRate', 'spo2', 'sleep'],
       onProgress,
-    }) => {
+    } = {}) => {
       try {
+        // Default to last 30 days if no date range specified
+        const syncEndDate = endDate || new Date().toISOString().split('T')[0];
+        const syncStartDate =
+          startDate ||
+          (() => {
+            const d = new Date();
+            d.setDate(d.getDate() - 30);
+            return d.toISOString().split('T')[0];
+          })();
+
         const currentPassphrase = passphraseRef.current;
         if (!currentPassphrase) {
           throw new Error('Passphrase required for data sync');
@@ -212,15 +222,15 @@ export function useFitbitConnection({
 
         // Perform batch sync
         const results = await fitbitApiClient.batchSync({
-          startDate,
-          endDate,
+          startDate: syncStartDate,
+          endDate: syncEndDate,
           dataTypes,
           onProgress,
         });
 
         // Update sync metadata
         await setSyncMetadata('last_sync_time', Date.now());
-        await setSyncMetadata('last_sync_range', [startDate, endDate]);
+        await setSyncMetadata('last_sync_range', [syncStartDate, syncEndDate]);
         await setSyncMetadata('last_sync_types', dataTypes);
 
         // Update local state

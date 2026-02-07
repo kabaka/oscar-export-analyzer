@@ -98,6 +98,40 @@ describe('useFitbitConnection', () => {
     expect(mockFns.setPassphrase).toHaveBeenCalledWith('newpass');
   });
 
+  it('syncFitbitData works when called with no arguments (defaults dates)', async () => {
+    mockFns.isAuthenticated.mockResolvedValue(true);
+    mockFns.getStoredTokens.mockResolvedValue({
+      access_token: 'mock_access_token',
+      refresh_token: 'mock_refresh_token',
+      expires_at: Date.now() + 100000,
+      scope: 'heartrate sleep',
+      created_at: Date.now() - 10000,
+      token_type: 'Bearer',
+      user_id: 'mock_user_id',
+    });
+    mockFns.batchSync.mockResolvedValue({ heartRate: [], spo2: [], sleep: [] });
+
+    const { result } = renderHook(() =>
+      useFitbitConnection({ passphrase: 'test', autoCheck: false }),
+    );
+    await act(async () => {
+      await result.current.checkConnection();
+    });
+    expect(result.current.status).toBe(CONNECTION_STATUS.CONNECTED);
+
+    // Call syncFitbitData with no arguments — should NOT throw
+    await act(async () => {
+      await result.current.syncFitbitData();
+    });
+
+    expect(mockFns.batchSync).toHaveBeenCalledTimes(1);
+    const callArgs = mockFns.batchSync.mock.calls[0][0];
+    // Should have computed default dates (YYYY-MM-DD strings)
+    expect(callArgs.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(callArgs.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(callArgs.dataTypes).toEqual(['heartRate', 'spo2', 'sleep']);
+  });
+
   it('does not show Not Connected when tokens are valid', async () => {
     mockFns.isAuthenticated.mockResolvedValue(true);
     mockFns.getStoredTokens.mockResolvedValue({
