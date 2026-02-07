@@ -3,7 +3,26 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FitbitDashboard from './FitbitDashboard';
 import { CONNECTION_STATUS } from '../../constants/fitbit';
-// ...existing code...
+
+// Mock fitbitDb for async token existence check
+const mockGetTokens = vi.fn().mockResolvedValue(null);
+vi.mock('../../utils/fitbitDb.js', () => ({
+  getTokens: (...args) => mockGetTokens(...args),
+}));
+
+// Mock the FitbitOAuthContext so FitbitConnectionCard can render without a real provider
+vi.mock('../../context/FitbitOAuthContext', () => ({
+  useFitbitOAuthContext: () => ({
+    initiateAuth: vi.fn(),
+    status: 'disconnected',
+    error: null,
+    isLoading: false,
+    clearError: vi.fn(),
+    passphrase: null,
+    setPassphrase: vi.fn(),
+  }),
+  FitbitOAuthProvider: ({ children }) => <>{children}</>,
+}));
 
 // Mock child components for isolation (except FitbitConnectionCard, which is handled per-test)
 vi.mock('./SyncStatusPanel', () => ({
@@ -110,21 +129,12 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
     };
     sessionStorage.clear();
     localStorage.clear();
+    mockGetTokens.mockResolvedValue(null);
   });
 
   it('prompts for passphrase if fitbit_tokens exist but passphrase is missing', async () => {
-    // Use the real FitbitConnectionCard for this test only
-    vi.resetModules();
-    // Dynamically import after resetModules to avoid stale module cache
-    const { default: FitbitDashboard } = await import('./FitbitDashboard');
-    const { CONNECTION_STATUS } = await import('../../constants/fitbit');
-    // Simulate tokens in storage but no passphrase
-    localStorage.setItem(
-      'fitbit_tokens',
-      JSON.stringify({ access_token: 'abc', refresh_token: 'def' }),
-    );
-    sessionStorage.removeItem('fitbit_session_passphrase');
-    sessionStorage.removeItem('fitbit_oauth_passphrase');
+    // Simulate tokens existing in IndexedDB
+    mockGetTokens.mockResolvedValue({ id: 'current', encrypted: true });
     // Provide minimal valid syncState to avoid prop errors
     const syncState = {
       status: '',
@@ -143,23 +153,22 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
         onCorrelationAnalysis={vi.fn()}
       />,
     );
-    // Should show connection card (prompt for passphrase)
+    // Should show connection card (prompt for passphrase) after async token check
+    // First confirm dashboard renders
     expect(
-      await screen.findByTestId('fitbit-connection-card'),
+      screen.getByTestId('fitbit-dashboard-container'),
     ).toBeInTheDocument();
+    // Wait for async token check to resolve and React to re-render with passphraseMissing=true
+    await vi.waitFor(() => {
+      // After getTokens resolves with truthy value, the passphraseMissing early return
+      // should render FitbitConnectionCard
+      expect(screen.getByTestId('fitbit-connection-card')).toBeInTheDocument();
+    });
   });
 
   it('auto-connects and displays Fitbit data/charts if passphrase is present in sessionStorage', async () => {
-    // Mock FitbitConnectionCard for this test
-    vi.doMock('./FitbitConnectionCard', () => ({
-      default: () => <div data-testid="fitbit-connection-card" />,
-    }));
     // Simulate passphrase and tokens present
     sessionStorage.setItem('fitbit_oauth_passphrase', 'test-passphrase');
-    localStorage.setItem(
-      'fitbit_tokens',
-      JSON.stringify({ access_token: 'abc', refresh_token: 'def' }),
-    );
     render(
       <FitbitDashboard
         fitbitData={fitbitData}
@@ -183,14 +192,9 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
         screen.getByTestId('fitbit-dashboard-container'),
       ).toBeInTheDocument();
     }
-    vi.resetModules();
   });
 
   it('loads Fitbit section data/charts after connection', async () => {
-    // Mock FitbitConnectionCard for this test
-    vi.doMock('./FitbitConnectionCard', () => ({
-      default: () => <div data-testid="fitbit-connection-card" />,
-    }));
     // Simulate user connects and data loads
     render(
       <FitbitDashboard
@@ -210,6 +214,5 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
     fireEvent.click(recentNightButton);
     // Should render chart in nightly-detail view
     expect(screen.getByTestId('dual-axis-sync-chart')).toBeInTheDocument();
-    vi.resetModules();
   });
 });

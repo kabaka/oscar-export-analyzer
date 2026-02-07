@@ -127,7 +127,8 @@ const exportData = filterByDateRange(sessions, startDate, endDate);
 
 // ✅ Export warning
 showExportDialog({
-  message: `This will export ${exportData.length} nights of data. ` +
+  message:
+    `This will export ${exportData.length} nights of data. ` +
     'Ensure you keep exported files secure.',
 });
 ```

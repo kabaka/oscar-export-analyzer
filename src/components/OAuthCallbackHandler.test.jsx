@@ -13,10 +13,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import OAuthCallbackHandler from './OAuthCallbackHandler.jsx';
 import '../test-utils/fitbitMocks.js';
 
-// Mock hooks
-vi.mock('../hooks/useFitbitOAuth.jsx');
+// Mock context
+vi.mock('../context/FitbitOAuthContext.jsx');
 
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
+import { useFitbitOAuthContext } from '../context/FitbitOAuthContext.jsx';
 
 describe.skip('OAuthCallbackHandler', () => {
   const mockHandleCallback = vi.fn();
@@ -42,11 +42,20 @@ describe.skip('OAuthCallbackHandler', () => {
       writable: true,
     });
 
-    vi.mocked(useFitbitOAuth).mockReturnValue({
+    vi.mocked(useFitbitOAuthContext).mockReturnValue({
       handleCallback: mockHandleCallback,
       handleOAuthError: mockHandleOAuthError,
       error: null,
       isLoading: false,
+      passphrase: 'test-passphrase',
+      status: 'disconnected',
+      initiateAuth: vi.fn(),
+      disconnect: vi.fn(),
+      clearError: vi.fn(),
+      isConnected: false,
+      isConnecting: false,
+      hasError: false,
+      setPassphrase: vi.fn(),
     });
   });
 
@@ -126,7 +135,7 @@ describe.skip('OAuthCallbackHandler', () => {
     });
 
     // Mock hook to call onSuccess when handleCallback succeeds
-    vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+    vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
       return {
         handleCallback: async (code, state, passphrase) => {
           const result = await mockHandleCallback(code, state, passphrase);
@@ -161,7 +170,7 @@ describe.skip('OAuthCallbackHandler', () => {
     window.location.search = '';
 
     // Mock hook with error state
-    vi.mocked(useFitbitOAuth).mockReturnValue({
+    vi.mocked(useFitbitOAuthContext).mockReturnValue({
       handleCallback: mockHandleCallback,
       handleOAuthError: mockHandleOAuthError,
       error: {
@@ -239,7 +248,7 @@ describe.skip('OAuthCallbackHandler', () => {
       mockHandleCallback.mockResolvedValue({ access_token: 'token123' });
 
       // Mock hook to verify parameters came from captured values
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
         return {
           handleCallback: async (code, state, passphrase) => {
             // Verify parameters match what was in URL BEFORE cleanup
@@ -296,7 +305,7 @@ describe.skip('OAuthCallbackHandler', () => {
       });
 
       // Mock hook to track when parameters are used
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
         return {
           handleCallback: async (code, state, passphrase) => {
             eventSequence.push('params_used');
@@ -345,7 +354,7 @@ describe.skip('OAuthCallbackHandler', () => {
       const mockOnSuccess = vi.fn();
       mockHandleCallback.mockResolvedValue({ access_token: 'token123' });
 
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
         return {
           handleCallback: async (code, state, passphrase) => {
             // Even though window.location.search is now empty,
@@ -388,7 +397,7 @@ describe.skip('OAuthCallbackHandler', () => {
       const mockOnSuccess = vi.fn();
       mockHandleCallback.mockResolvedValue({ access_token: 'token123' });
 
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
         return {
           handleCallback: async (code, state, passphrase) => {
             const result = await mockHandleCallback(code, state, passphrase);
@@ -440,7 +449,7 @@ describe.skip('OAuthCallbackHandler', () => {
       const mockOnSuccess = vi.fn();
       mockHandleCallback.mockResolvedValue({ access_token: 'token123' });
 
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
         return {
           handleCallback: async (code, state, passphrase) => {
             const result = await mockHandleCallback(code, state, passphrase);
@@ -494,7 +503,7 @@ describe.skip('OAuthCallbackHandler', () => {
 
       const mockOnError = vi.fn();
 
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onError }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onError }) => {
         return {
           handleCallback: mockHandleCallback,
           handleOAuthError: (error, description) => {
@@ -537,7 +546,7 @@ describe.skip('OAuthCallbackHandler', () => {
       const mockOnSuccess = vi.fn();
       mockHandleCallback.mockResolvedValue({ access_token: 'token123' });
 
-      vi.mocked(useFitbitOAuth).mockImplementation(({ onSuccess }) => {
+      vi.mocked(useFitbitOAuthContext).mockImplementation(({ onSuccess }) => {
         return {
           handleCallback: async (code, state, passphrase) => {
             // Verify URL decoding happened during capture

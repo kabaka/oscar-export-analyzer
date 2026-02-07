@@ -28,7 +28,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
-  
+
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
@@ -92,7 +92,9 @@ test.describe('Visual Regression', () => {
   test('chart layout matches baseline', async ({ page }) => {
     // Load test data
     await page.goto('/');
-    await page.locator('input[type="file"]').setInputFiles('tests/fixtures/test-data.csv');
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles('tests/fixtures/test-data.csv');
     await page.waitForLoadState('networkidle');
 
     // Take screenshot and compare with baseline
@@ -268,7 +270,9 @@ test('has proper ARIA labels', async ({ page }) => {
   expect(chartLabel).toContain('AHI Trends');
 
   // Check form labels
-  await expect(page.locator('label[for="start-date"]')).toHaveText('Start Date');
+  await expect(page.locator('label[for="start-date"]')).toHaveText(
+    'Start Date',
+  );
 });
 ```
 

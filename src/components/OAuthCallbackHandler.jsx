@@ -8,13 +8,12 @@
  */
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
+import { useFitbitOAuthContext } from '../context/FitbitOAuthContext.jsx';
 import { FITBIT_ERRORS } from '../constants/fitbitErrors.js';
 import {
   parseOAuthCallbackParams,
   buildOAuthError,
 } from '../utils/fitbitOAuth.js';
-import { FITBIT_OAUTH_STORAGE_KEYS } from '../constants/fitbit.js';
 
 /**
  * OAuth callback handler component.
@@ -27,26 +26,14 @@ import { FITBIT_OAUTH_STORAGE_KEYS } from '../constants/fitbit.js';
  * @param {Function} props.onComplete - Called when processing complete (success or error)
  * @returns {JSX.Element} Callback handler UI
  */
-export function OAuthCallbackHandler({
-  onSuccess,
-  onError,
-  passphrase,
-  onComplete,
-}) {
-  // FIX: Retrieve passphrase from sessionStorage if not provided as prop.
-  // The passphrase is stored by initiateAuth when user clicks "Connect to Fitbit".
-  // This ensures we have the passphrase for token encryption without requiring
-  // a secondary passphrase prompt, preventing the double-validation race condition.
-  const effectivePassphrase = useMemo(() => {
-    if (passphrase) {
-      return passphrase;
-    }
-    // Retrieve from sessionStorage (set by useFitbitOAuth.initiateAuth)
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE);
-    }
-    return null;
-  }, [passphrase]);
+export function OAuthCallbackHandler({ onSuccess, onError, onComplete }) {
+  const {
+    handleCallback,
+    handleOAuthError: contextHandleOAuthError,
+    error: oauthError,
+    isLoading,
+    passphrase,
+  } = useFitbitOAuthContext();
 
   // CRITICAL: Capture OAuth parameters BEFORE cleanup to prevent race condition
   // useMemo runs during render phase, guaranteeing params are captured before any cleanup
@@ -75,26 +62,6 @@ export function OAuthCallbackHandler({
   const [result, setResult] = useState(null);
   const hasProcessedRef = useRef(false);
 
-  const {
-    handleCallback,
-    handleOAuthError,
-    error: oauthError,
-    isLoading,
-  } = useFitbitOAuth({
-    onSuccess: (tokenData) => {
-      setResult({ type: 'success', data: tokenData });
-      setProcessing(false);
-      if (onSuccess) onSuccess(tokenData);
-      if (onComplete) onComplete({ success: true, data: tokenData });
-    },
-    onError: (err) => {
-      setResult({ type: 'error', error: err });
-      setProcessing(false);
-      if (onError) onError(err);
-      if (onComplete) onComplete({ success: false, error: err });
-    },
-  });
-
   useEffect(() => {
     const processCallback = async () => {
       try {
@@ -104,74 +71,23 @@ export function OAuthCallbackHandler({
 
         // Handle OAuth errors
         if (error) {
-          handleOAuthError(error, errorDescription);
+          contextHandleOAuthError(error, errorDescription);
+          const errorObj = buildOAuthError(error, errorDescription);
+          setResult({ type: 'error', error: errorObj });
+          setProcessing(false);
+          if (onError) onError(errorObj);
+          if (onComplete) onComplete({ success: false, error: errorObj });
           return;
         }
 
         // Handle successful authorization
-        if (code && state && effectivePassphrase) {
-          await handleCallback(code, state, effectivePassphrase);
-          // Persist passphrase for this session so users can sync immediately after OAuth.
-          if (typeof window !== 'undefined') {
-            const storedPassphrase = sessionStorage.getItem(
-              FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE,
-            );
-            if (storedPassphrase) {
-              sessionStorage.setItem(
-                FITBIT_OAUTH_STORAGE_KEYS.SESSION_PASSPHRASE,
-                storedPassphrase,
-              );
-            }
-            // Do NOT remove 'fitbit_oauth_passphrase' here; defer until app state is updated (see App.jsx)
-          }
-        } else if (code && state && !effectivePassphrase) {
-          // Check if fitbit tokens exist (user completed OAuth, but passphrase missing)
-          let hasTokens = false;
-          try {
-            if (typeof window !== 'undefined') {
-              // Check for presence of fitbit tokens in local/session storage (implementation may vary)
-              // Try both sessionStorage and localStorage for robustness
-              hasTokens = !!(
-                sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS) ||
-                localStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS)
-              );
-            }
-          } catch {
-            // Ignore storage access errors (non-blocking)
-          }
-          if (hasTokens) {
-            setResult({
-              type: 'error',
-              error: {
-                message:
-                  'Please re-enter your passphrase to complete Fitbit connection.',
-                details:
-                  'Fitbit tokens found, but passphrase is missing. For security, please re-enter your passphrase to decrypt and complete the connection.',
-                type: 'encryption',
-              },
-            });
-            setProcessing(false);
-            if (onError)
-              onError({
-                message:
-                  'Please re-enter your passphrase to complete Fitbit connection.',
-                details:
-                  'Fitbit tokens found, but passphrase is missing. For security, please re-enter your passphrase to decrypt and complete the connection.',
-                type: 'encryption',
-              });
-            if (onComplete)
-              onComplete({
-                success: false,
-                error: {
-                  message:
-                    'Please re-enter your passphrase to complete Fitbit connection.',
-                  details:
-                    'Fitbit tokens found, but passphrase is missing. For security, please re-enter your passphrase to decrypt and complete the connection.',
-                  type: 'encryption',
-                },
-              });
-            return;
-          }
+        if (code && state && passphrase) {
+          const tokenData = await handleCallback(code, state, passphrase);
+          setResult({ type: 'success', data: tokenData });
+          setProcessing(false);
+          if (onSuccess) onSuccess(tokenData);
+          if (onComplete) onComplete({ success: true, data: tokenData });
+        } else if (code && state && !passphrase) {
           throw new Error('Encryption passphrase required');
         } else {
           throw new Error('Missing authorization parameters');
@@ -195,11 +111,11 @@ export function OAuthCallbackHandler({
       }
     };
 
-    if (processing && (effectivePassphrase || oauthParams?.error)) {
+    if (processing && (passphrase || oauthParams?.error)) {
       if (hasProcessedRef.current) return;
       hasProcessedRef.current = true;
       processCallback();
-    } else if (processing && !effectivePassphrase) {
+    } else if (processing && !passphrase) {
       // Wait for passphrase to be provided
       setResult({
         type: 'waiting',
@@ -208,10 +124,10 @@ export function OAuthCallbackHandler({
     }
   }, [
     processing,
-    effectivePassphrase,
+    passphrase,
     oauthParams,
     handleCallback,
-    handleOAuthError,
+    contextHandleOAuthError,
     onSuccess,
     onError,
     onComplete,

@@ -99,10 +99,13 @@ Use `data-testid` only when semantic selectors are insufficient.
 Example:
 
 ```javascript
-await expect(page.locator('#ahi-trends-chart')).toHaveScreenshot('ahi-chart-baseline.png', {
-  mask: [page.locator('.chart-date-updated')], // Mask dynamic timestamp
-  maxDiffPixels: 100, // Allow minor rendering differences
-});
+await expect(page.locator('#ahi-trends-chart')).toHaveScreenshot(
+  'ahi-chart-baseline.png',
+  {
+    mask: [page.locator('.chart-date-updated')], // Mask dynamic timestamp
+    maxDiffPixels: 100, // Allow minor rendering differences
+  },
+);
 ```
 
 ### Chart Interaction Testing
@@ -194,7 +197,7 @@ import { buildSession } from '../../src/test-utils/builders';
 export const test = base.extend({
   validCSV: async ({}, use) => {
     const sessions = Array.from({ length: 30 }, (_, i) =>
-      buildSession({ date: `2024-01-${String(i + 1).padStart(2, '0')}` })
+      buildSession({ date: `2024-01-${String(i + 1).padStart(2, '0')}` }),
     );
     const csv = generateCSV(sessions);
     await use(csv);

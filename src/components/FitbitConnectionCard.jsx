@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
+import { useFitbitOAuthContext } from '../context/FitbitOAuthContext.jsx';
 import { useFitbitConnection } from '../hooks/useFitbitConnection.js';
 import FitbitStatusIndicator from './FitbitStatusIndicator.jsx';
 import { CONNECTION_STATUS, MVP_SCOPES } from '../constants/fitbit.js';
@@ -65,46 +65,27 @@ export function FitbitConnectionCard({
   const [internalPassphrase, setInternalPassphrase] = useState('');
   const [showPassphrase, setShowPassphrase] = useState(false);
 
-  // Restore passphrase from sessionStorage after OAuth redirect
-  React.useEffect(() => {
-    if (passphrase === null && !internalPassphrase) {
-      const restored =
-        sessionStorage.getItem('fitbit_session_passphrase') ||
-        sessionStorage.getItem('fitbit_oauth_passphrase');
-      if (restored) {
-        setInternalPassphrase(restored);
-        sessionStorage.removeItem('fitbit_session_passphrase');
-        sessionStorage.removeItem('fitbit_oauth_passphrase');
-      }
-    }
-  }, [passphrase, internalPassphrase]);
-
-  // Use prop passphrase if provided (for tests), otherwise use internal state
-  const effectivePassphrase =
-    passphrase !== null ? passphrase : internalPassphrase;
-  const passphraseStrength = getPassphraseStrength(effectivePassphrase);
-
-  // OAuth flow management
+  // Seed internal passphrase from context (e.g., recovered from sessionStorage after redirect)
   const {
     initiateAuth,
     status: oauthStatus,
     error: oauthError,
     isLoading: oauthLoading,
     clearError: clearOAuthError,
-  } = useFitbitOAuth({
-    onSuccess: (tokenData) => {
-      if (onConnectionChange) {
-        onConnectionChange({
-          type: 'connected',
-          data: tokenData,
-          timestamp: Date.now(),
-        });
-      }
-    },
-    onError: (error) => {
-      if (onError) onError(error);
-    },
-  });
+    passphrase: contextPassphrase,
+    setPassphrase: setContextPassphrase,
+  } = useFitbitOAuthContext();
+
+  React.useEffect(() => {
+    if (passphrase === null && !internalPassphrase && contextPassphrase) {
+      setInternalPassphrase(contextPassphrase);
+    }
+  }, [passphrase, internalPassphrase, contextPassphrase]);
+
+  // Use prop passphrase if provided (for tests), otherwise use internal state
+  const effectivePassphrase =
+    passphrase !== null ? passphrase : internalPassphrase;
+  const passphraseStrength = getPassphraseStrength(effectivePassphrase);
 
   // Connection state management
   const {
@@ -327,7 +308,12 @@ export function FitbitConnectionCard({
             id="fitbit-passphrase"
             type={showPassphrase ? 'text' : 'password'}
             value={internalPassphrase}
-            onChange={(e) => setInternalPassphrase(e.target.value)}
+            onChange={(e) => {
+              setInternalPassphrase(e.target.value);
+              if (setContextPassphrase) {
+                setContextPassphrase(e.target.value || null);
+              }
+            }}
             placeholder="Enter strong passphrase (min 8 characters)"
             className="passphrase-input"
             aria-describedby="passphrase-help passphrase-strength"

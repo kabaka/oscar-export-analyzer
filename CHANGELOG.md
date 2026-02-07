@@ -1,17 +1,18 @@
 # Changelog
 
-## [2026-01-28]
-
-### Fixed
-
-- Fitbit dashboard now prompts for passphrase (FitbitConnectionCard) if tokens exist but passphrase is missing, instead of rendering chart components. This prevents user confusion and enforces correct authentication flow.
-- Encryption/passphrase errors in Fitbit OAuth now use type 'encryption_error' (not 'oauth'), improving error handling and test clarity.
-
 All notable changes to OSCAR Export Analyzer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
+
+## 2026-02-06
+
+### Fixed
+
+- **Fitbit OAuth: architectural fix for broken connection flow** — OAuth never worked end-to-end due to three critical root causes: (1) `OAuthCallbackHandler` created its own isolated `useFitbitOAuth()` hook instead of reading from the shared `FitbitOAuthContext`, so status updates were invisible to the rest of the app; (2) `FitbitCorrelationSection` called `useFitbitConnection()` without a passphrase, causing immediate connection failure; (3) `FitbitDashboard` checked sessionStorage/localStorage for tokens that are actually stored in IndexedDB. Fixed by making `FitbitOAuthContext` the single source of truth for passphrase and connection state, wiring all components through the shared context, and replacing synchronous storage checks with async IndexedDB queries via `getTokens()`.
+- Removed `importModal.open()` from OAuth completion handler — Fitbit connection no longer incorrectly opens the CSV import dialog.
+- Cleaned up 19+ prior workaround attempts (localStorage backup, retry loops, modal force-removal, debug logging, delayed cleanups) that treated symptoms rather than root causes.
 
 ## 2026-01-28
 

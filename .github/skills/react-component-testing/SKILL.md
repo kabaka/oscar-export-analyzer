@@ -152,7 +152,9 @@ it('selects option from dropdown', async () => {
 
   await user.selectOptions(select, 'line');
 
-  expect(screen.getByRole('option', { name: /line chart/i }).selected).toBe(true);
+  expect(screen.getByRole('option', { name: /line chart/i }).selected).toBe(
+    true,
+  );
 });
 ```
 
@@ -257,7 +259,9 @@ import { DataContext } from '../context/DataContext';
 
 function renderWithContext(component, contextValue) {
   return render(
-    <DataContext.Provider value={contextValue}>{component}</DataContext.Provider>
+    <DataContext.Provider value={contextValue}>
+      {component}
+    </DataContext.Provider>,
   );
 }
 
@@ -335,9 +339,7 @@ it('manages focus correctly', async () => {
 ```javascript
 it('displays error message on failure', async () => {
   // Mock fetch to return error
-  global.fetch = vi.fn(() =>
-    Promise.reject(new Error('Failed to load data'))
-  );
+  global.fetch = vi.fn(() => Promise.reject(new Error('Failed to load data')));
 
   render(<DataLoader />);
 
@@ -373,7 +375,7 @@ describe('DateRangeControls edge cases', () => {
     await user.type(screen.getByLabelText(/end date/i), '2024-01-01');
 
     expect(
-      screen.getByText(/end date must be after start date/i)
+      screen.getByText(/end date must be after start date/i),
     ).toBeInTheDocument();
   });
 });

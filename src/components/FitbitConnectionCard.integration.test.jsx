@@ -17,13 +17,15 @@ vi.mock('../hooks/useFitbitConnection.js', () => ({
   }),
 }));
 
-vi.mock('../hooks/useFitbitOAuth.jsx', () => ({
-  useFitbitOAuth: () => ({
+vi.mock('../context/FitbitOAuthContext.jsx', () => ({
+  useFitbitOAuthContext: () => ({
     status: undefined,
     error: undefined,
     isLoading: false,
     initiateAuth: vi.fn(),
     clearError: vi.fn(),
+    passphrase: null,
+    setPassphrase: vi.fn(),
   }),
 }));
 

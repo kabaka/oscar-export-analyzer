@@ -212,21 +212,21 @@ Skills are stored in `.github/skills/skill-name/SKILL.md` and automatically load
 
 ### Agent-Skill Mapping
 
-| Agent | Primary Skills |
-|-------|----------------|
-| @orchestrator-manager | code-review-checklist, oscar-changelog-maintenance, vite-react-project-structure |
-| @frontend-developer | vite-react-project-structure, react-component-testing, oscar-web-worker-patterns, oscar-fitbit-integration, medical-data-visualization |
-| @ux-designer | medical-data-visualization, oscar-privacy-boundaries |
-| @testing-expert | oscar-test-data-generation, react-component-testing, playwright-visual-regression, oscar-privacy-boundaries |
-| @playwright-specialist | playwright-visual-regression, oscar-test-data-generation, oscar-privacy-boundaries, medical-data-visualization |
-| @performance-optimizer | oscar-web-worker-patterns, vite-react-project-structure, medical-data-visualization |
-| @data-scientist | oscar-statistical-validation, oscar-test-data-generation, oscar-privacy-boundaries |
-| @documentation-specialist | oscar-changelog-maintenance, vite-react-project-structure, oscar-privacy-boundaries |
-| @security-auditor | oscar-privacy-boundaries, oscar-fitbit-integration, vite-react-project-structure |
-| @adr-specialist | (references all skills for architectural context) |
-| @debugger-rca-analyst | root-cause-analysis-workflow, oscar-test-data-generation |
-| @readiness-reviewer | code-review-checklist, oscar-changelog-maintenance, oscar-privacy-boundaries |
-| @code-quality-enforcer | code-review-checklist, vite-react-project-structure, react-component-testing |
+| Agent                     | Primary Skills                                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| @orchestrator-manager     | code-review-checklist, oscar-changelog-maintenance, vite-react-project-structure                                                       |
+| @frontend-developer       | vite-react-project-structure, react-component-testing, oscar-web-worker-patterns, oscar-fitbit-integration, medical-data-visualization |
+| @ux-designer              | medical-data-visualization, oscar-privacy-boundaries                                                                                   |
+| @testing-expert           | oscar-test-data-generation, react-component-testing, playwright-visual-regression, oscar-privacy-boundaries                            |
+| @playwright-specialist    | playwright-visual-regression, oscar-test-data-generation, oscar-privacy-boundaries, medical-data-visualization                         |
+| @performance-optimizer    | oscar-web-worker-patterns, vite-react-project-structure, medical-data-visualization                                                    |
+| @data-scientist           | oscar-statistical-validation, oscar-test-data-generation, oscar-privacy-boundaries                                                     |
+| @documentation-specialist | oscar-changelog-maintenance, vite-react-project-structure, oscar-privacy-boundaries                                                    |
+| @security-auditor         | oscar-privacy-boundaries, oscar-fitbit-integration, vite-react-project-structure                                                       |
+| @adr-specialist           | (references all skills for architectural context)                                                                                      |
+| @debugger-rca-analyst     | root-cause-analysis-workflow, oscar-test-data-generation                                                                               |
+| @readiness-reviewer       | code-review-checklist, oscar-changelog-maintenance, oscar-privacy-boundaries                                                           |
+| @code-quality-enforcer    | code-review-checklist, vite-react-project-structure, react-component-testing                                                           |
 
 ---
 

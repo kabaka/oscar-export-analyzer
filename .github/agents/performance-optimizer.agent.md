@@ -61,8 +61,12 @@ import CorrelationAnalysis from './components/CorrelationAnalysis';
 import FitbitIntegration from './components/FitbitIntegration';
 
 // ✅ Lazy load non-critical components
-const UsagePatternsCharts = lazy(() => import('./components/UsagePatternsCharts'));
-const CorrelationAnalysis = lazy(() => import('./components/CorrelationAnalysis'));
+const UsagePatternsCharts = lazy(
+  () => import('./components/UsagePatternsCharts'),
+);
+const CorrelationAnalysis = lazy(
+  () => import('./components/CorrelationAnalysis'),
+);
 const FitbitIntegration = lazy(() => import('./components/FitbitIntegration'));
 
 function App() {
@@ -122,7 +126,10 @@ function AnalysisComponent({ sessions }) {
 
 // ✅ Memoize result
 function AnalysisComponent({ sessions }) {
-  const statistics = useMemo(() => calculateComplexStatistics(sessions), [sessions]);
+  const statistics = useMemo(
+    () => calculateComplexStatistics(sessions),
+    [sessions],
+  );
   return <div>{statistics.ahi}</div>;
 }
 ```
@@ -146,7 +153,12 @@ import { FixedSizeList } from 'react-window';
 
 function SessionList({ sessions }) {
   return (
-    <FixedSizeList height={600} itemCount={sessions.length} itemSize={50} width="100%">
+    <FixedSizeList
+      height={600}
+      itemCount={sessions.length}
+      itemSize={50}
+      width="100%"
+    >
       {({ index, style }) => (
         <div style={style}>
           <SessionRow session={sessions[index]} />
@@ -185,9 +197,12 @@ function AnalysisComponent({ csvData }) {
   const [sessions, setSessions] = useState([]);
 
   useEffect(() => {
-    const worker = new Worker(new URL('./csvParser.worker.js', import.meta.url), {
-      type: 'module',
-    });
+    const worker = new Worker(
+      new URL('./csvParser.worker.js', import.meta.url),
+      {
+        type: 'module',
+      },
+    );
 
     worker.postMessage({ csvData });
     worker.onmessage = (e) => {
@@ -305,7 +320,13 @@ function Dashboard() {
 
 ```html
 <!-- In index.html -->
-<link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin />
+<link
+  rel="preload"
+  href="/fonts/inter-var.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin
+/>
 <link rel="preconnect" href="https://cdn.plot.ly" />
 ```
 

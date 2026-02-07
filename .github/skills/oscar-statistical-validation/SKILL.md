@@ -35,7 +35,9 @@ function compareAhiAcrossEpapChange(beforeSessions, afterSessions) {
     pValue: result.pValue,
     statistic: result.statistic,
     interpretation:
-      result.pValue < 0.05 ? 'Significant difference' : 'No significant difference',
+      result.pValue < 0.05
+        ? 'Significant difference'
+        : 'No significant difference',
     effectSize: calculateEffectSize(beforeAhi, afterAhi),
   };
 }
@@ -90,7 +92,8 @@ function correlateEpapAndAhi(sessions) {
     correlation: r,
     rSquared: rSquared,
     interpretation: interpretCorrelation(r),
-    strength: Math.abs(r) > 0.7 ? 'strong' : Math.abs(r) > 0.4 ? 'moderate' : 'weak',
+    strength:
+      Math.abs(r) > 0.7 ? 'strong' : Math.abs(r) > 0.4 ? 'moderate' : 'weak',
   };
 }
 
@@ -201,12 +204,12 @@ function handleMissingData(sessions) {
       s.ahi !== undefined &&
       !isNaN(s.ahi) &&
       s.ahi >= 0 && // Physiologically valid
-      s.ahi < 200 // Upper sanity bound
+      s.ahi < 200, // Upper sanity bound
   );
 
   if (validSessions.length < sessions.length) {
     console.warn(
-      `Filtered out ${sessions.length - validSessions.length} invalid AHI values`
+      `Filtered out ${sessions.length - validSessions.length} invalid AHI values`,
     );
   }
 
@@ -390,12 +393,22 @@ describe('Mann-Whitney U Test', () => {
 ```javascript
 function classifyAhiSeverity(ahi) {
   if (ahi < 0) return { valid: false, error: 'AHI cannot be negative' };
-  if (ahi < 5) return { valid: true, severity: 'normal', description: 'No sleep apnea' };
-  if (ahi < 15) return { valid: true, severity: 'mild', description: 'Mild sleep apnea' };
+  if (ahi < 5)
+    return { valid: true, severity: 'normal', description: 'No sleep apnea' };
+  if (ahi < 15)
+    return { valid: true, severity: 'mild', description: 'Mild sleep apnea' };
   if (ahi < 30)
-    return { valid: true, severity: 'moderate', description: 'Moderate sleep apnea' };
+    return {
+      valid: true,
+      severity: 'moderate',
+      description: 'Moderate sleep apnea',
+    };
   if (ahi <= 200)
-    return { valid: true, severity: 'severe', description: 'Severe sleep apnea' };
+    return {
+      valid: true,
+      severity: 'severe',
+      description: 'Severe sleep apnea',
+    };
 
   return { valid: false, error: 'AHI suspiciously high (> 200)' };
 }

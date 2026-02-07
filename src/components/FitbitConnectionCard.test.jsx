@@ -7,14 +7,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FitbitConnectionCard from './FitbitConnectionCard.jsx';
 import { CONNECTION_STATUS } from '../constants/fitbit.js';
 
-// Mock hooks
-vi.mock('../hooks/useFitbitOAuth.jsx', () => ({
-  useFitbitOAuth: vi.fn(() => ({
+// Mock context
+vi.mock('../context/FitbitOAuthContext.jsx', () => ({
+  useFitbitOAuthContext: vi.fn(() => ({
     initiateAuth: vi.fn(),
     status: CONNECTION_STATUS.DISCONNECTED,
     error: null,
     isLoading: false,
     clearError: vi.fn(),
+    passphrase: null,
+    setPassphrase: vi.fn(),
   })),
 }));
 

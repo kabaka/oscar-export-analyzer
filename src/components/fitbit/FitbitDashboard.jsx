@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import FitbitConnectionCard from '../FitbitConnectionCard.jsx';
-import { FITBIT_OAUTH_STORAGE_KEYS } from '../../constants/fitbit.js';
+import { getTokens } from '../../utils/fitbitDb.js';
 import SyncStatusPanel from './SyncStatusPanel';
 import DualAxisSyncChart from './correlation/DualAxisSyncChart';
 import CorrelationMatrix from './correlation/CorrelationMatrix';
@@ -53,20 +53,25 @@ function FitbitDashboard({
   const hasData =
     fitbitData && fitbitData.correlationData && fitbitData.nightlyData;
 
-  // Check if tokens exist but passphrase is missing (for passphrase prompt)
-  let tokensExist = false;
-  if (typeof window !== 'undefined') {
-    try {
-      const tokenStr =
-        sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS) ||
-        localStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.TOKENS);
-      tokensExist = !!tokenStr;
-    } catch {
-      // ignore storage access errors
+  // Async check for tokens in IndexedDB (tokens are stored there, not sessionStorage/localStorage)
+  const [tokensExist, setTokensExist] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    async function checkTokens() {
+      try {
+        const tokens = await getTokens();
+        if (!cancelled) setTokensExist(!!tokens);
+      } catch {
+        if (!cancelled) setTokensExist(false);
+      }
     }
-  }
-  const passphraseMissing =
-    !sessionStorage.getItem('fitbit_session_passphrase') && tokensExist;
+    checkTokens();
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionStatus]);
+
+  const passphraseMissing = !isConnected && tokensExist;
 
   // Auto-select most recent night on data load
   useEffect(() => {

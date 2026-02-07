@@ -215,7 +215,7 @@ export function AppShell() {
     }, 250); // Delay to ensure hooks/components have time to use it
 
     // Always open import modal after OAuth, so user can import or reload data
-    importModal.open();
+    // (Removed: importModal.open() — this is a Fitbit connection, not CSV import)
 
     // Navigate to Fitbit section on success
     if (success) {

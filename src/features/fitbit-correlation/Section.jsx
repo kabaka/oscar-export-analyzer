@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import FitbitDashboard from '../../components/fitbit/FitbitDashboard';
 import { useFitbitOAuthContext } from '../../context/FitbitOAuthContext';
 import { useFitbitConnection } from '../../hooks/useFitbitConnection';
@@ -20,23 +20,11 @@ export function FitbitCorrelationSection() {
     disconnect,
     error: oauthError,
     clearError,
+    passphrase,
   } = useFitbitOAuthContext();
 
-  // Auto-connect if passphrase is present in sessionStorage and not already connected
-  useEffect(() => {
-    if (connectionStatus !== 'connected' && typeof window !== 'undefined') {
-      const passphrase = sessionStorage.getItem('fitbit_session_passphrase');
-      if (passphrase) {
-        // Optionally, trigger a silent connection or data load here
-        // This could be improved by exposing a connectWithPassphrase method
-        // For now, just reload the page section or trigger a sync if needed
-        // (Implementation may vary based on actual connection logic)
-      }
-    }
-  }, [connectionStatus]);
-
   const { fitbitData, syncState, syncFitbitData, clearFitbitData } =
-    useFitbitConnection();
+    useFitbitConnection({ passphrase });
 
   const handleConnect = async () => {
     try {
@@ -52,10 +40,6 @@ export function FitbitCorrelationSection() {
       clearError();
       await disconnect();
       clearFitbitData();
-      // Remove passphrase from sessionStorage on disconnect for security
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('fitbit_session_passphrase');
-      }
     } catch (error) {
       console.error('Failed to disconnect Fitbit:', error);
     }

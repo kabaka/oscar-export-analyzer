@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
+import { FITBIT_OAUTH_STORAGE_KEYS } from '../constants/fitbit.js';
 
 const FitbitOAuthContext = createContext(null);
 
@@ -23,6 +24,16 @@ const FitbitOAuthContext = createContext(null);
  * </FitbitOAuthProvider>
  */
 export function FitbitOAuthProvider({ children, onSuccess, onError }) {
+  // Passphrase state — recovered from sessionStorage on mount for OAuth redirect recovery
+  const [passphrase, setPassphrase] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        sessionStorage.getItem(FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE) || null
+      );
+    }
+    return null;
+  });
+
   // Use the existing OAuth hook to get all authentication functionality
   const oauthState = useFitbitOAuth({ onSuccess, onError });
 
@@ -45,12 +56,19 @@ export function FitbitOAuthProvider({ children, onSuccess, onError }) {
       refreshToken: oauthState.refreshToken,
       getValidToken: oauthState.getValidToken,
 
+      // Error handling
+      handleOAuthError: oauthState.handleOAuthError,
+
       // Connection utilities
       isConnected: oauthState.status === 'connected',
       isConnecting: oauthState.status === 'connecting',
       hasError: !!oauthState.error,
+
+      // Passphrase management
+      passphrase,
+      setPassphrase,
     }),
-    [oauthState],
+    [oauthState, passphrase],
   );
 
   return (

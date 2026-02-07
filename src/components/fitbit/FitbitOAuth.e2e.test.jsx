@@ -47,6 +47,14 @@ describe('Fitbit OAuth E2E Flow', () => {
   let mockEnvironment;
   let originalFetch;
 
+  // Helper to render FitbitConnectionCard within required FitbitOAuthProvider context
+  const renderCard = (props = {}) =>
+    render(
+      <FitbitOAuthProvider>
+        <FitbitConnectionCard {...props} />
+      </FitbitOAuthProvider>,
+    );
+
   beforeEach(() => {
     // Setup OAuth mock environment
     mockEnvironment = setupOAuthMockEnvironment();
@@ -276,10 +284,12 @@ describe('Fitbit OAuth E2E Flow', () => {
 
       // PHASE 1: Render connection card
       render(
-        <FitbitConnectionCard
-          passphrase={passphrase}
-          onConnectionChange={mockOnConnect}
-        />,
+        <FitbitOAuthProvider>
+          <FitbitConnectionCard
+            passphrase={passphrase}
+            onConnectionChange={mockOnConnect}
+          />
+        </FitbitOAuthProvider>,
       );
 
       // Find and click connect button
@@ -751,10 +761,12 @@ describe('Fitbit OAuth E2E Flow', () => {
 
       // PHASE 1: Disconnected state
       render(
-        <FitbitConnectionCard
-          passphrase={passphrase}
-          onConnectionChange={mockOnChange}
-        />,
+        <FitbitOAuthProvider>
+          <FitbitConnectionCard
+            passphrase={passphrase}
+            onConnectionChange={mockOnChange}
+          />
+        </FitbitOAuthProvider>,
       );
 
       // Verify initial disconnected state
@@ -827,7 +839,11 @@ describe('Fitbit OAuth E2E Flow', () => {
       const mockOnError = vi.fn();
 
       // Render without passphrase
-      render(<FitbitConnectionCard passphrase={null} onError={mockOnError} />);
+      render(
+        <FitbitOAuthProvider>
+          <FitbitConnectionCard passphrase={null} onError={mockOnError} />
+        </FitbitOAuthProvider>,
+      );
 
       const connectButton = screen.getByRole('button', {
         name: /connect.*fitbit/i,
@@ -1129,7 +1145,11 @@ describe('Fitbit OAuth E2E Flow', () => {
       // ===== CORRECT BEHAVIOR =====
       // Button should be DISABLED without passphrase
 
-      render(<FitbitConnectionCard passphrase={null} />);
+      render(
+        <FitbitOAuthProvider>
+          <FitbitConnectionCard passphrase={null} />
+        </FitbitOAuthProvider>,
+      );
 
       const connectButton = screen.getByRole('button', {
         name: /connect.*fitbit/i,
@@ -1154,7 +1174,11 @@ describe('Fitbit OAuth E2E Flow', () => {
 
       const passphrase = 'test-passphrase-strong-123';
 
-      render(<FitbitConnectionCard passphrase={passphrase} />);
+      render(
+        <FitbitOAuthProvider>
+          <FitbitConnectionCard passphrase={passphrase} />
+        </FitbitOAuthProvider>,
+      );
 
       const connectButton = screen.getByRole('button', {
         name: /connect.*fitbit/i,
@@ -1180,7 +1204,9 @@ describe('Fitbit OAuth E2E Flow', () => {
 
       // PHASE 1: User enters passphrase and connects
       const { unmount: unmountCard } = render(
-        <FitbitConnectionCard passphrase={passphrase} />,
+        <FitbitOAuthProvider>
+          <FitbitConnectionCard passphrase={passphrase} />
+        </FitbitOAuthProvider>,
       );
 
       const connectButton = screen.getByRole('button', {
@@ -1395,7 +1421,7 @@ describe('Fitbit OAuth E2E Flow', () => {
      */
 
     it('renders passphrase input field when no passphrase prop provided', () => {
-      render(<FitbitConnectionCard />);
+      renderCard();
 
       // Should render passphrase input
       const passphraseInput = screen.getByLabelText(/encryption passphrase/i);
@@ -1414,7 +1440,7 @@ describe('Fitbit OAuth E2E Flow', () => {
     });
 
     it('disables connect button until passphrase entered', () => {
-      render(<FitbitConnectionCard />);
+      renderCard();
 
       const connectButton = screen.getByRole('button', {
         name: /connect.*fitbit/i,
@@ -1425,7 +1451,7 @@ describe('Fitbit OAuth E2E Flow', () => {
     });
 
     it('enables connect button when valid passphrase entered', async () => {
-      render(<FitbitConnectionCard />);
+      renderCard();
 
       const passphraseInput = screen.getByLabelText(/encryption passphrase/i);
       const connectButton = screen.getByRole('button', {
@@ -1447,7 +1473,7 @@ describe('Fitbit OAuth E2E Flow', () => {
     });
 
     it('keeps button disabled if passphrase too short', async () => {
-      render(<FitbitConnectionCard />);
+      renderCard();
 
       const passphraseInput = screen.getByLabelText(/encryption passphrase/i);
       const connectButton = screen.getByRole('button', {
@@ -1469,7 +1495,7 @@ describe('Fitbit OAuth E2E Flow', () => {
     });
 
     it('shows passphrase strength indicator as user types', async () => {
-      render(<FitbitConnectionCard />);
+      renderCard();
 
       const passphraseInput = screen.getByLabelText(/encryption passphrase/i);
 
@@ -1511,7 +1537,7 @@ describe('Fitbit OAuth E2E Flow', () => {
     });
 
     it('toggles passphrase visibility', async () => {
-      render(<FitbitConnectionCard />);
+      renderCard();
 
       const passphraseInput = screen.getByLabelText(/encryption passphrase/i);
       const toggleButton = screen.getByLabelText(/show passphrase/i);
@@ -1545,7 +1571,7 @@ describe('Fitbit OAuth E2E Flow', () => {
       // 2. Click Connect button
       // 3. OAuth proceeds with passphrase from input
 
-      const { unmount: unmountCard } = render(<FitbitConnectionCard />);
+      const { unmount: unmountCard } = renderCard();
 
       const passphraseInput = screen.getByLabelText(/encryption passphrase/i);
       const connectButton = screen.getByRole('button', {
@@ -1622,7 +1648,7 @@ describe('Fitbit OAuth E2E Flow', () => {
     });
 
     it('does not render passphrase input when passphrase prop provided (test mode)', () => {
-      render(<FitbitConnectionCard passphrase="test-passphrase" />);
+      renderCard({ passphrase: 'test-passphrase' });
 
       // Should NOT render passphrase input (provided via prop)
       expect(

@@ -78,7 +78,7 @@ class FitbitOAuth {
 async exchangeCodeForTokens(authorizationCode) {
   // Retrieve PKCE verifier
   const codeVerifier = localStorage.getItem('fitbit_pkce_verifier');
-  
+
   if (!codeVerifier) {
     throw new Error('PKCE verifier not found');
   }
@@ -131,9 +131,12 @@ class PassphraseManager {
     localStorage.setItem('fitbitPassphraseBak', passphrase);
 
     // Clear backup after 5 minutes
-    setTimeout(() => {
-      localStorage.removeItem('fitbitPassphraseBak');
-    }, 5 * 60 * 1000);
+    setTimeout(
+      () => {
+        localStorage.removeItem('fitbitPassphraseBak');
+      },
+      5 * 60 * 1000,
+    );
   }
 
   retrievePassphrase() {
@@ -215,7 +218,7 @@ async function encryptData(data, passphrase) {
     new TextEncoder().encode(passphrase),
     'PBKDF2',
     false,
-    ['deriveKey']
+    ['deriveKey'],
   );
 
   const key = await crypto.subtle.deriveKey(
@@ -228,7 +231,7 @@ async function encryptData(data, passphrase) {
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt']
+    ['encrypt'],
   );
 
   // Encrypt data
@@ -236,7 +239,7 @@ async function encryptData(data, passphrase) {
   const encrypted = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv: iv },
     key,
-    new TextEncoder().encode(JSON.stringify(data))
+    new TextEncoder().encode(JSON.stringify(data)),
   );
 
   // Return encrypted data with salt and IV
@@ -254,7 +257,7 @@ async function decryptData(encryptedData, passphrase) {
     new TextEncoder().encode(passphrase),
     'PBKDF2',
     false,
-    ['deriveKey']
+    ['deriveKey'],
   );
 
   const key = await crypto.subtle.deriveKey(
@@ -267,14 +270,14 @@ async function decryptData(encryptedData, passphrase) {
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['decrypt']
+    ['decrypt'],
   );
 
   // Decrypt data
   const decrypted = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: new Uint8Array(encryptedData.iv) },
     key,
-    new Uint8Array(encryptedData.encrypted)
+    new Uint8Array(encryptedData.encrypted),
   );
 
   return JSON.parse(new TextDecoder().decode(decrypted));
@@ -324,7 +327,7 @@ async function fetchHeartRateData(accessToken, date) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
+    },
   );
 
   if (!response.ok) {
@@ -441,9 +444,12 @@ class FitbitAPIClient {
         // Rate limited
         const retryAfter = response.headers.get('Retry-After');
         this.isRateLimited = true;
-        setTimeout(() => {
-          this.isRateLimited = false;
-        }, parseInt(retryAfter) * 1000);
+        setTimeout(
+          () => {
+            this.isRateLimited = false;
+          },
+          parseInt(retryAfter) * 1000,
+        );
 
         throw new Error('Rate limited');
       }
@@ -508,7 +514,10 @@ const mockOAuthFlow = {
 ### Test Data Builders
 
 ```javascript
-import { buildFitbitHeartRate, buildFitbitSleepStage } from '../test-utils/fitbitBuilders';
+import {
+  buildFitbitHeartRate,
+  buildFitbitSleepStage,
+} from '../test-utils/fitbitBuilders';
 
 const mockFitbitData = {
   heartRate: [

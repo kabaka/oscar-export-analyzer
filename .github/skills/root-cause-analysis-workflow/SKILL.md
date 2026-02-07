@@ -151,7 +151,10 @@ function renderChart(data) {
 const parsed = parseCSV(csvText);
 console.log('[TEST] Parsed rows:', parsed.length);
 console.log('[TEST] First row:', parsed[0]);
-console.log('[TEST] Has required columns:', hasColumns(parsed, ['Date', 'AHI']));
+console.log(
+  '[TEST] Has required columns:',
+  hasColumns(parsed, ['Date', 'AHI']),
+);
 ```
 
 **Record results:**
@@ -182,7 +185,7 @@ console.log('[TEST] Has required columns:', hasColumns(parsed, ['Date', 'AHI']))
 
 **Goal:** Determine the definitive cause based on test results.
 
-```markdown
+````markdown
 ## Root Cause
 
 **Confirmed cause:** Date filter incorrectly excludes all data
@@ -192,6 +195,7 @@ Date filter compares Date objects, but parsed dates are ISO strings.
 String comparison fails, all rows excluded.
 
 **Evidence:**
+
 - Test 2 showed chart works when filter bypassed
 - Console inspection: `typeof startDate === 'object'`, `typeof row.date === 'string'`
 - Date comparison: `'2024-01-15' >= new Date('2024-01-01')` evaluates incorrectly
@@ -209,8 +213,9 @@ filtered = data.filter((row) => {
   return rowDate >= startDate && rowDate <= endDate;
 });
 ```
+````
 
-```
+````
 
 ### Phase 6: Implement and Verify Fix
 
@@ -228,7 +233,7 @@ filtered = data.filter((row) => {
    - Dates outside data range
 4. [x] No regressions in existing tests (`npm test -- --run`)
 5. [x] Added regression test for this specific bug
-```
+````
 
 **Regression test:**
 
@@ -244,7 +249,7 @@ describe('Date filter bug fix', () => {
     const filtered = filterByDateRange(
       data,
       new Date('2024-01-18'),
-      new Date('2024-01-22')
+      new Date('2024-01-22'),
     );
 
     // Should include only middle row
@@ -274,7 +279,7 @@ console.log(filtered.length); // Now: 1 ✅
 
 ## RCA Report Template
 
-```markdown
+````markdown
 # RCA: [Short Title]
 
 **Date:** [YYYY-MM-DD]
@@ -329,6 +334,7 @@ One-sentence description of the issue and root cause.
 - // Before
 + // After
 ```
+````
 
 **Verification:**
 
@@ -350,6 +356,7 @@ One-sentence description of the issue and root cause.
 - Type coercion in comparisons can fail silently
 - Always test edge cases (string dates vs Date objects)
 - Console inspection is critical for type debugging
+
 ```
 
 ```

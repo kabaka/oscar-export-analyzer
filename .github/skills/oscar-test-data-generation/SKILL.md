@@ -32,14 +32,17 @@ const sessions = Array.from({ length: 30 }, (_, i) =>
     ahi: 5 + Math.random() * 10,
     epap: 8 + Math.random() * 2,
     usage: 6 + Math.random() * 3,
-  })
+  }),
 );
 ```
 
 ### Fitbit Data Builder
 
 ```javascript
-import { buildFitbitHeartRate, buildFitbitSleepStage } from '../test-utils/fitbitBuilders';
+import {
+  buildFitbitHeartRate,
+  buildFitbitSleepStage,
+} from '../test-utils/fitbitBuilders';
 
 // Heart rate data
 const hrData = buildFitbitHeartRate({
@@ -108,7 +111,7 @@ const titrationPeriod = Array.from({ length: 14 }, (_, i) =>
     epap: 7 + i * 0.3, // Gradual increase
     ahi: 15 - i * 0.8, // Improving AHI
     usage: 7 + Math.random() * 0.5,
-  })
+  }),
 );
 
 // Weekly pattern (worse on weekends)
@@ -141,12 +144,24 @@ const correlatedNight = {
         date: '2024-01-15',
         time: `${hour}:30:00`,
         bpm: 60 + (hour < 6 || hour > 22 ? 0 : 15), // Lower during sleep
-      })
+      }),
     ),
     sleepStages: [
-      buildFitbitSleepStage({ date: '2024-01-15', level: 'light', seconds: 3600 }),
-      buildFitbitSleepStage({ date: '2024-01-15', level: 'deep', seconds: 2400 }),
-      buildFitbitSleepStage({ date: '2024-01-15', level: 'rem', seconds: 1800 }),
+      buildFitbitSleepStage({
+        date: '2024-01-15',
+        level: 'light',
+        seconds: 3600,
+      }),
+      buildFitbitSleepStage({
+        date: '2024-01-15',
+        level: 'deep',
+        seconds: 2400,
+      }),
+      buildFitbitSleepStage({
+        date: '2024-01-15',
+        level: 'rem',
+        seconds: 1800,
+      }),
     ],
   },
 };
@@ -159,7 +174,7 @@ const correlatedNight = {
 function generateCsvFromSessions(sessions) {
   const headers = ['Date', 'AHI', 'EPAP', 'Usage (hours)', 'Leak Rate'];
   const rows = sessions.map((s) =>
-    [s.date, s.ahi, s.epap, s.usage, s.leak].join(',')
+    [s.date, s.ahi, s.epap, s.usage, s.leak].join(','),
   );
 
   return [headers.join(','), ...rows].join('\n');

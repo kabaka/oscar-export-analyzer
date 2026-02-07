@@ -26,9 +26,12 @@ Vite recognizes `*.worker.js` files and bundles them automatically:
 
 ```javascript
 // src/components/CSVUpload.jsx
-const worker = new Worker(new URL('../workers/csvParser.worker.js', import.meta.url), {
-  type: 'module',
-});
+const worker = new Worker(
+  new URL('../workers/csvParser.worker.js', import.meta.url),
+  {
+    type: 'module',
+  },
+);
 ```
 
 **Key points:**
@@ -53,7 +56,7 @@ function CSVUpload() {
     // Initialize worker
     const csvWorker = new Worker(
       new URL('../workers/csvParser.worker.js', import.meta.url),
-      { type: 'module' }
+      { type: 'module' },
     );
 
     // Handle messages from worker
@@ -190,7 +193,7 @@ export function useCSVWorker() {
   useEffect(() => {
     workerRef.current = new Worker(
       new URL('../workers/csvParser.worker.js', import.meta.url),
-      { type: 'module' }
+      { type: 'module' },
     );
 
     return () => {
@@ -398,9 +401,12 @@ describe('CSV Worker', () => {
   let worker;
 
   beforeEach(() => {
-    worker = new Worker(new URL('../workers/csvParser.worker.js', import.meta.url), {
-      type: 'module',
-    });
+    worker = new Worker(
+      new URL('../workers/csvParser.worker.js', import.meta.url),
+      {
+        type: 'module',
+      },
+    );
   });
 
   afterEach(() => {

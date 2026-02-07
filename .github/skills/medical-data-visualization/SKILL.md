@@ -42,11 +42,23 @@ const smoothed30Day = rollingAverage(ahiValues, 30);
 
 <Plot
   data={[
-    { x: dates, y: ahiValues, name: 'Daily AHI', mode: 'markers', marker: { opacity: 0.3 } },
+    {
+      x: dates,
+      y: ahiValues,
+      name: 'Daily AHI',
+      mode: 'markers',
+      marker: { opacity: 0.3 },
+    },
     { x: dates, y: smoothed7Day, name: '7-day average', mode: 'lines' },
-    { x: dates, y: smoothed30Day, name: '30-day average', mode: 'lines', line: { width: 3 } },
+    {
+      x: dates,
+      y: smoothed30Day,
+      name: '30-day average',
+      mode: 'lines',
+      line: { width: 3 },
+    },
   ]}
-/>
+/>;
 ```
 
 ### 3. Outlier Clarity
@@ -60,9 +72,15 @@ const { normal, outliers } = detectOutliers(ahiValues);
 <Plot
   data={[
     { x: normalDates, y: normal, name: 'Normal readings', type: 'scatter' },
-    { x: outlierDates, y: outliers, name: 'Outliers', mode: 'markers', marker: { color: 'red', size: 10 } },
+    {
+      x: outlierDates,
+      y: outliers,
+      name: 'Outliers',
+      mode: 'markers',
+      marker: { color: 'red', size: 10 },
+    },
   ]}
-/>
+/>;
 ```
 
 ### 4. Multiple Perspectives
@@ -307,7 +325,7 @@ const labels = {
 };
 
 // ✅ With tooltip explanation
-<Tooltip content="AHI measures how many times per hour you stop breathing (apnea) or breathe shallowly (hypopnea) during sleep. Lower is better." />
+<Tooltip content="AHI measures how many times per hour you stop breathing (apnea) or breathe shallowly (hypopnea) during sleep. Lower is better." />;
 ```
 
 ### Hover Tooltips
@@ -327,7 +345,7 @@ hovertemplate: '<b>Date:</b> %{x|%Y-%m-%d}<br>' +
                '<b>AHI:</b> %{y:.1f} events/hour<br>' +
                '<b>Severity:</b> %{customdata}<extra></extra>',
 
-customdata: ahiValues.map(ahi => 
+customdata: ahiValues.map(ahi =>
   ahi < 5 ? 'Normal' : ahi < 15 ? 'Mild' : ahi < 30 ? 'Moderate' : 'Severe'
 ),
 ```
