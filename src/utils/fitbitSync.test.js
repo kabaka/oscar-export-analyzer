@@ -4,10 +4,39 @@ import {
   alignOscarFitbitNights,
   validateAlignment,
   imputeMissingValues,
+  formatDateKey,
 } from './fitbitSync.js';
 import { createNightlyRecord } from './fitbitModels.js';
 
 describe('Fitbit Synchronization Utilities', () => {
+  describe('formatDateKey', () => {
+    it('extracts date from ISO string with time', () => {
+      expect(formatDateKey('2026-01-08T12:00:00')).toBe('2026-01-08');
+      expect(formatDateKey('2026-01-08T22:00:00')).toBe('2026-01-08');
+    });
+
+    it('extracts date from date-only string', () => {
+      expect(formatDateKey('2026-01-08')).toBe('2026-01-08');
+    });
+
+    it('handles Date objects at midnight local time', () => {
+      const d = new Date('2026-01-08T00:00:00'); // local midnight
+      expect(formatDateKey(d)).toBe('2026-01-08');
+    });
+
+    it('returns empty string for null/undefined', () => {
+      expect(formatDateKey(null)).toBe('');
+      expect(formatDateKey(undefined)).toBe('');
+      expect(formatDateKey('')).toBe('');
+    });
+
+    it('OSCAR and Fitbit strings produce the same key for the same calendar date', () => {
+      const oscarDate = '2026-01-08T22:00:00';
+      const fitbitDate = '2026-01-08T12:00:00';
+      expect(formatDateKey(oscarDate)).toBe(formatDateKey(fitbitDate));
+    });
+  });
+
   describe('calculateSleepDate', () => {
     it('assigns correct sleep date for evening sessions', () => {
       // Session starts at 10:30 PM on Jan 15 -> sleep date is Jan 15

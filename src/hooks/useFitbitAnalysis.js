@@ -20,21 +20,105 @@ import { analyzeOscarFitbitIntegration } from '../utils/fitbitAnalysis.js';
  * correct calendar date regardless of the runtime timezone.
  *
  * @param {Array} heartRateData - Parsed heart rate records from parseSyncResults
+ * @param {Array} [spo2Data] - Parsed SpO2 records from parseSyncResults
+ * @param {Array} [sleepData] - Parsed sleep records from parseSyncResults
+ * @returns {Array} Fitbit nightly records for the analysis pipeline
+ */
+export function transformFitbitDataForPipeline(
+  heartRateData,
+  spo2Data = [],
+  sleepData = [],
+) {
+  if (!Array.isArray(heartRateData)) return [];
+
+  // Build lookup maps for SpO2 and sleep data by date
+  const spo2ByDate = new Map();
+  if (Array.isArray(spo2Data)) {
+    for (const entry of spo2Data) {
+      if (entry?.date) spo2ByDate.set(entry.date, entry);
+    }
+  }
+
+  const sleepByDate = new Map();
+  if (Array.isArray(sleepData)) {
+    for (const entry of sleepData) {
+      if (entry?.date) sleepByDate.set(entry.date, entry);
+    }
+  }
+
+  // Collect all unique dates from all data sources
+  const allDates = new Set();
+  for (const d of heartRateData) {
+    if (d?.date) allDates.add(d.date);
+  }
+  for (const d of spo2Data || []) {
+    if (d?.date) allDates.add(d.date);
+  }
+  for (const d of sleepData || []) {
+    if (d?.date) allDates.add(d.date);
+  }
+
+  // Build HR lookup
+  const hrByDate = new Map();
+  for (const day of heartRateData) {
+    if (day?.date && day.restingHeartRate != null) {
+      hrByDate.set(day.date, day);
+    }
+  }
+
+  // Build merged records for each date that has any data
+  const records = [];
+  for (const dateStr of allDates) {
+    const hr = hrByDate.get(dateStr);
+    const spo2 = spo2ByDate.get(dateStr);
+    const sleep = sleepByDate.get(dateStr);
+
+    // Require at least HR data to produce a record
+    if (!hr) continue;
+
+    const fitbit = {
+      heartRate: {
+        restingBpm: hr.restingHeartRate,
+      },
+    };
+
+    if (spo2) {
+      fitbit.oxygenSaturation = {
+        avgPercent: spo2.avg,
+        minPercent: spo2.min,
+        maxPercent: spo2.max,
+      };
+    }
+
+    if (sleep) {
+      fitbit.sleepStages = {
+        totalSleepMinutes: sleep.minutesAsleep,
+        sleepEfficiency: sleep.efficiency,
+        deepSleepMinutes: sleep.deep,
+        remSleepMinutes: sleep.rem,
+        lightSleepMinutes: sleep.light,
+        awakeMinutes: sleep.wake,
+        onsetLatencyMin: sleep.minutesToFallAsleep,
+      };
+    }
+
+    records.push({
+      date: `${dateStr}T12:00:00`,
+      fitbit,
+    });
+  }
+
+  return records;
+}
+
+/**
+ * Backward-compatible alias — transforms only HR data.
+ *
+ * @param {Array} heartRateData - Parsed heart rate records
  * @returns {Array} Fitbit nightly records for the analysis pipeline
  */
 export function transformHeartRateForPipeline(heartRateData) {
-  if (!Array.isArray(heartRateData)) return [];
-
-  return heartRateData
-    .filter((day) => day.restingHeartRate != null)
-    .map((day) => ({
-      date: `${day.date}T12:00:00`,
-      fitbit: {
-        heartRate: {
-          restingBpm: day.restingHeartRate,
-        },
-      },
-    }));
+  return transformFitbitDataForPipeline(heartRateData);
 }
 
 /**
@@ -176,13 +260,15 @@ export function shapeForDashboard(analysisResult, rawHeartRateData) {
  * @param {Object} options
  * @param {Array|null} options.oscarData - filteredSummary from DataContext
  * @param {Object|null} options.fitbitSyncedData - syncedData from useFitbitConnection
- *   Expected shape: { heartRateData: [{ date, restingHeartRate, heartRateZones }] }
+ *   Expected shape: { heartRateData: [...], spo2Data?: [...], sleepData?: [...] }
  * @returns {{ analysisData: Object, hasAnalysis: boolean, analysisError: string|null }}
  */
 export function useFitbitAnalysis({ oscarData, fitbitSyncedData } = {}) {
   return useMemo(() => {
     const hasOscarData = Array.isArray(oscarData) && oscarData.length > 0;
     const rawHeartRateData = fitbitSyncedData?.heartRateData;
+    const rawSpo2Data = fitbitSyncedData?.spo2Data;
+    const rawSleepData = fitbitSyncedData?.sleepData;
     const hasHeartRateData =
       Array.isArray(rawHeartRateData) && rawHeartRateData.length > 0;
 
@@ -197,7 +283,11 @@ export function useFitbitAnalysis({ oscarData, fitbitSyncedData } = {}) {
 
     try {
       const preparedOscar = prepareOscarData(oscarData);
-      const preparedFitbit = transformHeartRateForPipeline(rawHeartRateData);
+      const preparedFitbit = transformFitbitDataForPipeline(
+        rawHeartRateData,
+        rawSpo2Data,
+        rawSleepData,
+      );
 
       const result = analyzeOscarFitbitIntegration(
         preparedOscar,

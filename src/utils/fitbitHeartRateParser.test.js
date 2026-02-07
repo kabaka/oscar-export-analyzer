@@ -194,7 +194,142 @@ describe('parseSyncResults', () => {
   });
 
   it('returns empty data for null input', () => {
-    expect(parseSyncResults(null)).toEqual({ heartRateData: [] });
+    expect(parseSyncResults(null)).toEqual({
+      heartRateData: [],
+      spo2Data: [],
+      sleepData: [],
+    });
+  });
+
+  it('parses batch sync results with SpO2 data', () => {
+    const batchResults = {
+      heartRate: {
+        'activities-heart': [
+          { dateTime: '2026-01-08', value: { restingHeartRate: 68 } },
+        ],
+      },
+      spo2: [
+        { dateTime: '2026-01-08', value: { avg: 96.5, min: 93, max: 99 } },
+        { dateTime: '2026-01-09', value: { avg: 97.0, min: 94, max: 100 } },
+      ],
+    };
+
+    const result = parseSyncResults(batchResults);
+
+    expect(result.heartRateData).toHaveLength(1);
+    expect(result.spo2Data).toHaveLength(2);
+    expect(result.spo2Data[0]).toEqual({
+      date: '2026-01-08',
+      avg: 96.5,
+      min: 93,
+      max: 99,
+    });
+  });
+
+  it('parses batch sync results with sleep data', () => {
+    const batchResults = {
+      heartRate: {
+        'activities-heart': [
+          { dateTime: '2026-01-08', value: { restingHeartRate: 68 } },
+        ],
+      },
+      sleep: {
+        sleep: [
+          {
+            dateOfSleep: '2026-01-08',
+            duration: 28800000,
+            efficiency: 92,
+            minutesAsleep: 420,
+            minutesAwake: 30,
+            minutesToFallAsleep: 12,
+            levels: {
+              summary: {
+                deep: { count: 4, minutes: 90 },
+                light: { count: 20, minutes: 210 },
+                rem: { count: 6, minutes: 100 },
+                wake: { count: 25, minutes: 30 },
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseSyncResults(batchResults);
+
+    expect(result.heartRateData).toHaveLength(1);
+    expect(result.sleepData).toHaveLength(1);
+    expect(result.sleepData[0]).toEqual({
+      date: '2026-01-08',
+      duration: 28800000,
+      durationMinutes: 480,
+      efficiency: 92,
+      minutesAsleep: 420,
+      minutesAwake: 30,
+      minutesToFallAsleep: 12,
+      deep: 90,
+      light: 210,
+      rem: 100,
+      wake: 30,
+    });
+  });
+
+  it('skips SpO2/sleep data with errors', () => {
+    const batchResults = {
+      heartRate: {
+        'activities-heart': [
+          { dateTime: '2026-01-08', value: { restingHeartRate: 68 } },
+        ],
+      },
+      spo2: { error: 'Scope not granted' },
+      sleep: { error: 'Scope not granted' },
+    };
+
+    const result = parseSyncResults(batchResults);
+
+    expect(result.heartRateData).toHaveLength(1);
+    expect(result.spo2Data).toEqual([]);
+    expect(result.sleepData).toEqual([]);
+  });
+
+  it('selects longest sleep record when multiple records exist for same date', () => {
+    const batchResults = {
+      sleep: {
+        sleep: [
+          {
+            dateOfSleep: '2026-01-08',
+            duration: 3600000,
+            efficiency: 80,
+            minutesAsleep: 50,
+            minutesAwake: 10,
+            minutesToFallAsleep: 5,
+            levels: { summary: {} },
+          },
+          {
+            dateOfSleep: '2026-01-08',
+            duration: 28800000,
+            efficiency: 92,
+            minutesAsleep: 420,
+            minutesAwake: 30,
+            minutesToFallAsleep: 12,
+            levels: {
+              summary: {
+                deep: { minutes: 90 },
+                light: { minutes: 210 },
+                rem: { minutes: 100 },
+                wake: { minutes: 30 },
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    const result = parseSyncResults(batchResults);
+
+    expect(result.sleepData).toHaveLength(1);
+    expect(result.sleepData[0].minutesAsleep).toBe(420);
+    expect(result.sleepData[0].efficiency).toBe(92);
   });
 });
 

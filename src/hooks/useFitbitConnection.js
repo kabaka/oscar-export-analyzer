@@ -194,7 +194,7 @@ export function useFitbitConnection({
     async ({
       startDate,
       endDate,
-      dataTypes = ['heartRate'], // SpO2 and sleep disabled: Fitbit API CORS limitation (see docs/developer/fitbit-integration.md)
+      dataTypes = ['heartRate', 'spo2', 'sleep'],
       onProgress,
     } = {}) => {
       try {

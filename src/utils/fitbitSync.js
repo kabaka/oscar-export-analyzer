@@ -377,8 +377,30 @@ function regressionImputation(records, trainingData) {
 
 // Helper functions
 
-function formatDateKey(date) {
-  const d = new Date(date);
+/**
+ * Extracts a YYYY-MM-DD date key from a Date object or date string.
+ *
+ * For string inputs with a YYYY-MM-DD prefix (ISO 8601), extracts the date
+ * part directly — avoiding timezone-dependent `new Date()` parsing.
+ * For Date objects, uses local-time accessors (getFullYear/getMonth/getDate).
+ *
+ * @param {Date|string} date - Date value to convert to a key
+ * @returns {string} YYYY-MM-DD date key, or '' if invalid
+ */
+export function formatDateKey(date) {
+  if (!date) return '';
+
+  // For strings with a YYYY-MM-DD prefix, extract directly to avoid
+  // timezone-dependent Date constructor behaviour (e.g. date-only strings
+  // are parsed as UTC while date-time strings without Z are local).
+  if (typeof date === 'string') {
+    const match = date.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  // For Date objects (e.g. from calculateSleepDate) use local accessors
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

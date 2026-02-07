@@ -109,10 +109,8 @@ export const FITBIT_SCOPES = {
 };
 
 /**
- * MVP scopes - minimal permissions for core correlation features.
- * Note: We request SpO2 and sleep scopes for future use (e.g., CORS proxy),
- * but currently only heart rate data is synced due to Fitbit API CORS limitations.
- * See: https://community.fitbit.com/t5/Web-API-Development/Known-Issue-HRV-and-BR-Intraday-data-endpoint-returns-403-for-personal/td-p/5806264
+ * MVP scopes - permissions for core correlation features.
+ * Heart rate, SpO2, and sleep data are all synced for comprehensive analysis.
  */
 export const MVP_SCOPES = [
   FITBIT_SCOPES.HEARTRATE,
@@ -138,27 +136,30 @@ export const DATA_TYPE_SCOPES = {
 export const FITBIT_API = {
   baseUrl: 'https://api.fitbit.com',
 
-  // Heart rate endpoints
+  // Heart rate endpoints (scope: heartrate)
   heartRate: {
     intraday: '/1/user/-/activities/heart/date/{date}/1d/1min.json',
     dateRange: '/1/user/-/activities/heart/date/{startDate}/{endDate}.json',
   },
 
-  // SpO2 endpoints
+  // SpO2 endpoints (scope: oxygen_saturation)
   spo2: {
-    intraday: '/1/user/-/spo2/date/{date}.json',
+    summary: '/1/user/-/spo2/date/{date}.json',
     dateRange: '/1/user/-/spo2/date/{startDate}/{endDate}.json',
+    intraday: '/1/user/-/spo2/date/{date}/all.json',
   },
 
-  // Sleep endpoints
+  // Sleep endpoints (scope: sleep)
   sleep: {
     logs: '/1.2/user/-/sleep/date/{startDate}/{endDate}.json',
     detail: '/1.2/user/-/sleep/date/{date}.json',
   },
 
-  // Heart rate variability (HRV)
+  // Heart rate variability (scope: heartrate)
   hrv: {
-    dateRange: '/1/user/-/hrv/date/{startDate}/{endDate}/all.json',
+    summary: '/1/user/-/hrv/date/{date}.json',
+    dateRange: '/1/user/-/hrv/date/{startDate}/{endDate}.json',
+    intraday: '/1/user/-/hrv/date/{date}/all.json',
   },
 
   // User profile

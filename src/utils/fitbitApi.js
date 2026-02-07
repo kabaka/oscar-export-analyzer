@@ -156,12 +156,12 @@ class FitbitHttpClient {
         });
       }
 
-      // Provide better error message for CORS-masked permission errors
+      // Network/CORS error with no retries left
       if (error.name === 'TypeError') {
         throw {
           code: 'api_request_failed',
           type: 'api',
-          message: `Request to Fitbit API failed (CORS). The Fitbit API does not support browser-based access for this endpoint. Only heart rate data is available from client-side apps. See Fitbit community for details.`,
+          message: `Request to Fitbit API failed. Check your network connection and try again.`,
           details: error.message,
         };
       }
@@ -385,7 +385,7 @@ export class FitbitApiClient {
   async batchSync({
     startDate,
     endDate,
-    dataTypes = ['heartRate'], // SpO2 and sleep disabled due to Fitbit API CORS limitation
+    dataTypes = ['heartRate', 'spo2', 'sleep'],
     onProgress,
   }) {
     const results = {};

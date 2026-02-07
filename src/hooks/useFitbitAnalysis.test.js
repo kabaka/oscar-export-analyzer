@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import {
   useFitbitAnalysis,
   transformHeartRateForPipeline,
+  transformFitbitDataForPipeline,
   prepareOscarData,
   shapeForDashboard,
   buildScatterData,
@@ -163,6 +164,85 @@ describe('transformHeartRateForPipeline', () => {
     expect(transformHeartRateForPipeline(null)).toEqual([]);
     expect(transformHeartRateForPipeline(undefined)).toEqual([]);
     expect(transformHeartRateForPipeline('invalid')).toEqual([]);
+  });
+});
+
+describe('transformFitbitDataForPipeline', () => {
+  it('merges HR, SpO2, and sleep data for matching dates', () => {
+    const hrData = [
+      { date: '2026-01-08', restingHeartRate: 68, heartRateZones: [] },
+    ];
+    const spo2Data = [{ date: '2026-01-08', avg: 96.5, min: 93, max: 99 }];
+    const sleepData = [
+      {
+        date: '2026-01-08',
+        minutesAsleep: 420,
+        efficiency: 92,
+        deep: 90,
+        rem: 100,
+        light: 210,
+        wake: 30,
+        minutesToFallAsleep: 12,
+      },
+    ];
+
+    const result = transformFitbitDataForPipeline(hrData, spo2Data, sleepData);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].date).toBe('2026-01-08T12:00:00');
+    expect(result[0].fitbit.heartRate.restingBpm).toBe(68);
+    expect(result[0].fitbit.oxygenSaturation).toEqual({
+      avgPercent: 96.5,
+      minPercent: 93,
+      maxPercent: 99,
+    });
+    expect(result[0].fitbit.sleepStages).toEqual({
+      totalSleepMinutes: 420,
+      sleepEfficiency: 92,
+      deepSleepMinutes: 90,
+      remSleepMinutes: 100,
+      lightSleepMinutes: 210,
+      awakeMinutes: 30,
+      onsetLatencyMin: 12,
+    });
+  });
+
+  it('works with HR data only (backward compatible)', () => {
+    const hrData = [
+      { date: '2026-01-08', restingHeartRate: 68, heartRateZones: [] },
+    ];
+
+    const result = transformFitbitDataForPipeline(hrData);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].fitbit.heartRate.restingBpm).toBe(68);
+    expect(result[0].fitbit.oxygenSaturation).toBeUndefined();
+    expect(result[0].fitbit.sleepStages).toBeUndefined();
+  });
+
+  it('requires HR data to produce a record', () => {
+    const spo2Data = [{ date: '2026-01-08', avg: 96.5, min: 93, max: 99 }];
+
+    const result = transformFitbitDataForPipeline([], spo2Data);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it('handles dates with only partial data coverage', () => {
+    const hrData = [
+      { date: '2026-01-08', restingHeartRate: 68, heartRateZones: [] },
+      { date: '2026-01-09', restingHeartRate: 65, heartRateZones: [] },
+    ];
+    const spo2Data = [
+      { date: '2026-01-08', avg: 96.5, min: 93, max: 99 },
+      // No SpO2 for 2026-01-09
+    ];
+
+    const result = transformFitbitDataForPipeline(hrData, spo2Data);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].fitbit.oxygenSaturation).toBeDefined();
+    expect(result[1].fitbit.oxygenSaturation).toBeUndefined();
   });
 });
 
