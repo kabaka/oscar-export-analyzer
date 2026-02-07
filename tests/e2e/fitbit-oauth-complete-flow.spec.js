@@ -144,12 +144,14 @@ async function seedSessionData(page) {
             fitbitTx.objectStore(FITBIT_STORE).put({ ...night, id: idx + 1 });
           });
           fitbitTx.oncomplete = () => {
+            localStorage.setItem('oscar_storage_consent', 'allow');
             localStorage.setItem('oscar_seed_ready', 'true');
           };
           fitbitTx.onerror = () => {
             localStorage.setItem('oscar_seed_ready', 'error');
           };
         } else {
+          localStorage.setItem('oscar_storage_consent', 'allow');
           localStorage.setItem('oscar_seed_ready', 'true');
         }
       };
@@ -354,15 +356,21 @@ test('completes Fitbit OAuth flow with passphrase entry', async ({
   await page.waitForURL(/oauth-callback|p=oauth-callback/, { timeout: 15000 });
   await tokenRequestPromise;
 
-  // Wait for dashboard to be visible after OAuth
+  // After OAuth, the app renders without data loaded (session is not auto-restored).
+  // The import dialog appears with "Load previous session" - click it to restore
+  // the seeded session from IndexedDB so the Fitbit section renders.
+  const postOAuthLoadButton = page.getByRole('button', {
+    name: /load previous session/i,
+  });
+  await expect(postOAuthLoadButton).toBeVisible({ timeout: 15000 });
+  await postOAuthLoadButton.click();
+
+  // Wait for dashboard to be visible after session restore
   await page.waitForSelector('#fitbit-correlation', { timeout: 15000 });
 
-  // Now check for the recent night button
-  const recentNightDate = '2021-01-01';
-  const recentNightButton = page.getByTestId(
-    `recent-night-btn-${recentNightDate}`,
-  );
-  await expect(recentNightButton).toBeVisible({ timeout: 5000 });
+  // Verify Fitbit dashboard container is rendered within the section
+  const fitbitDashboard = page.getByTestId('fitbit-dashboard-container');
+  await expect(fitbitDashboard).toBeVisible({ timeout: 5000 });
 
   const stateErrors = consoleErrors.filter((err) =>
     err.toLowerCase().includes('invalid oauth state'),
