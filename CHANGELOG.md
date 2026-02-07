@@ -8,12 +8,17 @@ corresponds to changes released on that day.
 
 ## 2026-02-07
 
+### Changed
+
+- **Fitbit sync limited to heart rate only**: Disabled SpO2 and sleep data sync due to [Fitbit API CORS limitations](https://community.fitbit.com/t5/Web-API-Development/Known-Issue-HRV-and-BR-Intraday-data-endpoint-returns-403-for-personal/td-p/5806264) that prevent browser-based apps from accessing these endpoints. Heart rate correlation remains fully functional. SpO2 and sleep scopes are still requested during OAuth (for future CORS proxy support) but not actively synced.
+- Added clear user-facing note in the Fitbit Correlation section explaining the CORS limitation with a link to the Fitbit community post.
+
 ### Fixed
 
-- **Fitbit API sync failures**: Fixed three issues causing Fitbit data sync to fail for sleep and SpO2 endpoints while heart rate worked:
+- **Fitbit API sync improvements**: Fixed three issues with Fitbit data sync:
   - **Scope validation**: Added pre-call validation of OAuth-granted scopes — the app now checks which scopes the user actually approved during authorization and skips API calls for declined scopes with a clear message, instead of making doomed requests that Fitbit masks as CORS errors.
   - **batchSync concurrency bug**: Fixed broken concurrency control where all API requests fired simultaneously (`.map(async ...)` starts all promises immediately). Requests are now properly batched per `maxConcurrentRequests` setting.
-  - **CORS error diagnostics**: Improved error messages when Fitbit returns CORS-masked permission errors (TypeError) to suggest the likely real cause (scope not granted) instead of generic network error.
+  - **CORS error diagnostics**: Improved error messages when Fitbit returns CORS-masked permission errors to explain the browser-based access limitation instead of showing generic network errors.
   - **SpO2 endpoint format**: Fixed malformed SpO2 endpoint URLs with invalid `/all` suffix — updated to match current Fitbit Web API v1 specification.
 
 ## 2026-02-06

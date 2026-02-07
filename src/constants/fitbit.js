@@ -110,7 +110,9 @@ export const FITBIT_SCOPES = {
 
 /**
  * MVP scopes - minimal permissions for core correlation features.
- * Matches requirements from technical roadmap.
+ * Note: We request SpO2 and sleep scopes for future use (e.g., CORS proxy),
+ * but currently only heart rate data is synced due to Fitbit API CORS limitations.
+ * See: https://community.fitbit.com/t5/Web-API-Development/Known-Issue-HRV-and-BR-Intraday-data-endpoint-returns-403-for-personal/td-p/5806264
  */
 export const MVP_SCOPES = [
   FITBIT_SCOPES.HEARTRATE,

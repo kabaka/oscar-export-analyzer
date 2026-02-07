@@ -67,8 +67,24 @@ export function FitbitCorrelationSection() {
         </h2>
         <p className="section-description">
           Connect your Fitbit account to analyze correlations between sleep
-          therapy data and biometric measurements. Compare AHI events with heart
-          rate variability, sleep stages, and SpO2 readings.
+          therapy data and biometric measurements. Currently syncs resting heart
+          rate data for correlation with AHI and other CPAP metrics.
+        </p>
+        <p
+          className="section-description"
+          style={{ fontSize: '0.85em', color: 'var(--text-muted, #666)' }}
+        >
+          <strong>Note:</strong> SpO2 and sleep data sync is currently
+          unavailable due to{' '}
+          <a
+            href="https://community.fitbit.com/t5/Web-API-Development/Known-Issue-HRV-and-BR-Intraday-data-endpoint-returns-403-for-personal/td-p/5806264"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fitbit API CORS limitations
+          </a>{' '}
+          that prevent browser-based apps from accessing these endpoints. Heart
+          rate correlation is fully functional.
         </p>
       </div>
 
