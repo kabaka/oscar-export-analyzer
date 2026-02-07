@@ -2,7 +2,7 @@
 
 ## Custom Copilot Agents
 
-OSCAR Export Analyzer includes **10 specialized GitHub Copilot agents** for development workflows. When completing tasks that could be delegated, use these agents as subagents; they coordinate development, testing, documentation, analysis, and quality assurance.
+OSCAR Export Analyzer includes **13 specialized GitHub Copilot agents** for development workflows. When completing tasks that could be delegated, use these agents as subagents; they coordinate development, testing, documentation, analysis, and quality assurance.
 
 **Agents** (in `.github/agents/`):
 
@@ -10,17 +10,20 @@ OSCAR Export Analyzer includes **10 specialized GitHub Copilot agents** for deve
 - `@frontend-developer` — Build React/JSX components, hooks, component architecture
 - `@ux-designer` — Design user experiences, accessibility, data visualization, medical UI patterns
 - `@testing-expert` — Design test strategy, write Vitest/Playwright tests, E2E automation, synthetic test data
+- `@playwright-specialist` — E2E browser automation, visual regression, cross-browser testing (NEW)
+- `@performance-optimizer` — Performance profiling, optimization, bundle analysis (NEW)
 - `@data-scientist` — Statistical analysis, algorithm validation, medical data interpretation
 - `@documentation-specialist` — Write and maintain documentation, guides, architecture docs, code comments
 - `@security-auditor` — Audit security, privacy, sensitive health data handling (local-first privacy)
 - `@adr-specialist` — Document architectural decisions, technology choices, rationale
 - `@debugger-rca-analyst` — Determine root cause through rigorous testing and analysis
 - `@readiness-reviewer` — Pre-commit quality gate: tests pass, linting clean, scope complete, docs updated
-- `@code-quality-enforcer` — Enforce consistency, DRY principles, architecture adherence, code style (NEW)
+- `@code-quality-enforcer` — Enforce consistency, DRY principles, architecture adherence, code style
 
 **Documentation**:
 
 - [**Individual Agent Details**](.github/agents/*.agent.md) — Full agent descriptions, expertise, and patterns
+- [**Agent Skills Documentation**](#agent-skills) — Reusable skills portable across agents and platforms (see below)
 - [**Agent Review Synthesis**](docs/work/agent-reviews/SYNTHESIS-recommendations.md) — Comprehensive analysis of gaps and improvements (2026-01-26)
 - **Delegation Model**: Always delegate — use multiple agents for complex work. See orchestrator-manager for patterns.
 - **Quality Bar**: All tests pass, linting clean, documentation updated, no sensitive data committed.
@@ -118,6 +121,112 @@ Based on comprehensive self-review, @orchestrator-manager now enforces:
 - Quality review may request refactors that need re-testing
 - Readiness-reviewer gets cleaner code to validate
 - Developers see consistency feedback before formal gate
+
+---
+
+## Agent Skills
+
+OSCAR Export Analyzer uses **Agent Skills** — portable, reusable knowledge modules that agents reference when completing tasks. Skills follow the [open standard from agentskills.io](https://agentskills.io), enabling portability across VS Code, GitHub Copilot CLI, and future platforms.
+
+### What Are Agent Skills?
+
+Agent Skills are YAML + Markdown files that document:
+
+- **Patterns and best practices**: How to do something correctly in this project
+- **Project-specific conventions**: Unique patterns that might not be obvious
+- **Complex workflows**: Step-by-step processes for advanced tasks
+- **Security and privacy rules**: Critical guidelines that must be followed
+
+Skills are stored in `.github/skills/skill-name/SKILL.md` and automatically loaded when relevant to a task. Agents reference skills by name, and the platform loads the full instructions when needed.
+
+### Available Skills (12 Total)
+
+#### **Foundation Skills** (Project Conventions)
+
+1. **oscar-test-data-generation** — Synthetic CPAP test data builders, realistic scenarios, CSV generation
+   - Used by: testing-expert, data-scientist, debugger-rca-analyst
+   - When: Writing tests, investigating bugs, validating algorithms
+
+2. **oscar-privacy-boundaries** — PHI handling rules, local-first privacy, encryption, never-commit data rules
+   - Used by: ALL agents (security-critical skill)
+   - When: Any work involving OSCAR CSV data, logging, test data, documentation examples
+
+3. **oscar-changelog-maintenance** — Keep a Changelog format, date-based versioning, agent workflow
+   - Used by: ALL agents making user-facing changes
+   - When: Committing changes, preparing PRs, updating documentation
+
+4. **vite-react-project-structure** — File organization, naming conventions, directory structure
+   - Used by: frontend-developer, orchestrator-manager, documentation-specialist, code-quality-enforcer
+   - When: Creating components, organizing files, reviewing project structure
+
+#### **Technical Implementation Skills** (How-To Patterns)
+
+5. **oscar-web-worker-patterns** — Web Worker creation, message passing, CSV parsing, async computation
+   - Used by: frontend-developer, performance-optimizer
+   - When: Offloading heavy work to workers, implementing async analysis
+
+6. **oscar-statistical-validation** — Statistical tests, medical validation, numerical stability, edge cases
+   - Used by: data-scientist, testing-expert
+   - When: Implementing statistical features, validating algorithms, testing edge cases
+
+7. **react-component-testing** — Vitest + Testing Library patterns, accessible queries, mocking patterns
+   - Used by: testing-expert, frontend-developer, code-quality-enforcer
+   - When: Writing component tests, test reviews, ensuring test quality
+
+8. **root-cause-analysis-workflow** — Systematic debugging methodology, hypothesis validation, RCA reports
+   - Used by: debugger-rca-analyst, testing-expert
+   - When: Investigating bugs, diagnosing failures, documenting root causes
+
+#### **Advanced Feature Skills** (Complex Workflows)
+
+9. **oscar-fitbit-integration** — OAuth PKCE flow, passphrase encryption, API worker, correlation analytics
+   - Used by: frontend-developer, security-auditor
+   - When: Working on Fitbit features, OAuth flows, encrypted storage, correlation analysis
+
+10. **playwright-visual-regression** — E2E browser automation, visual regression, accessibility testing, CI integration
+    - Used by: playwright-specialist, testing-expert
+    - When: E2E tests, visual regression baselines, cross-browser validation, screenshot automation
+
+11. **medical-data-visualization** — Chart design patterns, accessibility (WCAG AA), colorblind palettes, medical terminology
+    - Used by: ux-designer, frontend-developer
+    - When: Designing charts, reviewing visualizations, accessibility audits
+
+12. **code-review-checklist** — Comprehensive pre-merge checklist (quality, testing, docs, security, scope)
+    - Used by: code-quality-enforcer, readiness-reviewer, orchestrator-manager
+    - When: Reviewing PRs, pre-commit checks, quality audits, verifying work completeness
+
+### How to Use Skills
+
+**For Agents:**
+
+- Reference skills by name when explaining patterns: "See oscar-test-data-generation skill for synthetic data examples"
+- Don't duplicate skill content in agent instructions—reference the skill instead
+- Multiple agents can reference the same skill (e.g., oscar-privacy-boundaries is referenced by all agents)
+
+**For Users:**
+
+- Skills activate automatically based on task context (no manual selection)
+- Skills are loaded progressively: metadata first, full body when needed
+- View skills in `.github/skills/` directories for detailed documentation
+- Skills are portable—work across VS Code, GitHub Copilot CLI, and future platforms
+
+### Agent-Skill Mapping
+
+| Agent | Primary Skills |
+|-------|----------------|
+| @orchestrator-manager | code-review-checklist, oscar-changelog-maintenance, vite-react-project-structure |
+| @frontend-developer | vite-react-project-structure, react-component-testing, oscar-web-worker-patterns, oscar-fitbit-integration, medical-data-visualization |
+| @ux-designer | medical-data-visualization, oscar-privacy-boundaries |
+| @testing-expert | oscar-test-data-generation, react-component-testing, playwright-visual-regression, oscar-privacy-boundaries |
+| @playwright-specialist | playwright-visual-regression, oscar-test-data-generation, oscar-privacy-boundaries, medical-data-visualization |
+| @performance-optimizer | oscar-web-worker-patterns, vite-react-project-structure, medical-data-visualization |
+| @data-scientist | oscar-statistical-validation, oscar-test-data-generation, oscar-privacy-boundaries |
+| @documentation-specialist | oscar-changelog-maintenance, vite-react-project-structure, oscar-privacy-boundaries |
+| @security-auditor | oscar-privacy-boundaries, oscar-fitbit-integration, vite-react-project-structure |
+| @adr-specialist | (references all skills for architectural context) |
+| @debugger-rca-analyst | root-cause-analysis-workflow, oscar-test-data-generation |
+| @readiness-reviewer | code-review-checklist, oscar-changelog-maintenance, oscar-privacy-boundaries |
+| @code-quality-enforcer | code-review-checklist, vite-react-project-structure, react-component-testing |
 
 ---
 

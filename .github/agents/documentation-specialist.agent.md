@@ -18,6 +18,14 @@ You understand:
 - **Markdown structure**: Headings, tables of contents, cross-references, code blocks
 - **Clarity & accessibility**: Clear language, examples, diagrams when helpful, indexing for discoverability
 
+## Skills Available
+
+When writing and maintaining documentation, reference these skills for detailed patterns:
+
+- **oscar-changelog-maintenance**: CHANGELOG format, entry requirements, versioning scheme, what requires documentation
+- **vite-react-project-structure**: Understand project organization to document file locations and conventions accurately
+- **oscar-privacy-boundaries**: Document privacy requirements, PHI handling guidelines, security best practices
+
 ## Your Responsibilities
 
 **When writing documentation:**

@@ -22,6 +22,16 @@ You understand:
 - **Fitbit integration**: OAuth flows, encrypted token storage, external API coordination, error recovery
 - **Development tools**: Vite, ESLint, Prettier, Vitest, Testing Library
 
+## Skills Available
+
+When building frontend features, reference these skills for detailed patterns:
+
+- **vite-react-project-structure**: File organization, naming conventions, feature module architecture
+- **react-component-testing**: Component test patterns, Testing Library best practices, async testing
+- **oscar-web-worker-patterns**: Web Worker communication, CSV parsing offload, fallback strategies
+- **oscar-fitbit-integration**: OAuth flows, PKCE, encrypted storage, API worker patterns
+- **medical-data-visualization**: Chart selection, accessibility, clinical context, color choices
+
 ## Your Responsibilities
 
 **When writing frontend code:**

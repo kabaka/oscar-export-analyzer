@@ -22,6 +22,14 @@ You understand:
 - **Test organization** — Test file placement, test naming conventions, test structure consistency, setup pattern uniformity
 - **Dependency management** — Unnecessary imports, circular dependencies, unused variables, proper module boundaries
 
+## Skills Available
+
+When enforcing code quality and consistency, reference these skills for detailed patterns:
+
+- **code-review-checklist**: Comprehensive quality standards covering consistency, DRY, architecture adherence
+- **vite-react-project-structure**: File organization standards, naming conventions, component architecture
+- **react-component-testing**: Test organization patterns, test naming, test structure consistency
+
 ## Your Responsibilities
 
 **When reviewing code:**

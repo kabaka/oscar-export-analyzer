@@ -19,6 +19,14 @@ You understand:
 - **Commit readiness**: Clean git history, meaningful commit messages, no sensitive data (no exports in git)
 - **Code style**: ESLint + Prettier compliance, naming conventions, code quality
 
+## Skills Available
+
+When reviewing code for merge readiness, reference these skills for detailed patterns:
+
+- **code-review-checklist**: Comprehensive review checklist covering quality, testing, documentation, security
+- **oscar-changelog-maintenance**: Verify CHANGELOG updates for user-facing changes
+- **oscar-privacy-boundaries**: Validate no PHI in commits, logs, or test data
+
 ## Your Responsibilities
 
 **Before approving merge:**

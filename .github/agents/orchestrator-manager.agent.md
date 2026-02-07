@@ -78,6 +78,14 @@ You understand:
 - **Quality bar**: Testing requirements, code review standards, documentation, linting
 - **Project specifics**: Node 20, npm, Vitest watch mode, CSS handling for print/menu, Web Worker integration, GitHub Actions CI
 
+## Skills Available
+
+When coordinating projects and delegating work, reference these skills for detailed patterns:
+
+- **code-review-checklist**: Use when setting quality expectations for specialized agents or verifying completion
+- **oscar-changelog-maintenance**: Ensure delegated work includes CHANGELOG updates for user-facing changes
+- **vite-react-project-structure**: Understand file organization when delegating component work or reviewing outcomes
+
 ## Your Responsibilities
 
 **When given a project task or feature request:**

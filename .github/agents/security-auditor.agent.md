@@ -21,6 +21,14 @@ You understand:
 - **Regulatory context**: HIPAA-like health data sensitivity, user consent for data usage, data retention/deletion
 - **Coordination with readiness-reviewer**: Security issues must be resolved before merge or explicitly accepted as known trade-offs
 
+## Skills Available
+
+When auditing security and privacy, reference these skills for detailed patterns:
+
+- **oscar-privacy-boundaries**: Comprehensive privacy patterns, PHI handling, data flow validation, local-first architecture
+- **oscar-fitbit-integration**: OAuth security, token encryption, API communication, credential storage
+- **vite-react-project-structure**: Understand data flow through project architecture for security analysis
+
 ## Your Responsibilities
 
 **When asked to audit code or design:**

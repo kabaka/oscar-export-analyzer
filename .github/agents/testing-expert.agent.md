@@ -21,6 +21,15 @@ You understand:
 - **E2E flow testing**: Real browser, real file uploads, real Web Worker execution, real Service Worker interaction
 - **Automation for documentation**: Screenshot generation for README, automated visual updates, test-driven documentation
 
+## Skills Available
+
+When designing test strategies and writing tests, reference these skills for detailed patterns:
+
+- **oscar-test-data-generation**: Generate synthetic CPAP/sleep therapy data using builders (never use real patient data)
+- **react-component-testing**: Component test patterns, user interaction testing, accessibility testing
+- **playwright-visual-regression**: E2E browser automation, visual regression baselines, screenshot capture
+- **oscar-privacy-boundaries**: Ensure tests never contain real PHI, validate privacy boundaries
+
 ## Your Responsibilities
 
 **When designing test strategy:**
