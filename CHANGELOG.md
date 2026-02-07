@@ -6,6 +6,12 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-02-07
+
+### Fixed
+
+- **Fitbit SpO2 API endpoint**: Fixed malformed SpO2 endpoint URLs that had invalid `/all` suffix causing CORS errors and 403 permission failures. Updated `spo2.intraday` from `/1/user/-/spo2/date/{date}/all.json` to `/1/user/-/spo2/date/{date}.json` and `spo2.dateRange` from `/1/user/-/spo2/date/{startDate}/{endDate}/all.json` to `/1/user/-/spo2/date/{startDate}/{endDate}.json` to match Fitbit Web API v1 specification. This resolves the SpO2 data sync failures when users connect Fitbit accounts.
+
 ## 2026-02-06
 
 ### Fixed

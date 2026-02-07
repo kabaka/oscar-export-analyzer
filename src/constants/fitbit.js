@@ -133,8 +133,8 @@ export const FITBIT_API = {
 
   // SpO2 endpoints
   spo2: {
-    intraday: '/1/user/-/spo2/date/{date}/all.json',
-    dateRange: '/1/user/-/spo2/date/{startDate}/{endDate}/all.json',
+    intraday: '/1/user/-/spo2/date/{date}.json',
+    dateRange: '/1/user/-/spo2/date/{startDate}/{endDate}.json',
   },
 
   // Sleep endpoints
