@@ -61,8 +61,8 @@ jobs:
           GZIPPED_MB=$(echo "scale=2; $GZIPPED_SIZE / 1024 / 1024" | bc)
           echo "Gzipped size: ${GZIPPED_MB}MB"
           echo ""
-          # Fail if gzipped bundle exceeds 3.2MB (increased for PWA assets: icons + service worker)
-          MAX_SIZE_MB=3.2
+          # Fail if gzipped bundle exceeds 3.5MB (increased for correlation analysis pipeline)
+          MAX_SIZE_MB=3.5
           if (( $(echo "$GZIPPED_MB > $MAX_SIZE_MB" | bc -l) )); then
             echo "❌ Bundle size ${GZIPPED_MB}MB exceeds maximum ${MAX_SIZE_MB}MB"
             exit 1
