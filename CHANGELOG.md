@@ -10,7 +10,11 @@ corresponds to changes released on that day.
 
 ### Fixed
 
-- **Fitbit SpO2 API endpoint**: Fixed malformed SpO2 endpoint URLs that had invalid `/all` suffix causing CORS errors and 403 permission failures. Updated `spo2.intraday` from `/1/user/-/spo2/date/{date}/all.json` to `/1/user/-/spo2/date/{date}.json` and `spo2.dateRange` from `/1/user/-/spo2/date/{startDate}/{endDate}/all.json` to `/1/user/-/spo2/date/{startDate}/{endDate}.json` to match Fitbit Web API v1 specification. This resolves the SpO2 data sync failures when users connect Fitbit accounts.
+- **Fitbit API sync failures**: Fixed three issues causing Fitbit data sync to fail for sleep and SpO2 endpoints while heart rate worked:
+  - **Scope validation**: Added pre-call validation of OAuth-granted scopes — the app now checks which scopes the user actually approved during authorization and skips API calls for declined scopes with a clear message, instead of making doomed requests that Fitbit masks as CORS errors.
+  - **batchSync concurrency bug**: Fixed broken concurrency control where all API requests fired simultaneously (`.map(async ...)` starts all promises immediately). Requests are now properly batched per `maxConcurrentRequests` setting.
+  - **CORS error diagnostics**: Improved error messages when Fitbit returns CORS-masked permission errors (TypeError) to suggest the likely real cause (scope not granted) instead of generic network error.
+  - **SpO2 endpoint format**: Fixed malformed SpO2 endpoint URLs with invalid `/all` suffix — updated to match current Fitbit Web API v1 specification.
 
 ## 2026-02-06
 

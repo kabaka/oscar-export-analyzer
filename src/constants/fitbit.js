@@ -119,6 +119,17 @@ export const MVP_SCOPES = [
 ];
 
 /**
+ * Maps batchSync data type names to their required OAuth scopes.
+ * Used for scope validation before making API calls.
+ */
+export const DATA_TYPE_SCOPES = {
+  heartRate: FITBIT_SCOPES.HEARTRATE,
+  spo2: FITBIT_SCOPES.SPO2,
+  sleep: FITBIT_SCOPES.SLEEP,
+  hrv: FITBIT_SCOPES.HEARTRATE, // HRV uses heart rate scope
+};
+
+/**
  * Fitbit Web API endpoints.
  * Rate limited to 150 requests/hour per user.
  */
@@ -194,6 +205,7 @@ export const FITBIT_ERRORS = {
   API_RATE_LIMITED: 'api_rate_limited',
   API_ERROR: 'api_error',
   NETWORK_ERROR: 'network_error',
+  SCOPE_NOT_GRANTED: 'scope_not_granted',
   ENCRYPTION_ERROR: {
     code: 'encryption_error',
     message:

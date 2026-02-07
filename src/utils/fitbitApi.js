@@ -16,6 +16,7 @@ import {
   RATE_LIMITS,
   SYNC_CONFIG,
   FITBIT_ERRORS,
+  DATA_TYPE_SCOPES,
 } from '../constants/fitbit.js';
 
 /**
@@ -153,6 +154,16 @@ class FitbitHttpClient {
           retries: retries - 1,
           delay: delay * RATE_LIMITS.backoffMultiplier,
         });
+      }
+
+      // Provide better error message for CORS-masked permission errors
+      if (error.name === 'TypeError') {
+        throw {
+          code: 'api_request_failed',
+          type: 'api',
+          message: `Request to ${endpoint} failed. This may indicate a permission issue — verify the required scope was granted during Fitbit authorization.`,
+          details: error.message,
+        };
       }
 
       throw error;
@@ -343,8 +354,26 @@ export class FitbitApiClient {
   }
 
   /**
+   * Check which scopes were granted during OAuth authorization.
+   * Returns null if scope info is unavailable (best-effort).
+   *
+   * @returns {Promise<string[]|null>} Granted scopes or null
+   */
+  async getGrantedScopes() {
+    if (!this.passphrase) return null;
+    try {
+      return await fitbitOAuth
+        .getTokenManager()
+        .getGrantedScopes(this.passphrase);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Batch sync multiple data types for a date range.
    * Respects rate limits and concurrent request limits.
+   * Validates granted scopes before making API calls.
    *
    * @param {Object} params - Sync parameters
    * @param {Date|string} params.startDate - Start date
@@ -374,48 +403,70 @@ export class FitbitApiClient {
       }
     };
 
+    // Best-effort scope validation: skip data types whose scope wasn't granted
+    const grantedScopes = await this.getGrantedScopes();
+    const filteredDataTypes = [];
+    for (const dataType of dataTypes) {
+      const requiredScope = DATA_TYPE_SCOPES[dataType];
+      if (
+        grantedScopes &&
+        requiredScope &&
+        !grantedScopes.includes(requiredScope)
+      ) {
+        console.warn(
+          `Skipping ${dataType}: scope '${requiredScope}' was not granted during Fitbit authorization.`,
+        );
+        results[dataType] = {
+          error: `Scope '${requiredScope}' was not granted. Re-authorize with this permission to access ${dataType} data.`,
+          scopeMissing: true,
+        };
+        updateProgress();
+      } else {
+        filteredDataTypes.push(dataType);
+      }
+    }
+
     try {
-      // Execute requests with concurrency limit
-      const promises = dataTypes.map(async (dataType) => {
-        try {
-          let data;
-
-          switch (dataType) {
-            case 'heartRate':
-              data = await this.getHeartRateRange(startDate, endDate);
-              break;
-            case 'spo2':
-              data = await this.getSpo2Range(startDate, endDate);
-              break;
-            case 'sleep':
-              data = await this.getSleepLogs(startDate, endDate);
-              break;
-            case 'hrv':
-              data = await this.getHrvRange(startDate, endDate);
-              break;
-            default:
-              throw {
-                code: 'unsupported_data_type',
-                type: 'api',
-                message: `Unsupported data type: ${dataType}`,
-                details: dataType,
-              };
-          }
-
-          results[dataType] = data;
-          updateProgress();
-        } catch (error) {
-          console.error(`Failed to sync ${dataType}:`, error);
-          results[dataType] = { error: error.message };
-          updateProgress();
-        }
-      });
-
-      // Wait for all requests with concurrency limit
+      // Execute requests with proper concurrency limit
       const semaphore = SYNC_CONFIG.maxConcurrentRequests;
-      for (let i = 0; i < promises.length; i += semaphore) {
-        const batch = promises.slice(i, i + semaphore);
-        await Promise.all(batch);
+      for (let i = 0; i < filteredDataTypes.length; i += semaphore) {
+        const batch = filteredDataTypes.slice(i, i + semaphore);
+        await Promise.all(
+          batch.map(async (dataType) => {
+            try {
+              let data;
+
+              switch (dataType) {
+                case 'heartRate':
+                  data = await this.getHeartRateRange(startDate, endDate);
+                  break;
+                case 'spo2':
+                  data = await this.getSpo2Range(startDate, endDate);
+                  break;
+                case 'sleep':
+                  data = await this.getSleepLogs(startDate, endDate);
+                  break;
+                case 'hrv':
+                  data = await this.getHrvRange(startDate, endDate);
+                  break;
+                default:
+                  throw {
+                    code: 'unsupported_data_type',
+                    type: 'api',
+                    message: `Unsupported data type: ${dataType}`,
+                    details: dataType,
+                  };
+              }
+
+              results[dataType] = data;
+              updateProgress();
+            } catch (error) {
+              console.error(`Failed to sync ${dataType}:`, error);
+              results[dataType] = { error: error.message || error.details };
+              updateProgress();
+            }
+          }),
+        );
       }
 
       return results;

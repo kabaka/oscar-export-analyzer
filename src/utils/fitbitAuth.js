@@ -293,6 +293,24 @@ class TokenManager {
   }
 
   /**
+   * Get the OAuth scopes granted during authorization.
+   * Returns an array of scope strings from the cached token data.
+   * Falls back to null if scope info is unavailable (e.g., old stored tokens).
+   *
+   * @param {string} passphrase - User encryption passphrase
+   * @returns {Promise<string[]|null>} Array of granted scope strings, or null if unavailable
+   */
+  async getGrantedScopes(passphrase) {
+    try {
+      const tokens = await this.getStoredTokens(passphrase);
+      if (!tokens?.scope) return null;
+      return tokens.scope.split(' ').filter(Boolean);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Get valid access token, refreshing if necessary.
    *
    * @param {string} passphrase - User encryption passphrase
