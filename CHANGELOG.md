@@ -15,6 +15,12 @@ corresponds to changes released on that day.
 - **`useFitbitAnalysis` hook**: Connects the analysis pipeline to the React UI, running `analyzeOscarFitbitIntegration()` via `useMemo` when OSCAR + Fitbit data are both available
 - **Three resting heart rate correlation pairs**: AHI↔resting HR, usage↔resting HR, and leak rate↔resting HR now included in correlation analysis
 - **Dashboard correlation views**: Dashboard now shows correlation overview, nightly detail, and scatter analysis views when analysis data is available
+- **Intraday heart rate data** (1-minute resolution) from Fitbit for detailed overnight HR analysis
+- **Per-night drill-down view** with SVG sparkline chart of minute-by-minute heart rate
+- **Side-by-side KPI comparison cards** showing OSCAR metrics (AHI, Total Time, Leak Rate) and Fitbit metrics (Resting HR, Min HR, Avg SpO2, Min SpO2) for each night
+- **SpO2 intraday data parsing** from Fitbit `/all` endpoint (5-minute intervals)
+- **Intraday heart rate stats computation** (min, max, avg BPM per night)
+- **`DISABLED_DATA_TYPES` constant** tracking temporarily unavailable Fitbit API endpoints (currently: `['sleep']`)
 
 ### Changed
 
@@ -22,6 +28,10 @@ corresponds to changes released on that day.
 - Added clear user-facing note in the Fitbit Correlation section explaining the CORS limitation with a link to the Fitbit community post.
 - **Fitbit data alignment supports HR-only sync mode**: `validateAlignment` now accepts `restingBpm` as alternative to `avgSleepBpm` and skips overlap validation in HR-only mode (no sleep duration data required)
 - **`onCorrelationAnalysis` prop now optional**: `FitbitDashboard` no longer requires a manual correlation trigger since analysis runs automatically
+- **Fixed SpO2 API endpoint** to use confirmed working `/all` format for intraday data
+- **Disabled Fitbit Sleep v1.2 API calls** due to persistent CORS errors on api.fitbit.com (affects all browser-based apps, including Fitbit's own Swagger UI)
+- **Default Fitbit sync data types** changed from heart rate + SpO2 + sleep to heart rate + SpO2
+- **Fitbit sync date range** now automatically aligns with OSCAR data range or active date filter (no more blind "last 30 days" default)
 
 ### Fixed
 

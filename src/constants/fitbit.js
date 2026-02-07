@@ -110,13 +110,15 @@ export const FITBIT_SCOPES = {
 
 /**
  * MVP scopes - permissions for core correlation features.
- * Heart rate, SpO2, and sleep data are all synced for comprehensive analysis.
+ * Sleep scope is excluded because the Sleep v1.2 API has CORS issues.
  */
-export const MVP_SCOPES = [
-  FITBIT_SCOPES.HEARTRATE,
-  FITBIT_SCOPES.SPO2,
-  FITBIT_SCOPES.SLEEP,
-];
+export const MVP_SCOPES = [FITBIT_SCOPES.HEARTRATE, FITBIT_SCOPES.SPO2];
+
+/**
+ * Data types disabled due to API issues.
+ * Sleep v1.2 endpoints return CORS errors even on Fitbit's official Swagger UI.
+ */
+export const DISABLED_DATA_TYPES = ['sleep'];
 
 /**
  * Maps batchSync data type names to their required OAuth scopes.
@@ -139,20 +141,25 @@ export const FITBIT_API = {
   // Heart rate endpoints (scope: heartrate)
   heartRate: {
     intraday: '/1/user/-/activities/heart/date/{date}/1d/1min.json',
+    intradayByRange:
+      '/1/user/-/activities/heart/date/{date}/{endDate}/1min/time/{startTime}/{endTime}.json',
     dateRange: '/1/user/-/activities/heart/date/{startDate}/{endDate}.json',
   },
 
   // SpO2 endpoints (scope: oxygen_saturation)
+  // The dateRange endpoint uses the /all suffix to return intraday SpO2 data
   spo2: {
     summary: '/1/user/-/spo2/date/{date}.json',
-    dateRange: '/1/user/-/spo2/date/{startDate}/{endDate}.json',
+    dateRange: '/1/user/-/spo2/date/{startDate}/{endDate}/all.json',
     intraday: '/1/user/-/spo2/date/{date}/all.json',
   },
 
-  // Sleep endpoints (scope: sleep)
+  // DISABLED: Sleep v1.2 endpoints produce CORS errors even on the official
+  // Fitbit Swagger UI (https://dev.fitbit.com/build/reference/web-api/sleep/).
+  // Keeping definitions for future use once Fitbit resolves the CORS issue.
   sleep: {
-    logs: '/1.2/user/-/sleep/date/{startDate}/{endDate}.json',
-    detail: '/1.2/user/-/sleep/date/{date}.json',
+    // DISABLED: logs: '/1.2/user/-/sleep/date/{startDate}/{endDate}.json',
+    // DISABLED: detail: '/1.2/user/-/sleep/date/{date}.json',
   },
 
   // Heart rate variability (scope: heartrate)
@@ -180,11 +187,13 @@ export const RATE_LIMITS = {
 
 /**
  * Data sync configuration.
+ * Fitbit SpO2 and HR summary endpoints support up to 30-day ranges.
  */
 export const SYNC_CONFIG = {
-  maxDaysPerRequest: 7, // Batch size for date range requests
+  maxDaysPerRequest: 30, // Fitbit supports up to 30-day ranges for SpO2/HR summary
   maxConcurrentRequests: 2, // Prevent rate limit exhaustion
   defaultLookbackDays: 30, // Default sync period
+  intradayBatchSize: 7, // HR intraday fetched 1 day at a time, batched in groups of 7
 };
 
 /**

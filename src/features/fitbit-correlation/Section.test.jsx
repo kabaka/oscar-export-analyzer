@@ -46,6 +46,20 @@ vi.mock('../../context/DataContext', () => ({
   useData: () => ({ filteredSummary: null }),
 }));
 
+vi.mock('../../hooks/useDateFilter', () => ({
+  __esModule: true,
+  useDateFilter: () => ({
+    dateFilter: { start: null, end: null },
+    setDateFilter: vi.fn(),
+    quickRange: 'all',
+    handleQuickRangeChange: vi.fn(),
+    parseDate: vi.fn(),
+    formatDate: vi.fn((d) => (d ? d.toISOString().split('T')[0] : '')),
+    selectCustomRange: vi.fn(),
+    resetDateFilter: vi.fn(),
+  }),
+}));
+
 vi.mock('../../components/fitbit/FitbitDashboard', () => ({
   __esModule: true,
   default: ({

@@ -129,7 +129,7 @@ describe('useFitbitConnection', () => {
     // Should have computed default dates (YYYY-MM-DD strings)
     expect(callArgs.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(callArgs.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(callArgs.dataTypes).toEqual(['heartRate', 'spo2', 'sleep']);
+    expect(callArgs.dataTypes).toEqual(['heartRate', 'spo2']);
   });
 
   it('does not show Not Connected when tokens are valid', async () => {

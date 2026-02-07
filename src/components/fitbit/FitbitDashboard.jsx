@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import FitbitConnectionCard from '../FitbitConnectionCard.jsx';
 import { getTokens } from '../../utils/fitbitDb.js';
@@ -157,8 +157,8 @@ function FitbitDashboard({
               lineHeight: 1.5,
             }}
           >
-            Correlate heart rate, SpO2, and sleep stage data with your CPAP
-            therapy metrics for deeper insights into sleep health patterns.
+            Syncs heart rate and SpO2 data for correlation with AHI and other
+            CPAP metrics for deeper insights into sleep health patterns.
           </p>
         </header>
 
@@ -302,7 +302,7 @@ function FitbitDashboard({
             <EmptyStateCard
               icon="🔗"
               title="Connect Your Fitbit"
-              description="Link your Fitbit account to start analyzing correlations between your heart rate, SpO2, sleep stages, and CPAP therapy data."
+              description="Link your Fitbit account to start analyzing correlations between your heart rate, SpO2, and CPAP therapy data."
               action="Connect above to get started"
             />
           )}
@@ -318,7 +318,10 @@ function FitbitDashboard({
 
           {/* Synced Heart Rate Data (when no full correlation data yet) */}
           {isConnected && hasSyncedHeartRateData && !hasData && (
-            <HeartRateDataSection heartRateData={fitbitData.heartRateData} />
+            <HeartRateDataSection
+              heartRateData={fitbitData.heartRateData}
+              heartRateIntraday={fitbitData.heartRateIntraday}
+            />
           )}
         </main>
       </div>
@@ -500,9 +503,383 @@ function CorrelationsSection({ correlationData, onCellClick }) {
 }
 
 /**
- * Detailed nightly analysis section.
+ * Converts a time string "HH:MM:SS" or "HH:MM" to minutes since midnight.
+ */
+function timeToMinutes(timeStr) {
+  const parts = timeStr.split(':');
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+}
+
+/**
+ * Peak-preserving downsampling for SVG rendering performance.
+ * Divides data into buckets and keeps min/max in each bucket to preserve
+ * signal peaks and troughs, which are clinically important for HR data.
+ *
+ * @param {Array} data - Array of { time, bpm } objects
+ * @param {number} targetPoints - Approximate number of output points
+ * @returns {Array} Downsampled array preserving extremes
+ */
+function downsampleIntraday(data, targetPoints = 200) {
+  if (!data || data.length <= targetPoints) return data;
+
+  const bucketSize = Math.ceil(data.length / targetPoints);
+  const result = [];
+
+  for (let i = 0; i < data.length; i += bucketSize) {
+    const bucket = data.slice(i, i + bucketSize);
+    let minItem = bucket[0];
+    let maxItem = bucket[0];
+
+    for (const item of bucket) {
+      if (item.bpm < minItem.bpm) minItem = item;
+      if (item.bpm > maxItem.bpm) maxItem = item;
+    }
+
+    if (minItem === maxItem) {
+      result.push(minItem);
+    } else {
+      // Emit in chronological order to keep the path smooth
+      const minIdx = bucket.indexOf(minItem);
+      const maxIdx = bucket.indexOf(maxItem);
+      if (minIdx <= maxIdx) {
+        result.push(minItem, maxItem);
+      } else {
+        result.push(maxItem, minItem);
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Inline SVG chart for intraday heart rate data.
+ * Uses viewBox for responsiveness and CSS custom properties for dark mode support.
+ * Downsamples ~1440 points to ~200 for SVG rendering performance.
+ */
+function IntradayHeartRateChart({
+  intradayData,
+  intradayStats,
+  date,
+  restingHR,
+}) {
+  const downsampled = useMemo(
+    () => downsampleIntraday(intradayData, 200),
+    [intradayData],
+  );
+
+  if (!downsampled || downsampled.length === 0) return null;
+
+  const svgWidth = 800;
+  const svgHeight = 200;
+  const pad = { top: 20, right: 60, bottom: 30, left: 50 };
+  const chartW = svgWidth - pad.left - pad.right;
+  const chartH = svgHeight - pad.top - pad.bottom;
+
+  // Y-axis: auto-scale with 10% padding
+  const bpmValues = downsampled.map((d) => d.bpm).filter(Number.isFinite);
+  const rawMin = Math.min(...bpmValues);
+  const rawMax = Math.max(...bpmValues);
+  const bpmRange = rawMax - rawMin || 1;
+  const yMin = Math.floor(rawMin - bpmRange * 0.1);
+  const yMax = Math.ceil(rawMax + bpmRange * 0.1);
+
+  const xScale = (minutes) => pad.left + (minutes / 1440) * chartW;
+  const yScale = (bpm) =>
+    pad.top + chartH - ((bpm - yMin) / (yMax - yMin)) * chartH;
+
+  // Build SVG path
+  const linePath = downsampled
+    .map((d, i) => {
+      const x = xScale(timeToMinutes(d.time)).toFixed(1);
+      const y = yScale(d.bpm).toFixed(1);
+      return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+    })
+    .join(' ');
+
+  // Overnight shading rects (10PM–midnight and midnight–7AM)
+  const nightStartX = xScale(22 * 60);
+  const nightEndX = xScale(7 * 60);
+  const dayEndX = xScale(1440);
+
+  // Resting HR reference line
+  const restingY =
+    restingHR != null && restingHR >= yMin && restingHR <= yMax
+      ? yScale(restingHR)
+      : null;
+
+  // Time labels at 3-hour intervals
+  const timeLabels = [0, 3, 6, 9, 12, 15, 18, 21].map((h) => ({
+    label: h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`,
+    x: xScale(h * 60),
+  }));
+
+  // Y-axis ticks
+  const yTickCount = 5;
+  const yLabels = Array.from({ length: yTickCount + 1 }, (_, i) => {
+    const val = yMin + (i * (yMax - yMin)) / yTickCount;
+    return { label: Math.round(val), y: yScale(val) };
+  });
+
+  return (
+    <div
+      style={{
+        padding: '1.5rem',
+        backgroundColor: 'var(--color-surface)',
+        borderRadius: '8px',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'var(--shadow-2)',
+        marginBottom: '1.5rem',
+      }}
+    >
+      <h3
+        style={{
+          margin: '0 0 0.5rem 0',
+          color: 'var(--color-text)',
+          fontSize: '1.1em',
+        }}
+      >
+        <span aria-hidden="true" style={{ marginRight: '0.5rem' }}>
+          💓
+        </span>
+        Intraday Heart Rate — {date}
+      </h3>
+
+      {/* Stats row */}
+      {intradayStats && (
+        <div
+          style={{
+            display: 'flex',
+            gap: '1.5rem',
+            marginBottom: '1rem',
+            flexWrap: 'wrap',
+            fontSize: '0.9em',
+          }}
+        >
+          <span style={{ color: 'var(--color-text-muted)' }}>
+            Min:{' '}
+            <strong style={{ color: 'var(--color-text)' }}>
+              {intradayStats.minBpm} bpm
+            </strong>
+          </span>
+          <span style={{ color: 'var(--color-text-muted)' }}>
+            Max:{' '}
+            <strong style={{ color: 'var(--color-text)' }}>
+              {intradayStats.maxBpm} bpm
+            </strong>
+          </span>
+          <span style={{ color: 'var(--color-text-muted)' }}>
+            Avg:{' '}
+            <strong style={{ color: 'var(--color-text)' }}>
+              {intradayStats.avgBpm} bpm
+            </strong>
+          </span>
+          <span style={{ color: 'var(--color-text-muted)' }}>
+            Data points:{' '}
+            <strong style={{ color: 'var(--color-text)' }}>
+              {intradayStats.dataPoints}
+            </strong>
+          </span>
+        </div>
+      )}
+
+      <svg
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        width="100%"
+        role="img"
+        aria-label={`Intraday heart rate chart for ${date}. ${intradayStats ? `Range: ${intradayStats.minBpm} to ${intradayStats.maxBpm} bpm, average ${intradayStats.avgBpm} bpm.` : ''}`}
+        style={{ display: 'block' }}
+      >
+        {/* Overnight shading: 10PM to midnight */}
+        <rect
+          x={nightStartX}
+          y={pad.top}
+          width={dayEndX - nightStartX}
+          height={chartH}
+          fill="var(--color-kpi-bg)"
+          opacity="0.5"
+        />
+        {/* Overnight shading: midnight to 7AM */}
+        <rect
+          x={pad.left}
+          y={pad.top}
+          width={nightEndX - pad.left}
+          height={chartH}
+          fill="var(--color-kpi-bg)"
+          opacity="0.5"
+        />
+
+        {/* Horizontal grid lines + Y labels */}
+        {yLabels.map((tick, i) => (
+          <g key={`y-${i}`}>
+            <line
+              x1={pad.left}
+              y1={tick.y}
+              x2={svgWidth - pad.right}
+              y2={tick.y}
+              stroke="var(--color-border)"
+              strokeWidth="0.5"
+            />
+            <text
+              x={pad.left - 8}
+              y={tick.y + 4}
+              textAnchor="end"
+              fontSize="10"
+              fill="var(--color-text-muted)"
+            >
+              {tick.label}
+            </text>
+          </g>
+        ))}
+
+        {/* Vertical grid lines + time labels */}
+        {timeLabels.map((tick, i) => (
+          <g key={`x-${i}`}>
+            <line
+              x1={tick.x}
+              y1={pad.top}
+              x2={tick.x}
+              y2={pad.top + chartH}
+              stroke="var(--color-border)"
+              strokeWidth="0.5"
+              strokeDasharray="3,3"
+            />
+            <text
+              x={tick.x}
+              y={svgHeight - 5}
+              textAnchor="middle"
+              fontSize="10"
+              fill="var(--color-text-muted)"
+            >
+              {tick.label}
+            </text>
+          </g>
+        ))}
+
+        {/* Resting HR reference line */}
+        {restingY != null && (
+          <g>
+            <line
+              x1={pad.left}
+              y1={restingY}
+              x2={svgWidth - pad.right}
+              y2={restingY}
+              stroke="var(--color-accent)"
+              strokeWidth="1"
+              strokeDasharray="6,4"
+              opacity="0.6"
+            />
+            <text
+              x={svgWidth - pad.right + 4}
+              y={restingY + 4}
+              fontSize="9"
+              fill="var(--color-accent)"
+            >
+              Rest {restingHR}
+            </text>
+          </g>
+        )}
+
+        {/* Data line */}
+        {linePath && (
+          <path
+            d={linePath}
+            fill="none"
+            stroke="var(--color-accent)"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        )}
+      </svg>
+    </div>
+  );
+}
+
+IntradayHeartRateChart.propTypes = {
+  intradayData: PropTypes.arrayOf(
+    PropTypes.shape({
+      time: PropTypes.string.isRequired,
+      bpm: PropTypes.number.isRequired,
+    }),
+  ).isRequired,
+  intradayStats: PropTypes.shape({
+    minBpm: PropTypes.number,
+    maxBpm: PropTypes.number,
+    avgBpm: PropTypes.number,
+    dataPoints: PropTypes.number,
+  }),
+  date: PropTypes.string.isRequired,
+  restingHR: PropTypes.number,
+};
+
+/** KPI-style card for a single metric. */
+function KpiCard({ label, value, unit, icon }) {
+  return (
+    <div
+      style={{
+        padding: '1rem',
+        backgroundColor: 'var(--color-kpi-bg)',
+        borderRadius: '6px',
+        textAlign: 'center',
+        minWidth: '100px',
+      }}
+    >
+      {icon && (
+        <div
+          style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}
+          aria-hidden="true"
+        >
+          {icon}
+        </div>
+      )}
+      <div
+        style={{
+          fontSize: '1.25rem',
+          fontWeight: 'bold',
+          color: 'var(--color-accent)',
+        }}
+      >
+        {value != null ? `${value}${unit || ''}` : '—'}
+      </div>
+      <div
+        style={{
+          fontSize: '0.8em',
+          color: 'var(--color-text-muted)',
+          marginTop: '0.25rem',
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+KpiCard.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  unit: PropTypes.string,
+  icon: PropTypes.string,
+};
+
+/**
+ * Detailed nightly analysis section with intraday HR chart, SpO2 panel,
+ * and side-by-side OSCAR + Fitbit summary cards.
  */
 function NightlyDetailSection({ nightData, onBackToOverview }) {
+  const hrIntraday = nightData.fitbit?.heartRate?.intradayData;
+  const hrStats = nightData.fitbit?.heartRate?.intradayStats;
+  const restingHR =
+    nightData.fitbit?.heartRate?.restingBpm ?? nightData.avgHeartRate;
+  const spo2 = nightData.fitbit?.oxygenSaturation;
+
+  // Look up intraday SpO2 from top-level heartRateIntraday by date (future-proof)
+  const spo2Intraday = useMemo(() => {
+    if (spo2?.intradayData) return spo2.intradayData;
+    // Not available in the current data pipeline — placeholder for future
+    return null;
+  }, [spo2]);
+
   return (
     <div className="nightly-detail-section">
       <div style={{ marginBottom: '2rem' }}>
@@ -533,6 +910,231 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
         </h2>
       </div>
 
+      {/* Night Summary Cards — side-by-side OSCAR and Fitbit KPIs */}
+      <div
+        style={{
+          display: 'grid',
+          gap: '1.5rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          marginBottom: '1.5rem',
+        }}
+      >
+        {/* OSCAR Metrics */}
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
+          }}
+        >
+          <h4
+            style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-text)',
+              fontSize: '0.95em',
+            }}
+          >
+            <span aria-hidden="true" style={{ marginRight: '0.5rem' }}>
+              🫁
+            </span>
+            OSCAR Metrics
+          </h4>
+          <div
+            style={{
+              display: 'grid',
+              gap: '0.75rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+            }}
+          >
+            <KpiCard
+              label="AHI"
+              value={nightData.oscar?.ahi ?? nightData.ahi}
+              icon="📊"
+            />
+            <KpiCard
+              label="Total Time"
+              value={
+                nightData.oscar?.totalTime != null
+                  ? `${(nightData.oscar.totalTime / 60).toFixed(1)}`
+                  : null
+              }
+              unit="h"
+              icon="⏱️"
+            />
+            <KpiCard
+              label="Leak Rate"
+              value={nightData.oscar?.leakRate}
+              unit=" L/m"
+              icon="💨"
+            />
+          </div>
+        </div>
+
+        {/* Fitbit Metrics */}
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
+          }}
+        >
+          <h4
+            style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-text)',
+              fontSize: '0.95em',
+            }}
+          >
+            <span aria-hidden="true" style={{ marginRight: '0.5rem' }}>
+              ⌚
+            </span>
+            Fitbit Metrics
+          </h4>
+          <div
+            style={{
+              display: 'grid',
+              gap: '0.75rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+            }}
+          >
+            <KpiCard
+              label="Resting HR"
+              value={restingHR}
+              unit=" bpm"
+              icon="❤️"
+            />
+            <KpiCard
+              label="Min HR"
+              value={hrStats?.minBpm}
+              unit=" bpm"
+              icon="📉"
+            />
+            <KpiCard
+              label="Avg SpO2"
+              value={spo2?.avgPercent}
+              unit="%"
+              icon="🫧"
+            />
+            <KpiCard
+              label="Min SpO2"
+              value={spo2?.minPercent}
+              unit="%"
+              icon="⚠️"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Intraday Heart Rate Chart */}
+      {hrIntraday && hrIntraday.length > 0 && (
+        <IntradayHeartRateChart
+          intradayData={hrIntraday}
+          intradayStats={hrStats}
+          date={nightData.date}
+          restingHR={restingHR}
+        />
+      )}
+
+      {/* SpO2 Data Panel */}
+      {spo2 && (
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border)',
+            boxShadow: 'var(--shadow-2)',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <h3
+            style={{
+              margin: '0 0 1rem 0',
+              color: 'var(--color-text)',
+              fontSize: '1.1em',
+            }}
+          >
+            <span aria-hidden="true" style={{ marginRight: '0.5rem' }}>
+              🫧
+            </span>
+            Blood Oxygen Saturation (SpO2)
+          </h3>
+          <div
+            style={{
+              display: 'grid',
+              gap: '0.75rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+            }}
+          >
+            <KpiCard label="Average" value={spo2.avgPercent} unit="%" />
+            <KpiCard label="Minimum" value={spo2.minPercent} unit="%" />
+            <KpiCard label="Maximum" value={spo2.maxPercent} unit="%" />
+          </div>
+
+          {/* Intraday SpO2 chart (future — data layer doesn't expose yet) */}
+          {spo2Intraday && spo2Intraday.length > 0 && (
+            <div style={{ marginTop: '1rem' }}>
+              <h4
+                style={{
+                  margin: '0 0 0.5rem 0',
+                  color: 'var(--color-text)',
+                  fontSize: '0.95em',
+                }}
+              >
+                Intraday SpO2
+              </h4>
+              <svg
+                viewBox="0 0 800 120"
+                width="100%"
+                role="img"
+                aria-label={`Intraday SpO2 for ${nightData.date}`}
+                style={{ display: 'block' }}
+              >
+                {/* Simple bar chart for minute-level SpO2 */}
+                {spo2Intraday.map((pt, i) => {
+                  const x = 50 + (i / spo2Intraday.length) * 690;
+                  const barH = ((pt.value - 85) / 15) * 80;
+                  return (
+                    <rect
+                      key={i}
+                      x={x}
+                      y={100 - Math.max(0, barH)}
+                      width={Math.max(1, 690 / spo2Intraday.length - 0.5)}
+                      height={Math.max(0, barH)}
+                      fill="var(--color-accent)"
+                      opacity="0.7"
+                    />
+                  );
+                })}
+                {/* 95% reference line */}
+                <line
+                  x1={50}
+                  y1={100 - ((95 - 85) / 15) * 80}
+                  x2={740}
+                  y2={100 - ((95 - 85) / 15) * 80}
+                  stroke="var(--color-text-muted)"
+                  strokeWidth="0.5"
+                  strokeDasharray="4,3"
+                />
+                <text
+                  x={745}
+                  y={100 - ((95 - 85) / 15) * 80 + 4}
+                  fontSize="9"
+                  fill="var(--color-text-muted)"
+                >
+                  95%
+                </text>
+              </svg>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dual-axis correlation chart */}
       <DualAxisSyncChart
         title={`Heart Rate & AHI Events - ${nightData.date}`}
         data={nightData}
@@ -643,8 +1245,23 @@ function EmptyStateCard({ icon, title, description, action }) {
  * Display synced heart rate data when full correlation data isn't available yet.
  * Shows resting heart rate time series and summary statistics.
  */
-function HeartRateDataSection({ heartRateData }) {
+function HeartRateDataSection({ heartRateData, heartRateIntraday = [] }) {
   const summary = computeHeartRateSummary(heartRateData);
+
+  // Build lookup for intraday stats by date
+  const intradayByDate = useMemo(() => {
+    const map = new Map();
+    if (Array.isArray(heartRateIntraday)) {
+      for (const entry of heartRateIntraday) {
+        if (entry?.date && entry?.intradayStats) {
+          map.set(entry.date, entry.intradayStats);
+        }
+      }
+    }
+    return map;
+  }, [heartRateIntraday]);
+
+  const hasAnyIntraday = intradayByDate.size > 0;
 
   return (
     <div
@@ -850,6 +1467,20 @@ function HeartRateDataSection({ heartRateData }) {
                 >
                   Heart Rate Zones
                 </th>
+                {hasAnyIntraday && (
+                  <th
+                    scope="col"
+                    style={{
+                      textAlign: 'right',
+                      padding: '0.75rem',
+                      borderBottom: '2px solid var(--color-border)',
+                      color: 'var(--color-text-muted)',
+                      fontWeight: '600',
+                    }}
+                  >
+                    Intraday
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -896,6 +1527,24 @@ function HeartRateDataSection({ heartRateData }) {
                           .join(', ')
                       : '—'}
                   </td>
+                  {hasAnyIntraday && (
+                    <td
+                      style={{
+                        padding: '0.75rem',
+                        borderBottom: '1px solid var(--color-border)',
+                        textAlign: 'right',
+                        color: 'var(--color-text-muted)',
+                        fontSize: '0.85em',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {(() => {
+                        const stats = intradayByDate.get(day.date);
+                        if (!stats) return '—';
+                        return `${stats.minBpm}–${stats.maxBpm} (avg ${stats.avgBpm})`;
+                      })()}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -929,6 +1578,18 @@ FitbitDashboard.propTypes = {
         date: PropTypes.string.isRequired,
         restingHeartRate: PropTypes.number,
         heartRateZones: PropTypes.array,
+      }),
+    ),
+    heartRateIntraday: PropTypes.arrayOf(
+      PropTypes.shape({
+        date: PropTypes.string.isRequired,
+        intradayData: PropTypes.array,
+        intradayStats: PropTypes.shape({
+          minBpm: PropTypes.number,
+          maxBpm: PropTypes.number,
+          avgBpm: PropTypes.number,
+          dataPoints: PropTypes.number,
+        }),
       }),
     ),
   }),
@@ -987,6 +1648,13 @@ HeartRateDataSection.propTypes = {
       heartRateZones: PropTypes.array,
     }),
   ).isRequired,
+  heartRateIntraday: PropTypes.arrayOf(
+    PropTypes.shape({
+      date: PropTypes.string.isRequired,
+      intradayData: PropTypes.array,
+      intradayStats: PropTypes.object,
+    }),
+  ),
 };
 
 export default FitbitDashboard;

@@ -22,12 +22,14 @@ import { analyzeOscarFitbitIntegration } from '../utils/fitbitAnalysis.js';
  * @param {Array} heartRateData - Parsed heart rate records from parseSyncResults
  * @param {Array} [spo2Data] - Parsed SpO2 records from parseSyncResults
  * @param {Array} [sleepData] - Parsed sleep records from parseSyncResults
+ * @param {Array} [heartRateIntraday] - Per-day intraday HR data from parseSyncResults
  * @returns {Array} Fitbit nightly records for the analysis pipeline
  */
 export function transformFitbitDataForPipeline(
   heartRateData,
   spo2Data = [],
   sleepData = [],
+  heartRateIntraday = [],
 ) {
   if (!Array.isArray(heartRateData)) return [];
 
@@ -66,12 +68,21 @@ export function transformFitbitDataForPipeline(
     }
   }
 
+  // Build HR intraday lookup
+  const hrIntradayByDate = new Map();
+  if (Array.isArray(heartRateIntraday)) {
+    for (const entry of heartRateIntraday) {
+      if (entry?.date) hrIntradayByDate.set(entry.date, entry);
+    }
+  }
+
   // Build merged records for each date that has any data
   const records = [];
   for (const dateStr of allDates) {
     const hr = hrByDate.get(dateStr);
     const spo2 = spo2ByDate.get(dateStr);
     const sleep = sleepByDate.get(dateStr);
+    const hrIntraday = hrIntradayByDate.get(dateStr);
 
     // Require at least HR data to produce a record
     if (!hr) continue;
@@ -81,6 +92,12 @@ export function transformFitbitDataForPipeline(
         restingBpm: hr.restingHeartRate,
       },
     };
+
+    // Include intraday HR data when available
+    if (hrIntraday?.intradayData?.length > 0) {
+      fitbit.heartRate.intradayData = hrIntraday.intradayData;
+      fitbit.heartRate.intradayStats = hrIntraday.intradayStats;
+    }
 
     if (spo2) {
       fitbit.oxygenSaturation = {
@@ -187,16 +204,22 @@ export function buildScatterData(metrics) {
  * Shapes raw analysis results into the format expected by FitbitDashboard.
  *
  * Dashboard expects:
- *   { correlationData, nightlyData, scatterData, summary, heartRateData }
+ *   { correlationData, nightlyData, scatterData, summary, heartRateData, heartRateIntraday }
  *
  * @param {Object|null} analysisResult - Output from analyzeOscarFitbitIntegration
  * @param {Array} rawHeartRateData - Original synced heart rate data (for fallback display)
+ * @param {Array} [rawHeartRateIntraday] - Per-day intraday HR data for night detail view
  * @returns {Object} Dashboard-compatible fitbitData
  */
-export function shapeForDashboard(analysisResult, rawHeartRateData) {
+export function shapeForDashboard(
+  analysisResult,
+  rawHeartRateData,
+  rawHeartRateIntraday,
+) {
   if (!analysisResult || !analysisResult.success) {
     return {
       heartRateData: rawHeartRateData || [],
+      heartRateIntraday: rawHeartRateIntraday || [],
     };
   }
 
@@ -246,6 +269,7 @@ export function shapeForDashboard(analysisResult, rawHeartRateData) {
       dataQuality: dataOverview?.dataQuality,
     },
     heartRateData: rawHeartRateData || [],
+    heartRateIntraday: rawHeartRateIntraday || [],
     clinicalInsights,
     advancedAnalysis,
   };
@@ -260,13 +284,14 @@ export function shapeForDashboard(analysisResult, rawHeartRateData) {
  * @param {Object} options
  * @param {Array|null} options.oscarData - filteredSummary from DataContext
  * @param {Object|null} options.fitbitSyncedData - syncedData from useFitbitConnection
- *   Expected shape: { heartRateData: [...], spo2Data?: [...], sleepData?: [...] }
+ *   Expected shape: { heartRateData: [...], heartRateIntraday?: [...], spo2Data?: [...], sleepData?: [...] }
  * @returns {{ analysisData: Object, hasAnalysis: boolean, analysisError: string|null }}
  */
 export function useFitbitAnalysis({ oscarData, fitbitSyncedData } = {}) {
   return useMemo(() => {
     const hasOscarData = Array.isArray(oscarData) && oscarData.length > 0;
     const rawHeartRateData = fitbitSyncedData?.heartRateData;
+    const rawHeartRateIntraday = fitbitSyncedData?.heartRateIntraday;
     const rawSpo2Data = fitbitSyncedData?.spo2Data;
     const rawSleepData = fitbitSyncedData?.sleepData;
     const hasHeartRateData =
@@ -275,7 +300,11 @@ export function useFitbitAnalysis({ oscarData, fitbitSyncedData } = {}) {
     // When either source is missing, return raw HR data for basic display
     if (!hasOscarData || !hasHeartRateData) {
       return {
-        analysisData: shapeForDashboard(null, rawHeartRateData),
+        analysisData: shapeForDashboard(
+          null,
+          rawHeartRateData,
+          rawHeartRateIntraday,
+        ),
         hasAnalysis: false,
         analysisError: null,
       };
@@ -287,6 +316,7 @@ export function useFitbitAnalysis({ oscarData, fitbitSyncedData } = {}) {
         rawHeartRateData,
         rawSpo2Data,
         rawSleepData,
+        rawHeartRateIntraday,
       );
 
       const result = analyzeOscarFitbitIntegration(
@@ -299,14 +329,22 @@ export function useFitbitAnalysis({ oscarData, fitbitSyncedData } = {}) {
       );
 
       return {
-        analysisData: shapeForDashboard(result, rawHeartRateData),
+        analysisData: shapeForDashboard(
+          result,
+          rawHeartRateData,
+          rawHeartRateIntraday,
+        ),
         hasAnalysis: result.success,
         analysisError: result.success ? null : result.error,
       };
     } catch (error) {
       console.error('Fitbit correlation analysis failed:', error);
       return {
-        analysisData: shapeForDashboard(null, rawHeartRateData),
+        analysisData: shapeForDashboard(
+          null,
+          rawHeartRateData,
+          rawHeartRateIntraday,
+        ),
         hasAnalysis: false,
         analysisError: error.message,
       };

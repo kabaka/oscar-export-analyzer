@@ -7,6 +7,8 @@ This guide covers the technical implementation of OSCAR's Fitbit integration, in
 - [Architecture Overview](#architecture-overview)
 - [OAuth Implementation](#oauth-implementation)
 - [API Integration](#api-integration)
+- [API Endpoints & Data Types](#api-endpoints--data-types)
+- [Architecture Decisions](#architecture-decisions)
 - [Data Processing](#data-processing)
 - [Security Implementation](#security-implementation)
 - [Testing Patterns](#testing-patterns)
@@ -40,11 +42,12 @@ src/features/fitbit/
 ### Data Flow
 
 1. **OAuth Authorization** → Secure token exchange with PKCE
-2. **API Data Fetch** → Background worker fetches heart rate, SpO2, sleep data
-3. **Encryption** → All data encrypted before browser storage
-4. **Temporal Alignment** → Match Fitbit timestamps with CPAP sessions
-5. **Correlation Analysis** → Statistical computations in analytics worker
-6. **Visualization** → Results rendered in Plotly charts
+2. **API Data Fetch** → Background worker fetches heart rate (summary + intraday) and SpO2 data
+3. **Intraday HR Pipeline** → `batchSync` → `getHeartRateIntradayBatch` → `parseHeartRateIntradayResponse` → `parseSyncResults` → `useFitbitAnalysis` → `shapeForDashboard` → `FitbitDashboard`
+4. **Encryption** → All data encrypted before browser storage
+5. **Temporal Alignment** → Match Fitbit timestamps with CPAP sessions
+6. **Correlation Analysis** → Statistical computations in analytics worker
+7. **Visualization** → Results rendered in Plotly charts + SVG sparkline charts
 
 ## OAuth Implementation
 
@@ -201,7 +204,7 @@ class FitbitOAuth {
   constructor() {
     this.clientId = import.meta.env.VITE_FITBIT_CLIENT_ID;
     this.redirectUri = `${window.location.origin}/oauth/fitbit/callback`;
-    this.scopes = ['heartrate', 'sleep', 'oxygen_saturation'];
+    this.scopes = ['heartrate', 'oxygen_saturation'];
   }
 
   async initiateAuth() {
@@ -299,7 +302,7 @@ async handleAuthCallback(authorizationCode) {
 All Fitbit API calls run in a dedicated Web Worker to prevent main thread blocking:
 
 ```javascript
-// src/features/fitbit/workers/fitbitApi.worker.js
+// src/utils/fitbitApi.js
 class FitbitApiWorker {
   constructor() {
     this.baseUrl = 'https://api.fitbit.com/1/user/-';
@@ -358,30 +361,123 @@ class FitbitApiWorker {
     };
   }
 }
+```
 
-// Initialize worker
-const worker = new FitbitApiWorker();
+## API Endpoints & Data Types
 
-self.onmessage = async (e) => {
-  try {
-    switch (e.data.type) {
-      case 'fetch-heartrate':
-        const hrData = await worker.fetchHeartRateData(
-          e.data.accessToken,
-          e.data.startDate,
-          e.data.endDate,
-        );
-        self.postMessage({ type: 'heartrate-data', data: hrData });
-        break;
+### Active Endpoints
 
-      // Additional API endpoints...
-    }
-  } catch (error) {
-    self.postMessage({
-      type: 'error',
-      error: error.message,
-    });
-  }
+#### Heart Rate (scope: `heartrate`)
+
+| Endpoint                                                     | Description                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------- |
+| `/1/user/-/activities/heart/date/{date}/1d/1min.json`        | **Intraday HR** — 1-minute resolution, 1,440 points/day |
+| `/1/user/-/activities/heart/date/{startDate}/{endDate}.json` | Summary HR — resting HR, zones per day                  |
+
+Intraday data is fetched via `getHeartRateIntradayBatch()` in batches of 7 days (`SYNC_CONFIG.intradayBatchSize`). Each day requires its own API call because Fitbit's intraday endpoint only supports single-day requests.
+
+#### SpO2 (scope: `oxygen_saturation`)
+
+| Endpoint                                             | Description                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------- |
+| `/1/user/-/spo2/date/{startDate}/{endDate}/all.json` | **Intraday SpO2** — 5-minute intervals, uses `/all` suffix |
+| `/1/user/-/spo2/date/{date}/all.json`                | Single-day intraday SpO2, uses `/all` suffix               |
+| `/1/user/-/spo2/date/{date}.json`                    | Daily summary SpO2                                         |
+
+> **Important:** The `/all` suffix is required for intraday SpO2 data. Without it, the endpoint returns only daily summaries. This was a bug fix — earlier versions used endpoints without `/all` and received empty intraday arrays.
+
+#### HRV (scope: `heartrate`)
+
+| Endpoint                                        | Description                 |
+| ----------------------------------------------- | --------------------------- |
+| `/1/user/-/hrv/date/{startDate}/{endDate}.json` | HRV summary by date range   |
+| `/1/user/-/hrv/date/{date}/all.json`            | Intraday HRV for single day |
+
+### Disabled Endpoints
+
+#### Sleep v1.2 (scope: `sleep`) — DISABLED
+
+```javascript
+// DISABLED: Sleep v1.2 endpoints produce CORS errors even on the official
+// Fitbit Swagger UI (https://dev.fitbit.com/build/reference/web-api/sleep/).
+// Keeping definitions for future use once Fitbit resolves the CORS issue.
+sleep: {
+  // DISABLED: logs: '/1.2/user/-/sleep/date/{startDate}/{endDate}.json',
+  // DISABLED: detail: '/1.2/user/-/sleep/date/{date}.json',
+},
+```
+
+Sleep endpoints are defined in `src/constants/fitbit.js` but commented out and not called. The `sleep` scope is excluded from `MVP_SCOPES` and `sleep` is listed in `DISABLED_DATA_TYPES`. See [Architecture Decisions](#sleep-api-disabled) for details.
+
+### Default Sync Types
+
+The default data types synced are `['heartRate', 'spo2']` (defined in `batchSync`). Sleep was removed from the defaults. The mapping from data type to OAuth scope is in `DATA_TYPE_SCOPES`.
+
+## Architecture Decisions
+
+### Sleep API Disabled
+
+**Decision:** Disable all Fitbit Sleep v1.2 API calls.
+
+**Context:** The Sleep v1.2 endpoints return CORS errors when called from browser-based applications. This is not a configuration issue — the errors reproduce on Fitbit's own Swagger UI at `dev.fitbit.com`. The issue affects the `GET /1.2/user/-/sleep/date/{date}.json` and `GET /1.2/user/-/sleep/date/{startDate}/{endDate}.json` endpoints.
+
+**Consequences:**
+
+- Sleep scope removed from `MVP_SCOPES` (not requested during OAuth)
+- `DISABLED_DATA_TYPES = ['sleep']` tracks disabled types
+- Sleep endpoints kept in `FITBIT_API` constant (commented out) for future re-enablement
+- Correlation analysis focuses on HR↔AHI, SpO2↔AHI, HR↔leak patterns
+- No code deletion — sleep support is disabled, not removed
+
+**Reversibility:** When Fitbit resolves the CORS issue, re-enable by adding `FITBIT_SCOPES.SLEEP` back to `MVP_SCOPES` and removing `'sleep'` from `DISABLED_DATA_TYPES`.
+
+### 1-Minute Heart Rate Resolution
+
+**Decision:** Fetch per-minute intraday heart rate data for each day in the sync range.
+
+**Context:** Fitbit offers 1-second and 1-minute resolution for intraday HR. We chose 1-minute because:
+
+- **Data volume**: 1,440 points/day vs. 86,400 points/day (60x reduction)
+- **Clinical relevance**: Minute-level patterns are sufficient to identify apnea-related HR changes
+- **Rate limits**: Fewer API calls needed (each day = 1 request regardless of resolution)
+- **Rendering**: SVG sparkline charts perform well with ~1,440 points
+
+**Trade-off:** Cannot detect sub-minute HR transients, but these are rarely clinically meaningful for CPAP correlation.
+
+### Non-Fatal Intraday Failures
+
+**Decision:** Intraday HR fetch failures are non-fatal and don't block the overall sync.
+
+**Context:** Intraday data requires additional Fitbit API permissions ("Personal" app type). If intraday fails, the sync still completes with summary HR data (resting HR, zones). The UI gracefully degrades — sparkline charts simply don't appear for days without intraday data.
+
+### Date Range Alignment
+
+**Decision:** Fitbit sync uses the OSCAR data date range (or active date filter) instead of a fixed lookback.
+
+**Context:** Previously defaulted to "last 30 days" which often missed the actual OSCAR data range. Now:
+
+- If a date filter is active, sync matches that range
+- Otherwise, derives min/max dates from the imported OSCAR CSV data
+- `SYNC_CONFIG.maxDaysPerRequest = 30` still limits individual API requests (Fitbit's max)
+- Ranges longer than 30 days are split into multiple batched requests
+
+### Constants Reference
+
+Key constants in `src/constants/fitbit.js`:
+
+```javascript
+// OAuth scopes for MVP (sleep excluded due to CORS)
+export const MVP_SCOPES = [FITBIT_SCOPES.HEARTRATE, FITBIT_SCOPES.SPO2];
+
+// Disabled data types (tracked for future re-enablement)
+export const DISABLED_DATA_TYPES = ['sleep'];
+
+// Sync configuration
+export const SYNC_CONFIG = {
+  maxDaysPerRequest: 30, // Fitbit's max range per API call
+  maxConcurrentRequests: 2, // Prevent rate limit exhaustion
+  defaultLookbackDays: 30, // Fallback if no OSCAR data range available
+  intradayBatchSize: 7, // HR intraday fetched 1 day at a time, batched in 7s
 };
 ```
 

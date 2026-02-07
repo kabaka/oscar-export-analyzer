@@ -28,11 +28,15 @@ import { parseSyncResults } from '../utils/fitbitHeartRateParser.js';
  * @param {Object} options - Hook configuration
  * @param {string} options.passphrase - User encryption passphrase
  * @param {boolean} options.autoCheck - Auto-check connection on mount
+ * @param {Object} [options.oscarDateRange] - Date range from OSCAR data
+ * @param {string} [options.oscarDateRange.start] - Start date (YYYY-MM-DD)
+ * @param {string} [options.oscarDateRange.end] - End date (YYYY-MM-DD)
  * @returns {Object} Connection state and methods
  */
 export function useFitbitConnection({
   passphrase = null,
   autoCheck = true,
+  oscarDateRange = null,
 } = {}) {
   const [status, setStatus] = useState(CONNECTION_STATUS.DISCONNECTED);
   const [error, setError] = useState(null);
@@ -183,6 +187,11 @@ export function useFitbitConnection({
   /**
    * Sync data from Fitbit API.
    *
+   * Date range priority:
+   *   1. Explicit startDate/endDate parameters
+   *   2. oscarDateRange from OSCAR data
+   *   3. Fall back to last 30 days
+   *
    * @param {Object} params - Sync parameters
    * @param {Date|string} params.startDate - Start date for sync
    * @param {Date|string} params.endDate - End date for sync
@@ -194,19 +203,29 @@ export function useFitbitConnection({
     async ({
       startDate,
       endDate,
-      dataTypes = ['heartRate', 'spo2', 'sleep'],
+      dataTypes = ['heartRate', 'spo2'],
       onProgress,
     } = {}) => {
       try {
-        // Default to last 30 days if no date range specified
-        const syncEndDate = endDate || new Date().toISOString().split('T')[0];
-        const syncStartDate =
-          startDate ||
-          (() => {
-            const d = new Date();
-            d.setDate(d.getDate() - 30);
-            return d.toISOString().split('T')[0];
-          })();
+        // Date range priority: explicit params > oscarDateRange > last 30 days
+        let syncStartDate = startDate;
+        let syncEndDate = endDate;
+
+        if (!syncStartDate || !syncEndDate) {
+          if (oscarDateRange?.start && oscarDateRange?.end) {
+            syncStartDate = syncStartDate || oscarDateRange.start;
+            syncEndDate = syncEndDate || oscarDateRange.end;
+          } else {
+            syncEndDate = syncEndDate || new Date().toISOString().split('T')[0];
+            syncStartDate =
+              syncStartDate ||
+              (() => {
+                const d = new Date();
+                d.setDate(d.getDate() - 30);
+                return d.toISOString().split('T')[0];
+              })();
+          }
+        }
 
         const currentPassphrase = passphraseRef.current;
         if (!currentPassphrase) {
@@ -257,7 +276,7 @@ export function useFitbitConnection({
         throw err;
       }
     },
-    [status, updateDataStats],
+    [status, updateDataStats, oscarDateRange],
   );
 
   /**

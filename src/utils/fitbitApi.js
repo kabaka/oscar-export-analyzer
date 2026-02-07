@@ -18,6 +18,7 @@ import {
   FITBIT_ERRORS,
   DATA_TYPE_SCOPES,
 } from '../constants/fitbit.js';
+import { parseHeartRateIntradayResponse } from './fitbitHeartRateParser.js';
 
 /**
  * Rate limiter to prevent API quota exhaustion.
@@ -306,21 +307,23 @@ export class FitbitApiClient {
   /**
    * Get sleep logs for a date range.
    *
-   * @param {Date|string} startDate - Start date
-   * @param {Date|string} endDate - End date
-   * @returns {Promise<Object>} Sleep data
+   * DISABLED: Sleep v1.2 endpoints produce CORS errors even on the official
+   * Fitbit Swagger UI. This method is retained for forward compatibility
+   * but will throw until the CORS issue is resolved by Fitbit.
+   *
+   * @param {Date|string} _startDate - Start date (unused)
+   * @param {Date|string} _endDate - End date (unused)
+   * @returns {Promise<Object>} Never resolves — always throws
    */
-  async getSleepLogs(startDate, endDate) {
-    const accessToken = await this.getAccessToken();
-    const formattedStart = this.httpClient.formatDate(startDate);
-    const formattedEnd = this.httpClient.formatDate(endDate);
-
-    const endpoint = this.httpClient.replaceParams(FITBIT_API.sleep.logs, {
-      startDate: formattedStart,
-      endDate: formattedEnd,
-    });
-
-    return this.httpClient.makeRequest(endpoint, accessToken);
+  async getSleepLogs(/* startDate, endDate */) {
+    throw {
+      code: 'api_endpoint_disabled',
+      type: 'api',
+      message:
+        'Sleep API (v1.2) is currently disabled due to CORS errors on api.fitbit.com. ' +
+        'This is a known Fitbit platform issue, not a configuration problem.',
+      details: 'See https://dev.fitbit.com/build/reference/web-api/sleep/',
+    };
   }
 
   /**
@@ -351,6 +354,69 @@ export class FitbitApiClient {
   async getUserProfile() {
     const accessToken = await this.getAccessToken();
     return this.httpClient.makeRequest(FITBIT_API.profile, accessToken);
+  }
+
+  /**
+   * Fetch intraday heart rate data for multiple dates.
+   * Uses 1-minute resolution. Fetches one day at a time (API limitation).
+   * Optionally constrains to a time window (e.g., sleep hours only).
+   *
+   * @param {Date|string} startDate - First date to fetch
+   * @param {Date|string} endDate - Last date to fetch
+   * @param {Object} [options] - Options
+   * @param {string} [options.startTime='00:00'] - Start time (HH:mm)
+   * @param {string} [options.endTime='23:59'] - End time (HH:mm)
+   * @param {Function} [options.onProgress] - Progress callback
+   * @returns {Promise<Object[]>} Array of { date, intradayData, summary }
+   */
+  async getHeartRateIntradayBatch(startDate, endDate, options = {}) {
+    const { onProgress } = options;
+    const formattedStart = this.httpClient.formatDate(startDate);
+    const formattedEnd = this.httpClient.formatDate(endDate);
+
+    // Generate list of dates between start and end (inclusive)
+    const dates = [];
+    const current = new Date(`${formattedStart}T12:00:00`);
+    const last = new Date(`${formattedEnd}T12:00:00`);
+    while (current <= last) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+
+    const results = [];
+    const batchSize = SYNC_CONFIG.maxConcurrentRequests;
+
+    for (let i = 0; i < dates.length; i += batchSize) {
+      const batch = dates.slice(i, i + batchSize);
+
+      const batchResults = await Promise.all(
+        batch.map(async (date) => {
+          try {
+            // Use the existing intraday endpoint (returns summary + intraday for 1 day)
+            const raw = await this.getHeartRateIntraday(date);
+            const parsed = parseHeartRateIntradayResponse(raw);
+            return parsed;
+          } catch (error) {
+            console.error(`Failed to fetch HR intraday for ${date}:`, error);
+            return { date, error: error.message || 'Failed to fetch' };
+          }
+        }),
+      );
+
+      results.push(...batchResults);
+
+      if (onProgress) {
+        onProgress({
+          completed: Math.min(i + batchSize, dates.length),
+          total: dates.length,
+          percentage: Math.round(
+            (Math.min(i + batchSize, dates.length) / dates.length) * 100,
+          ),
+        });
+      }
+    }
+
+    return results.filter((r) => !r.error);
   }
 
   /**
@@ -385,7 +451,7 @@ export class FitbitApiClient {
   async batchSync({
     startDate,
     endDate,
-    dataTypes = ['heartRate', 'spo2', 'sleep'],
+    dataTypes = ['heartRate', 'spo2'],
     onProgress,
   }) {
     const results = {};
@@ -437,9 +503,31 @@ export class FitbitApiClient {
               let data;
 
               switch (dataType) {
-                case 'heartRate':
-                  data = await this.getHeartRateRange(startDate, endDate);
+                case 'heartRate': {
+                  // Fetch range summary
+                  const summaryData = await this.getHeartRateRange(
+                    startDate,
+                    endDate,
+                  );
+                  // Also fetch intraday batch
+                  let intradayData = [];
+                  try {
+                    intradayData = await this.getHeartRateIntradayBatch(
+                      startDate,
+                      endDate,
+                    );
+                  } catch (intradayErr) {
+                    console.warn(
+                      'HR intraday batch failed, continuing with summary only:',
+                      intradayErr,
+                    );
+                  }
+                  data = {
+                    ...summaryData,
+                    _intradayBatch: intradayData,
+                  };
                   break;
+                }
                 case 'spo2':
                   data = await this.getSpo2Range(startDate, endDate);
                   break;

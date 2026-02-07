@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import FitbitDashboard from '../../components/fitbit/FitbitDashboard';
 import { useFitbitOAuthContext } from '../../context/FitbitOAuthContext';
 import { useFitbitConnection } from '../../hooks/useFitbitConnection';
 import { useFitbitAnalysis } from '../../hooks/useFitbitAnalysis';
 import { useData } from '../../context/DataContext';
+import { useDateFilter } from '../../hooks/useDateFilter';
 
 /**
  * Fitbit correlation analysis section for the main OSCAR app.
@@ -15,10 +16,38 @@ import { useData } from '../../context/DataContext';
  * automatically runs the full correlation analysis pipeline and
  * populates the dashboard with insights.
  *
+ * Aligns Fitbit sync date range with OSCAR data:
+ * - If a date filter is active, uses filter start/end
+ * - Otherwise derives range from the min/max Date in filteredSummary
+ *
  * @returns {JSX.Element} Fitbit correlation analysis section
  */
 export function FitbitCorrelationSection() {
   const { filteredSummary } = useData();
+  const { dateFilter } = useDateFilter();
+
+  // Compute OSCAR date range for Fitbit sync alignment
+  const oscarDateRange = useMemo(() => {
+    // If date filter is active (has start and end), use it
+    if (dateFilter?.start && dateFilter?.end) {
+      const fmt = (d) =>
+        d instanceof Date ? d.toISOString().split('T')[0] : String(d);
+      return { start: fmt(dateFilter.start), end: fmt(dateFilter.end) };
+    }
+
+    // Otherwise derive range from filteredSummary min/max Date
+    if (Array.isArray(filteredSummary) && filteredSummary.length > 0) {
+      const dates = filteredSummary
+        .map((r) => r.Date)
+        .filter(Boolean)
+        .sort();
+      if (dates.length > 0) {
+        return { start: dates[0], end: dates[dates.length - 1] };
+      }
+    }
+
+    return null;
+  }, [dateFilter, filteredSummary]);
 
   const {
     status: connectionStatus,
@@ -34,7 +63,7 @@ export function FitbitCorrelationSection() {
     syncState,
     syncFitbitData,
     clearFitbitData,
-  } = useFitbitConnection({ passphrase });
+  } = useFitbitConnection({ passphrase, oscarDateRange });
 
   // Run correlation analysis when both OSCAR and Fitbit data are available
   const { analysisData } = useFitbitAnalysis({
@@ -83,8 +112,8 @@ export function FitbitCorrelationSection() {
         </h2>
         <p className="section-description">
           Connect your Fitbit account to analyze correlations between sleep
-          therapy data and biometric measurements. Syncs heart rate, SpO2, and
-          sleep stage data for correlation with AHI and other CPAP metrics.
+          therapy data and biometric measurements. Syncs heart rate and SpO2
+          data for correlation with AHI and other CPAP metrics.
         </p>
       </div>
 

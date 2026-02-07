@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseHeartRateResponse,
+  parseHeartRateIntradayResponse,
   parseSyncResults,
   computeHeartRateSummary,
+  parseSpo2Response,
 } from './fitbitHeartRateParser';
 
 describe('parseHeartRateResponse', () => {
@@ -196,6 +198,7 @@ describe('parseSyncResults', () => {
   it('returns empty data for null input', () => {
     expect(parseSyncResults(null)).toEqual({
       heartRateData: [],
+      heartRateIntraday: [],
       spo2Data: [],
       sleepData: [],
     });
@@ -330,6 +333,155 @@ describe('parseSyncResults', () => {
     expect(result.sleepData).toHaveLength(1);
     expect(result.sleepData[0].minutesAsleep).toBe(420);
     expect(result.sleepData[0].efficiency).toBe(92);
+  });
+});
+
+describe('parseHeartRateIntradayResponse', () => {
+  it('returns empty data for null input', () => {
+    const result = parseHeartRateIntradayResponse(null);
+    expect(result.date).toBeNull();
+    expect(result.intradayData).toEqual([]);
+    expect(result.intradayStats).toBeNull();
+  });
+
+  it('returns empty data for undefined input', () => {
+    const result = parseHeartRateIntradayResponse(undefined);
+    expect(result.date).toBeNull();
+    expect(result.intradayData).toEqual([]);
+    expect(result.intradayStats).toBeNull();
+  });
+
+  it('parses intraday response with summary and per-minute data', () => {
+    const raw = {
+      'activities-heart': [
+        {
+          dateTime: '2026-01-08',
+          value: {
+            restingHeartRate: 68,
+            heartRateZones: [
+              {
+                name: 'Out of Range',
+                minutes: 1400,
+                caloriesOut: 1200,
+                min: 30,
+                max: 100,
+              },
+            ],
+          },
+        },
+      ],
+      'activities-heart-intraday': {
+        dataset: [
+          { time: '00:00:00', value: 64 },
+          { time: '00:01:00', value: 62 },
+          { time: '00:02:00', value: 66 },
+        ],
+        datasetInterval: 1,
+        datasetType: 'minute',
+      },
+    };
+    const result = parseHeartRateIntradayResponse(raw);
+    expect(result.date).toBe('2026-01-08');
+    expect(result.restingHeartRate).toBe(68);
+    expect(result.intradayData).toHaveLength(3);
+    expect(result.intradayData[0]).toEqual({ time: '00:00:00', bpm: 64 });
+    expect(result.intradayStats.minBpm).toBe(62);
+    expect(result.intradayStats.maxBpm).toBe(66);
+    expect(result.intradayStats.avgBpm).toBe(64);
+    expect(result.intradayStats.dataPoints).toBe(3);
+  });
+
+  it('handles missing intraday dataset', () => {
+    const raw = {
+      'activities-heart': [
+        {
+          dateTime: '2026-01-08',
+          value: { restingHeartRate: 68 },
+        },
+      ],
+    };
+    const result = parseHeartRateIntradayResponse(raw);
+    expect(result.date).toBe('2026-01-08');
+    expect(result.restingHeartRate).toBe(68);
+    expect(result.intradayData).toEqual([]);
+    expect(result.intradayStats).toBeNull();
+  });
+
+  it('computes correct intradayStats for varied BPM values', () => {
+    const raw = {
+      'activities-heart': [
+        {
+          dateTime: '2026-01-08',
+          value: { restingHeartRate: 65 },
+        },
+      ],
+      'activities-heart-intraday': {
+        dataset: [
+          { time: '00:00:00', value: 50 },
+          { time: '00:01:00', value: 100 },
+          { time: '00:02:00', value: 75 },
+        ],
+      },
+    };
+    const result = parseHeartRateIntradayResponse(raw);
+    expect(result.intradayStats.minBpm).toBe(50);
+    expect(result.intradayStats.maxBpm).toBe(100);
+    expect(result.intradayStats.avgBpm).toBe(75);
+    expect(result.intradayStats.dataPoints).toBe(3);
+  });
+});
+
+describe('parseSpo2Response — intraday /all format', () => {
+  it('parses SpO2 intraday /all format with minutes array', () => {
+    const raw = [
+      {
+        dateTime: '2026-01-08',
+        minutes: [
+          { minute: '2026-01-08T01:30:00.000', value: 96.5 },
+          { minute: '2026-01-08T01:35:00.000', value: 97.0 },
+          { minute: '2026-01-08T01:40:00.000', value: 95.0 },
+        ],
+      },
+    ];
+    const result = parseSpo2Response(raw);
+    expect(result).toHaveLength(1);
+    expect(result[0].avg).toBeCloseTo(96.2, 0);
+    expect(result[0].min).toBe(95);
+    expect(result[0].max).toBe(97);
+    expect(result[0].intradayData).toHaveLength(3);
+  });
+
+  it('computes avg/min/max from minutes data', () => {
+    const raw = [
+      {
+        dateTime: '2026-01-09',
+        minutes: [
+          { minute: '2026-01-09T02:00:00.000', value: 92.0 },
+          { minute: '2026-01-09T02:05:00.000', value: 98.0 },
+        ],
+      },
+    ];
+    const result = parseSpo2Response(raw);
+    expect(result[0].avg).toBe(95);
+    expect(result[0].min).toBe(92);
+    expect(result[0].max).toBe(98);
+  });
+
+  it('still handles old value.avg/min/max format', () => {
+    const raw = [
+      {
+        dateTime: '2026-01-08',
+        value: { avg: 96.5, min: 93, max: 99 },
+      },
+    ];
+    const result = parseSpo2Response(raw);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      date: '2026-01-08',
+      avg: 96.5,
+      min: 93,
+      max: 99,
+    });
   });
 });
 

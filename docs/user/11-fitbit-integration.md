@@ -7,6 +7,8 @@ OSCAR Export Analyzer includes optional Fitbit integration to correlate CPAP the
 - [Overview](#overview)
 - [Privacy & Security](#privacy--security)
 - [Setup Instructions](#setup-instructions)
+- [Intraday Heart Rate Data](#intraday-heart-rate-data)
+- [Date Range Alignment](#date-range-alignment)
 - [Correlation Analysis](#correlation-analysis)
 - [Troubleshooting](#troubleshooting)
 - [Data Limitations](#data-limitations)
@@ -26,19 +28,21 @@ The Fitbit integration adds a **Fitbit Correlations** dashboard that analyzes re
 
 **Fitbit Physiological Data:**
 
-- Heart rate variability (HRV) during sleep
-- SpO2 (blood oxygen saturation) levels
-- Sleep stages (Light, Deep, REM, Wake)
-- Restlessness and movement patterns
+- Heart rate — including **minute-by-minute intraday data** (1,440 data points per night)
+- Resting heart rate trends over time
+- SpO2 (blood oxygen saturation) levels — intraday at 5-minute intervals
+- Heart rate variability (HRV) derived from heart rate data
+
+> **Note:** Fitbit sleep stage data is not currently available due to a [Fitbit platform CORS limitation](#sleep-api-cors-limitation). Heart rate and SpO2 provide rich overnight insights in the meantime.
 
 ### Why It's Valuable
 
 Understanding correlations between therapy metrics and physiological responses helps:
 
-- **Validate therapy effectiveness** – Does lower AHI correlate with better HRV?
-- **Identify therapy issues** – Do leak events coincide with oxygen desaturations?
-- **Optimize settings** – Which pressure ranges produce the most restorative sleep?
-- **Track progress** – How do therapy improvements affect overall sleep quality?
+- **Validate therapy effectiveness** – Does lower AHI correlate with lower resting heart rate?
+- **Identify therapy issues** – Do leak events coincide with heart rate spikes or oxygen desaturations?
+- **See overnight detail** – Minute-by-minute heart rate reveals patterns during CPAP use
+- **Track progress** – How do therapy improvements affect heart rate and SpO2 over time?
 
 ## Privacy & Security
 
@@ -56,7 +60,7 @@ The Fitbit integration maintains OSCAR's privacy-first approach:
 
 The connection process uses industry-standard OAuth 2.0 with PKCE:
 
-- **Limited scope**: Access only to heart rate, SpO2, and sleep data
+- **Limited scope**: Access only to heart rate and SpO2 data
 - **Temporary authorization**: Tokens automatically expire and refresh
 - **Revocable access**: Disconnect anytime via Settings or Fitbit account management
 
@@ -106,9 +110,8 @@ Before connecting Fitbit:
 1. Browser opens Fitbit login page
 2. Sign in to your Fitbit account
 3. Review data access permissions:
-   - Heart rate data (minute-level)
-   - SpO2 data (daily summaries)
-   - Sleep stages and duration
+   - Heart rate data (minute-level intraday)
+   - SpO2 data (intraday at 5-minute intervals)
 4. Click **Allow** to grant access
 
 #### 3. Automatic Passphrase Restoration (New)
@@ -138,6 +141,38 @@ For maximum security, encrypt your Fitbit data:
 3. Enable **"Encrypt Fitbit data"**
 4. **Remember your passphrase** – it cannot be recovered if lost
 
+## Intraday Heart Rate Data
+
+One of the most powerful features of the Fitbit integration is **per-minute heart rate data**. For each night in your date range, the app fetches 1-minute resolution heart rate readings — up to 1,440 data points per day.
+
+### What You'll See
+
+In the **night detail view** (click any night in the Fitbit dashboard), you'll find:
+
+- **Side-by-side KPI comparison**: OSCAR metrics (AHI, Total Time, Leak Rate) next to Fitbit metrics (Resting HR, Min HR, Avg SpO2, Min SpO2) for that specific night
+- **SVG sparkline chart**: A minute-by-minute heart rate graph showing overnight patterns — dips, spikes, and recovery periods during CPAP use
+- **SpO2 data cards**: When available, intraday SpO2 readings at 5-minute intervals
+- **Dual-axis sync chart**: Combined OSCAR + Fitbit data on a shared timeline
+
+### Interpreting Heart Rate Patterns
+
+- **Gradual decline** into sleep is normal and healthy
+- **Sharp spikes** may correspond to apnea events or arousals
+- **Elevated baseline** throughout the night could indicate therapy issues
+- **Low, steady overnight HR** generally correlates with effective therapy
+
+> Heart rate data is fetched in batches of 7 days at a time and processed efficiently in the background. Initial sync for large date ranges may take a few minutes.
+
+## Date Range Alignment
+
+Fitbit sync automatically aligns with your OSCAR data:
+
+- **With a date filter active**: Syncs only the filtered date range — great for focusing on a specific period
+- **Without a date filter**: Derives the range from the earliest and latest dates in your imported OSCAR CSV data
+- **No more "last 30 days" default**: The sync always matches the data you're actually analyzing
+
+This means you get Fitbit data exactly where you need it, without fetching months of irrelevant days. If you import 90 days of OSCAR data, the Fitbit sync covers those same 90 days.
+
 ## Correlation Analysis
 
 ### Available Visualizations
@@ -150,11 +185,11 @@ The **Fitbit Correlations** dashboard includes:
 - **Interpretation**: Color intensity shows correlation strength
 - **Look for**: Strong correlations (>0.5) between therapy and physiological metrics
 
-#### 2. AHI vs. Heart Rate Variability
+#### 2. AHI vs. Resting Heart Rate
 
 - **Purpose**: Primary therapy effectiveness indicator
-- **Expected**: Lower AHI should correlate with higher HRV (better sleep quality)
-- **Clinical relevance**: HRV is sensitive to sleep fragmentation
+- **Expected**: Lower AHI should correlate with lower resting HR
+- **Clinical relevance**: Resting heart rate is sensitive to sleep quality and fragmentation
 
 #### 3. Pressure vs. SpO2 Patterns
 
@@ -162,17 +197,17 @@ The **Fitbit Correlations** dashboard includes:
 - **Expected**: Optimal pressure should minimize SpO2 drops
 - **Look for**: Sweet spot where pressure prevents desaturations without over-treatment
 
-#### 4. Sleep Stage Distribution
+#### 4. Leak Rate vs. Heart Rate
 
-- **Purpose**: How therapy affects sleep architecture
-- **Expected**: Better therapy should increase deep and REM sleep percentages
-- **Compare**: Sleep stage patterns on high vs. low AHI nights
+- **Purpose**: Detect how mask seal issues affect physiology
+- **Expected**: Higher leak rates may correlate with elevated heart rate if causing arousals
+- **Compare**: Nights with good seal vs. poor seal
 
-#### 5. Time-Aligned Analysis
+#### 5. Night Detail View
 
-- **Purpose**: Minute-by-minute correlation during sleep
-- **Advanced**: Shows precise timing relationships
-- **Clinical value**: Identifies if therapy events predict physiological responses
+- **Purpose**: Minute-by-minute view of a single night
+- **Advanced**: Shows intraday heart rate sparkline alongside OSCAR therapy data
+- **Clinical value**: Identifies if therapy events (apneas, leaks) correspond to heart rate changes
 
 ### Statistical Indicators
 
@@ -188,13 +223,13 @@ Each visualization includes statistical context:
 
 #### Strong Positive Correlations (r > 0.5)
 
-- **AHI ↔ Restlessness**: More apneas = more movement (expected)
-- **Pressure ↔ AHI Control**: Higher pressure = lower AHI (if properly titrated)
+- **AHI ↔ Resting HR**: More apneas = elevated resting heart rate (expected — sleep fragmentation increases sympathetic tone)
+- **Leak Rate ↔ Heart Rate**: High leaks = elevated HR if causing arousals
 
 #### Strong Negative Correlations (r < -0.5)
 
-- **AHI ↔ HRV**: More apneas = lower heart rate variability (expected)
-- **AHI ↔ Deep Sleep**: More apneas = less restorative sleep (expected)
+- **Usage ↔ Resting HR**: More CPAP usage = lower resting heart rate (therapy effectiveness)
+- **AHI ↔ SpO2**: More apneas = lower blood oxygen (expected)
 
 #### Weak Correlations (|r| < 0.3)
 
@@ -205,14 +240,14 @@ Each visualization includes statistical context:
 
 **Good Therapy Response:**
 
-- AHI negatively correlates with HRV (r = -0.7)
+- AHI positively correlates with resting HR — nights with more events show elevated HR
 - Pressure optimally balances AHI control and SpO2 stability
-- Sleep stages show healthy distribution
+- Intraday HR shows gradual decline into sleep with stable overnight baseline
 
 **Potential Issues:**
 
 - High pressure but persistent oxygen drops (possible central apneas)
-- Low AHI but poor HRV (possible flow limitations or other sleep disorders)
+- Low AHI but elevated resting HR (possible flow limitations or other sleep disorders)
 - Inconsistent patterns suggest equipment or fit problems
 
 ## Troubleshooting
@@ -243,6 +278,14 @@ Each visualization includes statistical context:
 - Click "Reconnect" to refresh authorization
 - Data remains encrypted and safe during reconnection
 
+**"Sleep data not syncing"**
+
+- This is a known limitation, not a configuration issue on your end
+- Fitbit's Sleep v1.2 API endpoints currently return CORS errors that prevent browser-based apps from accessing sleep data
+- This affects all browser-based Fitbit integrations, including Fitbit's own Swagger UI
+- Heart rate and SpO2 data sync normally and provide rich overnight insights
+- Sleep data support will be re-enabled if/when Fitbit resolves this platform issue
+
 ### Data Quality Issues
 
 **Missing heart rate data**
@@ -256,12 +299,6 @@ Each visualization includes statistical context:
 - Only newer Fitbit devices support SpO2
 - Requires specific positioning during sleep
 - May have gaps due to movement or poor sensor contact
-
-**Sleep stage inaccuracies**
-
-- Fitbit uses accelerometer + heart rate estimation
-- Less accurate than clinical polysomnography
-- Use for trends, not absolute values
 
 ### Performance Issues
 
@@ -286,6 +323,17 @@ Each visualization includes statistical context:
 - After OAuth, your passphrase is restored automatically from sessionStorage or a secure localStorage backup. You do not need to re-enter it unless session data was cleared or browser privacy settings/extensions block storage.
 - If connection fails or you are unexpectedly prompted for your passphrase, check that your browser allows sessionStorage/localStorage and that you have not cleared session data.
 
+### Sleep API CORS Limitation
+
+Fitbit's Sleep v1.2 API endpoints currently return CORS (Cross-Origin Resource Sharing) errors that prevent any browser-based application from accessing sleep stage data. This is a **Fitbit platform issue**, not a bug in OSCAR Export Analyzer:
+
+- The CORS errors occur even on [Fitbit's official Swagger UI](https://dev.fitbit.com/build/reference/web-api/sleep/)
+- Sleep scopes have been removed from the OAuth flow until this is resolved
+- All other Fitbit APIs (heart rate, SpO2, HRV) work correctly
+- If Fitbit fixes this in the future, sleep data support will be re-enabled
+
+In the meantime, **intraday heart rate data provides excellent overnight insight** — you can see exactly how your heart responds during CPAP therapy, which is often more granular than sleep stage summaries.
+
 ### Fitbit Device Limitations
 
 **Heart Rate Variability:**
@@ -299,12 +347,6 @@ Each visualization includes statistical context:
 - Consumer-grade sensor limitations
 - Movement artifacts during sleep
 - May miss brief desaturations (<1 minute)
-
-**Sleep Stage Detection:**
-
-- Algorithm-based estimation, not polysomnography
-- Accuracy varies by individual and device model
-- Use for pattern recognition, not clinical diagnosis
 
 ### Statistical Considerations
 

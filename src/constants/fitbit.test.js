@@ -8,6 +8,7 @@ import {
   FITBIT_SCOPES,
   MVP_SCOPES,
   CONNECTION_STATUS,
+  DISABLED_DATA_TYPES,
 } from '../constants/fitbit.js';
 
 describe('Fitbit Constants', () => {
@@ -28,7 +29,11 @@ describe('Fitbit Constants', () => {
   });
 
   it('exports MVP scopes array', () => {
-    expect(MVP_SCOPES).toEqual(['heartrate', 'oxygen_saturation', 'sleep']);
+    expect(MVP_SCOPES).toEqual(['heartrate', 'oxygen_saturation']);
+  });
+
+  it('exports DISABLED_DATA_TYPES array', () => {
+    expect(DISABLED_DATA_TYPES).toEqual(['sleep']);
   });
 
   it('exports connection status constants', () => {

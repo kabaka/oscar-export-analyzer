@@ -68,6 +68,89 @@ export function parseHeartRateResponse(rawResponse) {
 }
 
 /**
+ * Parse a single-day Fitbit intraday heart rate API response.
+ *
+ * The Fitbit intraday HR response for a single date looks like:
+ * ```json
+ * {
+ *   "activities-heart": [{ "dateTime": "2026-01-08", "value": { "restingHeartRate": 68, "heartRateZones": [...] } }],
+ *   "activities-heart-intraday": {
+ *     "dataset": [
+ *       { "time": "00:00:00", "value": 64 },
+ *       { "time": "00:01:00", "value": 63 }
+ *     ],
+ *     "datasetInterval": 1,
+ *     "datasetType": "minute"
+ *   }
+ * }
+ * ```
+ *
+ * @param {Object} rawResponse - Raw response from Fitbit intraday HR API
+ * @returns {Object} Parsed intraday heart rate data with summary and per-minute values
+ *
+ * @example
+ * const parsed = parseHeartRateIntradayResponse(rawResponse);
+ * // Returns: {
+ * //   date: "2026-01-08",
+ * //   restingHeartRate: 68, heartRateZones: [...],
+ * //   intradayData: [{ time: "00:00:00", bpm: 64 }, ...],
+ * //   intradayStats: { minBpm: 52, maxBpm: 95, avgBpm: 64.3, dataPoints: 1440 }
+ * // }
+ */
+export function parseHeartRateIntradayResponse(rawResponse) {
+  if (!rawResponse)
+    return { date: null, intradayData: [], intradayStats: null };
+
+  // Extract daily summary from activities-heart
+  const entries = rawResponse['activities-heart'];
+  const entry =
+    Array.isArray(entries) && entries.length > 0 ? entries[0] : null;
+  const date = entry?.dateTime ?? null;
+  const restingHeartRate = entry?.value?.restingHeartRate ?? null;
+  const heartRateZones = Array.isArray(entry?.value?.heartRateZones)
+    ? entry.value.heartRateZones.map((zone) => ({
+        name: zone.name,
+        minutes: zone.minutes ?? 0,
+        caloriesOut: zone.caloriesOut ?? 0,
+        min: zone.min,
+        max: zone.max,
+      }))
+    : [];
+
+  // Extract intraday dataset
+  const intraday = rawResponse['activities-heart-intraday'];
+  const dataset = Array.isArray(intraday?.dataset) ? intraday.dataset : [];
+
+  const intradayData = dataset
+    .filter((point) => point && point.time != null && point.value != null)
+    .map((point) => ({
+      time: point.time,
+      bpm: point.value,
+    }));
+
+  // Compute intraday statistics
+  let intradayStats = null;
+  if (intradayData.length > 0) {
+    const bpmValues = intradayData.map((d) => d.bpm);
+    const sum = bpmValues.reduce((a, b) => a + b, 0);
+    intradayStats = {
+      minBpm: Math.min(...bpmValues),
+      maxBpm: Math.max(...bpmValues),
+      avgBpm: Math.round((sum / bpmValues.length) * 10) / 10,
+      dataPoints: intradayData.length,
+    };
+  }
+
+  return {
+    date,
+    restingHeartRate,
+    heartRateZones,
+    intradayData,
+    intradayStats,
+  };
+}
+
+/**
  * Parse batch sync results to extract heart rate, SpO2, and sleep data.
  *
  * batchSync() returns results keyed by data type:
@@ -77,10 +160,17 @@ export function parseHeartRateResponse(rawResponse) {
  * @returns {Object} Parsed synced data with heartRateData, spo2Data, and sleepData arrays
  */
 export function parseSyncResults(batchResults) {
-  if (!batchResults) return { heartRateData: [], spo2Data: [], sleepData: [] };
+  if (!batchResults)
+    return {
+      heartRateData: [],
+      heartRateIntraday: [],
+      spo2Data: [],
+      sleepData: [],
+    };
 
   const result = {
     heartRateData: [],
+    heartRateIntraday: [],
     spo2Data: [],
     sleepData: [],
   };
@@ -88,6 +178,11 @@ export function parseSyncResults(batchResults) {
   // Parse heart rate data if present and not an error
   if (batchResults.heartRate && !batchResults.heartRate.error) {
     result.heartRateData = parseHeartRateResponse(batchResults.heartRate);
+
+    // Extract intraday batch data if present (added by batchSync)
+    if (Array.isArray(batchResults.heartRate._intradayBatch)) {
+      result.heartRateIntraday = batchResults.heartRate._intradayBatch;
+    }
   }
 
   // Parse SpO2 data if present and not an error
@@ -96,6 +191,7 @@ export function parseSyncResults(batchResults) {
   }
 
   // Parse sleep data if present and not an error
+  // (Sleep API is currently disabled due to CORS issues; sleepData will be [])
   if (batchResults.sleep && !batchResults.sleep.error) {
     result.sleepData = parseSleepResponse(batchResults.sleep);
   }
@@ -152,11 +248,19 @@ export function computeHeartRateSummary(heartRateData) {
 /**
  * Parse raw Fitbit SpO2 API response into a clean array of daily records.
  *
- * The Fitbit SpO2 date range API returns data in this format:
+ * Handles both the basic summary format and the intraday /all format:
+ *
+ * Summary format:
  * ```json
- * [
- *   { "dateTime": "2026-01-08", "value": { "avg": 96.5, "min": 93, "max": 99 } }
- * ]
+ * [{ "dateTime": "2026-01-08", "value": { "avg": 96.5, "min": 93, "max": 99 } }]
+ * ```
+ *
+ * Intraday /all format:
+ * ```json
+ * [{ "dateTime": "2026-01-08", "minutes": [
+ *   { "minute": "2026-01-08T01:30:00.000", "value": 96.5 },
+ *   { "minute": "2026-01-08T01:35:00.000", "value": 97.0 }
+ * ]}]
  * ```
  *
  * @param {Array|Object} rawResponse - Raw response from Fitbit SpO2 API
@@ -173,6 +277,38 @@ export function parseSpo2Response(rawResponse) {
     .map((entry) => {
       if (!entry || !entry.dateTime) return null;
 
+      // Intraday /all format: has minutes array
+      if (Array.isArray(entry.minutes) && entry.minutes.length > 0) {
+        const values = entry.minutes
+          .filter((m) => m && m.value != null)
+          .map((m) => m.value);
+
+        const intradayData = entry.minutes
+          .filter((m) => m && m.minute != null && m.value != null)
+          .map((m) => ({
+            minute: m.minute,
+            value: m.value,
+          }));
+
+        const avg =
+          values.length > 0
+            ? Math.round(
+                (values.reduce((a, b) => a + b, 0) / values.length) * 10,
+              ) / 10
+            : null;
+        const min = values.length > 0 ? Math.min(...values) : null;
+        const max = values.length > 0 ? Math.max(...values) : null;
+
+        return {
+          date: entry.dateTime,
+          avg,
+          min,
+          max,
+          intradayData,
+        };
+      }
+
+      // Basic summary format: has value object
       const value = entry.value || {};
       return {
         date: entry.dateTime,
