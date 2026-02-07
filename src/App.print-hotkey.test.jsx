@@ -57,13 +57,9 @@ describe('Print hotkey interception', () => {
       { timeout: 8000 },
     );
 
-    // Fire Cmd/Ctrl+P
-    const keyboardEvent = new KeyboardEvent('keydown', {
-      key: 'p',
-      metaKey: true, // macOS; ctrlKey would also be intercepted
-      bubbles: true,
-    });
-    window.dispatchEvent(keyboardEvent);
+    // Fire Cmd/Ctrl+P using userEvent for proper event simulation
+    const user = userEvent.setup();
+    await user.keyboard('{Meta>}p{/Meta}');
 
     // Print warning dialog should open due to interception when summaryAvailable is true
     const warningDialog = await screen.findByRole('alertdialog', {
