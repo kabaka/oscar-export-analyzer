@@ -52,7 +52,11 @@ function FitbitDashboard({
 
   const isConnected = connectionStatus === CONNECTION_STATUS.CONNECTED;
   const hasData =
-    fitbitData && fitbitData.correlationData && fitbitData.nightlyData;
+    fitbitData &&
+    fitbitData.correlationData &&
+    fitbitData.correlationData.metrics &&
+    fitbitData.correlationData.metrics.length > 0 &&
+    fitbitData.nightlyData;
   const hasSyncedHeartRateData =
     fitbitData &&
     fitbitData.heartRateData &&
@@ -496,7 +500,7 @@ function CorrelationsSection({ correlationData, onCellClick }) {
       <CorrelationMatrix
         correlationData={correlationData}
         onCellClick={onCellClick}
-        title={`Metric Correlations (${correlationData.sampleSize} nights)`}
+        title={`Metric Correlations (${correlationData.sampleSize ?? 'N/A'} nights)`}
       />
     </div>
   );

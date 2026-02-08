@@ -271,4 +271,90 @@ describe('BivariateScatterPlot', () => {
     expect(screenReaderSummary).toHaveTextContent(/5.*nights/i);
     expect(screenReaderSummary).toHaveTextContent(/correlation.*-0.73/i);
   });
+
+  describe('null statistics handling', () => {
+    const nullStatsScatterData = {
+      xValues: [5.2, 8.1],
+      yValues: [72, 68],
+      dateLabels: ['2026-01-20', '2026-01-21'],
+      statistics: {
+        correlation: null,
+        pValue: null,
+        rSquared: null,
+        slope: null,
+        intercept: null,
+      },
+      regressionLine: null,
+      confidenceInterval: null,
+      outliers: [],
+    };
+
+    const nullStatsProps = {
+      xMetric: 'AHI',
+      yMetric: 'Heart Rate',
+      scatterData: nullStatsScatterData,
+      onPointClick: vi.fn(),
+    };
+
+    it('renders without crashing when all statistics are null', () => {
+      render(<BivariateScatterPlot {...nullStatsProps} />);
+
+      expect(screen.getByText('Relationship Analysis')).toBeInTheDocument();
+    });
+
+    it('shows em-dash for null correlation value', () => {
+      render(<BivariateScatterPlot {...nullStatsProps} />);
+
+      const statValues = screen.getAllByText('\u2014');
+      // correlation, rSquared, slope should all show em-dash
+      expect(statValues.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('shows N/A for null pValue', () => {
+      render(<BivariateScatterPlot {...nullStatsProps} />);
+
+      expect(screen.getAllByText('N/A').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('shows Insufficient data interpretation for null correlation', () => {
+      render(<BivariateScatterPlot {...nullStatsProps} />);
+
+      expect(
+        screen.getAllByText('Insufficient data').length,
+      ).toBeGreaterThanOrEqual(1);
+    });
+
+    it('generates clinical interpretation for null statistics', () => {
+      render(<BivariateScatterPlot {...nullStatsProps} />);
+
+      expect(
+        screen.getByText(/Insufficient data to determine a relationship/i),
+      ).toBeInTheDocument();
+    });
+
+    it('handles partial null statistics (only pValue null)', () => {
+      const partialNullData = {
+        ...nullStatsScatterData,
+        statistics: {
+          correlation: -0.5,
+          pValue: null,
+          rSquared: 0.25,
+          slope: -0.3,
+          intercept: 80,
+        },
+      };
+
+      render(
+        <BivariateScatterPlot
+          {...nullStatsProps}
+          scatterData={partialNullData}
+        />,
+      );
+
+      // correlation should render normally
+      expect(screen.getByText('-0.500')).toBeInTheDocument();
+      // pValue should show N/A
+      expect(screen.getAllByText('N/A').length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

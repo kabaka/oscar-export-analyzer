@@ -99,6 +99,9 @@ export function parseDuration(s, opts = {}) {
   return h * SECONDS_PER_HOUR + m * SECONDS_PER_MINUTE + sec;
 }
 
+// Track which quantile warnings have been emitted to avoid console spam
+const _emittedQuantileWarnings = new Set();
+
 /**
  * Compute the sample quantile (percentile) at probability level q ∈ [0,1].
  * Uses linear interpolation between sorted values (Type 7 quantile, R default).
@@ -120,11 +123,15 @@ export function parseDuration(s, opts = {}) {
  */
 export function quantile(arr, q) {
   if (!arr.length) return NaN;
-  // Warn for quartiles with insufficient data
+  // Warn for quartiles with insufficient data (at most once per n/q combo)
   if (arr.length < 4 && (q === 0.25 || q === 0.75)) {
-    console.warn(
-      `quantile: insufficient data for quartile calculation (n=${arr.length}, minimum n=4 required for q=${q})`,
-    );
+    const key = `n=${arr.length},q=${q}`;
+    if (!_emittedQuantileWarnings.has(key)) {
+      _emittedQuantileWarnings.add(key);
+      console.warn(
+        `quantile: insufficient data for quartile calculation (n=${arr.length}, minimum n=4 required for q=${q})`,
+      );
+    }
   }
   const sorted = arr.slice().sort((a, b) => a - b);
   const pos = (sorted.length - 1) * q;

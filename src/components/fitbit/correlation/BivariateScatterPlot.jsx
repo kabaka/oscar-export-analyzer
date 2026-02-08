@@ -238,9 +238,10 @@ function BivariateScatterPlot({
     if (processedData.isEmpty) return {};
 
     const { statistics } = scatterData;
-    const correlationText = statistics
-      ? ` (r=${statistics.correlation.toFixed(2)}, p${statistics.pValue < 0.001 ? '<0.001' : `=${statistics.pValue.toFixed(3)}`})`
-      : '';
+    const correlationText =
+      statistics && statistics.correlation != null
+        ? ` (r=${statistics.correlation.toFixed(2)}, p${statistics.pValue != null && statistics.pValue < 0.001 ? '<0.001' : statistics.pValue != null ? `=${statistics.pValue.toFixed(3)}` : '=N/A'})`
+        : '';
 
     return {
       title: title || `${yMetric} vs ${xMetric}${correlationText}`,
@@ -364,9 +365,10 @@ function BivariateScatterPlot({
         Scatter plot of {scatterData.xValues?.length || 0} nights showing{' '}
         {yMetric} versus {xMetric}.
         {statistics &&
+          statistics.correlation != null &&
           ` ${statistics.correlation > 0 ? 'Positive' : 'Negative'} correlation (r=${statistics.correlation.toFixed(2)}, ` +
-            `${statistics.pValue < SIGNIFICANCE_LEVELS.P_05 ? 'significant' : 'not significant'}). ` +
-            `${(statistics.rSquared * 100).toFixed(0)}% of variance explained.`}
+            `${statistics.pValue != null && statistics.pValue < SIGNIFICANCE_LEVELS.P_05 ? 'significant' : 'not significant'}). ` +
+            `${statistics.rSquared != null ? (statistics.rSquared * 100).toFixed(0) : '?'}% of variance explained.`}
         {scatterData.outliers?.length > 0 &&
           ` ${scatterData.outliers.length} outliers detected beyond 2 standard deviations.`}
       </div>
@@ -465,13 +467,15 @@ function StatisticalSummary({
             className="stat-value"
             style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
           >
-            {correlation.toFixed(3)}
+            {correlation != null ? correlation.toFixed(3) : '\u2014'}
           </span>
           <span
             className="stat-interpretation"
             style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
           >
-            {getCorrelationStrength(correlation)}
+            {correlation != null
+              ? getCorrelationStrength(correlation)
+              : 'Insufficient data'}
           </span>
         </div>
 
@@ -490,17 +494,23 @@ function StatisticalSummary({
             className="stat-value"
             style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
           >
-            {pValue < 0.001 ? '<0.001' : pValue.toExponential(2)}
+            {pValue != null
+              ? pValue < 0.001
+                ? '<0.001'
+                : pValue.toExponential(2)
+              : 'N/A'}
           </span>
           <span
             className="stat-interpretation"
             style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
           >
-            {pValue < SIGNIFICANCE_LEVELS.P_001
-              ? 'Highly Significant'
-              : pValue < SIGNIFICANCE_LEVELS.P_05
-                ? 'Significant'
-                : 'Not Significant'}
+            {pValue == null
+              ? 'N/A'
+              : pValue < SIGNIFICANCE_LEVELS.P_001
+                ? 'Highly Significant'
+                : pValue < SIGNIFICANCE_LEVELS.P_05
+                  ? 'Significant'
+                  : 'Not Significant'}
           </span>
         </div>
 
@@ -519,13 +529,15 @@ function StatisticalSummary({
             className="stat-value"
             style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
           >
-            {rSquared.toFixed(3)}
+            {rSquared != null ? rSquared.toFixed(3) : '\u2014'}
           </span>
           <span
             className="stat-interpretation"
             style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
           >
-            {(rSquared * 100).toFixed(0)}% variance explained
+            {rSquared != null
+              ? `${(rSquared * 100).toFixed(0)}% variance explained`
+              : 'Insufficient data'}
           </span>
         </div>
 
@@ -544,13 +556,15 @@ function StatisticalSummary({
             className="stat-value"
             style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
           >
-            {slope.toFixed(3)}
+            {slope != null ? slope.toFixed(3) : '\u2014'}
           </span>
           <span
             className="stat-interpretation"
             style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
           >
-            {getSlopeInterpretation(xMetric, yMetric, slope)}
+            {slope != null
+              ? getSlopeInterpretation(xMetric, yMetric, slope)
+              : 'Insufficient data'}
           </span>
         </div>
       </div>
@@ -647,6 +661,7 @@ function getMetricLabel(metric) {
  * Get correlation strength description.
  */
 function getCorrelationStrength(correlation) {
+  if (correlation == null) return 'Insufficient data';
   const abs = Math.abs(correlation);
   if (abs < CORRELATION_THRESHOLDS.WEAK) return 'Weak correlation';
   if (abs < CORRELATION_THRESHOLDS.MODERATE) return 'Moderate correlation';
@@ -658,6 +673,7 @@ function getCorrelationStrength(correlation) {
  * Get slope interpretation.
  */
 function getSlopeInterpretation(xMetric, yMetric, slope) {
+  if (slope == null) return 'Insufficient data';
   if (slope > 0) {
     return `${slope.toFixed(2)} ${yMetric} per ${xMetric}`;
   } else {
@@ -675,13 +691,18 @@ function generateClinicalInterpretation(
   yMetric,
   sampleSize,
 ) {
-  const isSignificant = pValue < SIGNIFICANCE_LEVELS.P_05;
+  if (correlation == null) {
+    return `Insufficient data to determine a relationship between ${xMetric} and ${yMetric}. More paired observations are needed for correlation analysis.`;
+  }
+  const isSignificant = pValue != null && pValue < SIGNIFICANCE_LEVELS.P_05;
   const strength = getCorrelationStrength(correlation);
   const direction = correlation > 0 ? 'positive' : 'negative';
 
   let interpretation = `This analysis shows a ${strength.toLowerCase()} ${direction} relationship between ${xMetric} and ${yMetric}`;
 
-  if (isSignificant) {
+  if (pValue == null) {
+    interpretation += '.';
+  } else if (isSignificant) {
     interpretation += ` that is statistically significant (p${pValue < 0.001 ? '<0.001' : `=${pValue.toFixed(3)}`}).`;
   } else {
     interpretation += ` that is not statistically significant (p=${pValue.toFixed(3)}).`;

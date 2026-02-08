@@ -125,6 +125,9 @@ function CorrelationMatrix({
           // Skip diagonal cells (always 1.0)
           if (i === n - 1 - j) continue;
 
+          // Skip cells where correlation or pValue is null (insufficient data)
+          if (correlation == null || pValue == null) continue;
+
           annotations.push({
             x: j,
             y: i,
@@ -366,8 +369,14 @@ function CorrelationTable({ correlationData, className }) {
             <td>
               {pair.metric1} ↔ {pair.metric2}
             </td>
-            <td>{pair.correlation.toFixed(3)}</td>
-            <td>{pair.pValue.toExponential(3)}</td>
+            <td>
+              {pair.correlation != null
+                ? pair.correlation.toFixed(3)
+                : '\u2014'}
+            </td>
+            <td>
+              {pair.pValue != null ? pair.pValue.toExponential(3) : 'N/A'}
+            </td>
             <td>{getSignificanceLabel(pair.pValue)}</td>
             <td>
               {getCorrelationInterpretation(pair.correlation, pair.pValue)}
@@ -392,6 +401,7 @@ function generateSignificanceLabels(pValues) {
  * Get significance label for p-value.
  */
 function getSignificanceLabel(pValue) {
+  if (pValue == null) return 'N/A';
   if (pValue < SIGNIFICANCE_LEVELS.P_001) return '***';
   if (pValue < SIGNIFICANCE_LEVELS.P_01) return '**';
   if (pValue < SIGNIFICANCE_LEVELS.P_05) return '*';
@@ -402,6 +412,7 @@ function getSignificanceLabel(pValue) {
  * Format correlation text with significance stars.
  */
 function formatCorrelationText(correlation, pValue) {
+  if (correlation == null) return '\u2014'; // em-dash for missing correlation
   const significance = getSignificanceLabel(pValue);
   return `${correlation.toFixed(2)}${significance}`;
 }
@@ -410,6 +421,7 @@ function formatCorrelationText(correlation, pValue) {
  * Get text color based on correlation strength for readability.
  */
 function getTextColor(correlation) {
+  if (correlation == null) return '#999999';
   return Math.abs(correlation) > 0.4 ? '#FFFFFF' : '#000000';
 }
 
@@ -420,22 +432,29 @@ function findStrongestCorrelation(correlations, metrics, pValues) {
   let maxCorr = 0;
   let maxPair = null;
   let maxPValue = 1;
+  let maxCorrValue = null;
 
   for (let i = 0; i < metrics.length; i++) {
     for (let j = i + 1; j < metrics.length; j++) {
-      const corr = Math.abs(correlations[i][j]);
+      const rawCorr = correlations[i][j];
+      // Skip null correlations (insufficient data for this pair)
+      if (rawCorr == null) continue;
+      const corr = Math.abs(rawCorr);
       if (corr > maxCorr) {
         maxCorr = corr;
+        maxCorrValue = rawCorr;
         maxPair = `${metrics[i]} and ${metrics[j]}`;
         maxPValue = pValues[i][j];
       }
     }
   }
 
-  if (maxPair) {
+  if (maxPair && maxCorrValue != null) {
     const significance =
-      maxPValue < SIGNIFICANCE_LEVELS.P_05 ? 'significant' : 'not significant';
-    return `Strongest correlation: ${maxPair} (r=${correlations[metrics.indexOf(maxPair.split(' and ')[0])][metrics.indexOf(maxPair.split(' and ')[1])].toFixed(2)}, ${significance}).`;
+      maxPValue != null && maxPValue < SIGNIFICANCE_LEVELS.P_05
+        ? 'significant'
+        : 'not significant';
+    return `Strongest correlation: ${maxPair} (r=${maxCorrValue.toFixed(2)}, ${significance}).`;
   }
 
   return '';
@@ -445,8 +464,9 @@ function findStrongestCorrelation(correlations, metrics, pValues) {
  * Get correlation interpretation for accessibility.
  */
 function getCorrelationInterpretation(correlation, pValue) {
+  if (correlation == null) return 'Insufficient data';
   const absCorr = Math.abs(correlation);
-  const isSignificant = pValue < SIGNIFICANCE_LEVELS.P_05;
+  const isSignificant = pValue != null && pValue < SIGNIFICANCE_LEVELS.P_05;
 
   let strength = '';
   if (absCorr < CORRELATION_THRESHOLDS.WEAK) strength = 'weak';

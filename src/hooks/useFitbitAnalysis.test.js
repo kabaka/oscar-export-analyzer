@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
   useFitbitAnalysis,
@@ -659,5 +659,377 @@ describe('useFitbitAnalysis', () => {
 
     // useMemo should prevent re-computation
     expect(analyzeOscarFitbitIntegration).toHaveBeenCalledTimes(1);
+  });
+});
+
+// --- End-to-end pipeline integration test (uses REAL analyzeOscarFitbitIntegration) ---
+
+describe('end-to-end pipeline with sparse real-world data', () => {
+  // 7 nights of OSCAR data (field names matching normalizeOscarRecord)
+  const oscarData = [
+    {
+      Date: '2025-06-02',
+      AHI: '3.2',
+      'Median EPAP': '8.0',
+      'Total Time': '7.5',
+      'Leak Rate Median': '12',
+    },
+    {
+      Date: '2025-06-03',
+      AHI: '5.1',
+      'Median EPAP': '8.0',
+      'Total Time': '6.75',
+      'Leak Rate Median': '18',
+    },
+    {
+      Date: '2025-06-04',
+      AHI: '2.8',
+      'Median EPAP': '8.2',
+      'Total Time': '8.0',
+      'Leak Rate Median': '10',
+    },
+    {
+      Date: '2025-06-05',
+      AHI: '7.3',
+      'Median EPAP': '7.8',
+      'Total Time': '5.5',
+      'Leak Rate Median': '25',
+    },
+    {
+      Date: '2025-06-06',
+      AHI: '4.5',
+      'Median EPAP': '8.0',
+      'Total Time': '7.0',
+      'Leak Rate Median': '15',
+    },
+    {
+      Date: '2025-06-07',
+      AHI: '1.9',
+      'Median EPAP': '8.4',
+      'Total Time': '7.25',
+      'Leak Rate Median': '8',
+    },
+    {
+      Date: '2025-06-08',
+      AHI: '6.0',
+      'Median EPAP': '8.0',
+      'Total Time': '6.5',
+      'Leak Rate Median': '20',
+    },
+  ];
+
+  // 7 days of Fitbit HR (full coverage, realistic resting HR + heartRateZones)
+  const fitbitHeartRate = [
+    {
+      date: '2025-06-02',
+      restingHeartRate: 61,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1320,
+          caloriesOut: 1200,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 30, caloriesOut: 200 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 8, caloriesOut: 80 },
+        { name: 'Peak', min: 170, max: 220, minutes: 0, caloriesOut: 0 },
+      ],
+    },
+    {
+      date: '2025-06-03',
+      restingHeartRate: 63,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1310,
+          caloriesOut: 1180,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 35, caloriesOut: 220 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 12, caloriesOut: 100 },
+        { name: 'Peak', min: 170, max: 220, minutes: 0, caloriesOut: 0 },
+      ],
+    },
+    {
+      date: '2025-06-04',
+      restingHeartRate: 60,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1350,
+          caloriesOut: 1220,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 25, caloriesOut: 180 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 5, caloriesOut: 50 },
+        { name: 'Peak', min: 170, max: 220, minutes: 0, caloriesOut: 0 },
+      ],
+    },
+    {
+      date: '2025-06-05',
+      restingHeartRate: 66,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1280,
+          caloriesOut: 1150,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 40, caloriesOut: 260 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 15, caloriesOut: 120 },
+        { name: 'Peak', min: 170, max: 220, minutes: 2, caloriesOut: 15 },
+      ],
+    },
+    {
+      date: '2025-06-06',
+      restingHeartRate: 62,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1330,
+          caloriesOut: 1190,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 28, caloriesOut: 195 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 10, caloriesOut: 85 },
+        { name: 'Peak', min: 170, max: 220, minutes: 0, caloriesOut: 0 },
+      ],
+    },
+    {
+      date: '2025-06-07',
+      restingHeartRate: 58,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1360,
+          caloriesOut: 1230,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 22, caloriesOut: 170 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 3, caloriesOut: 30 },
+        { name: 'Peak', min: 170, max: 220, minutes: 0, caloriesOut: 0 },
+      ],
+    },
+    {
+      date: '2025-06-08',
+      restingHeartRate: 64,
+      heartRateZones: [
+        {
+          name: 'Out of Range',
+          min: 30,
+          max: 100,
+          minutes: 1300,
+          caloriesOut: 1170,
+        },
+        { name: 'Fat Burn', min: 100, max: 140, minutes: 33, caloriesOut: 210 },
+        { name: 'Cardio', min: 140, max: 170, minutes: 11, caloriesOut: 90 },
+        { name: 'Peak', min: 170, max: 220, minutes: 1, caloriesOut: 8 },
+      ],
+    },
+  ];
+
+  // Sparse SpO2 — only 2 of 7 days (insufficient for correlation, n < 3)
+  // This is the scenario that was previously crashing with .toFixed() on null
+  const fitbitSpo2 = [
+    { date: '2025-06-02', avg: 96.5, min: 94.7, max: 97.4 },
+    { date: '2025-06-08', avg: 96.0, min: 89.1, max: 100.0 },
+  ];
+
+  let pipelineResult;
+  let dashboardResult;
+
+  beforeAll(async () => {
+    // Bypass the vi.mock at the top of this file to get the REAL implementation
+    const { analyzeOscarFitbitIntegration: realAnalyze } =
+      await vi.importActual('../utils/fitbitAnalysis.js');
+
+    // Step 1-2: Transform raw data into pipeline format
+    const preparedOscar = prepareOscarData(oscarData);
+    const preparedFitbit = transformFitbitDataForPipeline(
+      fitbitHeartRate,
+      fitbitSpo2,
+    );
+
+    // Step 3: Run the full analysis pipeline (alignment + quality + correlation)
+    pipelineResult = realAnalyze(preparedOscar, preparedFitbit, {
+      minNightsRequired: 3,
+      enableAdvancedAnalysis: false, // skip advanced (needs 14+ nights)
+    });
+
+    // Step 4: Shape for dashboard consumption
+    dashboardResult = shapeForDashboard(pipelineResult, fitbitHeartRate);
+  });
+
+  it('pipeline completes successfully without throwing', () => {
+    expect(pipelineResult).toBeDefined();
+    expect(pipelineResult.success).toBe(true);
+    expect(pipelineResult.error).toBeUndefined();
+  });
+
+  it('shapeForDashboard returns all required dashboard properties', () => {
+    expect(dashboardResult).toHaveProperty('correlationData');
+    expect(dashboardResult).toHaveProperty('nightlyData');
+    expect(dashboardResult).toHaveProperty('scatterData');
+    expect(dashboardResult).toHaveProperty('summary');
+    expect(dashboardResult).toHaveProperty('heartRateData');
+    expect(dashboardResult.heartRateData).toEqual(fitbitHeartRate);
+  });
+
+  it('correlationData has NxN matrix format with correct types', () => {
+    const { correlationData } = dashboardResult;
+    expect(correlationData).not.toBeNull();
+
+    const { metrics, correlations, pValues } = correlationData;
+
+    // metrics is a string[]
+    expect(Array.isArray(metrics)).toBe(true);
+    metrics.forEach((m) => expect(typeof m).toBe('string'));
+
+    // Expect at least ahi, restingHR, and several others from the pipeline
+    const n = metrics.length;
+    expect(n).toBeGreaterThanOrEqual(3);
+
+    // correlations and pValues are number[][] (with nulls for insufficient data)
+    expect(correlations).toHaveLength(n);
+    expect(pValues).toHaveLength(n);
+    correlations.forEach((row) => expect(row).toHaveLength(n));
+    pValues.forEach((row) => expect(row).toHaveLength(n));
+
+    // Every cell is either a number or null
+    correlations.forEach((row) => {
+      row.forEach((val) => {
+        expect(val === null || typeof val === 'number').toBe(true);
+      });
+    });
+    pValues.forEach((row) => {
+      row.forEach((val) => {
+        expect(val === null || typeof val === 'number').toBe(true);
+      });
+    });
+  });
+
+  it('matrix diagonal is 1.0 for correlations and 0.0 for pValues', () => {
+    const { correlations, pValues, metrics } = dashboardResult.correlationData;
+
+    for (let i = 0; i < metrics.length; i++) {
+      expect(correlations[i][i]).toBe(1.0);
+      expect(pValues[i][i]).toBe(0.0);
+    }
+  });
+
+  it('matrix is symmetric', () => {
+    const { correlations, pValues, metrics } = dashboardResult.correlationData;
+    const n = metrics.length;
+
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        expect(correlations[i][j]).toBe(correlations[j][i]);
+        expect(pValues[i][j]).toBe(pValues[j][i]);
+      }
+    }
+  });
+
+  it('contains valid correlations where data is sufficient (AHI ↔ Resting HR)', () => {
+    const { correlations, pValues, metrics } = dashboardResult.correlationData;
+
+    const ahiIdx = metrics.indexOf('AHI');
+    const restingHRIdx = metrics.indexOf('Resting HR');
+    expect(ahiIdx).toBeGreaterThanOrEqual(0);
+    expect(restingHRIdx).toBeGreaterThanOrEqual(0);
+
+    // AHI ↔ Resting HR: all 7 nights have both values → valid correlation
+    const r = correlations[ahiIdx][restingHRIdx];
+    const p = pValues[ahiIdx][restingHRIdx];
+    expect(r).not.toBeNull();
+    expect(typeof r).toBe('number');
+    expect(Number.isFinite(r)).toBe(true);
+    expect(r).toBeGreaterThanOrEqual(-1);
+    expect(r).toBeLessThanOrEqual(1);
+
+    expect(p).not.toBeNull();
+    expect(typeof p).toBe('number');
+    expect(Number.isFinite(p)).toBe(true);
+  });
+
+  it('contains null correlations where data is insufficient (SpO2 with only 2 data points)', () => {
+    const { correlations, pValues, metrics } = dashboardResult.correlationData;
+
+    const ahiIdx = metrics.indexOf('AHI');
+    const minSpO2Idx = metrics.indexOf('Min SpO2');
+
+    // SpO2 only available for 2 of 7 nights → n < 3 → null in matrix
+    if (minSpO2Idx >= 0) {
+      expect(correlations[ahiIdx][minSpO2Idx]).toBeNull();
+      expect(pValues[ahiIdx][minSpO2Idx]).toBeNull();
+    }
+
+    // HRV has no data at all → null
+    const hrvIdx = metrics.indexOf('HRV');
+    if (hrvIdx >= 0) {
+      expect(correlations[ahiIdx][hrvIdx]).toBeNull();
+      expect(pValues[ahiIdx][hrvIdx]).toBeNull();
+    }
+  });
+
+  it('nightlyData is array with correct shape per entry', () => {
+    const { nightlyData } = dashboardResult;
+
+    expect(Array.isArray(nightlyData)).toBe(true);
+    expect(nightlyData.length).toBeGreaterThanOrEqual(3);
+
+    nightlyData.forEach((night) => {
+      expect(night).toHaveProperty('date');
+      expect(typeof night.date).toBe('string');
+      expect(night.date).toMatch(/^\d{4}-\d{2}-\d{2}/);
+
+      expect(night).toHaveProperty('avgHeartRate');
+      expect(night).toHaveProperty('ahi');
+      expect(night).toHaveProperty('oscar');
+      expect(night).toHaveProperty('fitbit');
+    });
+  });
+
+  it('no .toFixed() crash — simulates dashboard rendering of correlation values', () => {
+    const { correlations, pValues } = dashboardResult.correlationData;
+
+    // This is what the CorrelationMatrix component does:
+    // iterate cells and call .toFixed() on non-null values
+    expect(() => {
+      correlations.forEach((row) => {
+        row.forEach((val) => {
+          if (val !== null) {
+            val.toFixed(2);
+          }
+        });
+      });
+      pValues.forEach((row) => {
+        row.forEach((val) => {
+          if (val !== null) {
+            val.toFixed(4);
+          }
+        });
+      });
+    }).not.toThrow();
+  });
+
+  it('summary has expected fields and reasonable values', () => {
+    const { summary } = dashboardResult;
+
+    expect(summary).toHaveProperty('totalNights');
+    expect(typeof summary.totalNights).toBe('number');
+    expect(summary.totalNights).toBeGreaterThanOrEqual(3);
+
+    expect(summary).toHaveProperty('strongCorrelations');
+    expect(typeof summary.strongCorrelations).toBe('number');
+    expect(summary.strongCorrelations).toBeGreaterThanOrEqual(0);
+
+    expect(summary).toHaveProperty('matchRate');
+    expect(summary).toHaveProperty('dataQuality');
   });
 });
