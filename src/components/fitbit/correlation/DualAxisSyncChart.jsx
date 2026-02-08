@@ -279,14 +279,14 @@ function DualAxisSyncChart({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '1px dashed #ccc',
+          border: '1px dashed var(--color-border)',
           borderRadius: '8px',
-          backgroundColor: '#f9f9f9',
+          backgroundColor: 'var(--color-kpi-bg)',
         }}
       >
         <div
           className="empty-state"
-          style={{ textAlign: 'center', color: '#666' }}
+          style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}
         >
           <p>No correlation data available</p>
           <p style={{ fontSize: '0.9em' }}>

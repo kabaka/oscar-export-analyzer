@@ -26,7 +26,15 @@ vi.mock('../context/FitbitOAuthContext.jsx', () => ({
     clearError: vi.fn(),
     passphrase: null,
     setPassphrase: vi.fn(),
+    recoverWithPassphrase: vi.fn().mockResolvedValue(false),
   }),
+}));
+
+vi.mock('../utils/fitbitDb.js', () => ({
+  getTokens: vi.fn().mockResolvedValue(null),
+  getFitbitDataStats: vi.fn().mockResolvedValue(null),
+  setSyncMetadata: vi.fn().mockResolvedValue(true),
+  getSyncMetadata: vi.fn().mockResolvedValue(null),
 }));
 
 describe('FitbitConnectionCard (integration)', () => {

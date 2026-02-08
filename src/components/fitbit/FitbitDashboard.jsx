@@ -8,6 +8,7 @@ import CorrelationMatrix from './correlation/CorrelationMatrix';
 import BivariateScatterPlot from './correlation/BivariateScatterPlot';
 import { CONNECTION_STATUS } from '../../constants/fitbit';
 import { computeHeartRateSummary } from '../../utils/fitbitHeartRateParser';
+import { METRIC_LABELS } from '../../hooks/useFitbitAnalysis';
 
 /**
  * Main dashboard for Fitbit integration and correlation analysis.
@@ -1139,13 +1140,43 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
       )}
 
       {/* Dual-axis correlation chart */}
-      <DualAxisSyncChart
-        title={`Heart Rate & AHI Events - ${nightData.date}`}
-        data={nightData}
-        onEventClick={(event) => {
-          console.log('Event clicked:', event);
-        }}
-      />
+      {(() => {
+        const hrIntradayArr = nightData.fitbit?.heartRate?.intradayData;
+        if (!hrIntradayArr || hrIntradayArr.length === 0) return null;
+
+        const timestamps = hrIntradayArr.map((pt) => {
+          const [h, m, s] = (pt.time || '00:00:00').split(':').map(Number);
+          const d = new Date(nightData.date);
+          d.setHours(h, m, s || 0, 0);
+          return d;
+        });
+        const heartRateVals = hrIntradayArr.map((pt) => pt.bpm);
+
+        // SpO2 intraday if available
+        const spo2Arr = nightData.fitbit?.oxygenSaturation?.intradayData;
+        const spO2Vals = spo2Arr ? spo2Arr.map((pt) => pt.value) : [];
+
+        // OSCAR events if available
+        const oscarEvents = nightData.oscar?.events || [];
+
+        const dualData = {
+          timestamps,
+          heartRate: heartRateVals,
+          spO2: spO2Vals,
+          ahiEvents: oscarEvents,
+          sleepStages: [],
+        };
+
+        return (
+          <DualAxisSyncChart
+            title={`Heart Rate & AHI Events - ${nightData.date}`}
+            data={dualData}
+            onEventClick={(event) => {
+              console.log('Event clicked:', event);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -1158,6 +1189,36 @@ function ScatterDetailSection({
   scatterData,
   onBackToCorrelations,
 }) {
+  // Build reverse lookup: display label → internal key
+  const labelToKey = useMemo(() => {
+    const map = {};
+    for (const [key, label] of Object.entries(METRIC_LABELS)) {
+      map[label] = key;
+    }
+    return map;
+  }, []);
+
+  // Look up the scatter pair matching the selected metric display labels
+  const transformedScatterData = useMemo(() => {
+    if (!scatterData || !metricPair) return null;
+
+    const xKey = labelToKey[metricPair.xMetric] || metricPair.xMetric;
+    const yKey = labelToKey[metricPair.yMetric] || metricPair.yMetric;
+
+    // Try both key orderings since buildScatterData uses sorted pairs
+    const pair =
+      scatterData[`${xKey}_${yKey}`] || scatterData[`${yKey}_${xKey}`];
+
+    if (!pair || !pair.points || pair.points.length === 0) return null;
+
+    return {
+      xValues: pair.points.map((p) => p.x),
+      yValues: pair.points.map((p) => p.y),
+      dateLabels: pair.points.map((p) => p.date || `Point ${p.index ?? ''}`),
+      statistics: metricPair.statistics || null,
+    };
+  }, [scatterData, metricPair, labelToKey]);
+
   return (
     <div className="scatter-detail-section">
       <div style={{ marginBottom: '2rem' }}>
@@ -1185,7 +1246,7 @@ function ScatterDetailSection({
       <BivariateScatterPlot
         xMetric={metricPair.xMetric}
         yMetric={metricPair.yMetric}
-        scatterData={scatterData}
+        scatterData={transformedScatterData}
         onPointClick={(date) => {
           console.log('Point clicked:', date);
         }}

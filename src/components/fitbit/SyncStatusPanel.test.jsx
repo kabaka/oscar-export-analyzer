@@ -51,7 +51,6 @@ describe('SyncStatusPanel', () => {
 
     expect(screen.getByText('Data Synchronization')).toBeInTheDocument();
     expect(screen.getByText(/Synced \(/)).toBeInTheDocument();
-    expect(screen.getByText(/Next automatic sync:/)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /sync now/i }),
     ).toBeInTheDocument();
@@ -96,22 +95,14 @@ describe('SyncStatusPanel', () => {
     expect(mockProps.onSyncNow).toHaveBeenCalledTimes(1);
   });
 
-  it('handles auto-sync toggle', () => {
+  it('shows next auto-sync time when enabled', () => {
     render(<SyncStatusPanel {...mockProps} />);
 
-    // Component uses button not switch
-    const autoSyncButton = screen.getByRole('button', {
-      name: /auto-sync/i,
-    });
-    expect(autoSyncButton).toBeInTheDocument();
-
-    fireEvent.click(autoSyncButton);
-
-    // Clicking opens menu, doesn't directly toggle
-    expect(autoSyncButton).toBeInTheDocument();
+    // Compact design shows next sync time inline
+    expect(screen.getByText(/Next sync:/)).toBeInTheDocument();
   });
 
-  it('handles disabled auto-sync state', () => {
+  it('hides next sync time when auto-sync disabled', () => {
     const disabledAutoSyncProps = {
       ...mockProps,
       autoSyncEnabled: false,
@@ -119,20 +110,8 @@ describe('SyncStatusPanel', () => {
 
     render(<SyncStatusPanel {...disabledAutoSyncProps} />);
 
-    // Component shows OFF state in button
-    const autoSyncButton = screen.getByRole('button', {
-      name: /auto-sync/i,
-    });
-    expect(autoSyncButton).toHaveTextContent('OFF');
-  });
-
-  it('displays recent activity correctly', () => {
-    render(<SyncStatusPanel {...mockProps} />);
-
-    expect(screen.getByText('Recent Activity:')).toBeInTheDocument();
-    expect(screen.getByText('Auto sync completed')).toBeInTheDocument();
-    expect(screen.getByText('Manual sync requested')).toBeInTheDocument();
-    // Component doesn't show details field, only message
+    // No next sync time shown when disabled
+    expect(screen.queryByText(/Next sync:/)).not.toBeInTheDocument();
   });
 
   it('formats dates correctly', () => {
@@ -146,46 +125,6 @@ describe('SyncStatusPanel', () => {
 
     // Component formats times and dates - just verify it renders
     expect(screen.getByText(/Synced \(/)).toBeInTheDocument();
-    expect(screen.getByText(/Next automatic sync:/)).toBeInTheDocument();
-  });
-
-  it('handles missing recent activity', () => {
-    const noActivityProps = {
-      ...mockProps,
-      recentActivity: [],
-    };
-
-    render(<SyncStatusPanel {...noActivityProps} />);
-
-    expect(screen.getByText('Recent Activity:')).toBeInTheDocument();
-    expect(screen.getByText('No recent sync activity')).toBeInTheDocument();
-  });
-
-  it('shows success/failure icons for activity items', () => {
-    const mixedActivityProps = {
-      ...mockProps,
-      recentActivity: [
-        {
-          time: new Date('2026-01-24T08:30:00'),
-          message: 'Sync completed',
-          details: 'Success',
-          type: 'success',
-        },
-        {
-          time: new Date('2026-01-23T08:30:00'),
-          message: 'Sync failed',
-          details: 'Network error',
-          type: 'error',
-        },
-      ],
-    };
-
-    render(<SyncStatusPanel {...mixedActivityProps} />);
-
-    // Success icon
-    expect(screen.getByText('✓')).toBeInTheDocument();
-    // Failure icon
-    expect(screen.getByText('✗')).toBeInTheDocument();
   });
 
   it('sets correct ARIA attributes', () => {
@@ -196,15 +135,10 @@ describe('SyncStatusPanel', () => {
 
     const syncButton = screen.getByRole('button', { name: /sync now/i });
     expect(syncButton).toBeInTheDocument();
-
-    // Auto-sync toggle exists as a button, not a switch
-    const autoSyncButton = screen.getByRole('button', { name: /auto-sync/i });
-    expect(autoSyncButton).toBeInTheDocument();
   });
 
   it('shows different data quality indicators', () => {
-    // Component currently doesn't render data quality text directly
-    // Test that component renders without errors with quality prop
+    // Component renders without errors with extra props
     const qualityVariants = ['Excellent', 'Good', 'Fair', 'Poor'];
 
     qualityVariants.forEach((quality) => {
@@ -253,24 +187,46 @@ describe('SyncStatusPanel', () => {
     expect(syncingElements.length).toBeGreaterThan(0);
   });
 
-  it('shows overflow for long activity list', async () => {
-    const longActivityProps = {
+  it('shows error with retry button when sync fails', () => {
+    const errorProps = {
       ...mockProps,
-      recentActivity: Array.from({ length: 10 }, (_, i) => ({
-        time: new Date(`2026-01-${24 - i}T08:30:00`),
-        message: `Activity ${i + 1}`,
-        details: `Details for activity ${i + 1}`,
-        type: i % 2 === 0 ? 'success' : 'error',
-      })),
+      syncStatus: 'error',
+      errorMessage: 'Network timeout',
     };
 
-    render(<SyncStatusPanel {...longActivityProps} />);
+    render(<SyncStatusPanel {...errorProps} />);
 
-    const activityList = screen.getByRole('list');
-    expect(activityList.children).toHaveLength(10);
+    expect(screen.getByText('Sync failed')).toBeInTheDocument();
+    expect(screen.getByText(/Network timeout/)).toBeInTheDocument();
 
-    // Component renders all activity items
-    expect(screen.getByText('Activity 1')).toBeInTheDocument();
+    const retryButton = screen.getByRole('button', { name: /retry/i });
+    fireEvent.click(retryButton);
+    expect(mockProps.onSyncNow).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses theme-aware CSS custom properties', () => {
+    render(<SyncStatusPanel {...mockProps} />);
+
+    const panel = screen.getByRole('region', { name: /data synchronization/i });
+    const style = panel.getAttribute('style');
+
+    // Should use CSS custom properties, not hardcoded colors
+    expect(style).toContain('var(--color-surface)');
+    expect(style).toContain('var(--color-border)');
+    expect(style).toContain('var(--shadow-2)');
+    expect(style).not.toContain('#ffffff');
+    expect(style).not.toContain('#e0e0e0');
+  });
+
+  it('renders without maxWidth constraint', () => {
+    render(<SyncStatusPanel {...mockProps} />);
+
+    const panel = screen.getByRole('region', { name: /data synchronization/i });
+    const style = panel.getAttribute('style');
+
+    // Should not have maxWidth
+    expect(style).not.toContain('max-width');
+    expect(style).not.toContain('maxWidth');
   });
 
   it('shows keyboard navigation hints', () => {
@@ -279,9 +235,8 @@ describe('SyncStatusPanel', () => {
     const syncButton = screen.getByRole('button', { name: /sync now/i });
 
     fireEvent.focus(syncButton);
-    // In a real implementation, we'd check for focus indicators
 
-    // Buttons respond to click events, not keyDown in this component
+    // Buttons respond to click events
     fireEvent.click(syncButton);
     expect(mockProps.onSyncNow).toHaveBeenCalledTimes(1);
   });

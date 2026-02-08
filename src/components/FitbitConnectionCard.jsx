@@ -7,11 +7,12 @@
  * @component
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFitbitOAuthContext } from '../context/FitbitOAuthContext.jsx';
 import { useFitbitConnection } from '../hooks/useFitbitConnection.js';
 import FitbitStatusIndicator from './FitbitStatusIndicator.jsx';
 import { CONNECTION_STATUS, MVP_SCOPES } from '../constants/fitbit.js';
+import { getTokens } from '../utils/fitbitDb.js';
 
 /**
  * Calculate passphrase strength.
@@ -60,6 +61,8 @@ export function FitbitConnectionCard({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSecurityInfo, setShowSecurityInfo] = useState(false);
+  const [tokensExist, setTokensExist] = useState(false);
+  const [recoveryError, setRecoveryError] = useState(null);
 
   // Internal passphrase state (used when passphrase prop not provided)
   const [internalPassphrase, setInternalPassphrase] = useState('');
@@ -74,6 +77,7 @@ export function FitbitConnectionCard({
     clearError: clearOAuthError,
     passphrase: contextPassphrase,
     setPassphrase: setContextPassphrase,
+    recoverWithPassphrase,
   } = useFitbitOAuthContext();
 
   React.useEffect(() => {
@@ -109,11 +113,33 @@ export function FitbitConnectionCard({
   const currentError = oauthError || connectionError;
   const isLoading = oauthLoading || isRefreshing;
 
+  // Check if encrypted tokens exist in IndexedDB (for passphrase recovery)
+  useEffect(() => {
+    let cancelled = false;
+    async function checkTokens() {
+      try {
+        const tokens = await getTokens();
+        if (!cancelled) setTokensExist(!!tokens);
+      } catch {
+        if (!cancelled) setTokensExist(false);
+      }
+    }
+    checkTokens();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStatus]);
+
+  // Recovery mode: tokens exist but no active connection (passphrase lost)
+  const isRecoveryMode =
+    tokensExist && currentStatus !== CONNECTION_STATUS.CONNECTED;
+
   // Handle connection actions
   const handleConnect = async () => {
     try {
       clearOAuthError();
       clearConnectionError();
+      setRecoveryError(null);
 
       if (!effectivePassphrase || effectivePassphrase.length < 8) {
         throw new Error(
@@ -130,6 +156,38 @@ export function FitbitConnectionCard({
     } catch (error) {
       console.error('Failed to initiate Fitbit connection:', error);
       if (onError) onError(error);
+    }
+  };
+
+  /**
+   * Attempt to recover Fitbit connection with a passphrase.
+   * Tries to decrypt stored tokens without going through OAuth again.
+   */
+  const handleRecover = async () => {
+    try {
+      setRecoveryError(null);
+      clearOAuthError();
+      clearConnectionError();
+
+      if (!effectivePassphrase || effectivePassphrase.length < 8) {
+        setRecoveryError(
+          'Encryption passphrase required (minimum 8 characters)',
+        );
+        return;
+      }
+
+      const success = await recoverWithPassphrase(effectivePassphrase);
+      if (!success) {
+        setRecoveryError('Incorrect passphrase. Please try again.');
+      } else if (onConnectionChange) {
+        onConnectionChange({
+          type: 'recovered',
+          timestamp: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error('Passphrase recovery failed:', error);
+      setRecoveryError('Failed to restore connection. Please try again.');
     }
   };
 
@@ -414,6 +472,32 @@ export function FitbitConnectionCard({
       const isPassphraseValid =
         effectivePassphrase && effectivePassphrase.length >= 8;
 
+      // Recovery mode: tokens exist but passphrase was lost (e.g., page refresh)
+      if (isRecoveryMode) {
+        return (
+          <div className="action-buttons disconnected">
+            <button
+              type="button"
+              onClick={handleRecover}
+              disabled={isLoading || !isPassphraseValid}
+              className="primary-button"
+              aria-describedby="passphrase-help"
+            >
+              {isLoading ? 'Restoring...' : 'Restore Connection'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleConnect}
+              disabled={isLoading || !isPassphraseValid}
+              className="secondary-button"
+            >
+              Connect with new account
+            </button>
+          </div>
+        );
+      }
+
       return (
         <div className="action-buttons disconnected">
           <button
@@ -466,7 +550,9 @@ export function FitbitConnectionCard({
         <p id="fitbit-card-description" className="card-description">
           {currentStatus === CONNECTION_STATUS.CONNECTED
             ? 'Your Fitbit data is connected and ready for correlation analysis with your CPAP therapy data.'
-            : 'Correlate heart rate, SpO2, and sleep stages with your CPAP therapy data for deeper insights.'}
+            : isRecoveryMode
+              ? 'Enter your passphrase to restore your Fitbit connection. Your encrypted tokens are still stored on this device.'
+              : 'Correlate heart rate, SpO2, and sleep stages with your CPAP therapy data for deeper insights.'}
         </p>
 
         {currentStatus === CONNECTION_STATUS.CONNECTED && renderDataPreview()}
@@ -475,7 +561,14 @@ export function FitbitConnectionCard({
           renderPassphraseInput()}
 
         {currentStatus !== CONNECTION_STATUS.CONNECTED &&
+          !isRecoveryMode &&
           renderSecurityNotice()}
+
+        {recoveryError && (
+          <div className="error-message" role="alert">
+            <p>{recoveryError}</p>
+          </div>
+        )}
 
         {currentError && (
           <div className="error-message" role="alert">

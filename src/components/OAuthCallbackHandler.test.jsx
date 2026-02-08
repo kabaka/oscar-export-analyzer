@@ -56,6 +56,7 @@ describe.skip('OAuthCallbackHandler', () => {
       isConnecting: false,
       hasError: false,
       setPassphrase: vi.fn(),
+      recoverWithPassphrase: vi.fn().mockResolvedValue(false),
     });
   });
 

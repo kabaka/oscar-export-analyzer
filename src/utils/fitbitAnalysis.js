@@ -309,22 +309,32 @@ export function generateTreatmentRecommendations(
 // Helper functions
 
 function normalizeOscarRecord(oscarRow) {
+  const toFinite = (v) => {
+    const val = parseFloat(v);
+    return Number.isFinite(val) ? val : NaN;
+  };
+
+  const totalTimeHours = parseFloat(oscarRow['Total Time']);
+  const totalMinutes = Number.isFinite(totalTimeHours)
+    ? totalTimeHours * 60
+    : NaN;
+
   return {
-    ahi: parseFloat(oscarRow.AHI) || NaN,
-    centralAhi: parseFloat(oscarRow['Central AHI']) || NaN,
-    obstructiveAhi: parseFloat(oscarRow['Obstructive AHI']) || NaN,
-    hypopneaAhi: parseFloat(oscarRow['Hypopnea AHI']) || NaN,
+    ahi: toFinite(oscarRow.AHI),
+    centralAhi: toFinite(oscarRow['Central AHI']),
+    obstructiveAhi: toFinite(oscarRow['Obstructive AHI']),
+    hypopneaAhi: toFinite(oscarRow['Hypopnea AHI']),
 
     pressures: {
-      epap: parseFloat(oscarRow['Median EPAP']) || NaN,
-      ipap: parseFloat(oscarRow['Median IPAP']) || NaN,
-      meanPressure: parseFloat(oscarRow['Mean Pressure']) || NaN,
-      maxPressure: parseFloat(oscarRow['Max Pressure']) || NaN,
+      epap: toFinite(oscarRow['Median EPAP']),
+      ipap: toFinite(oscarRow['Median IPAP']),
+      meanPressure: toFinite(oscarRow['Mean Pressure']),
+      maxPressure: toFinite(oscarRow['Max Pressure']),
     },
 
     usage: {
-      totalMinutes: parseFloat(oscarRow['Total Time']) * 60 || NaN, // Convert hours to minutes
-      leakPercent: parseFloat(oscarRow['Leak Rate Median']) || NaN,
+      totalMinutes,
+      leakPercent: toFinite(oscarRow['Leak Rate Median']),
     },
 
     events: [], // Would be populated from details data if available

@@ -204,7 +204,7 @@ export function buildScatterData(metrics) {
  * Human-readable labels for internal metric keys used in correlation pairs.
  * @type {Object<string, string>}
  */
-const METRIC_LABELS = {
+export const METRIC_LABELS = {
   ahi: 'AHI',
   restingHR: 'Resting HR',
   minSpO2: 'Min SpO2',
@@ -351,6 +351,9 @@ export function shapeForDashboard(
     advancedAnalysis,
   } = analysisResult;
 
+  // Helper: coerce NaN/undefined/null to null for safe display
+  const finiteOrNull = (v) => (Number.isFinite(v) ? v : null);
+
   // Count strong correlations (|r| > 0.3 and p < 0.05)
   const strongCorrelations = correlations?.correlations
     ? Object.values(correlations.correlations).filter(
@@ -368,9 +371,9 @@ export function shapeForDashboard(
       record.date instanceof Date
         ? record.date.toISOString().slice(0, 10)
         : String(record.date).slice(0, 10),
-    avgHeartRate: record.fitbit?.heartRate?.restingBpm ?? null,
-    ahi: record.oscar?.ahi ?? null,
-    minSpO2: record.fitbit?.oxygenSaturation?.minPercent ?? null,
+    avgHeartRate: finiteOrNull(record.fitbit?.heartRate?.restingBpm),
+    ahi: finiteOrNull(record.oscar?.ahi),
+    minSpO2: finiteOrNull(record.fitbit?.oxygenSaturation?.minPercent),
     oscar: record.oscar,
     fitbit: record.fitbit,
   }));

@@ -20,6 +20,7 @@ vi.mock('../../context/FitbitOAuthContext', () => ({
     clearError: vi.fn(),
     passphrase: null,
     setPassphrase: vi.fn(),
+    recoverWithPassphrase: vi.fn().mockResolvedValue(false),
   }),
   FitbitOAuthProvider: ({ children }) => <>{children}</>,
 }));
@@ -71,6 +72,13 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
           duration: 20,
         },
       ];
+      // Build intraday HR data in the format NightlyDetailSection expects
+      const intradayData = heartRate.map((bpm, i) => {
+        const t = timestamps[i];
+        const hh = String(t.getUTCHours()).padStart(2, '0');
+        const mm = String(t.getUTCMinutes()).padStart(2, '0');
+        return { time: `${hh}:${mm}:00`, bpm };
+      });
       return {
         date,
         avgHeartRate,
@@ -83,6 +91,13 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
         sleepStages: Array.from({ length: timestamps.length }, () => 'LIGHT'),
         sleepStart: timestamps[0],
         sleepEnd: timestamps[timestamps.length - 1],
+        fitbit: {
+          heartRate: {
+            restingBpm: avgHeartRate,
+            intradayData,
+          },
+        },
+        oscar: { ahi, events: ahiEvents },
       };
     };
     const night1 = buildNight('2026-01-28', 65, 95, 10);

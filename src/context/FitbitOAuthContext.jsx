@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import { useFitbitOAuth } from '../hooks/useFitbitOAuth.jsx';
 import { FITBIT_OAUTH_STORAGE_KEYS } from '../constants/fitbit.js';
+import { fitbitOAuth } from '../utils/fitbitAuth.js';
 
 const FitbitOAuthContext = createContext(null);
 
@@ -37,6 +44,43 @@ export function FitbitOAuthProvider({ children, onSuccess, onError }) {
   // Use the existing OAuth hook to get all authentication functionality
   const oauthState = useFitbitOAuth({ onSuccess, onError });
 
+  /**
+   * Recover a Fitbit connection by re-entering the encryption passphrase.
+   * Stores the passphrase in state and sessionStorage, then verifies it
+   * can decrypt the stored tokens.
+   *
+   * @param {string} passphraseValue - The user's encryption passphrase
+   * @returns {Promise<boolean>} True if passphrase decrypts tokens successfully
+   */
+  const recoverWithPassphrase = useCallback(
+    async (passphraseValue) => {
+      try {
+        // Store passphrase for the session
+        setPassphrase(passphraseValue);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(
+            FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE,
+            passphraseValue,
+          );
+        }
+
+        // Verify the passphrase can decrypt stored tokens
+        const isAuth = await fitbitOAuth.isAuthenticated(passphraseValue);
+        if (!isAuth) {
+          // Clear invalid passphrase
+          setPassphrase(null);
+          sessionStorage.removeItem(FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE);
+        }
+        return isAuth;
+      } catch {
+        setPassphrase(null);
+        sessionStorage.removeItem(FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE);
+        return false;
+      }
+    },
+    [setPassphrase],
+  );
+
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(
     () => ({
@@ -67,8 +111,9 @@ export function FitbitOAuthProvider({ children, onSuccess, onError }) {
       // Passphrase management
       passphrase,
       setPassphrase,
+      recoverWithPassphrase,
     }),
-    [oauthState, passphrase],
+    [oauthState, passphrase, recoverWithPassphrase],
   );
 
   return (

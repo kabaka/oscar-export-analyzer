@@ -17,6 +17,7 @@ vi.mock('../context/FitbitOAuthContext.jsx', () => ({
     clearError: vi.fn(),
     passphrase: null,
     setPassphrase: vi.fn(),
+    recoverWithPassphrase: vi.fn().mockResolvedValue(false),
   })),
 }));
 
@@ -33,6 +34,10 @@ vi.mock('../hooks/useFitbitConnection.js', () => ({
     disconnect: vi.fn(),
     clearError: vi.fn(),
   })),
+}));
+
+vi.mock('../utils/fitbitDb.js', () => ({
+  getTokens: vi.fn().mockResolvedValue(null),
 }));
 
 // Import mocked hooks

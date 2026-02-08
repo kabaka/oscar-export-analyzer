@@ -8,6 +8,18 @@ corresponds to changes released on that day.
 
 ## 2026-02-07
 
+### Fixed
+
+- **Fitbit nightly detail chart always empty ("No correlation data available")**: NightlyDetailSection was passing summary scalars to DualAxisSyncChart, which expects time-series arrays. Now constructs proper `{timestamps, heartRate, spO2, ahiEvents}` from intraday data.
+- **Fitbit overview metrics blank (AHI, heart rate, SpO2)**: `parseFloat(0) || NaN` corrupted valid zero values (e.g., AHI=0 became NaN). Replaced with `Number.isFinite()`-based helpers (`toFinite`, `finiteOrNull`) throughout the analysis pipeline.
+- **Fitbit scatter analysis panel always blank**: ScatterDetailSection passed the entire scatter data map instead of the selected metric pair, and used display labels as keys. Now does reverse label→key lookup and transforms point arrays to expected format.
+- **DualAxisSyncChart empty state ignored dark mode**: Hardcoded `#ccc`, `#f9f9f9`, `#666` replaced with CSS custom properties (`var(--color-border)`, `var(--color-kpi-bg)`, `var(--color-text-muted)`).
+
+### Changed
+
+- **SyncStatusPanel redesigned**: Replaced oversized, theme-unaware Data Synchronization panel with compact, theme-compliant card. Removed `maxWidth: 600px` constraint, hardcoded hex colors, auto-sync dropdown menu, and activity history. Now uses CSS custom properties and integrates visually with surrounding dashboard cards.
+- **Passphrase recovery on page refresh**: Entering the encryption passphrase after a page refresh now restores the Fitbit connection without re-doing the full OAuth flow. FitbitConnectionCard detects encrypted tokens in IndexedDB and shows a "Restore Connection" prompt with passphrase input.
+
 ### Added
 
 - **Heart rate data display after Fitbit sync**: Synced resting heart rate data now appears in the Fitbit dashboard with summary statistics (average, min, max, date range) and a daily data table. Previously, synced data was fetched but silently discarded — the full sync-to-display pipeline is now connected.
