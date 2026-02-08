@@ -7,6 +7,7 @@ import {
   prepareOscarData,
   shapeForDashboard,
   buildScatterData,
+  buildCorrelationMatrix,
 } from './useFitbitAnalysis';
 
 // Mock the heavy analysis pipeline to keep tests fast and isolated
@@ -317,6 +318,126 @@ describe('buildScatterData', () => {
   });
 });
 
+describe('buildCorrelationMatrix', () => {
+  it('converts pair-format correlations to NxN matrix format', () => {
+    const input = {
+      correlations: {
+        ahi_restingHR: { correlation: 0.45, pValue: 0.01, n: 8 },
+        ahi_usage: { correlation: -0.32, pValue: 0.04, n: 8 },
+        restingHR_usage: { correlation: 0.15, pValue: 0.25, n: 8 },
+      },
+      sampleSize: 8,
+      metrics: { ahi: [1, 2], restingHR: [3, 4], usage: [5, 6] },
+    };
+
+    const result = buildCorrelationMatrix(input);
+
+    expect(result.metrics).toEqual(['AHI', 'Resting HR', 'Usage (hrs)']);
+    expect(result.sampleSize).toBe(8);
+    expect(result.correlations).toHaveLength(3);
+    expect(result.pValues).toHaveLength(3);
+
+    // Diagonal should be 1.0 for correlations, 0.0 for pValues
+    for (let i = 0; i < 3; i++) {
+      expect(result.correlations[i][i]).toBe(1.0);
+      expect(result.pValues[i][i]).toBe(0.0);
+    }
+
+    // Off-diagonal: ahi (0) / restingHR (1) → 0.45
+    expect(result.correlations[0][1]).toBe(0.45);
+    expect(result.correlations[1][0]).toBe(0.45);
+    expect(result.pValues[0][1]).toBe(0.01);
+    expect(result.pValues[1][0]).toBe(0.01);
+
+    // ahi (0) / usage (2) → -0.32
+    expect(result.correlations[0][2]).toBe(-0.32);
+    expect(result.correlations[2][0]).toBe(-0.32);
+
+    // restingHR (1) / usage (2) → 0.15
+    expect(result.correlations[1][2]).toBe(0.15);
+    expect(result.correlations[2][1]).toBe(0.15);
+  });
+
+  it('returns null for null or undefined input', () => {
+    expect(buildCorrelationMatrix(null)).toBeNull();
+    expect(buildCorrelationMatrix(undefined)).toBeNull();
+  });
+
+  it('returns null when correlations object is empty', () => {
+    expect(buildCorrelationMatrix({ correlations: {} })).toBeNull();
+  });
+
+  it('returns null when correlations key is missing', () => {
+    expect(buildCorrelationMatrix({ sampleSize: 5 })).toBeNull();
+  });
+
+  it('handles NaN correlation values by using null', () => {
+    const input = {
+      correlations: {
+        ahi_hrv: { correlation: NaN, pValue: NaN, n: 0 },
+        ahi_restingHR: { correlation: 0.5, pValue: 0.02, n: 8 },
+      },
+      sampleSize: 8,
+      metrics: {},
+    };
+
+    const result = buildCorrelationMatrix(input);
+
+    expect(result.metrics).toHaveLength(3); // ahi, hrv, restingHR
+    expect(result.correlations).toHaveLength(3);
+
+    // Find the ahi/hrv indices
+    const ahiIdx = result.metrics.indexOf('AHI');
+    const hrvIdx = result.metrics.indexOf('HRV');
+    expect(ahiIdx).toBeGreaterThanOrEqual(0);
+    expect(hrvIdx).toBeGreaterThanOrEqual(0);
+
+    // NaN pair → null in matrix
+    expect(result.correlations[ahiIdx][hrvIdx]).toBeNull();
+    expect(result.pValues[ahiIdx][hrvIdx]).toBeNull();
+
+    // Diagonal still correct
+    expect(result.correlations[ahiIdx][ahiIdx]).toBe(1.0);
+  });
+
+  it('produces symmetric matrix', () => {
+    const input = {
+      correlations: {
+        ahi_restingHR: { correlation: 0.6, pValue: 0.001, n: 10 },
+      },
+      sampleSize: 10,
+      metrics: {},
+    };
+
+    const result = buildCorrelationMatrix(input);
+    const n = result.metrics.length;
+
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        expect(result.correlations[i][j]).toBe(result.correlations[j][i]);
+        expect(result.pValues[i][j]).toBe(result.pValues[j][i]);
+      }
+    }
+  });
+
+  it('handles unknown metric keys gracefully via fallback split', () => {
+    const input = {
+      correlations: {
+        customA_customB: { correlation: 0.3, pValue: 0.05, n: 5 },
+      },
+      sampleSize: 5,
+      metrics: {},
+    };
+
+    const result = buildCorrelationMatrix(input);
+
+    // Falls back to first underscore split
+    expect(result.metrics).toContain('customA');
+    expect(result.metrics).toContain('customB');
+    expect(result.correlations[0][1]).toBe(0.3);
+  });
+});
+
 describe('shapeForDashboard', () => {
   it('returns only heartRateData when analysis is null', () => {
     const hrData = [
@@ -352,6 +473,13 @@ describe('shapeForDashboard', () => {
     expect(result.scatterData).toBeDefined();
     expect(result.summary).toBeDefined();
     expect(result.heartRateData).toEqual(hrData);
+
+    // correlationData is in matrix format (not raw pair format)
+    expect(Array.isArray(result.correlationData.metrics)).toBe(true);
+    expect(Array.isArray(result.correlationData.correlations)).toBe(true);
+    expect(Array.isArray(result.correlationData.pValues)).toBe(true);
+    // metrics.slice() should now work (it's an array)
+    expect(() => result.correlationData.metrics.slice()).not.toThrow();
 
     // Summary is shaped correctly
     expect(result.summary.totalNights).toBe(8);

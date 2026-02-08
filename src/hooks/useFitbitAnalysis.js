@@ -201,6 +201,126 @@ export function buildScatterData(metrics) {
 }
 
 /**
+ * Human-readable labels for internal metric keys used in correlation pairs.
+ * @type {Object<string, string>}
+ */
+const METRIC_LABELS = {
+  ahi: 'AHI',
+  restingHR: 'Resting HR',
+  minSpO2: 'Min SpO2',
+  avgSpO2: 'Avg SpO2',
+  sleepEfficiency: 'Sleep Efficiency',
+  deepSleepPercent: 'Deep Sleep %',
+  hrv: 'HRV',
+  epap: 'EPAP',
+  usage: 'Usage (hrs)',
+  leakPercent: 'Leak %',
+};
+
+/**
+ * Converts pair-format correlation output into the NxN matrix format
+ * expected by CorrelationMatrix.
+ *
+ * Pair format (from computeOscarFitbitCorrelations):
+ *   { correlations: { "ahi_restingHR": { correlation, pValue, ... }, ... }, sampleSize, metrics }
+ *
+ * Matrix format (for CorrelationMatrix component):
+ *   { metrics: string[], correlations: number[][], pValues: number[][], sampleSize: number }
+ *
+ * @param {Object|null} correlationAnalysis - Raw correlation output
+ * @returns {Object|null} Matrix-format correlation data, or null if input is empty
+ */
+export function buildCorrelationMatrix(correlationAnalysis) {
+  if (!correlationAnalysis?.correlations) return null;
+
+  const pairs = correlationAnalysis.correlations;
+  const pairKeys = Object.keys(pairs);
+  if (pairKeys.length === 0) return null;
+
+  // Extract unique metric keys from pair keys (e.g. "ahi_restingHR" → ["ahi", "restingHR"])
+  const metricSet = new Set();
+  const pairLookup = new Map();
+
+  for (const key of pairKeys) {
+    const pair = pairs[key];
+    const parts = findMetricPair(key);
+    if (parts) {
+      const [a, b] = parts;
+      metricSet.add(a);
+      metricSet.add(b);
+      pairLookup.set(`${a}_${b}`, pair);
+      pairLookup.set(`${b}_${a}`, pair);
+    }
+  }
+
+  const metricKeys = [...metricSet];
+  const n = metricKeys.length;
+  if (n === 0) return null;
+
+  const labels = metricKeys.map((k) => METRIC_LABELS[k] || k);
+
+  // Build NxN matrices
+  const corrMatrix = Array.from({ length: n }, () => Array(n).fill(null));
+  const pValMatrix = Array.from({ length: n }, () => Array(n).fill(null));
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) {
+        corrMatrix[i][j] = 1.0;
+        pValMatrix[i][j] = 0.0;
+      } else {
+        const lookupKey = `${metricKeys[i]}_${metricKeys[j]}`;
+        const pair = pairLookup.get(lookupKey);
+        if (pair) {
+          corrMatrix[i][j] = Number.isFinite(pair.correlation)
+            ? pair.correlation
+            : null;
+          pValMatrix[i][j] = Number.isFinite(pair.pValue) ? pair.pValue : null;
+        }
+      }
+    }
+  }
+
+  return {
+    metrics: labels,
+    correlations: corrMatrix,
+    pValues: pValMatrix,
+    sampleSize: correlationAnalysis.sampleSize ?? null,
+  };
+}
+
+/**
+ * Extracts the two metric names from a pair key like "ahi_restingHR".
+ * Tries all split positions against known metric labels, then falls back
+ * to the first underscore split.
+ *
+ * @param {string} key - The pair key (e.g. "ahi_restingHR")
+ * @returns {[string,string]|null} The two metric keys, or null if unresolvable
+ */
+function findMetricPair(key) {
+  const knownMetrics = Object.keys(METRIC_LABELS);
+
+  // Try every possible underscore split position
+  for (let pos = 1; pos < key.length; pos++) {
+    if (key[pos] === '_') {
+      const a = key.slice(0, pos);
+      const b = key.slice(pos + 1);
+      if (knownMetrics.includes(a) && knownMetrics.includes(b)) {
+        return [a, b];
+      }
+    }
+  }
+
+  // Fallback: accept even unknown metric keys so the matrix is still populated
+  const underscoreIdx = key.indexOf('_');
+  if (underscoreIdx > 0 && underscoreIdx < key.length - 1) {
+    return [key.slice(0, underscoreIdx), key.slice(underscoreIdx + 1)];
+  }
+
+  return null;
+}
+
+/**
  * Shapes raw analysis results into the format expected by FitbitDashboard.
  *
  * Dashboard expects:
@@ -255,11 +375,11 @@ export function shapeForDashboard(
     fitbit: record.fitbit,
   }));
 
-  // Build scatter data from correlation metrics
+  // Build scatter data from raw correlation metrics (needs the metrics object, not matrix)
   const scatterData = buildScatterData(correlations?.metrics);
 
   return {
-    correlationData: correlations,
+    correlationData: buildCorrelationMatrix(correlations),
     nightlyData,
     scatterData,
     summary: {
