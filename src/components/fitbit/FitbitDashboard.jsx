@@ -47,7 +47,6 @@ function FitbitDashboard({
   onSync,
   className = '',
 }) {
-  const [activeView, setActiveView] = useState('overview');
   const [selectedNight, setSelectedNight] = useState(null);
   const [selectedMetricPair, setSelectedMetricPair] = useState(null);
 
@@ -84,35 +83,14 @@ function FitbitDashboard({
 
   const passphraseMissing = !isConnected && tokensExist;
 
-  // Auto-select most recent night on data load
-  useEffect(() => {
-    if (
-      hasData &&
-      fitbitData?.nightlyData &&
-      fitbitData.nightlyData.length > 0
-    ) {
-      const sortedNights = [...fitbitData.nightlyData].sort(
-        (a, b) => new Date(b.date) - new Date(a.date),
-      );
-      // Use queueMicrotask to avoid synchronous setState in effect
-      queueMicrotask(() => setSelectedNight(sortedNights[0]));
-    }
-  }, [hasData, fitbitData]);
-
   const handleNightSelection = (nightData) => {
-    setSelectedNight(nightData);
-    setActiveView('nightly-detail');
+    setSelectedNight((prev) =>
+      prev && prev.date === nightData.date ? null : nightData,
+    );
   };
 
   const handleCorrelationDrillDown = (xMetric, yMetric, statistics) => {
     setSelectedMetricPair({ xMetric, yMetric, statistics });
-    setActiveView('scatter-detail');
-  };
-
-  const handleViewChange = (view) => {
-    setActiveView(view);
-    if (view !== 'nightly-detail') setSelectedNight(null);
-    if (view !== 'scatter-detail') setSelectedMetricPair(null);
   };
 
   // If tokens exist but passphrase is missing, always show connection card (prompt for passphrase)
@@ -204,101 +182,34 @@ function FitbitDashboard({
           </section>
         )}
 
-        {/* Navigation Tabs (Data available only) */}
-        {hasData && (
-          <nav
-            style={{
-              marginBottom: '2rem',
-              borderBottom: '1px solid var(--color-border)',
-              display: 'flex',
-              gap: '2rem',
-              overflowX: 'auto',
-            }}
-          >
-            {[
-              { key: 'overview', label: 'Overview', icon: '📊' },
-              { key: 'correlations', label: 'Correlations', icon: '🔗' },
-              {
-                key: 'nightly-detail',
-                label: selectedNight
-                  ? `Night: ${selectedNight.date}`
-                  : 'Night Detail',
-                icon: '🌙',
-              },
-              {
-                key: 'scatter-detail',
-                label: selectedMetricPair
-                  ? `${selectedMetricPair.xMetric} vs ${selectedMetricPair.yMetric}`
-                  : 'Scatter Analysis',
-                icon: '📈',
-              },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleViewChange(tab.key)}
-                disabled={tab.key === 'nightly-detail' && !selectedNight}
-                style={{
-                  padding: '1rem 1.5rem',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderBottom:
-                    activeView === tab.key
-                      ? '3px solid var(--color-accent)'
-                      : '3px solid transparent',
-                  color:
-                    activeView === tab.key
-                      ? 'var(--color-accent)'
-                      : 'var(--color-text-muted)',
-                  cursor: 'pointer',
-                  fontSize: '0.95em',
-                  fontWeight: activeView === tab.key ? '600' : 'normal',
-                  whiteSpace: 'nowrap',
-                  opacity:
-                    (tab.key === 'nightly-detail' && !selectedNight) ||
-                    (tab.key === 'scatter-detail' && !selectedMetricPair)
-                      ? 0.5
-                      : 1,
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <span aria-hidden="true" style={{ marginRight: '0.5rem' }}>
-                  {tab.icon}
-                </span>
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        )}
-
         {/* Main Content Area */}
         <main>
-          {activeView === 'overview' && hasData && (
+          {/* Overview Metrics + Recent Nights Accordion */}
+          {hasData && (
             <OverviewSection
               fitbitData={fitbitData}
-              onNightSelect={handleNightSelection}
-              onCorrelationSelect={handleCorrelationDrillDown}
+              selectedNight={selectedNight}
+              onNightToggle={handleNightSelection}
             />
           )}
 
-          {activeView === 'correlations' && hasData && (
-            <CorrelationsSection
-              correlationData={fitbitData.correlationData}
-              onCellClick={handleCorrelationDrillDown}
-            />
+          {/* Correlation Matrix */}
+          {hasData && fitbitData.correlationData && (
+            <section style={{ marginBottom: '3rem' }}>
+              <CorrelationMatrix
+                correlationData={fitbitData.correlationData}
+                onCellClick={handleCorrelationDrillDown}
+                title={`Metric Correlations (${fitbitData.correlationData.sampleSize ?? 'N/A'} nights)`}
+              />
+            </section>
           )}
 
-          {activeView === 'nightly-detail' && selectedNight && (
-            <NightlyDetailSection
-              nightData={selectedNight}
-              onBackToOverview={() => handleViewChange('overview')}
-            />
-          )}
-
-          {activeView === 'scatter-detail' && selectedMetricPair && (
+          {/* Selected Correlation Scatter Detail */}
+          {hasData && selectedMetricPair && (
             <ScatterDetailSection
               metricPair={selectedMetricPair}
               scatterData={fitbitData.scatterData}
-              onBackToCorrelations={() => handleViewChange('correlations')}
+              onClearSelection={() => setSelectedMetricPair(null)}
             />
           )}
 
@@ -335,19 +246,19 @@ function FitbitDashboard({
 }
 
 /**
- * Overview section with key metrics and recent nights.
+ * Overview section with key metrics and expandable recent nights accordion.
  */
-function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
+function OverviewSection({ fitbitData, selectedNight, onNightToggle }) {
   const recentNights = fitbitData.nightlyData?.slice(0, 7) || [];
 
   return (
-    <div className="overview-section">
+    <div className="overview-section" style={{ marginBottom: '3rem' }}>
       <div
         style={{
           display: 'grid',
           gap: '2rem',
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          marginBottom: '3rem',
+          marginBottom: '2rem',
         }}
       >
         {/* Quick Stats */}
@@ -404,105 +315,95 @@ function OverviewSection({ fitbitData, onNightSelect, onCorrelationSelect }) {
             </div>
           </div>
         </div>
-
-        {/* Recent Nights */}
-        <div
-          style={{
-            padding: '2rem',
-            backgroundColor: 'var(--color-surface)',
-            borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-2)',
-          }}
-        >
-          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
-            🌙 Recent Nights
-          </h3>
-          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-            {recentNights.map((night) => (
-              <button
-                key={night.date}
-                data-testid={`recent-night-btn-${night.date}`}
-                onClick={() => onNightSelect(night)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  backgroundColor: 'transparent',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '4px',
-                  marginBottom: '0.5rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s ease',
-                  color: 'var(--color-text)',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = 'var(--color-kpi-bg)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                }}
-              >
-                <div style={{ fontWeight: '500', marginBottom: '0.25rem' }}>
-                  {new Date(night.date).toLocaleDateString([], {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </div>
-                <div
-                  style={{
-                    fontSize: '0.85em',
-                    color: 'var(--color-text-muted)',
-                  }}
-                >
-                  HR: {night.avgHeartRate}bpm • AHI: {night.ahi} • SpO2:{' '}
-                  {night.minSpO2}%
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
-      {/* Mini correlation matrix preview */}
-      {fitbitData.correlationData && (
-        <div
-          style={{
-            padding: '2rem',
-            backgroundColor: 'var(--color-surface)',
-            borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-2)',
-          }}
-        >
-          <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
-            🔗 Correlation Preview
-          </h3>
-          <div style={{ height: '300px' }}>
-            <CorrelationMatrix
-              correlationData={fitbitData.correlationData}
-              onCellClick={onCorrelationSelect}
-              showAnnotations={false}
-            />
-          </div>
+      {/* Recent Nights — expandable accordion */}
+      <div
+        style={{
+          padding: '2rem',
+          backgroundColor: 'var(--color-surface)',
+          borderRadius: '8px',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-2)',
+        }}
+      >
+        <h3 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
+          🌙 Recent Nights
+        </h3>
+        <div>
+          {recentNights.map((night) => {
+            const isExpanded = selectedNight?.date === night.date;
+            return (
+              <div key={night.date}>
+                <button
+                  data-testid={`recent-night-btn-${night.date}`}
+                  onClick={() => onNightToggle(night)}
+                  aria-expanded={isExpanded}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    backgroundColor: isExpanded
+                      ? 'var(--color-kpi-bg)'
+                      : 'transparent',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: isExpanded ? '4px 4px 0 0' : '4px',
+                    marginBottom: isExpanded ? 0 : '0.5rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.2s ease',
+                    color: 'var(--color-text)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: '500', marginBottom: '0.25rem' }}>
+                      {new Date(night.date).toLocaleDateString([], {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.85em',
+                        color: 'var(--color-text-muted)',
+                      }}
+                    >
+                      HR: {night.avgHeartRate}bpm • AHI: {night.ahi} • SpO2:{' '}
+                      {night.minSpO2}%
+                    </div>
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      fontSize: '1.2em',
+                      transition: 'transform 0.2s ease',
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
+                    }}
+                  >
+                    ▾
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div
+                    style={{
+                      border: '1px solid var(--color-border)',
+                      borderTop: 'none',
+                      borderRadius: '0 0 4px 4px',
+                      padding: '1rem',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    <NightlyDetailSection nightData={night} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Full correlations section.
- */
-function CorrelationsSection({ correlationData, onCellClick }) {
-  return (
-    <div className="correlations-section">
-      <CorrelationMatrix
-        correlationData={correlationData}
-        onCellClick={onCellClick}
-        title={`Metric Correlations (${correlationData.sampleSize ?? 'N/A'} nights)`}
-      />
+      </div>
     </div>
   );
 }
@@ -871,9 +772,8 @@ KpiCard.propTypes = {
  * Detailed nightly analysis section with intraday HR chart, SpO2 panel,
  * and side-by-side OSCAR + Fitbit summary cards.
  */
-function NightlyDetailSection({ nightData, onBackToOverview }) {
+function NightlyDetailSection({ nightData }) {
   const hrIntraday = nightData.fitbit?.heartRate?.intradayData;
-  const hrStats = nightData.fitbit?.heartRate?.intradayStats;
   const restingHR =
     nightData.fitbit?.heartRate?.restingBpm ?? nightData.avgHeartRate;
   const spo2 = nightData.fitbit?.oxygenSaturation;
@@ -887,24 +787,8 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
 
   return (
     <div className="nightly-detail-section">
-      <div style={{ marginBottom: '2rem' }}>
-        <button
-          onClick={onBackToOverview}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: 'transparent',
-            color: 'var(--color-accent)',
-            border: '1px solid var(--color-accent)',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.9em',
-            marginBottom: '1rem',
-          }}
-        >
-          ← Back to Overview
-        </button>
-
-        <h2 style={{ margin: '0', color: 'var(--color-text)' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ margin: '0', color: 'var(--color-text)' }}>
           Night Detail:{' '}
           {new Date(nightData.date).toLocaleDateString([], {
             weekday: 'long',
@@ -912,7 +796,7 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
             month: 'long',
             day: 'numeric',
           })}
-        </h2>
+        </h3>
       </div>
 
       {/* Night Summary Cards — side-by-side OSCAR and Fitbit KPIs */}
@@ -961,8 +845,9 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
             <KpiCard
               label="Total Time"
               value={
-                nightData.oscar?.totalTime != null
-                  ? `${(nightData.oscar.totalTime / 60).toFixed(1)}`
+                nightData.oscar?.usage?.totalMinutes != null &&
+                Number.isFinite(nightData.oscar.usage.totalMinutes)
+                  ? `${(nightData.oscar.usage.totalMinutes / 60).toFixed(1)}`
                   : null
               }
               unit="h"
@@ -970,8 +855,8 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
             />
             <KpiCard
               label="Leak Rate"
-              value={nightData.oscar?.leakRate}
-              unit=" L/m"
+              value={nightData.oscar?.usage?.leakPercent}
+              unit="%"
               icon="💨"
             />
           </div>
@@ -1014,7 +899,7 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
             />
             <KpiCard
               label="Min HR"
-              value={hrStats?.minBpm}
+              value={nightData.fitbit?.heartRate?.minSleepBpm}
               unit=" bpm"
               icon="📉"
             />
@@ -1038,7 +923,7 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
       {hrIntraday && hrIntraday.length > 0 && (
         <IntradayHeartRateChart
           intradayData={hrIntraday}
-          intradayStats={hrStats}
+          intradayStats={undefined}
           date={nightData.date}
           restingHR={restingHR}
         />
@@ -1184,11 +1069,7 @@ function NightlyDetailSection({ nightData, onBackToOverview }) {
 /**
  * Detailed scatter plot analysis section.
  */
-function ScatterDetailSection({
-  metricPair,
-  scatterData,
-  onBackToCorrelations,
-}) {
+function ScatterDetailSection({ metricPair, scatterData, onClearSelection }) {
   // Build reverse lookup: display label → internal key
   const labelToKey = useMemo(() => {
     const map = {};
@@ -1220,27 +1101,34 @@ function ScatterDetailSection({
   }, [scatterData, metricPair, labelToKey]);
 
   return (
-    <div className="scatter-detail-section">
-      <div style={{ marginBottom: '2rem' }}>
+    <div className="scatter-detail-section" style={{ marginBottom: '3rem' }}>
+      <div
+        style={{
+          marginBottom: '1.5rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
+        <h3 style={{ margin: '0', color: 'var(--color-text)' }}>
+          {metricPair.yMetric} vs {metricPair.xMetric}
+        </h3>
         <button
-          onClick={onBackToCorrelations}
+          onClick={onClearSelection}
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: 'transparent',
-            color: 'var(--color-accent)',
-            border: '1px solid var(--color-accent)',
+            color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border)',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '0.9em',
-            marginBottom: '1rem',
           }}
         >
-          ← Back to Correlations
+          ✕ Clear Selection
         </button>
-
-        <h2 style={{ margin: '0', color: 'var(--color-text)' }}>
-          {metricPair.yMetric} vs {metricPair.xMetric}
-        </h2>
       </div>
 
       <BivariateScatterPlot
@@ -1678,24 +1566,18 @@ FitbitDashboard.propTypes = {
 
 OverviewSection.propTypes = {
   fitbitData: PropTypes.object.isRequired,
-  onNightSelect: PropTypes.func.isRequired,
-  onCorrelationSelect: PropTypes.func.isRequired,
-};
-
-CorrelationsSection.propTypes = {
-  correlationData: PropTypes.object.isRequired,
-  onCellClick: PropTypes.func.isRequired,
+  selectedNight: PropTypes.object,
+  onNightToggle: PropTypes.func.isRequired,
 };
 
 NightlyDetailSection.propTypes = {
   nightData: PropTypes.object.isRequired,
-  onBackToOverview: PropTypes.func.isRequired,
 };
 
 ScatterDetailSection.propTypes = {
   metricPair: PropTypes.object.isRequired,
   scatterData: PropTypes.object.isRequired,
-  onBackToCorrelations: PropTypes.func.isRequired,
+  onClearSelection: PropTypes.func.isRequired,
 };
 
 EmptyStateCard.propTypes = {

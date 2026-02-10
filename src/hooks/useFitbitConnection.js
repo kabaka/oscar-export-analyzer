@@ -344,7 +344,7 @@ export function useFitbitConnection({
     let cancelled = false;
     async function checkIfTokens() {
       if (autoCheck) {
-        let shouldCheck = !!passphrase;
+        let shouldCheck = !!passphrase && passphrase.length >= 8;
         if (!shouldCheck) {
           // Check if tokens exist in IndexedDB (fitbit_tokens.current)
           try {
@@ -409,7 +409,40 @@ export function useFitbitConnection({
       lastSync: lastSync,
       nextAutoSync: null, // TODO: implement auto-sync scheduling
       autoSyncEnabled: false, // TODO: implement auto-sync toggle
-      dataMetrics: dataStats || {},
+      dataMetrics: (() => {
+        const hr = syncedData?.heartRateData || [];
+        const sp = syncedData?.spo2Data || [];
+        const sl = syncedData?.sleepData || [];
+        return {
+          heartRate: {
+            nights: hr.length,
+            lastDate:
+              hr.length > 0
+                ? new Date(
+                    hr[hr.length - 1]?.date || hr[hr.length - 1]?.dateTime,
+                  )
+                : new Date(),
+          },
+          sleepStages: {
+            nights: sl.length,
+            lastDate:
+              sl.length > 0
+                ? new Date(
+                    sl[sl.length - 1]?.date || sl[sl.length - 1]?.dateTime,
+                  )
+                : new Date(),
+          },
+          spO2: {
+            nights: sp.length,
+            lastDate:
+              sp.length > 0
+                ? new Date(
+                    sp[sp.length - 1]?.date || sp[sp.length - 1]?.dateTime,
+                  )
+                : new Date(),
+          },
+        };
+      })(),
       recentActivity: [], // TODO: implement activity tracking
       errorMessage: error?.message || null,
     },

@@ -227,7 +227,7 @@ describe('FitbitDashboard OAuth/Passphrase Flow', () => {
     );
     expect(recentNightButton).toBeInTheDocument();
     fireEvent.click(recentNightButton);
-    // Should render chart in nightly-detail view
+    // Should render chart in expanded night accordion
     expect(screen.getByTestId('dual-axis-sync-chart')).toBeInTheDocument();
   });
 });

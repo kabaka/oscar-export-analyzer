@@ -6,6 +6,22 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-02-09
+
+### Changed
+
+- **Fitbit dashboard: removed tabs, converted to linear layout**: Replaced the tab-based navigation (Overview / Nightly Detail / Correlations / Scatter) with a sequential, scrollable layout matching the rest of the app's design. All sections now render inline: overview metrics → correlation matrix → recent nights accordion → selected correlation scatter detail.
+- **Nightly detail: expandable accordion**: Each night in Recent Nights is now an expand/collapse accordion row instead of a separate tabbed view. Expanding a night shows side-by-side OSCAR and Fitbit KPI cards plus intraday charts inline.
+- **Scatter analysis: inline conditional panel**: Selecting a correlation cell shows the scatter plot inline below the matrix with a "Clear Selection" button, instead of navigating to a separate tab.
+
+### Fixed
+
+- **Fitbit "0 nights" despite successful sync**: SyncStatusPanel showed "0 nights" because `syncState.dataMetrics` was set to `getFitbitDataStats()` output (wrong shape). Now computes per-type metrics (`heartRate`, `sleepStages`, `spO2`) from `syncedData` with correct `{nights, lastDate}` structure.
+- **Passphrase input triggered token decryption on every keystroke**: `setContextPassphrase` was called in the input `onChange`, causing `useFitbitConnection` to attempt decryption on each character. Now only updates context passphrase on explicit Connect/Restore button click. Added `passphrase.length >= 8` guard to auto-check effect.
+- **SyncStatusPanel desktop spacing**: Data metrics row used `display: flex` which clustered items on the left. Changed to `display: grid` with `repeat(3, 1fr)` for even distribution.
+- **Nightly detail missing values (Total Time, Leak Rate, Min HR)**: NightlyDetailSection accessed nonexistent property paths (`oscar.totalTime`, `oscar.leakRate`, `fitbit.heartRate.intradayStats.minBpm`). Fixed to use correct model paths (`oscar.usage.totalMinutes`, `oscar.usage.leakPercent`, `fitbit.heartRate.minSleepBpm`).
+- **Duplicate correlation preview**: Removed redundant "Correlation Preview" from OverviewSection; the full correlation matrix now renders once in its own section.
+
 ## 2026-02-07
 
 ### Fixed

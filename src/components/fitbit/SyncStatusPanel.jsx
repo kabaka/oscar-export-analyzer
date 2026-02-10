@@ -167,12 +167,12 @@ function SyncStatusPanel({
       {/* Data metrics row */}
       <div
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1.5rem',
           marginTop: '1rem',
           paddingTop: '1rem',
           borderTop: '1px solid var(--color-border-light, var(--color-border))',
-          flexWrap: 'wrap',
         }}
       >
         {[
@@ -190,6 +190,7 @@ function SyncStatusPanel({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.125rem',
+                textAlign: 'center',
               }}
             >
               <span

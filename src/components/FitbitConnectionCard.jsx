@@ -147,6 +147,11 @@ export function FitbitConnectionCard({
         );
       }
 
+      // Commit passphrase to context before initiating auth
+      if (setContextPassphrase) {
+        setContextPassphrase(effectivePassphrase);
+      }
+
       // FIX: Pass passphrase to initiateAuth so it can be stored for OAuth callback.
       // This ensures passphrase is available when user is redirected back from Fitbit.
       await initiateAuth({
@@ -174,6 +179,11 @@ export function FitbitConnectionCard({
           'Encryption passphrase required (minimum 8 characters)',
         );
         return;
+      }
+
+      // Commit passphrase to context before recovery attempt
+      if (setContextPassphrase) {
+        setContextPassphrase(effectivePassphrase);
       }
 
       const success = await recoverWithPassphrase(effectivePassphrase);
@@ -368,9 +378,6 @@ export function FitbitConnectionCard({
             value={internalPassphrase}
             onChange={(e) => {
               setInternalPassphrase(e.target.value);
-              if (setContextPassphrase) {
-                setContextPassphrase(e.target.value || null);
-              }
             }}
             placeholder="Enter strong passphrase (min 8 characters)"
             className="passphrase-input"
