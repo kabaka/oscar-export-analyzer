@@ -51,7 +51,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Comment PR with preview URL
         if: steps.deployment.outputs.page_url
@@ -99,7 +99,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Report deployment status
         run: echo "✅ Production deployment complete for commit ${{ github.event.workflow_run.head_sha }}"
