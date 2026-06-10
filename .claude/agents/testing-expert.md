@@ -17,7 +17,7 @@ You understand:
 - **Playwright browser automation**: Cross-browser testing, visual regression, screenshot capture, PDF validation, accessibility automation
 - **Synthetic test data**: Realistic CSV data, various CPAP settings, edge case scenarios
 - **Test coverage**: Branch coverage, edge cases, error scenarios, accessibility, critical user flows
-- **OSCAR analyzer**: CSV parsing, data validation, chart rendering, Web Worker integration, print functionality, PWA installation, Fitbit OAuth flows
+- **OSCAR analyzer**: CSV parsing, data validation, chart rendering, Web Worker integration, print functionality, PWA installation, wearable-export ingestion (directory pick → aggregate → correlate)
 - **Test data management**: Fixture files, cleanup, isolation, idempotency
 - **Visual regression testing**: Baseline comparison, chart rendering validation, responsive design verification, print layout validation
 - **E2E flow testing**: Real browser, real file uploads, real Web Worker execution, real Service Worker interaction
@@ -76,7 +76,7 @@ When designing test strategies and writing tests, reference these skills for det
 
 **When designing E2E test strategy (Playwright):**
 
-1. **Critical user flows** — Identify flows users care about: CSV upload → filter → export, chart interactions, print layout, PWA installation, Fitbit OAuth
+1. **Critical user flows** — Identify flows users care about: CSV upload → filter → export, chart interactions, print layout, PWA installation, wearable-export import (directory pick → ingest → correlation)
 2. **Real browser validation** — Test against Chrome, Firefox, Safari (or headless equivalents)
 3. **Visual regression** — Establish baselines for charts, layouts, dark mode, responsive breakpoints; detect visual changes
 4. **Cross-flow scenarios** — Upload large CSV, filter dates, zoom chart, export PDF, print (integrated flow testing)

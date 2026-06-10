@@ -54,24 +54,30 @@ This chapter lists common issues and step‑by‑step solutions. Always ensure y
 
 ## Miscellaneous
 
-### Fitbit OAuth: Passphrase or Session Issues
+### Wearable Export: Import Issues
 
-#### Problem
+Wearable correlation works from a **local Google Health (formerly Fitbit) export** you point the app at — there is no account login, OAuth, or passphrase. If you are looking for OAuth/passphrase steps from an older version, they no longer apply; that integration was removed. The [Wearable Integration Guide](11-wearable-integration.md#troubleshooting) has the full walkthrough. Common problems:
 
-After connecting Fitbit, you are unexpectedly prompted to re-enter your encryption passphrase, or connection fails with a session error.
+#### "Wearable import requires a Chromium-based browser"
 
-#### Why this happens
+- The import uses the browser's directory-picker API, available today only in Chromium browsers (Chrome, Edge, Brave, and similar). On Firefox or Safari you will see this message.
+- Use a Chromium browser for the import. Your CPAP analysis works on every browser regardless.
 
-- The app restores your passphrase automatically after OAuth using sessionStorage or a secure localStorage backup.
-- If session/local storage is cleared (by privacy settings, incognito mode, or extensions), you must re-enter your passphrase to complete the connection.
+#### The folder picker did not appear, or import did nothing
 
-#### Solutions
+- Make sure you selected the **top-level export folder**, not a single file inside it.
+- Confirm you granted **read permission** when the browser prompted.
+- Very large exports take time to enumerate; give the progress indicator a moment.
 
-- Ensure your browser allows `sessionStorage` and `localStorage` (not cleared by privacy settings or extensions).
-- Do not clear browser session data during the OAuth process.
-- Try reconnecting with privacy settings relaxed or in a different browser.
-- If you use incognito/private mode, you may need to re-enter your passphrase every time.
-- If the problem persists, check the [Fitbit Integration Guide](11-fitbit-integration.md#troubleshooting) for more details and security rationale.
+#### "No overlapping nights" or an empty correlation matrix
+
+- Correlations only use nights where **both** CPAP and wearable data exist. Confirm your CPAP date range overlaps the period your wearable was recording, and that the wearable was actually worn on those nights.
+- Some metrics (for example SpO₂ or HRV) are missing from older device exports; the app shows whatever your export includes and omits the rest.
+
+#### Re-importing a fresh export
+
+- Download a new export and import it again. The app ingests only the **new** nights, so re-imports are much faster than the first import.
+- To clear everything, use **Forget folder** — this removes imported wearable data and any remembered folder permission without affecting your CPAP sessions.
 
 ### Printed report misses charts
 

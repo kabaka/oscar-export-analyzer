@@ -1,9 +1,3 @@
-#### Passphrase Security Model (Fitbit OAuth)
-
-The user's encryption passphrase is stored in `sessionStorage` (and a short-lived backup in `localStorage`) only for the duration of the OAuth redirect. After OAuth, the app restores the passphrase automatically if possible. If session/local storage is cleared or blocked, the user must re-enter it. The passphrase is never persisted long-term, written to disk, or stored in cookies.
-
-This model minimizes risk of compromise and preserves privacy, even if a device is compromised after the session. For full rationale and implementation details, see [Fitbit Integration — Developer Guide](fitbit-integration.md#passphrase-security-model).
-
 ## Architecture
 
 At heart the analyzer is a single‑page application powered by [React](https://react.dev/) and bundled with
@@ -26,11 +20,10 @@ graph LR
     B -->|Heavy Computation| I[Analytics Worker]
     I -->|Results| C
 
-    J[Fitbit OAuth] --> K[Fitbit API Worker]
-    K -->|Encrypted Data| C
-    K -.->|Encrypted Storage| H
-    C --> L[Correlation Analytics]
-    L --> M[Fitbit Charts]
+    J[Export Folder Picker] --> K[Wearable Ingest Worker]
+    K -->|Nightly Rollups + Intraday| H
+    H --> L[Correlation Analytics]
+    L --> M[Wearable Charts]
 
     style A fill:#e1f5ff
     style C fill:#fff4e1
@@ -52,48 +45,28 @@ graph LR
 3. **Context Store** – `AppProviders` wraps the tree with `DataProvider` to expose parsed rows and filtered subsets via
    hooks like `useData`, `useParameters`, and `useTheme`. Using context keeps props shallow and makes it easy to expose
    new pieces of state without threading them through every component.
-4. **Fitbit Integration** – Optional OAuth flow connects to Fitbit Web API via dedicated worker. All Fitbit data is encrypted using the same AES-GCM implementation as CPAP data and stored in IndexedDB. Correlation analytics run in background workers to maintain UI responsiveness.
+4. **Wearable Integration** – Optional local Google Health (formerly Fitbit) export ingestion. The user selects an export folder; a dedicated Web Worker enumerates, parses, and aggregates the in-scope files to nightly rollups plus intraday detail in IndexedDB. No network request is made for health data. Correlation analytics run over the CPAP↔wearable overlap to keep the UI responsive.
 
-## Fitbit Integration Architecture
+## Wearable Integration Architecture
 
-### OAuth Flow with PKCE
+> Earlier versions used a Fitbit OAuth/API integration. That has been **removed entirely** (no tokens, no `*.fitbit.com` access); the local-first guarantee is now CSP-enforced (`connect-src 'self'`). The current design ingests a local export directory.
 
-The Fitbit integration implements OAuth 2.0 with PKCE (Proof Key for Code Exchange) for secure authorization:
+### Ingestion Pipeline
 
-```javascript
-// Security-first OAuth implementation
-class FitbitOAuth {
-  async initiateAuth() {
-    // Generate PKCE challenge to prevent authorization code interception
-    const codeVerifier = this.generateRandomString(128);
-    const codeChallenge = await this.sha256(codeVerifier);
-
-    // Store verifier in localStorage (not sessionStorage)
-    // localStorage persists across OAuth redirect, sessionStorage does not
-    localStorage.setItem('fitbit_pkce_verifier', codeVerifier);
-
-    // Redirect to Fitbit with PKCE parameters
-    const authUrl = new URL('https://www.fitbit.com/oauth2/authorize');
-    authUrl.searchParams.set('code_challenge', codeChallenge);
-    authUrl.searchParams.set('code_challenge_method', 'S256');
-    // ... additional OAuth parameters
-  }
-}
-```
-
-### Data Processing Pipeline
-
-1. **API Worker**: Fitbit API calls isolated in Web Worker to prevent main thread blocking
-2. **Encryption**: All data encrypted before storage using user-provided passphrase
-3. **Correlation Engine**: Statistical analysis runs in analytics worker
-4. **Chart Integration**: Results fed to existing Plotly chart infrastructure
+1. **Directory pick (Chromium-only)**: `showDirectoryPicker({ mode: 'read' })` yields a structured-cloneable `FileSystemDirectoryHandle`. Non-Chromium browsers get a clear unsupported empty-state; CPAP analysis is unaffected.
+2. **Ingest Worker**: `workers/wearableIngest.worker.js` enumerates the export against an exact-anchored allowlist, parses one file at a time (bounded memory), keys samples to nights, and aggregates to nightly rollups. Heavy logic lives in `utils/wearable/ingestEngine.js` (a plain, testable module).
+3. **Persistence**: Rollups + intraday are written via `putBatch()` into the `wearable_nights` / `wearable_intraday` / `wearable_meta` stores (IndexedDB v4; legacy Fitbit stores dropped, CPAP `sessions` preserved).
+4. **Alignment & correlation**: `utils/wearable/alignment.js` matches wearable nights to CPAP sessions; `correlationEngine.js` computes FDR-corrected correlations fed to the existing Plotly chart infrastructure.
 
 ### Security Architecture
 
-- **Local-First**: No server communication beyond OAuth and API calls
-- **Encrypted Storage**: AES-GCM with PBKDF2 key derivation (same as CPAP data)
-- **Token Security**: Access/refresh tokens encrypted and automatically rotated
-- **Scope Limitation**: OAuth limited to read-only heart rate, SpO2, and sleep data
+- **Local-First, CSP-enforced**: No server or wearable-service communication of any kind; `connect-src 'self'`.
+- **Read-only access**: The export folder is opened read-only and never written to.
+- **Allowlist scoping**: Only recognized physiological files are read; everything else is pruned.
+- **Sanitized worker messages**: No file paths or PHI cross the worker boundary.
+- **Opt-in handle persistence**: The directory handle is persisted only with user consent and cleared by the "Forget folder" action.
+
+For the full design, see [Wearable Integration — Developer Guide](wearable-integration.md) and ADRs 0003–0006.
 
 **Example: Web Worker Message Passing**
 

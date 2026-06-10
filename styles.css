@@ -1548,26 +1548,14 @@ select:focus-visible {
   background: var(--color-elevated);
 }
 
-/* Fitbit Correlation Section Styles */
-.fitbit-dashboard-container {
+/* Wearable Correlation Section Styles */
+.wearable-dashboard-container {
   max-width: var(--max-content-width, 1200px);
   margin: 0 auto;
   padding: 2rem;
 }
 
-.fitbit-loading-state,
-.fitbit-error-state {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: var(--color-text);
-}
-
-.fitbit-error-message {
-  color: var(--color-error, #dc3545);
-  margin-bottom: 1rem;
-}
-
-.fitbit-overview-section {
+.wearable-dashboard-section {
   margin-bottom: 2rem;
   padding: 1.5rem;
   background: var(--color-surface);
@@ -1575,100 +1563,255 @@ select:focus-visible {
   border: 1px solid var(--color-border);
 }
 
-.fitbit-overview-section h3 {
+.wearable-dashboard-section h3 {
   color: var(--color-accent);
   margin-bottom: 1rem;
   font-size: 1.25rem;
 }
 
-.fitbit-overview-grid {
+.wearable-overview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
 
-.fitbit-metric-card {
+.wearable-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   background: var(--color-bg);
   padding: 1rem;
   border-radius: 6px;
   border: 1px solid var(--color-border);
 }
 
-.fitbit-metric-label {
+.wearable-metric-label {
   color: var(--color-text-muted);
   font-size: 0.875rem;
-  margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.fitbit-metric-value {
+.wearable-metric-value {
   color: var(--color-text);
   font-size: 1.5rem;
   font-weight: 600;
 }
 
-.fitbit-chart-section {
-  margin-bottom: 2rem;
-}
-
-.fitbit-chart-section h3 {
-  color: var(--color-text);
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-}
-
-.fitbit-chart-container {
-  background: var(--color-bg);
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  min-height: 400px;
-}
-
-.fitbit-correlation-analysis {
-  background: var(--color-surface);
+/* Import card + ingest status */
+.wearable-import-card,
+.wearable-ingest-panel,
+.wearable-night-detail {
+  max-width: var(--max-content-width, 1200px);
+  margin: 0 auto 1.5rem;
   padding: 1.5rem;
-  border-radius: 8px;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.wearable-import-header,
+.wearable-ingest-header,
+.wearable-night-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.wearable-status-chip {
+  font-size: 0.8125rem;
+  /* Use the full-strength text color (not muted) so the small chip text
+     meets WCAG AA contrast in both themes. */
+  color: var(--color-text);
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.wearable-status-chip.wearable-status-error {
+  color: var(--color-error, #dc3545);
+  border-color: var(--color-error, #dc3545);
+}
+
+.wearable-correlation-table abbr {
+  text-decoration-style: dotted;
+  cursor: help;
+}
+
+.wearable-import-note {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.wearable-import-cta {
+  padding: 0.5rem 1rem;
+  background: var(--color-accent);
+  color: var(--color-button-text, #fff);
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Cancel is a non-primary / interrupting action — keep it visually distinct
+   from the accent CTA so users don't mistake it for "continue". */
+.wearable-ingest-cancel {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--color-error, #dc3545);
+  border: 1px solid var(--color-error, #dc3545);
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wearable-import-secondary {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.wearable-import-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.wearable-consent-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: none;
+  padding: 0;
+  margin: 0.75rem 0;
+}
+
+.wearable-consent-options legend {
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+  padding: 0;
+}
+
+.wearable-consent-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.wearable-consent-options label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-text);
+}
+
+.wearable-consent-hint {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  /* Align hint under the label text (past the checkbox). */
+  margin: 0 0 0 1.6rem;
+}
+
+.wearable-detection-summary {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.wearable-detection-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wearable-detection-label {
+  color: var(--color-text-muted);
+}
+
+.wearable-import-error {
+  color: var(--color-error, #dc3545);
+}
+
+.wearable-ingest-live {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.wearable-ingest-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
   margin-top: 1rem;
 }
 
-.fitbit-correlation-analysis h4 {
-  color: var(--color-accent);
-  margin-bottom: 0.75rem;
+/* Correlation analysis table */
+.wearable-correlation-analysis {
+  margin-top: 1rem;
 }
 
-.fitbit-correlation-list {
+.wearable-correlation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.wearable-correlation-table th,
+.wearable-correlation-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.wearable-diagnostics-list,
+.wearable-nights-list {
   list-style: none;
   padding: 0;
 }
 
-.fitbit-correlation-list li {
-  padding: 0.5rem 0;
+.wearable-nights-list li {
   border-bottom: 1px solid var(--color-border);
+}
+
+.wearable-night-button {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0;
+  background: transparent;
+  border: none;
   color: var(--color-text);
-}
-
-.fitbit-correlation-list li:last-child {
-  border-bottom: none;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .fitbit-dashboard-container {
-    /* Theme variables automatically handle dark mode */
-  }
+  cursor: pointer;
 }
 
 /* Print styles */
 @media print {
-  .fitbit-dashboard-container {
+  .wearable-dashboard-container {
     max-width: 100%;
     padding: 1rem;
   }
 
-  .fitbit-chart-container {
+  .wearable-dashboard-section,
+  .wearable-night-detail,
+  .wearable-correlation-table tr {
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Screen-reader-only table alternatives carry the data legibly on paper. */
+  .wearable-correlation-table .sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    white-space: normal;
   }
 }

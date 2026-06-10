@@ -2,7 +2,6 @@ import React, { createContext, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { DataProvider } from '../context/DataContext';
 import { GuideContext } from '../context/GuideContext';
-import { FitbitOAuthProvider } from '../context/FitbitOAuthContext';
 import { useAppState } from './useAppState';
 import { useGuide } from '../hooks/useGuide';
 
@@ -38,18 +37,16 @@ export function AppProviders({ children }) {
   return (
     <AppStateContext.Provider value={state}>
       <GuideContext.Provider value={guide}>
-        <FitbitOAuthProvider>
-          <DataProvider
-            summaryData={state.summaryData}
-            setSummaryData={state.setSummaryData}
-            detailsData={state.detailsData}
-            setDetailsData={state.setDetailsData}
-            filteredSummary={state.filteredSummary}
-            filteredDetails={state.filteredDetails}
-          >
-            {children}
-          </DataProvider>
-        </FitbitOAuthProvider>
+        <DataProvider
+          summaryData={state.summaryData}
+          setSummaryData={state.setSummaryData}
+          detailsData={state.detailsData}
+          setDetailsData={state.setDetailsData}
+          filteredSummary={state.filteredSummary}
+          filteredDetails={state.filteredDetails}
+        >
+          {children}
+        </DataProvider>
       </GuideContext.Provider>
     </AppStateContext.Provider>
   );

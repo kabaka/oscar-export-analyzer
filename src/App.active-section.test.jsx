@@ -203,9 +203,9 @@ vi.mock('./features/raw-explorer/Section', () => ({
   __esModule: true,
   default: () => <div id="raw-data-explorer">Raw</div>,
 }));
-vi.mock('./features/fitbit-correlation/Section', () => ({
+vi.mock('./features/wearable-correlation/Section', () => ({
   __esModule: true,
-  default: () => <div id="fitbit-correlation">Fitbit</div>,
+  default: () => <div id="wearable-correlation">Wearable</div>,
 }));
 
 describe('App active section tracking and observer setup', () => {

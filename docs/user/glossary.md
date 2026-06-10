@@ -66,15 +66,15 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 
 ---
 
-### Fitbit Integration
+### Wearable Integration
 
-**Definition**: Optional connection to Fitbit devices via OAuth authentication to analyze correlations between CPAP therapy metrics and physiological data.
+**Definition**: Optional correlation of CPAP therapy metrics with physiological data from a local Google Health (formerly Fitbit) export that you download and select yourself.
 
-**Context**: When enabled, the analyzer securely downloads heart rate, SpO2, and sleep stage data from Fitbit Web API. All data remains local and encrypted. Correlation analysis helps identify relationships between therapy effectiveness and cardiovascular/respiratory responses.
+**Context**: You point the analyzer at your exported folder; it reads the files locally (read-only, no network, no OAuth) and aggregates nightly SpO2, heart rate, HRV, sleep, and related metrics. All data stays in your browser. Correlation analysis helps identify within-person relationships between therapy effectiveness and cardiovascular/respiratory responses. The folder import requires a Chromium-based browser.
 
-**Related Terms**: [HRV](#hrv-heart-rate-variability), [Correlation Analysis](#correlation-analysis), [OAuth](#oauth)
+**Related Terms**: [HRV](#hrv-heart-rate-variability), [Correlation Analysis](#correlation-analysis)
 
-**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Statistical Concepts](04-statistical-concepts.md)
+**See Also**: [Wearable Integration Guide](11-wearable-integration.md), [Statistical Concepts](04-statistical-concepts.md)
 
 ---
 
@@ -94,11 +94,11 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 
 **Definition**: The variation in time intervals between heartbeats, measured in milliseconds. Higher HRV typically indicates better cardiovascular health and more restorative sleep.
 
-**Context**: Available when Fitbit integration is enabled. HRV is calculated as RMSSD (Root Mean Square of Successive Differences) from minute-level heart rate data during sleep periods. Lower HRV may correlate with higher AHI or poor therapy effectiveness.
+**Context**: Available when wearable integration is enabled. HRV comes from your Google Health (Fitbit) export and is correlated with CPAP nights during sleep periods. Lower HRV may correlate with higher AHI or poor therapy effectiveness.
 
-**Related Terms**: [Fitbit Integration](#fitbit-integration), [Correlation Analysis](#correlation-analysis)
+**Related Terms**: [Wearable Integration](#wearable-integration), [Correlation Analysis](#correlation-analysis)
 
-**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Statistical Concepts](04-statistical-concepts.md)
+**See Also**: [Wearable Integration Guide](11-wearable-integration.md), [Statistical Concepts](04-statistical-concepts.md)
 
 ---
 
@@ -480,11 +480,11 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 
 **Definition**: Statistical method to measure the strength and direction of linear relationships between two variables, typically expressed as Pearson correlation coefficient (r) ranging from -1 to +1.
 
-**Context**: Used extensively in Fitbit integration to identify relationships between CPAP therapy metrics (AHI, pressure, usage) and physiological responses (HRV, SpO2, sleep stages). Includes significance testing (p-values) and effect size calculations for clinical interpretation.
+**Context**: Used extensively in wearable integration to identify within-person relationships between CPAP therapy metrics (AHI, pressure, usage) and physiological responses (HRV, SpO2, sleep stages). Includes significance testing with false-discovery-rate (FDR) correction and effect size calculations for clinical interpretation.
 
 **Related Terms**: [Pearson Correlation](#pearson-correlation), [Spearman Correlation](#spearman-correlation), [P-Value](#p-value), [Effect Size](#effect-size)
 
-**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Statistical Concepts](04-statistical-concepts.md)
+**See Also**: [Wearable Integration Guide](11-wearable-integration.md), [Statistical Concepts](04-statistical-concepts.md)
 
 ---
 
@@ -650,11 +650,11 @@ A comprehensive reference for medical, statistical, and technical terms used thr
 
 **Definition**: Industry-standard protocol for secure API authorization that allows applications to access user data without exposing passwords.
 
-**Context**: Used for Fitbit integration. OAuth 2.0 with PKCE (Proof Key for Code Exchange) provides secure, time-limited access to heart rate and sleep data. Users can revoke access anytime via Fitbit account settings or analyzer Settings panel.
+**Context**: Not used by OSCAR Export Analyzer. Earlier versions connected to the Fitbit Web API via OAuth 2.0 with PKCE; that integration has been removed in favor of [local wearable-export ingestion](#wearable-integration), which requires no login, tokens, or network access. This entry is retained for historical reference.
 
-**Related Terms**: [Fitbit Integration](#fitbit-integration), [API](#api), [Encryption](#encryption)
+**Related Terms**: [Wearable Integration](#wearable-integration), [API](#api), [Encryption](#encryption)
 
-**See Also**: [Fitbit Integration Guide](11-fitbit-integration.md), [Disclaimers](08-disclaimers.md)
+**See Also**: [Wearable Integration Guide](11-wearable-integration.md), [Disclaimers](08-disclaimers.md)
 
 ---
 

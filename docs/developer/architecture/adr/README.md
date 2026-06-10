@@ -17,10 +17,14 @@ Document decisions that are:
 
 ## ADR List
 
-| ADR                                                | Title                                                 | Status   | Date       |
-| -------------------------------------------------- | ----------------------------------------------------- | -------- | ---------- |
-| [0001](0001-working-directory-policy.md)           | Working Directory Policy for Subagent Ephemeral Files | Accepted | 2026-01-22 |
-| [0002](0002-progressive-web-app-implementation.md) | Progressive Web App (PWA) Implementation              | Accepted | 2026-01-24 |
+| ADR                                                                 | Title                                                     | Status   | Date       |
+| ------------------------------------------------------------------- | --------------------------------------------------------- | -------- | ---------- |
+| [0001](0001-working-directory-policy.md)                            | Working Directory Policy for Subagent Ephemeral Files     | Accepted | 2026-01-22 |
+| [0002](0002-progressive-web-app-implementation.md)                  | Progressive Web App (PWA) Implementation                  | Accepted | 2026-01-24 |
+| [0003](0003-replace-fitbit-oauth-with-local-export-ingestion.md)    | Replace Fitbit OAuth/API with Local Export Ingestion      | Proposed | 2026-06-10 |
+| [0004](0004-ingest-and-aggregate-wearable-data-to-indexeddb.md)     | Ingest-and-Aggregate Wearable Data to IndexedDB           | Proposed | 2026-06-10 |
+| [0005](0005-wearable-export-file-access-and-privacy-boundary.md)    | Wearable Export File Access, Handle Persistence & Privacy | Proposed | 2026-06-10 |
+| [0006](0006-wearable-cpap-alignment-and-correlation-methodology.md) | Wearable↔CPAP Alignment & Correlation Methodology        | Proposed | 2026-06-10 |
 
 ## ADR Template
 

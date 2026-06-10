@@ -13,7 +13,7 @@ OSCAR Export Analyzer is a web‑based toolkit for exploring CSV exports produce
 - [Installation](#installation)
 - [Development](#development)
 - [Usage Walkthrough](#usage-walkthrough)
-- [Fitbit Integration Setup](#fitbit-integration-setup)
+- [Wearable Integration](#wearable-integration)
 - [Feature Tour](#feature-tour)
 - [Data Privacy](#data-privacy)
 - [Troubleshooting](#troubleshooting)
@@ -123,38 +123,30 @@ Common workflows for contributors:
 6. Hover any chart element for a tooltip. Click legend items to toggle series visibility. Use the zoom controls to focus on ranges of interest.
 7. Sessions persist automatically to your browser's storage. Drop a saved session JSON on the splash screen or click **Load previous session** there to restore it. Use the header menu's **Export JSON** to save a portable snapshot.
 
-## Fitbit Integration Setup
+## Wearable Integration
 
-OSCAR Export Analyzer supports optional integration with Fitbit devices to enhance therapy analysis with physiological data. This integration adds powerful correlation capabilities while maintaining the same privacy-first approach.
+OSCAR Export Analyzer can correlate CPAP therapy with physiological data from a **local Google Health (formerly Fitbit) export** — no account login, no OAuth, and no network access to any wearable service. You download your export and point the app at the folder; everything is processed in your browser.
 
 ### Prerequisites
 
-1. **Fitbit Account**: A Fitbit account with data from a compatible device (heart rate and SpO2 capable)
-2. **Recent Data**: At least 7 nights of overlapping CPAP and Fitbit data for meaningful correlations
-3. **Secure Connection**: HTTPS-enabled browser for OAuth authentication
+1. **A Chromium-based browser**: The folder import uses the File System Access API (`showDirectoryPicker`), which is Chromium-only today. CPAP analysis works on every browser; only the wearable import is Chromium-only.
+2. **A Google Health (Fitbit) export**: Download your data export (Google Takeout for Fitbit/Google Health).
+3. **Overlapping nights**: Correlations use nights where both CPAP and wearable data exist — more overlap yields more reliable patterns.
 
 ### Quick Setup
 
-1. **Load CPAP Data First**: Import your OSCAR CSV files as usual
-2. **Connect Fitbit**: Navigate to **Settings** → **Fitbit Integration** → **Connect to Fitbit**
-3. **Authorize Access**: Complete OAuth flow (grants read-only access to heart rate, SpO2, and sleep data)
-4. **Sync Data**: Initial sync downloads up to 100 days of historical data (may take 2-3 minutes)
-5. **Explore Correlations**: New **Fitbit Correlation** dashboard appears in navigation
+1. **Load CPAP Data First**: Import your OSCAR CSV files as usual.
+2. **Open the Wearable Correlation section** and click **Select export folder**; choose the top-level export directory and grant read access.
+3. **Wait for ingestion**: A Web Worker stream-aggregates the export to nightly rollups plus intraday detail in IndexedDB while the rest of the UI stays responsive.
+4. **Explore Correlations**: The correlation matrix and single-night drill-down (hypnogram + SpO₂/HR/event overlays) populate for overlapping nights.
 
 ### Privacy & Security
 
-- **Local Processing**: All Fitbit data stays on your device, same as CPAP data
-- **Encrypted Storage**: Fitbit data encrypted in browser storage using your chosen passphrase
-- **Limited Scope**: OAuth access limited to heart rate, SpO2, and sleep stage data only
-- **Revoke Anytime**: Disconnect via Settings or your Fitbit account's App Management page
+- **Local-only, no network**: The export is read directly from disk, read-only; with the old OAuth endpoints gone the local-first guarantee is now CSP-enforced.
+- **You control retention**: Wearable data lives only in your browser; a **"Forget folder"** action clears it and any remembered folder permission. CPAP sessions are unaffected.
+- **Incremental re-import**: Re-pointing at an updated export ingests only new nights.
 
-### Troubleshooting
-
-- **No Overlapping Data**: Ensure CPAP and Fitbit data share common nights
-- **Authorization Errors**: Clear browser cache and retry OAuth flow
-- **Slow Sync**: Large data ranges may take several minutes to process
-
-For detailed setup instructions, see [Fitbit Integration Guide](docs/user/11-fitbit-integration.md).
+For detailed setup instructions and interpretation caveats (single-subject, FDR-corrected correlations), see the [Wearable Integration Guide](docs/user/11-wearable-integration.md).
 
 ## Feature Tour
 
@@ -172,9 +164,9 @@ Screenshots are temporarily unavailable and will be refreshed after the correcte
 
 **Pressure & Correlation** – Investigates how exhalation pressure (EPAP) relates to AHI. Scatter plots, LOESS curves, and correlation matrices support hypothesis generation.
 
-### Fitbit Integration
+### Wearable Integration
 
-**Fitbit Data Correlation** – Optional integration with Fitbit devices to analyze relationships between CPAP therapy effectiveness and physiological metrics. Connect securely via OAuth to correlate heart rate variability, SpO2, sleep stages, and restlessness patterns with therapy outcomes. All Fitbit data remains local and is encrypted using the same privacy-first approach as CPAP data.
+**Wearable Data Correlation** – Optional correlation of CPAP therapy effectiveness with physiological metrics from a local Google Health (formerly Fitbit) export. Import your export folder (no OAuth, no network) to correlate heart-rate variability, SpO₂, sleep stages, and related metrics with therapy outcomes, and drill into any single night's hypnogram with overlays. All wearable data stays local in your browser. Requires a Chromium-based browser.
 
 ---
 

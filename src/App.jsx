@@ -9,7 +9,6 @@ import { OfflineReadyToast } from './components/OfflineReadyToast';
 import { UpdateNotification } from './components/UpdateNotification';
 import ExportDataModal from './components/ExportDataModal';
 import ImportDataModal from './components/ImportDataModal';
-import OAuthCallbackHandler from './components/OAuthCallbackHandler';
 import AppFooter from './components/AppFooter';
 import {
   DataImportModal,
@@ -28,7 +27,7 @@ import { RangeComparisonsSection } from './features/range-comparisons';
 import { ApneaClustersSection } from './features/apnea-clusters';
 import FalseNegativesSection from './features/false-negatives/Section';
 import RawExplorerSection from './features/raw-explorer/Section';
-import FitbitCorrelationSection from './features/fitbit-correlation/Section';
+import WearableCorrelationSection from './features/wearable-correlation/Section';
 import { setStorageConsent } from './utils/storageConsent';
 import {
   DEFAULT_HEADER_OFFSET_PX,
@@ -46,7 +45,7 @@ const LEGAL_DOC_ANCHORS = new Set([
   'data-storage',
   'data-retention',
   'exports-and-sharing',
-  'fitbit-integration',
+  'wearable-integration',
   'warranty-disclaimer',
   'contact',
   'accessibility',
@@ -116,17 +115,6 @@ export function AppShell() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOfflineToast, setShowOfflineToast] = useState(false);
 
-  // OAuth callback detection
-  const isOAuthCallback = useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasAuthParams = urlParams.has('code') && urlParams.has('state');
-    const hasError = urlParams.has('error');
-    return hasAuthParams || hasError;
-  }, []);
-  // FIX: Show OAuth handler immediately when callback detected.
-  // The passphrase is already available from sessionStorage (set by FitbitConnectionCard).
-  const [showOauthHandler, setShowOauthHandler] = useState(isOAuthCallback);
-
   // Service worker registration and update notification
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -182,48 +170,6 @@ export function AppShell() {
     localStorage.setItem('onboarding-completed', 'true');
   };
 
-  const handleOAuthSuccess = () => {
-    console.log('OAuth connection successful');
-    // Token is already stored by the handler
-  };
-
-  const handleOAuthError = (err) => {
-    console.error('OAuth connection failed:', err);
-    setError(err?.message || 'Fitbit connection failed');
-  };
-
-  const handleOAuthComplete = ({ success }) => {
-    // Clean up URL parameters and Facebook's #_=_ hash
-    let cleanUrl = window.location.pathname;
-    let hash = window.location.hash;
-    if (hash === '#_=_') {
-      hash = ''; // Strip Facebook's OAuth artifact
-    }
-    // If we're on oauth-callback path, navigate to base URL
-    if (cleanUrl.includes('oauth-callback')) {
-      cleanUrl = window.location.origin + '/oscar-export-analyzer/';
-    }
-    cleanUrl += hash;
-    window.history.replaceState({}, '', cleanUrl);
-
-    // Hide handler first, then remove passphrase after UI is ready
-    setShowOauthHandler(false);
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('fitbit_oauth_passphrase');
-      }
-    }, 250); // Delay to ensure hooks/components have time to use it
-
-    // Always open import modal after OAuth, so user can import or reload data
-    // (Removed: importModal.open() — this is a Fitbit connection, not CSV import)
-
-    // Navigate to Fitbit section on success
-    if (success) {
-      window.location.hash = 'fitbit-correlation';
-      setActiveSectionId('fitbit-correlation');
-    }
-  };
-
   const tocSections = useMemo(
     () => [
       { id: 'overview', label: 'Overview' },
@@ -234,7 +180,7 @@ export function AppShell() {
       { id: 'clustered-apnea', label: 'Clusters' },
       { id: 'false-negatives', label: 'False Negatives' },
       { id: 'raw-data-explorer', label: 'Raw Data' },
-      { id: 'fitbit-correlation', label: 'Fitbit Analysis' },
+      { id: 'wearable-correlation', label: 'Wearable Analysis' },
     ],
     [],
   );
@@ -571,22 +517,6 @@ export function AppShell() {
   const summaryHasRows = !!filteredSummary?.length;
   const detailsHasRows = !!filteredDetails?.length;
 
-  // If OAuth callback is being processed, show handler instead of normal app UI
-  if (isOAuthCallback && showOauthHandler) {
-    return (
-      <>
-        {beforeHeader}
-        <div className="oauth-callback-container">
-          <OAuthCallbackHandler
-            onSuccess={handleOAuthSuccess}
-            onError={handleOAuthError}
-            onComplete={handleOAuthComplete}
-          />
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <AppLayout
@@ -612,7 +542,7 @@ export function AppShell() {
         )}
         {summaryHasRows && (
           <>
-            <FitbitCorrelationSection />
+            <WearableCorrelationSection />
           </>
         )}
       </AppLayout>

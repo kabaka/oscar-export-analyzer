@@ -211,9 +211,13 @@ describe('exportImport utilities', () => {
     });
 
     it('should reject file larger than 50MB', async () => {
-      // Create mock file with size > 50MB
+      // Create a mock file whose .size exceeds the limit. Use a zero-filled
+      // byte buffer rather than 'x'.repeat(...) — a single contiguous
+      // allocation, avoiding the giant-string + UTF-8 transcode that made this
+      // test GC-thrash and time out under parallel load. The size guard checks
+      // file.size before reading content, so the bytes are never inspected.
       const largeFile = new File(
-        ['x'.repeat(MAX_FILE_SIZE_BYTES + 1)],
+        [new Uint8Array(MAX_FILE_SIZE_BYTES + 1)],
         'large.json.enc',
         { type: 'application/json' },
       );
@@ -221,7 +225,7 @@ describe('exportImport utilities', () => {
       await expect(importEncryptedData(largeFile, passphrase)).rejects.toThrow(
         'File too large (maximum 50MB)',
       );
-    }, 30000);
+    });
 
     it('should reject invalid JSON', async () => {
       const invalidFile = new File(['not valid json{{{'], 'invalid.json.enc', {

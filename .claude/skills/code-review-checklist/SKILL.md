@@ -174,8 +174,8 @@ npm run build         # Build succeeds, no warnings
 
 - [ ] No credentials in code
 - [ ] API keys not hardcoded
-- [ ] HTTPS for external requests
-- [ ] PKCE for OAuth flows
+- [ ] No network requests for health data (CSP `connect-src 'self'`)
+- [ ] Wearable export accessed read-only via allowlist; worker messages sanitized
 
 ## Performance
 
