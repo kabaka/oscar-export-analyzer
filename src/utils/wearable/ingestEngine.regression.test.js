@@ -413,6 +413,43 @@ describe('runIngest regression (c) — incremental re-import skips by {relativeP
     expect(dates).toContain(N2);
   });
 
+  it('carries a SKIPPED file forward into the manifest so it stays skipped on the NEXT run', async () => {
+    const db = getDb();
+    // First run establishes the manifest.
+    await runIngest({ dirHandle: buildExport(firstRunFixture()), db });
+    const knownFiles1 = await getWearableMeta(db, 'files');
+    expect(knownFiles1.some((f) => f.relativePath === SPO2_1)).toBe(true);
+
+    // Second (incremental) run: the SpO2 file is unchanged ⇒ skipped. Regression:
+    // its {relativePath,size} identity MUST be re-written into the manifest, not
+    // dropped — otherwise the next run loses it and re-reads the full export.
+    const result2 = await runIngest({
+      dirHandle: buildExport(firstRunFixture()),
+      db,
+      opts: { knownFiles: knownFiles1 },
+    });
+    expect(result2.stats.filesSkipped).toBeGreaterThanOrEqual(1);
+
+    const knownFiles2 = await getWearableMeta(db, 'files');
+    const spo2Entry = knownFiles2.find((f) => f.relativePath === SPO2_1);
+    expect(spo2Entry, 'skipped file must remain in the manifest').toBeTruthy();
+    expect(typeof spo2Entry.size).toBe('number');
+
+    // Third run, fed the SECOND run's manifest: the file is STILL recognized and
+    // skipped (no re-read), proving the identity survived an all-skip run.
+    const reads = [];
+    const root3 = buildExport(firstRunFixture(), {
+      fileSpies: { [SPO2_1]: (name) => reads.push(name) },
+    });
+    const result3 = await runIngest({
+      dirHandle: root3,
+      db,
+      opts: { knownFiles: knownFiles2 },
+    });
+    expect(reads).toHaveLength(0); // never re-opened
+    expect(result3.stats.filesSkipped).toBeGreaterThanOrEqual(1);
+  });
+
   it('mtime is irrelevant: a file with the same size but a changed mtime is still skipped', async () => {
     const db = getDb();
     await runIngest({ dirHandle: buildExport(firstRunFixture()), db });
@@ -626,6 +663,147 @@ describe('runIngest — expanded end-to-end ingestion (HRV/snore/summaries; priv
     expect(relPaths.some((p) => p.includes('daily_heart_rate_zones.csv'))).toBe(
       false,
     );
+  });
+});
+
+/* ===========================================================================
+ * (e) Multi-month export (>64 nights) — eviction must NOT drop later metrics
+ *
+ * Regression for the per-metric-phase eviction bug: with metric-major iteration,
+ * a night evicted during the SpO2 phase became unreachable to the HRV/snore/HR
+ * phases, so every night beyond the most-recent `MAX_RESIDENT_INTRADAY_NIGHTS`
+ * (64) silently lost its HRV/snore/HR data. Phase B is now night-major, so EVERY
+ * night — including the very oldest in a multi-month export — receives ALL of its
+ * high-frequency metrics while resident memory stays bounded.
+ * =========================================================================== */
+
+describe('runIngest regression (e) — >64 nights keep ALL metrics on the oldest nights', () => {
+  const getDb = withIndexedDb();
+  const NIGHT_COUNT = 70; // > MAX_RESIDENT_INTRADAY_NIGHTS (64)
+
+  /** HRV details (5-min naive-local windows) inside 23:00→07:00 for one night. */
+  function hrvDetailsCsvFor(y, m, d) {
+    const rows = ['timestamp,rmssd,coverage,low_frequency,high_frequency'];
+    for (let i = 0; i < 90; i += 1) {
+      const t = new Date(Date.UTC(y, m, d, 23, 0, 0) + i * 5 * 60000);
+      rows.push(`${isoNaive(t)},${30 + (i % 5)},0.95,120,180`);
+    }
+    return rows.join('\n') + '\n';
+  }
+
+  /** Snore epochs (30s naive-local) inside the window for one night. */
+  function snoreCsvFor(y, m, d) {
+    const rows = ['timestamp,mean_dba,max_dba,snore_label'];
+    for (let i = 0; i < 120; i += 1) {
+      const t = new Date(Date.UTC(y, m, d, 23, 30, 0) + i * 30000);
+      rows.push(`${isoNaive(t)},38,${40 + (i % 6)},1`);
+    }
+    return rows.join('\n') + '\n';
+  }
+
+  function manyNightsFixture() {
+    const map = {};
+    const userSleepsRows = ['sleep_start,start_utc_offset'];
+    const nightKeys = [];
+    // Walk forward NIGHT_COUNT nights, spaced 2 days apart so each night's
+    // UTC-stamped SpO2 window is unambiguously assignable (adjacent-night SpO2
+    // assignment is a separate concern from eviction). 70 nights × 2 days still
+    // spans ~4.7 months — a realistic multi-month export well past the 64-night
+    // resident cap, which is what this regression exercises.
+    const base = Date.UTC(2024, 0, 1); // 2024-01-01
+    const SPACING_DAYS = 2;
+    for (let i = 0; i < NIGHT_COUNT; i += 1) {
+      const day = new Date(base + i * SPACING_DAYS * 86400000);
+      const y = day.getUTCFullYear();
+      const m = day.getUTCMonth();
+      const d = day.getUTCDate();
+      const night = isoDate(day);
+      nightKeys.push(night);
+
+      // Sleep session (naive-local 23:00→07:00).
+      map[`Global Export Data/sleep-${night}.json`] = sleepJson({
+        logId: 1000 + i,
+        night,
+      });
+      // UserSleeps +00:00 placeholder hint (inference resolves the real -480).
+      userSleepsRows.push(`${night}T23:00:00Z,+00:00`);
+
+      // SpO2 in true UTC: local 23:00→07:00 PST ⇒ UTC 07:00→15:00 the NEXT day.
+      const utc = new Date(Date.UTC(y, m, d + 1));
+      map[`Oxygen Saturation (SpO2)/Minute SpO2 - ${night}.csv`] =
+        minuteSpo2Csv({
+          utcYear: utc.getUTCFullYear(),
+          utcMonth: utc.getUTCMonth(),
+          utcDay: utc.getUTCDate(),
+        });
+      // HRV / snore / HR are all naive-local across the same window.
+      map[
+        `Heart Rate Variability/Heart Rate Variability Details - ${night}.csv`
+      ] = hrvDetailsCsvFor(y, m, d);
+      map[`Snore and Noise Detect/Snore Details - ${night}.csv`] = snoreCsvFor(
+        y,
+        m,
+        d,
+      );
+      map[`Global Export Data/heart_rate-${night}.json`] = heartRateJson({
+        year: y,
+        month: m,
+        day: d,
+      });
+    }
+    map['Health Fitness Data_GoogleData/UserSleeps_0.csv'] =
+      userSleepsRows.join('\n') + '\n';
+    return { map, nightKeys };
+  }
+
+  it('persists SpO2 + HRV + snore + HR for the OLDEST nights, not just the most recent 64', async () => {
+    const db = getDb();
+    const { map, nightKeys } = manyNightsFixture();
+    const result = await runIngest({ dirHandle: buildExport(map), db });
+
+    expect(result.nights).toBe(NIGHT_COUNT);
+
+    const nights = await getWearableNightsInRange(
+      db,
+      '2024-01-01',
+      '2024-12-31',
+    );
+    expect(nights).toHaveLength(NIGHT_COUNT);
+    const byDate = new Map(nights.map((n) => [n.nightDate, n]));
+
+    // The oldest nights (the ones the buggy metric-major eviction would have
+    // dropped after the SpO2 phase) must still carry every high-frequency metric.
+    const oldest = nightKeys.slice(0, 6);
+    for (const key of oldest) {
+      const n = byDate.get(key);
+      expect(n, `night ${key} should be persisted`).toBeTruthy();
+      expect(n.spo2, `${key} spo2`).not.toBeNull();
+      expect(n.hrv, `${key} hrv`).not.toBeNull();
+      expect(n.snore, `${key} snore`).not.toBeNull();
+      expect(n.hr, `${key} hr`).not.toBeNull();
+      // All four intraday typed-array series were persisted for the night.
+      expect(n.intradayMetrics).toEqual(
+        expect.arrayContaining(['spo2', 'hrv', 'snore', 'hr']),
+      );
+    }
+
+    // EVERY night across the whole export has the full metric set (not just the
+    // sampled oldest few) — proves no positional data loss anywhere.
+    for (const n of nights) {
+      expect(n.spo2, `${n.nightDate} spo2`).not.toBeNull();
+      expect(n.hrv, `${n.nightDate} hrv`).not.toBeNull();
+      expect(n.snore, `${n.nightDate} snore`).not.toBeNull();
+      expect(n.hr, `${n.nightDate} hr`).not.toBeNull();
+    }
+
+    // And the persisted intraday arrays for an oldest night are non-empty.
+    const oldestKey = nightKeys[0];
+    for (const metric of ['spo2', 'hrv', 'snore', 'hr']) {
+      const rec = await getWearableIntraday(db, oldestKey, metric);
+      expect(rec, `${oldestKey} ${metric} intraday`).not.toBeNull();
+      expect(ArrayBuffer.isView(rec.values)).toBe(true);
+      expect(rec.values.length).toBeGreaterThan(0);
+    }
   });
 });
 

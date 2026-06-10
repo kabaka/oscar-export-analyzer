@@ -353,7 +353,19 @@ export async function runIngest({
   stats.nights = nightIndex.size;
 
   /* ----------------------------- PHASE B ----------------------------- */
-  // High-frequency metrics, each in its own phase, files date-ordered.
+  // High-frequency metrics. Processed **night-major**: we first bucket every
+  // metric's samples by nightKey (metric-ordered so SpO2's resolved offset still
+  // seeds later nights via `prevInferredOffset`), then iterate nights in date
+  // order and assign ALL of a night's metrics together before flushing+evicting
+  // that night exactly once. This guarantees every night receives all of its
+  // metrics regardless of position/count — a night is never evicted mid-way
+  // through the metric set (perf-storage §2 correctness fix).
+  //
+  // Memory stays bounded: only the per-night intraday typed arrays are the heavy
+  // resident state, and each night's intraday is built then immediately evicted,
+  // so at most one night's intraday is resident at a time (well under
+  // `MAX_RESIDENT_INTRADAY_NIGHTS`). The transient raw-sample buckets are dropped
+  // per night as they are consumed.
   const phaseBMetrics = [
     { metric: METRIC.SPO2_MINUTE, key: 'spo2' },
     { metric: METRIC.HRV_DETAILS, key: 'hrv' },
@@ -361,55 +373,42 @@ export async function runIngest({
     { metric: METRIC.HR, key: 'hr' },
   ];
 
-  let prevInferredOffset = null;
+  // nightKey → { spo2?, hrv?, snore?, hr? } bucketed sample payloads.
+  /** @type {Map<string, Record<string, object>>} */
+  const samplesByNight = new Map();
   for (const { metric, key: metricKey } of phaseBMetrics) {
     throwIfAborted(signal);
     const metricFiles = phaseBFiles
       .filter((f) => f.metric === metric)
       .sort((a, b) => (a.relPath < b.relPath ? -1 : 1));
 
-    // Group samples by nightKey within this metric (file → date-ordered).
-    let residentNights = 0;
     for (const f of metricFiles) {
       throwIfAborted(signal);
-      if (skipByIdentity(f.relPath, await readSize(f.handle))) {
+      const size = await readSize(f.handle);
+      if (skipByIdentity(f.relPath, size)) {
         stats.filesSkipped += 1;
         filesDone += 1;
+        // BUG 3 fix: carry the skipped (unchanged) file's identity forward so the
+        // NEXT incremental run still recognizes it as already-ingested. Without
+        // this the manifest would lose every skipped Phase-B file and re-read the
+        // full high-frequency export on the next "check for new data".
+        fileIdentity.push({ relativePath: f.relPath, size });
         continue;
       }
       const text = await readText(f.handle);
       const byNight = bucketSamplesByNight(metric, text, nightIndex, stats);
 
       for (const [nightKey, payload] of byNight) {
-        const night = nightIndex.get(nightKey);
-        if (!night) continue;
+        if (!nightIndex.has(nightKey)) continue;
         if (sinceDate && nightKey <= sinceDate) continue;
-
-        applyMetricToNight(
-          metricKey,
-          night,
-          payload,
-          prevInferredOffset,
-          offsetHints,
-          stats,
-        );
-        if (night.window?.windowSource === 'inferred') {
-          prevInferredOffset = night.window.utcOffsetMinutes;
+        let perNight = samplesByNight.get(nightKey);
+        if (!perNight) {
+          perNight = {};
+          samplesByNight.set(nightKey, perNight);
         }
-        markHighWater(lastIngestedDate, metricKey, nightKey);
-        bumpCount(stats.perMetricCounts, metricKey);
-
-        residentNights += 1;
-        if (residentNights >= MAX_RESIDENT_INTRADAY_NIGHTS) {
-          await flushNightAndEvict(night, flushBuffer, nightIndex);
-          await flush();
-          residentNights -= 1;
-        }
+        perNight[metricKey] = payload;
       }
-      fileIdentity.push({
-        relativePath: f.relPath,
-        size: await readSize(f.handle),
-      });
+      fileIdentity.push({ relativePath: f.relPath, size });
       filesDone += 1;
       stats.filesProcessed += 1;
       emitProgress(
@@ -422,7 +421,50 @@ export async function runIngest({
     }
   }
 
-  // Final flush: persist every remaining night + its intraday.
+  // Apply all bucketed metrics night-by-night (date order), assigning EVERY
+  // metric for a night before that night is flushed+evicted exactly once. SpO2 is
+  // applied first per night so its resolved offset is available to the others.
+  // Eviction is bounded by `MAX_RESIDENT_INTRADAY_NIGHTS`: a night's intraday
+  // typed arrays become eligible for eviction the moment all its metrics are in,
+  // so no more than that many nights' intraday is ever resident at once.
+  let prevInferredOffset = null;
+  let residentNights = 0;
+  const orderedNightKeys = [...samplesByNight.keys()].sort();
+  for (const nightKey of orderedNightKeys) {
+    throwIfAborted(signal);
+    const night = nightIndex.get(nightKey);
+    if (!night) continue;
+    const perNight = samplesByNight.get(nightKey);
+    for (const { key: metricKey } of phaseBMetrics) {
+      const payload = perNight[metricKey];
+      if (!payload) continue;
+      applyMetricToNight(
+        metricKey,
+        night,
+        payload,
+        prevInferredOffset,
+        offsetHints,
+        stats,
+      );
+      if (night.window?.windowSource === 'inferred') {
+        prevInferredOffset = night.window.utcOffsetMinutes;
+      }
+      markHighWater(lastIngestedDate, metricKey, nightKey);
+      bumpCount(stats.perMetricCounts, metricKey);
+    }
+    // This night is fully assigned. Free its raw sample buckets immediately, then
+    // persist + evict its intraday once the resident set hits the cap.
+    samplesByNight.delete(nightKey);
+    residentNights += 1;
+    if (residentNights >= MAX_RESIDENT_INTRADAY_NIGHTS) {
+      await flushNightAndEvict(night, flushBuffer, nightIndex);
+      await flush();
+      residentNights -= 1;
+    }
+  }
+
+  // Final flush: persist every remaining night that received no Phase-B metrics
+  // (sleep-only nights are still skeletons in nightIndex) + drain the buffer.
   for (const [, night] of nightIndex) {
     stageNightForFlush(night, flushBuffer);
   }

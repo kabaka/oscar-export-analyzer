@@ -93,4 +93,33 @@ describe('useWearableData', () => {
     });
     expect(detail).toBeNull();
   });
+
+  it('reloads nights when reloadKey changes (import-completion signal)', async () => {
+    // Simulates the BUG-2 flow: the hook first loads with NO persisted nights
+    // (empty range result), an import then completes and persists a night, and
+    // the caller bumps `reloadKey` (e.g. `lastImport.at`). The hook must re-query
+    // IndexedDB and surface the newly-persisted night WITHOUT a date-range change.
+    globalThis.indexedDB = new IDBFactory(); // fresh DB: starts empty
+    const props = { start: '2024-02-01', end: '2024-02-28', reloadKey: 0 };
+    const { result, rerender } = renderHook((p) => useWearableData(p), {
+      initialProps: props,
+    });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.nights).toHaveLength(0); // dashboard would be hidden
+
+    // An ingest completes and persists a night in-range (same start/end).
+    const db = await openAppDb();
+    await putBatch(db, [
+      {
+        store: 'wearable_nights',
+        value: { nightDate: '2024-02-15', sleep: { score: 90 } },
+      },
+    ]);
+    db.close();
+
+    // Caller bumps reloadKey on import completion (date range unchanged).
+    rerender({ ...props, reloadKey: 1 });
+    await waitFor(() => expect(result.current.nights).toHaveLength(1));
+    expect(result.current.nights[0].nightDate).toBe('2024-02-15');
+  });
 });

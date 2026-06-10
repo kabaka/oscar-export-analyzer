@@ -32,6 +32,9 @@ corresponds to changes released on that day.
 ### Fixed
 
 - **Wearable correlation chart: SpO₂ now shown in true units.** The dual-axis sync chart previously rescaled SpO₂ onto the heart-rate axis (a misleading "SpO₂ (scaled)" line). SpO₂ now has its own percentage axis ranged 70–100% so real overnight desaturations are visible rather than clipped, and the three series are distinguished by line style, not color alone. Both correlation charts also now render correctly in dark mode.
+- **Multi-month wearable exports no longer lose HRV/snore/HR on older nights.** The ingest engine's high-frequency phase evicted each night from memory after the SpO₂ pass, before the HRV, snore, and heart-rate passes ran — so any export with more than 64 nights (i.e. essentially every multi-month export) silently kept only SpO₂ for all but the most recent 64 nights, leaving correlations and drill-downs systematically blank for older nights. The phase is now processed night-by-night, assigning every metric to a night before it is evicted, so all nights retain their full metric set while memory stays bounded.
+- **Wearable dashboard now appears right after the first import.** After a first import completed, the dashboard stayed hidden until the date filter changed or the page was refreshed, because the nightly query never reloaded on import completion. The query now reloads when an ingest finishes, so newly-imported nights show immediately.
+- **Incremental re-import no longer re-reads unchanged high-frequency files.** Skipped (unchanged) high-frequency files were dropped from the saved file manifest, so the next "check for new data" re-read the entire high-frequency export even when nothing had changed. Skipped files now stay in the manifest and are recognized and skipped again on the next run.
 
 ## 2026-02-09
 
