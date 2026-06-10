@@ -138,10 +138,54 @@ beforeEach(() => {
   sessionStorage.clear();
 });
 
-// Also mock Plotly charts to simplify component tests
+// Also mock Plotly charts to simplify component tests.
+//
+// ThemedPlot renders the real chart via a lazily-imported `PlotlyChart` module
+// (which wraps `react-plotly.js/factory` + a partial `plotly.js/lib/core`
+// build). We mock that module directly so component tests render a plain,
+// synchronous stub instead of pulling in the full Plotly bundle. The stub keeps
+// the legacy `data-testid="plotly-chart"` contract that existing tests assert.
 const plotlyMock = vi.fn((props) =>
   React.createElement('div', { 'data-testid': 'plotly-chart', ...props }),
 );
+vi.mock('./components/ui/PlotlyChart', () => ({
+  default: plotlyMock,
+  REGISTERED_TRACE_TYPES: [
+    'scatter',
+    'bar',
+    'histogram',
+    'histogram2d',
+    'heatmap',
+    'box',
+    'violin',
+  ],
+}));
+// Backwards-compatible alias: a few tests import `react-plotly.js` directly to
+// inspect `Plot.mock.calls`. Keep that working against the same mock fn.
 vi.mock('react-plotly.js', () => {
   return { default: plotlyMock };
+});
+
+// ThemedPlot wraps its chart in `React.lazy(() => import('./PlotlyChart'))` so
+// the Plotly bundle stays out of the initial chunk in production. Under test,
+// `React.lazy` would suspend on first render, breaking the many component tests
+// that query the chart synchronously (`getByTestId('plotly-chart')`). Other
+// `React.lazy` users (doc sections) are tested with their own async-aware
+// helpers, so here we override `lazy` ONLY for the PlotlyChart factory and
+// delegate everything else to the real React implementation. For PlotlyChart we
+// return a plain synchronous component (the shared Plotly mock), so charts
+// render eagerly and existing synchronous queries keep working.
+vi.mock('react', async () => {
+  const actual = await vi.importActual('react');
+  const realLazy = actual.lazy;
+  const lazy = (factory) => {
+    const source = factory.toString();
+    if (source.includes('PlotlyChart')) {
+      // Synchronous stand-in for the lazily-loaded Plotly chart: render the
+      // shared Plotly mock directly so Suspense never defers in tests.
+      return plotlyMock;
+    }
+    return realLazy(factory);
+  };
+  return { ...actual, default: actual.default, lazy };
 });

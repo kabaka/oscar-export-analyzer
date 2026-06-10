@@ -1,12 +1,45 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import PropTypes from 'prop-types';
-import Plot from 'react-plotly.js';
 import { useEffectiveDarkMode } from '../../hooks/useEffectiveDarkMode';
 import { applyChartTheme } from '../../utils/chartTheme';
 import {
   getResponsiveChartLayout,
   getResponsiveChartConfig,
 } from '../../utils/chartConfig';
+
+// Lazy-load the heavy Plotly bundle so it is excluded from the initial/critical
+// chunk. The import/overview path that renders no chart pays nothing for
+// Plotly; it is fetched on demand the first time a chart mounts.
+const PlotlyChart = lazy(() => import('./PlotlyChart'));
+
+/**
+ * Lightweight placeholder shown while the Plotly chunk loads on first render.
+ * Reserves layout space (matching the chart's style) to avoid layout shift.
+ */
+function PlotLoadingFallback({ style }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 120,
+        color: 'var(--color-text-muted, #888)',
+        fontSize: '0.875rem',
+        ...style,
+      }}
+    >
+      Loading chart…
+    </div>
+  );
+}
+
+PlotLoadingFallback.propTypes = {
+  style: PropTypes.object,
+};
 
 /**
  * Wrapper component for Plotly charts with automatic dark/light theme switching
@@ -64,13 +97,15 @@ export default function ThemedPlot({
   };
 
   return (
-    <Plot
-      key={isDark ? 'dark' : 'light'}
-      layout={responsiveLayout}
-      config={responsiveConfig}
-      useResizeHandler={useResizeHandler}
-      {...props}
-    />
+    <Suspense fallback={<PlotLoadingFallback style={props.style} />}>
+      <PlotlyChart
+        key={isDark ? 'dark' : 'light'}
+        layout={responsiveLayout}
+        config={responsiveConfig}
+        useResizeHandler={useResizeHandler}
+        {...props}
+      />
+    </Suspense>
   );
 }
 

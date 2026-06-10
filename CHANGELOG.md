@@ -25,6 +25,14 @@ corresponds to changes released on that day.
 - **IndexedDB migration to v4.** The schema upgrades to version 4: the legacy Fitbit-sync stores (`fitbit_tokens`, `fitbit_data`, `sync_metadata`) are dropped and the wearable-export stores (`wearable_nights`, `wearable_intraday`, `wearable_meta`) are created. This is a one-time wearable reset — any data from the old Fitbit sync is abandoned and re-ingested from your export. **CPAP sessions are preserved.**
 - **Wearable import requires a Chromium-based browser (v1).** Export ingestion uses the File System Access API (`showDirectoryPicker`), which is Chromium-only. On Firefox/Safari the wearable section shows a clear unsupported empty-state; CPAP analysis is unaffected on all browsers.
 
+### Performance
+
+- **~82% smaller initial download.** Plotly is now lazy-loaded as a custom partial build that registers only the trace types the app actually uses (scatter, bar, histogram, histogram2d, heatmap, box, violin). The initial JavaScript drops from ~1.76 MB to ~325 KB gzipped; the Plotly engine is fetched once, on demand, the first time a chart is shown. The import/overview path no longer pays for the charting library upfront.
+
+### Fixed
+
+- **Wearable correlation chart: SpO₂ now shown in true units.** The dual-axis sync chart previously rescaled SpO₂ onto the heart-rate axis (a misleading "SpO₂ (scaled)" line). SpO₂ now has its own percentage axis ranged 70–100% so real overnight desaturations are visible rather than clipped, and the three series are distinguished by line style, not color alone. Both correlation charts also now render correctly in dark mode.
+
 ## 2026-02-09
 
 ### Changed
