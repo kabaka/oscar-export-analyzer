@@ -121,10 +121,13 @@ export const useDateRangeFilter = (initialData) => {
 ### Web Worker Communication
 
 ```jsx
-// Use web worker for heavy CSV parsing
-const worker = new Worker(new URL('../workers/csvParser.js', import.meta.url), {
-  type: 'module',
-});
+// Use web worker for heavy CSV parsing (see src/workers/csv.worker.js)
+const worker = new Worker(
+  new URL('../workers/csv.worker.js', import.meta.url),
+  {
+    type: 'module',
+  },
+);
 
 const parseCSV = (csvText) => {
   return new Promise((resolve, reject) => {

@@ -117,50 +117,24 @@ async exchangeCodeForTokens(authorizationCode) {
 
 **User passphrase** encrypts Fitbit tokens and is stored temporarily:
 
-- **Primary storage:** `sessionStorage` (cleared when tab closes)
-- **Backup storage:** `localStorage` (short-lived, for OAuth redirect only)
-- **Never persisted:** Not written to disk, cookies, or IndexedDB without encryption
+- **Storage:** `sessionStorage` **only** (cleared when the tab closes). It survives the same-origin OAuth redirect, so no persistent backup is needed.
+- **Never persisted:** Never write the passphrase to `localStorage`, disk, cookies, or IndexedDB. A plaintext passphrase in `localStorage` would survive browser restarts and defeat the encrypted-token model — and a `setTimeout` cleanup is unreliable because the OAuth redirect unloads the page before it can fire.
+
+> This mirrors the real app, which keeps the passphrase in `sessionStorage` only (see `src/context/FitbitOAuthContext.jsx` and `FITBIT_OAUTH_STORAGE_KEYS.PASSPHRASE` in `src/constants/fitbit.js`). Do not add a `localStorage` backup.
 
 ```javascript
 class PassphraseManager {
   storePassphrase(passphrase) {
-    // Primary: session storage (cleared on tab close)
+    // sessionStorage survives the same-origin OAuth redirect and clears on tab close.
     sessionStorage.setItem('fitbitPassphrase', passphrase);
-
-    // Backup: local storage (for OAuth redirect recovery)
-    localStorage.setItem('fitbitPassphraseBak', passphrase);
-
-    // Clear backup after 5 minutes
-    setTimeout(
-      () => {
-        localStorage.removeItem('fitbitPassphraseBak');
-      },
-      5 * 60 * 1000,
-    );
   }
 
   retrievePassphrase() {
-    // Try session storage first
-    let passphrase = sessionStorage.getItem('fitbitPassphrase');
-
-    // Fall back to local storage if session cleared
-    if (!passphrase) {
-      passphrase = localStorage.getItem('fitbitPassphraseBak');
-
-      if (passphrase) {
-        // Restore to session storage
-        sessionStorage.setItem('fitbitPassphrase', passphrase);
-        // Clear backup
-        localStorage.removeItem('fitbitPassphraseBak');
-      }
-    }
-
-    return passphrase;
+    return sessionStorage.getItem('fitbitPassphrase');
   }
 
   clearPassphrase() {
     sessionStorage.removeItem('fitbitPassphrase');
-    localStorage.removeItem('fitbitPassphraseBak');
   }
 }
 ```
