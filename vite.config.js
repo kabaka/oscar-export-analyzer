@@ -134,6 +134,20 @@ export default defineConfig({
       onwarn(warning) {
         throw new Error(warning.message || warning);
       },
+      output: {
+        // Isolate the (large) Plotly engine into its own chunk so it caches
+        // independently and loads in parallel. ThemedPlot lazily imports
+        // PlotlyChart, so this chunk is fetched on demand the first time a chart
+        // mounts — it is not part of the initial/critical payload.
+        manualChunks(id) {
+          if (
+            id.includes('node_modules/plotly.js') ||
+            id.includes('node_modules/react-plotly.js')
+          ) {
+            return 'plotly';
+          }
+        },
+      },
     },
   },
 });
