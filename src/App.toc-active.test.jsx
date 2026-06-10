@@ -106,7 +106,7 @@ describe('TOC active highlighting', () => {
       'clustered-apnea',
       'false-negatives',
       'raw-data-explorer',
-      'fitbit-correlation',
+      'wearable-correlation',
     ];
     // Force geometry to stay below the fold so the observer callback must use its entries
     sectionIds.forEach((id) => {

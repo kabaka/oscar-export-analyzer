@@ -65,11 +65,11 @@ Always ensure E2E coverage for:
    - Service worker registers
    - Offline functionality (if applicable)
 
-4. **Fitbit OAuth Flow** (if enabled)
-   - OAuth redirect works
-   - Passphrase entry encrypted
-   - Token storage secure
-   - API data fetched
+4. **Wearable Export Import** (Chromium only)
+   - Directory picker opens and reads the export (File System Access API)
+   - Unsupported empty-state shown on non-Chromium browsers
+   - Ingest progress reported; nights aggregate
+   - CPAP↔wearable correlation view renders
 
 5. **Print/PDF Generation**
    - Print stylesheet applied

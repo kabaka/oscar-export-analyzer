@@ -189,8 +189,8 @@ If working on a feature across multiple commits, add CHANGELOG entry in the **fi
 
 ### Security
 
-- Added encrypted token storage for Fitbit OAuth with user-provided passphrase
-- Implemented automatic token refresh with secure session management
+- Enforced local-first guarantee with a strict CSP (`connect-src 'self'`); no health-data network endpoints remain
+- Sanitized wearable-ingest worker messages so file paths and PHI never cross the worker boundary
 ```
 
 ## Common Mistakes to Avoid

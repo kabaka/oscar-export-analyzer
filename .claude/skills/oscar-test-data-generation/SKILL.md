@@ -36,26 +36,23 @@ const sessions = Array.from({ length: 30 }, (_, i) =>
 );
 ```
 
-### Fitbit Data Builder
+### Wearable Night Builder
+
+The Fitbit API builders were removed with the OAuth integration (ADR-0003). Wearable
+data is now nightly rollups built directly from the `WearableNight` model. Construct
+synthetic nights with `createWearableNight` (and the helpers in `wearableNight.js`);
+for ingestion tests, build small synthetic export file trees that exercise the
+allowlist, schema drift, and the SpO2 `50.0` sentinel. See the
+`oscar-wearable-integration` skill for the model and pipeline.
 
 ```javascript
-import {
-  buildFitbitHeartRate,
-  buildFitbitSleepStage,
-} from '../test-utils/fitbitBuilders';
+import { createWearableNight } from '../utils/wearable/wearableNight';
 
-// Heart rate data
-const hrData = buildFitbitHeartRate({
+// A synthetic nightly rollup record
+const night = createWearableNight({
   date: '2024-01-15',
-  bpm: 65,
-  confidence: 3,
-});
-
-// Sleep stage data
-const sleepStage = buildFitbitSleepStage({
-  date: '2024-01-15',
-  level: 'deep',
-  seconds: 3600,
+  spo2: { meanPct: 94.2, spo2ValidMinutes: 380, spo2SentinelMinutesRemoved: 0 },
+  // ...hr / hrv / sleep groups as needed
 });
 ```
 
@@ -127,10 +124,10 @@ const weeklyPattern = Array.from({ length: 30 }, (_, i) => {
 });
 ```
 
-### Correlation Scenarios (CPAP + Fitbit)
+### Correlation Scenarios (CPAP + wearable)
 
 ```javascript
-// Correlated CPAP and Fitbit data
+// A CPAP session paired with its wearable nightly rollup, for alignment/correlation tests.
 const correlatedNight = {
   cpap: buildSession({
     date: '2024-01-15',
@@ -138,32 +135,16 @@ const correlatedNight = {
     usage: 7.2,
     epap: 9.0,
   }),
-  fitbit: {
-    heartRate: Array.from({ length: 24 }, (_, hour) =>
-      buildFitbitHeartRate({
-        date: '2024-01-15',
-        time: `${hour}:30:00`,
-        bpm: 60 + (hour < 6 || hour > 22 ? 0 : 15), // Lower during sleep
-      }),
-    ),
-    sleepStages: [
-      buildFitbitSleepStage({
-        date: '2024-01-15',
-        level: 'light',
-        seconds: 3600,
-      }),
-      buildFitbitSleepStage({
-        date: '2024-01-15',
-        level: 'deep',
-        seconds: 2400,
-      }),
-      buildFitbitSleepStage({
-        date: '2024-01-15',
-        level: 'rem',
-        seconds: 1800,
-      }),
-    ],
-  },
+  wearable: createWearableNight({
+    date: '2024-01-15',
+    spo2: {
+      meanPct: 92.1,
+      spo2ValidMinutes: 360,
+      spo2SentinelMinutesRemoved: 0,
+    },
+    hr: { meanBpm: 58 },
+    sleep: { deepMinutes: 40, remMinutes: 30, lightMinutes: 60 },
+  }),
 };
 ```
 
@@ -211,7 +192,7 @@ export const MEDICAL_THRESHOLDS = {
 ## Resources
 
 - **Builder API**: `src/test-utils/builders.js`
-- **Fitbit builders**: `src/test-utils/fitbitBuilders.js`
+- **Wearable night model**: `src/utils/wearable/wearableNight.js` (`createWearableNight`)
 - **Test constants**: `src/test-utils/testConstants.js`
 - **Mock hooks**: `src/test-utils/mockHooks.js`
 - **Fixtures**: `src/test-utils/fixtures/`

@@ -3,20 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- 
+    <!--
       Content Security Policy (CSP) for OSCAR Export Analyzer
       Provides defense-in-depth against XSS attacks and unauthorized resource loading.
       Designed for local-first privacy: blocks all external resources, allows only same-origin scripts.
-      
-      Exception: Fitbit API integration requires connect-src to include https://api.fitbit.com
-      for OAuth token exchange and user data synchronization. This is the only external API
-      endpoint permitted, enabling optional Fitbit correlation features while maintaining
-      strict CSP for all other resources. Fitbit OAuth redirects to our own domain and
-      do not require additional CSP permissions.
+
+      connect-src 'self': there are NO external API endpoints. All data (OSCAR CSV
+      and wearable exports) is read and processed entirely on-device (File System
+      Access API + Web Workers + IndexedDB); nothing is uploaded. With the former
+      Fitbit OAuth/API integration removed (ADR-0003/ADR-0005), the local-first
+      guarantee is CSP-enforced — any accidental attempt to POST health data
+      off-device is blocked by the browser, not just by review. Do NOT add external
+      connect targets; scripts/check-no-egress.mjs guards against regressions.
+
+      blob: in worker-src/img-src is required for Vite/PWA worker bootstrapping and
+      Plotly image export; data: in img-src/font-src is required for inline Plotly
+      assets. 'unsafe-inline' in style-src is required by Plotly's runtime styling.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.fitbit.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
+      content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
     />
     <!-- Theme colors for light and dark mode -->
     <meta

@@ -11,7 +11,7 @@ OSCAR Export Analyzer processes sensitive Protected Health Information (PHI)—s
 
 **Local-First, No Server Uploads**
 
-All data processing happens entirely in the browser. No patient data is ever sent to external servers (except Fitbit OAuth when user explicitly connects).
+All data processing happens entirely in the browser. No patient data is ever sent to external servers. There are **no** health-data network endpoints — the CSP (`connect-src 'self'`) enforces this. (Wearable data comes from a local export the user picks, not an API.)
 
 ## Data Handling Rules
 
@@ -173,32 +173,26 @@ const testData = [
 ];
 ```
 
-## Fitbit Integration Privacy
+## Wearable Integration Privacy
 
-**OAuth token security:**
+The wearable feature ingests a **local Google Health (formerly Fitbit) export directory** via the File System Access API. There is **no OAuth, no API, and no token storage** — that integration was removed (ADR-0003). See the `oscar-wearable-integration` skill for the full boundary.
+
+**File-access boundary:**
 
 ```javascript
-// Tokens encrypted before storage
-const encryptedTokens = await encryptWithPassphrase(tokens, userPassphrase);
-await db.fitbitTokens.put(encryptedTokens);
-
-// Passphrase stored in sessionStorage ONLY (cleared on tab close).
-// It survives the same-origin OAuth redirect, so no localStorage backup is
-// needed — a plaintext passphrase in localStorage would persist across browser
-// restarts and defeat the encrypted-token model.
-sessionStorage.setItem('fitbitPassphrase', passphrase);
+// Read-only directory pick; the app never writes to the export.
+const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+// Posted to the ingest worker; only allowlisted physiological files are read.
 ```
 
-**API call limitations:**
-
-- Read-only scopes (heart rate, sleep, SpO2)
-- No write permissions
-- Minimal data retention (rolling 30-day window)
-- User can disconnect anytime
+- **Read-only** directory access (`mode: 'read'`).
+- **Exact-anchored allowlist/denylist** — only recognized physiological files are read; everything else (e.g. GPS) is pruned before parsing.
+- **Sanitized worker messages** — no file paths or PHI cross the worker boundary; progress carries only counts + a metric-phase label.
+- **Opt-in handle persistence** — the directory handle is persisted only if the user opts in, and is cleared by "Forget folder" (`clearWearableData()`).
 
 **Network requests:**
 
-- Only to Fitbit API (explicit user action)
+- **None for health data.** No wearable endpoints exist; `connect-src 'self'` enforces it.
 - No analytics, tracking, or telemetry
 - No CDN dependencies with user data
 
@@ -214,7 +208,7 @@ When implementing new features, verify:
 - [ ] Web Worker errors sanitized
 - [ ] Test data uses builders, not real examples
 - [ ] IndexedDB writes encrypted if storing PHI
-- [ ] No network requests to non-Fitbit endpoints
+- [ ] No network requests for health data (CSP `connect-src 'self'`)
 
 ## Data Lifecycle
 
@@ -256,4 +250,4 @@ When implementing new features, verify:
 - **Encryption utilities**: `src/utils/encryption.js`
 - **Data context**: `src/context/DataContext.jsx`
 - **Test builders**: `src/test-utils/builders.js`
-- **Fitbit security model**: `docs/developer/fitbit-integration.md`
+- **Wearable security model**: `docs/developer/wearable-integration.md`

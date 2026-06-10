@@ -216,9 +216,9 @@ vi.mock('./features/raw-explorer/Section', () => ({
   default: () => <div data-testid="raw-explorer" />,
 }));
 
-vi.mock('./features/fitbit-correlation/Section', () => ({
+vi.mock('./features/wearable-correlation/Section', () => ({
   __esModule: true,
-  default: () => <div data-testid="fitbit-correlation" />,
+  default: () => <div data-testid="wearable-correlation" />,
 }));
 
 vi.mock('./utils/storageConsent', () => ({

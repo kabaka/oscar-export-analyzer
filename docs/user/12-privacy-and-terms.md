@@ -3,7 +3,7 @@
 ## Privacy Policy
 
 - OSCAR Export Analyzer runs entirely in your browser. No uploads, telemetry, or third-party analytics are used.
-- OSCAR CSV files, derived metrics, and visualizations stay on your device. Network requests are limited to loading the app shell and optional Fitbit OAuth endpoints when explicitly initiated.
+- OSCAR CSV files, derived metrics, and visualizations stay on your device. Network requests are limited to loading the app shell; no health data is ever uploaded. Wearable correlation reads a local Google Health (formerly Fitbit) export directly from disk and makes no network requests.
 - You choose if and when to save a session. Saved sessions are encrypted in IndexedDB with your passphrase when cross-device transfer is used.
 
 ## Data Storage
@@ -25,11 +25,12 @@
 - **Safe transfer guidance**: Prefer direct device transfer (AirDrop, USB). Avoid untrusted cloud folders when possible.
 - **Decryption control**: Only someone with the exported file and your passphrase can decrypt the session.
 
-## Fitbit Integration
+## Wearable Integration
 
-- **Opt-in only**: Fitbit OAuth is initiated by you and limited to requested scopes. Tokens are stored locally and encrypted.
-- **No secondary analytics**: Fitbit data is processed locally for correlation dashboards; it is not uploaded or shared.
-- **Revoke anytime**: Disconnect Fitbit to clear tokens and associated Fitbit data from this device.
+- **Local export only**: Wearable correlation uses a local Google Health (formerly Fitbit) export that you download and select yourself. There is no OAuth, no account login, and no network access to any wearable service — the export is read from disk in read-only mode.
+- **No secondary analytics**: Wearable data is aggregated locally for correlation dashboards; it is never uploaded or shared.
+- **You control retention**: Wearable data is stored only in your browser. Use **Forget folder** to clear all imported wearable data and any remembered folder permission. CPAP sessions are unaffected.
+- **Chromium-only import**: The folder import requires a Chromium-based browser; CPAP analysis works on every browser. See the [Wearable Integration Guide](11-wearable-integration.md).
 
 ## Terms of Service
 

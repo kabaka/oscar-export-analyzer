@@ -41,3 +41,31 @@ export const DECIMAL_PLACES_4 = 4;
 
 /** File size constants (bytes) */
 export const CSV_CHUNK_SIZE_BYTES = 1024 * 1024; // 1 MB chunk for CSV parsing
+
+/* ===========================================================================
+ * Wearable-export ingestion (perf-storage design rev2 §2.3/§2.3a/§2.4).
+ * Tunable constants for the streaming ingest worker. See §5.0 profiling gates.
+ * =========================================================================== */
+
+/** Puts per `putBatch` IndexedDB transaction (perf §2.3a, tuned by G4). */
+export const MAX_PUTS_PER_TX = 110;
+
+/** How often (in nights) Phase-A rollups flush for durability (perf §2.3a). */
+export const FLUSH_INTERVAL_NIGHTS = 30;
+
+/**
+ * Max nights of ONE metric's intraday typed arrays held resident at once
+ * (perf §2.3, tuned by G3). Bounds steady-state heap independent of export size.
+ */
+export const MAX_RESIDENT_INTRADAY_NIGHTS = 64;
+
+/** Coalesce worker→main progress messages to ~10/s (perf §2.4, G5). */
+export const INGEST_PROGRESS_THROTTLE_MS = 100;
+
+/** Downsample cadences (seconds) for persisted intraday arrays (perf §3.3). */
+export const INTRADAY_CADENCE_SEC = {
+  hr: 60,
+  spo2: 60,
+  hrv: 300,
+  snore: 30,
+};

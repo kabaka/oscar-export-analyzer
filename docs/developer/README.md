@@ -22,8 +22,8 @@ codebase:
    async patterns, Web Workers, accessibility, and synthetic test data.
 6. [Accessibility](accessibility.md) — WCAG 2.1 AA compliance, keyboard navigation, screen reader support, color
    contrast, focus management, and accessibility testing practices.
-7. [Fitbit Integration](fitbit-integration.md) — OAuth implementation, API integration patterns, correlation analytics,
-   security architecture, and testing strategies for Fitbit data integration.
+7. [Wearable Integration](wearable-integration.md) — local Google Health (Fitbit) export ingestion, the nightly
+   aggregation pipeline, correlation analytics, the privacy boundary, and testing strategies for wearable data.
 8. [CLI Tool](cli-tool.md) — command-line analysis tool for batch processing, scripting, and algorithm experimentation.
 
 You do not need to read these documents in order. Skim the sections that match your immediate task, then come back for

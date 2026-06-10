@@ -1,11 +1,11 @@
 // Minimal IndexedDB wrapper for saving the last session locally.
-// Uses the shared Fitbit-aware DB initializer to keep schema versions in sync.
-import { openFitbitDb } from './fitbitDb.js';
+// Uses the shared application DB initializer to keep schema versions in sync.
+import { openAppDb } from './appDb.js';
 
 const STORE = 'sessions';
 
 async function openDb() {
-  return openFitbitDb();
+  return openAppDb();
 }
 
 export async function putLastSession(session) {

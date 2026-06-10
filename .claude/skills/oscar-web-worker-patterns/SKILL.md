@@ -1,11 +1,11 @@
 ---
 name: oscar-web-worker-patterns
-description: Patterns for Web Worker integration in OSCAR analyzer including CSV parsing, analytics computation, and Fitbit API communication. Use when implementing or debugging worker-based features.
+description: Patterns for Web Worker integration in OSCAR analyzer including CSV parsing, analytics computation, and the wearable-export ingest worker. Use when implementing or debugging worker-based features.
 ---
 
 # OSCAR Web Worker Patterns
 
-OSCAR Export Analyzer offloads heavy computation to Web Workers to keep the UI responsive. This skill documents patterns for CSV parsing, analytics computation, and Fitbit API workers.
+OSCAR Export Analyzer offloads heavy computation to Web Workers to keep the UI responsive. This skill documents patterns for CSV parsing, analytics computation, and the wearable-export ingest worker.
 
 ## Why Web Workers
 
@@ -17,7 +17,7 @@ OSCAR Export Analyzer offloads heavy computation to Web Workers to keep the UI r
 
 - CSV parsing with PapaParse (thousands of rows)
 - Statistical analysis (clustering, change-point detection)
-- Fitbit API calls (encryption/decryption, network requests)
+- Wearable-export ingestion (enumerate a picked directory, parse + aggregate to nightly rollups; no network — see `oscar-wearable-integration`)
 - Large dataset transformations
 
 ## Worker Creation (Vite)

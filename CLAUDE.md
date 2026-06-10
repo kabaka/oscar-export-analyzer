@@ -8,7 +8,7 @@ This file configures the **main Claude Code session as the project orchestrator*
 
 OSCAR Export Analyzer is a small open-source **Vite + React SPA** for analyzing OSCAR sleep-therapy (CPAP) data, developed primarily by AI agents with human guidance. Key characteristics:
 
-- **Stack**: Vite + React (JSX), custom hooks, Web Worker for CSV parsing, Plotly charts, IndexedDB persistence, optional Fitbit OAuth integration.
+- **Stack**: Vite + React (JSX), custom hooks, Web Worker for CSV parsing, Plotly charts, IndexedDB persistence, optional local wearable-export ingestion (Google Health, formerly Fitbit) via the File System Access API.
 - **Privacy**: Local-first. All data stays in the browser; no server, no network uploads of health data.
 - **Quality bar**: Node 20, npm. `npm run lint` (ESLint), `npm test -- --run` (Vitest), `npm run build` must all pass. CHANGELOG.md uses Keep-a-Changelog with date-based versioning (main deploys straight to GitHub Pages).
 - **Sensitive data**: OSCAR CSV exports are PHI. Never commit real exports or test data with real patient info; use synthetic data.
@@ -47,14 +47,14 @@ If you find yourself doing the actual feature work, coding, testing, or debuggin
 
 ## Your specialist subagents (`.claude/agents/`)
 
-- `frontend-developer` — React/JSX, component architecture, state management, hooks, Web Worker integration, Fitbit UI
+- `frontend-developer` — React/JSX, component architecture, state management, hooks, Web Worker integration, wearable-export ingestion UI
 - `ux-designer` — Data visualization, accessibility (WCAG AA), medical UI patterns, responsive & print design
 - `testing-expert` — Test strategy, Vitest, Testing Library, synthetic CPAP test data, coverage
 - `playwright-specialist` — E2E browser automation, visual regression, cross-browser & accessibility testing
 - `performance-optimizer` — Profiling, bundle analysis, rendering/Web Worker performance, memory
 - `data-scientist` — Statistical analysis, algorithm design & validation, medical data interpretation, clustering (consult at **design** phase for analytical features, not just review)
 - `documentation-specialist` — Architecture docs, user/developer guides, READMEs, code comments, `docs/work/` cleanup
-- `security-auditor` — Sensitive data flows, privacy boundaries, local-first guarantees, OAuth/token security
+- `security-auditor` — Sensitive data flows, privacy boundaries, local-first guarantees, wearable-export file access (File System Access API, allowlist, no network)
 - `adr-specialist` — Architecture Decision Records for hard-to-reverse or high-impact technical choices
 - `debugger-rca-analyst` — Root cause analysis, hypothesis testing, systematic investigation, RCA reports
 - `code-quality-enforcer` — Consistency, DRY, architecture adherence, code smells; can block merge (review stage 1)
@@ -98,7 +98,7 @@ If you find yourself doing the actual feature work, coding, testing, or debuggin
 
 ## Skills (`.claude/skills/`)
 
-Skills hold detailed, reusable patterns. They activate automatically when their `description` matches the task, or you can invoke one explicitly with the Skill tool. When delegating, tell subagents which skills are relevant. Key skills: `code-review-checklist`, `oscar-changelog-maintenance`, `vite-react-project-structure`, `medical-data-visualization`, `oscar-privacy-boundaries`, `oscar-statistical-validation`, `oscar-test-data-generation`, `oscar-web-worker-patterns`, `oscar-fitbit-integration`, `react-component-testing`, `playwright-visual-regression`, `root-cause-analysis-workflow`.
+Skills hold detailed, reusable patterns. They activate automatically when their `description` matches the task, or you can invoke one explicitly with the Skill tool. When delegating, tell subagents which skills are relevant. Key skills: `code-review-checklist`, `oscar-changelog-maintenance`, `vite-react-project-structure`, `medical-data-visualization`, `oscar-privacy-boundaries`, `oscar-statistical-validation`, `oscar-test-data-generation`, `oscar-web-worker-patterns`, `oscar-wearable-integration`, `react-component-testing`, `playwright-visual-regression`, `root-cause-analysis-workflow`.
 
 ## Working-directory policy
 

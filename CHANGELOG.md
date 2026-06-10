@@ -6,6 +6,25 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-06-10
+
+### Removed
+
+- **Fitbit OAuth/API integration removed entirely.** The OAuth 2.0 + PKCE connection flow, the Fitbit Web API sync layer, encrypted token storage, and all associated `*.fitbit.com` network access have been deleted. This eliminates the entire OAuth attack surface — no access/refresh tokens at rest, no token-refresh lifecycle, no redirect/callback handling, and the previously flagged insecure passphrase backup is gone. `https://api.fitbit.com` is removed from the Content Security Policy, so the local-first guarantee is now CSP-enforced (`connect-src 'self'`).
+
+### Added
+
+- **Local wearable-export ingestion.** Replaces the OAuth integration with directory-based ingestion of a local Google Health (formerly Fitbit) export. You pick your export folder; a Web Worker stream-aggregates the in-scope files to nightly rollups plus intraday drill-down in IndexedDB. No network request is ever made for health data.
+- **Nightly CPAP↔wearable correlation.** Correlates CPAP therapy nights with wearable metrics — SpO₂, heart rate, HRV, and sleep, plus readiness, stress, snore, and related daily metrics. Single-subject, FDR-corrected correlation surfaced with effect sizes and significance.
+- **Single-night drill-down.** A per-night detail view renders a sleep-stage hypnogram with SpO₂/HR/event overlays aligned to the CPAP session timeline.
+- **Incremental re-import.** Re-pointing at an updated export ingests only new nights rather than re-processing the whole tree.
+- **Opt-in "remember folder."** With your consent, the export directory handle is persisted so re-import does not require re-selecting the folder; a "Forget folder" action clears it along with all wearable data.
+
+### Changed
+
+- **IndexedDB migration to v4.** The schema upgrades to version 4: the legacy Fitbit-sync stores (`fitbit_tokens`, `fitbit_data`, `sync_metadata`) are dropped and the wearable-export stores (`wearable_nights`, `wearable_intraday`, `wearable_meta`) are created. This is a one-time wearable reset — any data from the old Fitbit sync is abandoned and re-ingested from your export. **CPAP sessions are preserved.**
+- **Wearable import requires a Chromium-based browser (v1).** Export ingestion uses the File System Access API (`showDirectoryPicker`), which is Chromium-only. On Firefox/Safari the wearable section shows a clear unsupported empty-state; CPAP analysis is unaffected on all browsers.
+
 ## 2026-02-09
 
 ### Changed
