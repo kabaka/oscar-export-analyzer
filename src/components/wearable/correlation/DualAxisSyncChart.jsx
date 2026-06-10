@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { ThemedPlot } from '../../ui';
+import { useEffectiveDarkMode } from '../../../hooks/useEffectiveDarkMode';
 import { COLORS } from '../../../utils/colors';
 import {
   HORIZONTAL_CENTER_LEGEND,
@@ -79,6 +80,13 @@ function DualAxisSyncChart({
   // eslint-disable-next-line no-unused-vars
   const [selectedEventIndex, setSelectedEventIndex] = useState(null); // State used via setter in handlePlotClick
 
+  const isDark = useEffectiveDarkMode();
+  // applyChartTheme only themes the primary x/y axes, so the right-hand
+  // (yaxis2) and overlaid SpO2 (yaxis3) labels/ticks need an explicit
+  // theme-aware color to stay readable (WCAG AA) in dark mode. Values mirror
+  // chartTheme.js axisColor (light #5b6472 / dark #aab2bd).
+  const secondaryAxisColor = isDark ? '#aab2bd' : '#5b6472';
+
   // Process data for visualization
   const processedData = useMemo(() => {
     if (!data || !data.timestamps || data.timestamps.length === 0) {
@@ -115,26 +123,13 @@ function DualAxisSyncChart({
       });
     }
 
-    // SpO2 background band (primary y-axis, scaled)
+    // SpO2 line on its OWN axis (yaxis3) so it reads in true % units rather
+    // than being scaled onto the heart-rate axis (clinically misleading).
     if (spO2 && spO2.length > 0) {
-      // Scale SpO2 to heart rate range for visual overlay
-      const hrMin = Math.min(...heartRate.filter(Boolean)) || 40;
-      const hrMax = Math.max(...heartRate.filter(Boolean)) || 100;
-      const spO2Min = Math.min(...spO2.filter(Boolean)) || 90;
-      const spO2Max = Math.max(...spO2.filter(Boolean)) || 100;
-
-      const scaledSpO2 = spO2.map((val) => {
-        if (!val) return null;
-        // Scale SpO2 (90-100) to heart rate range
-        return (
-          hrMin + ((val - spO2Min) / (spO2Max - spO2Min)) * (hrMax - hrMin)
-        );
-      });
-
       traces.push({
-        name: 'SpO2 (scaled)',
+        name: 'SpO₂',
         x: timestamps,
-        y: scaledSpO2,
+        y: spO2,
         type: 'scatter',
         mode: 'lines',
         line: {
@@ -142,11 +137,9 @@ function DualAxisSyncChart({
           width: LINE_WIDTH_FINE,
           dash: 'dot',
         },
-        yaxis: 'y',
-        opacity: 0.6,
-        hovertemplate:
-          '<b>%{x|%H:%M}</b><br>SpO2: %{customdata}%<extra></extra>',
-        customdata: spO2,
+        yaxis: 'y3',
+        opacity: 0.8,
+        hovertemplate: '<b>%{x|%H:%M}</b><br>SpO₂: %{y}%<extra></extra>',
         connectgaps: false,
       });
     }
@@ -189,39 +182,73 @@ function DualAxisSyncChart({
     };
   }, [data]);
 
-  // Create chart layout with dual y-axes
+  // Create chart layout with three y-axes (HR, AHI, SpO2 — each in true units)
   const chartLayout = useMemo(() => {
     const baseLayout = {
       title: title || 'Heart Rate & AHI Events Correlation',
 
-      // Primary Y-axis (left) - Heart Rate
+      // Primary Y-axis (left) - Heart Rate. gridcolor/color left unset so
+      // applyChartTheme supplies theme-aware values; series-color emphasis is
+      // kept via the legend/trace colors rather than tinting the axis.
       yaxis: {
         title: 'Heart Rate (bpm)',
         side: 'left',
         color: COLORS.primary,
         range: [40, 120],
-        gridcolor: '#f0f0f0',
         zeroline: false,
       },
 
-      // Secondary Y-axis (right) - AHI Events
+      // Secondary Y-axis (right edge of the plot domain) - AHI Events.
+      // Anchored to the x-axis so it sits at the right edge of the SHRUNK
+      // plot domain (xaxis.domain[1]), leaving the strip beyond it for yaxis3.
+      // standoff/automargin are set explicitly because applyChartTheme only
+      // normalizes the primary x/y axes (yaxis2/yaxis3 pass through untouched),
+      // so without these the right-hand axis titles can clip.
       yaxis2: {
-        title: 'AHI Events per Hour',
+        title: { text: 'AHI Events per Hour', standoff: 8 },
         side: 'right',
         overlaying: 'y',
+        anchor: 'x',
         color: COLORS.threshold,
         range: [0, 30],
         showgrid: false,
         zeroline: false,
+        automargin: true,
       },
 
-      // X-axis - Time
+      // Tertiary Y-axis (free, far right) - SpO2 in true % units. Range is
+      // [70,100] (NOT [80,100]): genuine apnea-driven desaturations into the
+      // low-80s/70s are the clinical signal, and a floor of 80 would pin/clip
+      // those nadirs (visually identical to a flat 80% — the same class of
+      // "misleading scaling" bug this change set out to fix). Sub-70 sentinel
+      // and data-quality values (SPO2_SUBSEVENTY_FLOOR) are filtered upstream,
+      // so 70 is the natural valid floor. Anchored 'free' just inside the paper
+      // edge (position 0.99) so its ticks and title have room within the
+      // widened right margin. Themed explicitly (applyChartTheme skips it).
+      yaxis3: {
+        title: { text: 'SpO₂ (%)', standoff: 8 },
+        side: 'right',
+        overlaying: 'y',
+        anchor: 'free',
+        position: 0.99,
+        color: secondaryAxisColor,
+        range: [70, 100],
+        showgrid: false,
+        zeroline: false,
+        automargin: true,
+      },
+
+      // X-axis - Time. Domain shrunk on the right to [0, 0.88] so the AHI axis
+      // (anchored at the domain edge) and the far-right SpO2 axis (position
+      // 0.99) have a visible gap between them and neither set of tick labels
+      // overlaps the other.
       xaxis: {
         title: 'Sleep Time',
         type: 'date',
+        domain: [0, 0.88],
         tickformat: '%H:%M',
         showspikes: true,
-        spikecolor: '#999',
+        spikecolor: secondaryAxisColor,
         spikedash: 'solid',
         spikemode: 'across',
         spikethickness: 1,
@@ -249,7 +276,7 @@ function DualAxisSyncChart({
     };
 
     return baseLayout;
-  }, [title, showLegend]);
+  }, [title, showLegend, secondaryAxisColor]);
 
   // Handle event clicks
   const handlePlotClick = (event) => {
@@ -310,9 +337,12 @@ function DualAxisSyncChart({
         role="region"
         aria-label="Chart summary"
       >
-        Heart rate and AHI events correlation chart for {title}. Shows{' '}
-        {processedData.traces[0]?.y?.length || 0} heart rate measurements and{' '}
-        {data.ahiEvents?.length || 0} AHI events during sleep period.
+        Heart rate and AHI events correlation chart for {title}. Heart rate is
+        shown in bpm on the left axis, AHI events per hour on the right axis,
+        and SpO₂ in true percent units on a separate far-right axis (range 70 to
+        100 percent). Shows {processedData.traces[0]?.y?.length || 0} heart rate
+        measurements and {data.ahiEvents?.length || 0} AHI events during sleep
+        period.
         {data.ahiEvents?.length > 0 &&
           ` Average AHI: ${(data.ahiEvents.reduce((sum, event) => sum + (event.severity || 0), 0) / data.ahiEvents.length).toFixed(1)} events per hour.`}
       </div>
