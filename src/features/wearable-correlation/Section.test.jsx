@@ -21,6 +21,10 @@ const importState = {
 const dataState = { nights: [], getNightDetail: vi.fn() };
 const correlationState = { aligned: [], correlation: null, hasResult: false };
 
+// Capture the args the Section passes into useWearableData so we can assert the
+// import-completion signal is wired through as `reloadKey` (BUG 2).
+let lastDataArgs = null;
+
 vi.mock('../../hooks/useWearableImport', () => ({
   __esModule: true,
   useWearableImport: () => importState,
@@ -28,7 +32,10 @@ vi.mock('../../hooks/useWearableImport', () => ({
 
 vi.mock('../../hooks/useWearableData', () => ({
   __esModule: true,
-  useWearableData: () => dataState,
+  useWearableData: (args) => {
+    lastDataArgs = args;
+    return dataState;
+  },
 }));
 
 vi.mock('../../hooks/useWearableCorrelation', () => ({
@@ -52,7 +59,9 @@ describe('WearableCorrelationSection', () => {
   beforeEach(() => {
     importState.supported = true;
     importState.state = 'idle';
+    importState.lastImport = null;
     dataState.nights = [];
+    lastDataArgs = null;
   });
 
   it('renders the section heading and import card', () => {
@@ -90,5 +99,23 @@ describe('WearableCorrelationSection', () => {
     expect(
       screen.getByTestId('wearable-dashboard-container'),
     ).toBeInTheDocument();
+  });
+
+  it('passes the import-completion signal into useWearableData as reloadKey (BUG 2)', () => {
+    // No import yet → no reload signal.
+    render(<WearableCorrelationSection />);
+    expect(lastDataArgs.reloadKey).toBeNull();
+
+    // An import completes: lastImport is set. The Section must thread its `at`
+    // timestamp into useWearableData so the query reloads and the dashboard
+    // appears without a date-filter change or refresh.
+    importState.lastImport = { at: 1736300000000, nights: 1, dateRange: null };
+    // The dashboard becomes visible once the (reloaded) query yields nights.
+    dataState.nights = [{ nightDate: '2026-01-08', nightKey: '2026-01-08' }];
+    render(<WearableCorrelationSection />);
+    expect(lastDataArgs.reloadKey).toBe(1736300000000);
+    expect(
+      screen.getAllByTestId('wearable-dashboard-container').length,
+    ).toBeGreaterThan(0);
   });
 });

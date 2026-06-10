@@ -47,9 +47,14 @@ export function WearableCorrelationSection() {
   }, [dateFilter, filteredSummary]);
 
   const imports = useWearableImport();
+  // Reload persisted nights whenever an ingest completes (`lastImport` is set on
+  // completion). Without this signal, a first import in the common "don't touch
+  // the date filter" flow would leave `nights` empty and the dashboard hidden
+  // until a refresh or filter change.
   const { nights, getNightDetail } = useWearableData({
     start: oscarDateRange?.start ?? null,
     end: oscarDateRange?.end ?? null,
+    reloadKey: imports.lastImport?.at ?? null,
   });
 
   const { correlation } = useWearableCorrelation({

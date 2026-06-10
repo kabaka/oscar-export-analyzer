@@ -19,10 +19,18 @@ import {
  * @param {object} [args]
  * @param {string|null} [args.start] - Inclusive `YYYY-MM-DD` lower bound.
  * @param {string|null} [args.end] - Inclusive `YYYY-MM-DD` upper bound.
+ * @param {*} [args.reloadKey] - An opaque value that, when changed, forces a
+ *   reload of `nights` from IndexedDB. Callers pass an import-completion signal
+ *   here (e.g. `lastImport?.at`) so a finished ingest makes freshly-persisted
+ *   nights appear without requiring a date-filter change or page refresh.
  * @returns {{ nights: object[], loading: boolean, error: string|null,
  *   reload: () => void, getNightDetail: (date: string, metric: string) => Promise<object|null> }}
  */
-export function useWearableData({ start = null, end = null } = {}) {
+export function useWearableData({
+  start = null,
+  end = null,
+  reloadKey = null,
+} = {}) {
   const [nights, setNights] = useState([]);
   // Start in the loading state: the initial range query is kicked off by the
   // mount effect, so consumers should treat the first render as "loading".
@@ -59,7 +67,12 @@ export function useWearableData({ start = null, end = null } = {}) {
       setNights([]);
       setLoading(false);
     }
-  }, [start, end]);
+    // `reloadKey` is intentionally a dependency: when an import completes the
+    // caller bumps it, re-creating `load` and re-running the effect below to pull
+    // the newly-persisted nights from IndexedDB. It is a trigger, not read in the
+    // body, so the exhaustive-deps rule sees it as "unnecessary".
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reloadKey is a deliberate reload trigger
+  }, [start, end, reloadKey]);
 
   useEffect(() => {
     // `load` awaits a microtask before any setState, so the state update is
