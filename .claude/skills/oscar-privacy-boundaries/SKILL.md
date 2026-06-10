@@ -182,12 +182,11 @@ const testData = [
 const encryptedTokens = await encryptWithPassphrase(tokens, userPassphrase);
 await db.fitbitTokens.put(encryptedTokens);
 
-// Passphrase stored in sessionStorage only (cleared on tab close)
+// Passphrase stored in sessionStorage ONLY (cleared on tab close).
+// It survives the same-origin OAuth redirect, so no localStorage backup is
+// needed — a plaintext passphrase in localStorage would persist across browser
+// restarts and defeat the encrypted-token model.
 sessionStorage.setItem('fitbitPassphrase', passphrase);
-
-// Short-lived backup in localStorage for OAuth redirect
-localStorage.setItem('fitbitPassphraseBak', passphrase);
-// Cleared immediately after OAuth callback
 ```
 
 **API call limitations:**
