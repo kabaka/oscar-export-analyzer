@@ -55,9 +55,11 @@ describe('wearable constants', () => {
   it('exports chart layout constants', () => {
     expect(DUAL_AXIS_CHART_HEIGHT).toBe(500);
     expect(CORRELATION_MATRIX_HEIGHT).toBe(450);
+    // Right margin widened to fit the third (far-right SpO2) axis so its
+    // ticks and title clear the paper edge without clipping.
     expect(CORRELATION_CHART_MARGINS.DUAL_AXIS).toMatchObject({
       top: 20,
-      right: 80,
+      right: 110,
     });
   });
 

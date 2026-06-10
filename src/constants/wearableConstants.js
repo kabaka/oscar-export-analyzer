@@ -91,7 +91,11 @@ export const CORRELATION_MATRIX_HEIGHT = 450; // Height for correlation matrix h
 
 export const CORRELATION_CHART_MARGINS = {
   DEFAULT: { top: 20, right: 40, bottom: 60, left: 60 },
-  DUAL_AXIS: { top: 20, right: 80, bottom: 60, left: 60 },
+  // DUAL_AXIS originally reserved room for two axes (HR left, AHI right).
+  // The chart now carries a THIRD axis (SpO2, free, far right), so the right
+  // margin is widened to ~110px so the far-right axis ticks and the "SpO₂ (%)"
+  // title clear the paper edge without clipping. See TRIPLE_AXIS below.
+  DUAL_AXIS: { top: 20, right: 110, bottom: 60, left: 60 },
   COMPACT: { top: 15, right: 30, bottom: 45, left: 45 },
 };
 

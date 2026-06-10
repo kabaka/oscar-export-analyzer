@@ -87,6 +87,29 @@ describe('BivariateScatterPlot', () => {
     expect(screen.getByText('-0.450')).toBeInTheDocument();
   });
 
+  it('themes the statistical summary with CSS variables (no hardcoded light hex)', () => {
+    render(<BivariateScatterPlot {...mockProps} />);
+
+    // Summary box and clinical interpretation box use theme-aware tokens so
+    // they render correctly in dark mode (WCAG AA), not hardcoded light hex.
+    // jsdom does not resolve CSS custom properties, so toHaveStyle on the
+    // var() token reads as an applied (non-empty) style — enough to confirm a
+    // theme token (not a hardcoded hex) drives the color.
+    const heading = screen.getByRole('heading', {
+      name: 'Relationship Analysis',
+    });
+    expect(heading).toHaveStyle({ color: 'var(--color-text)' });
+
+    const clinicalHeading = screen.getByRole('heading', {
+      name: 'Clinical Interpretation',
+    });
+    // Clinical box is the heading's wrapper; it should not carry the old
+    // hardcoded light surface color.
+    expect(clinicalHeading.parentElement).not.toHaveStyle({
+      'background-color': '#ffffff',
+    });
+  });
+
   it('shows clinical interpretation', () => {
     render(<BivariateScatterPlot {...mockProps} />);
 

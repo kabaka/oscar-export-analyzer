@@ -151,11 +151,13 @@ describe('DualAxisSyncChart', () => {
     expect(heartRateTrace).toBeDefined();
     expect(heartRateTrace.y).toEqual(mockNightData.heartRate);
 
-    // Should have SpO2 trace (scaled)
-    const spO2Trace = parsedData.data.find(
-      (trace) => trace.name === 'SpO2 (scaled)',
-    );
+    // Should have SpO2 trace on its own axis, in true % units (not "scaled")
+    const spO2Trace = parsedData.data.find((trace) => trace.name === 'SpO₂');
     expect(spO2Trace).toBeDefined();
+    expect(spO2Trace.name).not.toMatch(/scaled/i);
+    // Values are the raw SpO2 percentages, not rescaled onto the HR axis
+    expect(spO2Trace.y).toEqual(mockNightData.spO2);
+    expect(spO2Trace.yaxis).toBe('y3');
 
     // Should have AHI events trace
     const ahiTrace = parsedData.data.find(
@@ -194,14 +196,36 @@ describe('DualAxisSyncChart', () => {
     expect(parsedData.layout.yaxis.title).toBe('Heart Rate (bpm)');
     expect(parsedData.layout.yaxis.side).toBe('left');
 
-    // Secondary y-axis for AHI events
-    expect(parsedData.layout.yaxis2.title).toBe('AHI Events per Hour');
+    // Secondary y-axis for AHI events. Title is given in object form so an
+    // explicit standoff keeps the right-hand axis title from clipping.
+    expect(parsedData.layout.yaxis2.title.text).toBe('AHI Events per Hour');
     expect(parsedData.layout.yaxis2.side).toBe('right');
     expect(parsedData.layout.yaxis2.overlaying).toBe('y');
+
+    // Tertiary y-axis for SpO2 — true % units, NOT scaled onto the HR axis
+    expect(parsedData.layout.yaxis3.title.text).toBe('SpO₂ (%)');
+    expect(parsedData.layout.yaxis3.title.text).not.toMatch(/scaled/i);
+    expect(parsedData.layout.yaxis3.overlaying).toBe('y');
+    // Range sits in real SpO2 territory (70–100%), not the HR range. Floor is
+    // 70 (not 80) so genuine apnea desaturations into the low-80s/70s are
+    // shown rather than clipped at the axis floor.
+    expect(parsedData.layout.yaxis3.range).toEqual([70, 100]);
 
     // Time axis
     expect(parsedData.layout.xaxis.title).toBe('Sleep Time');
     expect(parsedData.layout.xaxis.type).toBe('date');
+  });
+
+  it('themes the secondary and tertiary axes for dark mode legibility', () => {
+    render(<DualAxisSyncChart title="Themed Chart" data={mockNightData} />);
+
+    const parsedData = JSON.parse(screen.getByTestId('chart-data').textContent);
+
+    // jsdom defaults to light mode, so axis/spike colors use the light
+    // theme-aware token (chartTheme.js light axisColor). The point is that the
+    // SpO2 axis is themed at all rather than left to a hardcoded default.
+    expect(parsedData.layout.yaxis3.color).toBe('#5b6472');
+    expect(parsedData.layout.xaxis.spikecolor).toBe('#5b6472');
   });
 
   it('sets correct ARIA attributes', () => {

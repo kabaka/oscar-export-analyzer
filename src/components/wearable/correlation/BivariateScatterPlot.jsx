@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { ThemedPlot } from '../../ui';
+import { useEffectiveDarkMode } from '../../../hooks/useEffectiveDarkMode';
 import { COLORS } from '../../../utils/colors';
 import {
   HORIZONTAL_CENTER_LEGEND,
@@ -87,6 +88,12 @@ function BivariateScatterPlot({
   const [selectedPoint, setSelectedPoint] = useState(null); // State used via setter in handlePlotClick
   const [showConfidenceInterval, setShowConfidenceInterval] = useState(true);
   const [highlightOutliers, setHighlightOutliers] = useState(true);
+
+  const isDark = useEffectiveDarkMode();
+  // Theme-aware spike color (mirrors chartTheme.js axisColor: light #5b6472 /
+  // dark #aab2bd). Axis gridcolor is left unset so applyChartTheme supplies a
+  // theme-aware value rather than a hardcoded light grey.
+  const spikeColor = isDark ? '#aab2bd' : '#5b6472';
 
   // Process scatter plot data
   const processedData = useMemo(() => {
@@ -249,18 +256,16 @@ function BivariateScatterPlot({
       xaxis: {
         title: getMetricLabel(xMetric),
         zeroline: false,
-        gridcolor: '#f0f0f0',
         showspikes: true,
-        spikecolor: '#999',
+        spikecolor: spikeColor,
         spikethickness: 1,
       },
 
       yaxis: {
         title: getMetricLabel(yMetric),
         zeroline: false,
-        gridcolor: '#f0f0f0',
         showspikes: true,
-        spikecolor: '#999',
+        spikecolor: spikeColor,
         spikethickness: 1,
       },
 
@@ -278,7 +283,7 @@ function BivariateScatterPlot({
       paper_bgcolor: 'transparent',
       plot_bgcolor: 'transparent',
     };
-  }, [xMetric, yMetric, title, scatterData, processedData.isEmpty]);
+  }, [xMetric, yMetric, title, scatterData, processedData.isEmpty, spikeColor]);
 
   // Handle point clicks
   const handlePlotClick = (event) => {
@@ -434,12 +439,12 @@ function StatisticalSummary({
       style={{
         marginTop: '2rem',
         padding: '1rem',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'var(--color-kpi-bg)',
         borderRadius: '8px',
-        border: '1px solid #e9ecef',
+        border: '1px solid var(--color-border-light)',
       }}
     >
-      <h4 style={{ margin: '0 0 1rem 0', color: '#495057' }}>
+      <h4 style={{ margin: '0 0 1rem 0', color: 'var(--color-text)' }}>
         Relationship Analysis
       </h4>
 
@@ -457,7 +462,7 @@ function StatisticalSummary({
             style={{
               display: 'block',
               fontWeight: 'bold',
-              color: '#6c757d',
+              color: 'var(--color-text-muted)',
               fontSize: '0.9em',
             }}
           >
@@ -465,13 +470,21 @@ function StatisticalSummary({
           </label>
           <span
             className="stat-value"
-            style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
+            style={{
+              fontSize: '1.2em',
+              fontWeight: 'bold',
+              color: 'var(--color-text)',
+            }}
           >
             {correlation != null ? correlation.toFixed(3) : '\u2014'}
           </span>
           <span
             className="stat-interpretation"
-            style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
+            style={{
+              display: 'block',
+              fontSize: '0.85em',
+              color: 'var(--color-text-muted)',
+            }}
           >
             {correlation != null
               ? getCorrelationStrength(correlation)
@@ -484,7 +497,7 @@ function StatisticalSummary({
             style={{
               display: 'block',
               fontWeight: 'bold',
-              color: '#6c757d',
+              color: 'var(--color-text-muted)',
               fontSize: '0.9em',
             }}
           >
@@ -492,7 +505,11 @@ function StatisticalSummary({
           </label>
           <span
             className="stat-value"
-            style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
+            style={{
+              fontSize: '1.2em',
+              fontWeight: 'bold',
+              color: 'var(--color-text)',
+            }}
           >
             {pValue != null
               ? pValue < 0.001
@@ -502,7 +519,11 @@ function StatisticalSummary({
           </span>
           <span
             className="stat-interpretation"
-            style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
+            style={{
+              display: 'block',
+              fontSize: '0.85em',
+              color: 'var(--color-text-muted)',
+            }}
           >
             {pValue == null
               ? 'N/A'
@@ -519,7 +540,7 @@ function StatisticalSummary({
             style={{
               display: 'block',
               fontWeight: 'bold',
-              color: '#6c757d',
+              color: 'var(--color-text-muted)',
               fontSize: '0.9em',
             }}
           >
@@ -527,13 +548,21 @@ function StatisticalSummary({
           </label>
           <span
             className="stat-value"
-            style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
+            style={{
+              fontSize: '1.2em',
+              fontWeight: 'bold',
+              color: 'var(--color-text)',
+            }}
           >
             {rSquared != null ? rSquared.toFixed(3) : '\u2014'}
           </span>
           <span
             className="stat-interpretation"
-            style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
+            style={{
+              display: 'block',
+              fontSize: '0.85em',
+              color: 'var(--color-text-muted)',
+            }}
           >
             {rSquared != null
               ? `${(rSquared * 100).toFixed(0)}% variance explained`
@@ -546,7 +575,7 @@ function StatisticalSummary({
             style={{
               display: 'block',
               fontWeight: 'bold',
-              color: '#6c757d',
+              color: 'var(--color-text-muted)',
               fontSize: '0.9em',
             }}
           >
@@ -554,13 +583,21 @@ function StatisticalSummary({
           </label>
           <span
             className="stat-value"
-            style={{ fontSize: '1.2em', fontWeight: 'bold', color: '#495057' }}
+            style={{
+              fontSize: '1.2em',
+              fontWeight: 'bold',
+              color: 'var(--color-text)',
+            }}
           >
             {slope != null ? slope.toFixed(3) : '\u2014'}
           </span>
           <span
             className="stat-interpretation"
-            style={{ display: 'block', fontSize: '0.85em', color: '#6c757d' }}
+            style={{
+              display: 'block',
+              fontSize: '0.85em',
+              color: 'var(--color-text-muted)',
+            }}
           >
             {slope != null
               ? getSlopeInterpretation(xMetric, yMetric, slope)
@@ -574,12 +611,12 @@ function StatisticalSummary({
         className="clinical-interpretation"
         style={{
           padding: '1rem',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--color-surface)',
           borderRadius: '6px',
-          border: '1px solid #dee2e6',
+          border: '1px solid var(--color-border)',
         }}
       >
-        <h5 style={{ margin: '0 0 0.5rem 0', color: '#495057' }}>
+        <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-text)' }}>
           Clinical Interpretation
         </h5>
         <p
@@ -587,7 +624,7 @@ function StatisticalSummary({
             margin: 0,
             fontSize: '0.95em',
             lineHeight: 1.5,
-            color: '#495057',
+            color: 'var(--color-text)',
           }}
         >
           {generateClinicalInterpretation(
@@ -603,14 +640,14 @@ function StatisticalSummary({
       {/* Outlier analysis */}
       {outliers && outliers.length > 0 && (
         <div className="outlier-analysis" style={{ marginTop: '1rem' }}>
-          <h5 style={{ margin: '0 0 0.5rem 0', color: '#495057' }}>
+          <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-text)' }}>
             Outlier Detection
           </h5>
           <p
             style={{
               margin: '0 0 0.5rem 0',
               fontSize: '0.95em',
-              color: '#495057',
+              color: 'var(--color-text)',
             }}
           >
             Found {outliers.length} outlier(s) beyond 2 standard deviations:
@@ -620,7 +657,7 @@ function StatisticalSummary({
               margin: 0,
               paddingLeft: '1.5rem',
               fontSize: '0.9em',
-              color: '#6c757d',
+              color: 'var(--color-text-muted)',
             }}
           >
             {outliers.slice(0, 5).map((outlier, index) => (
