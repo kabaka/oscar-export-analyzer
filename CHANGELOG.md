@@ -6,6 +6,16 @@ and this project uses [date-based versioning](https://calver.org/) (YYYY-MM-DD)
 to track releases as they're deployed to production on the main branch. Each date section
 corresponds to changes released on that day.
 
+## 2026-07-08
+
+### Changed
+
+- **Dependency and CI action updates** ([#151](https://github.com/kabaka/oscar-export-analyzer/pull/151)). Combined the open Dependabot updates into a single change. GitHub Actions: `actions/github-script` 8→9, `actions/deploy-pages` 4→5, `actions/configure-pages` 5→6, `actions/download-artifact` 4→8, `actions/upload-artifact` 4→7 (contributor-facing CI/CD workflow bumps). npm dev/build tooling: `jsdom` 27.0.1→27.4.0, `@eslint/js` 9.38.0→9.39.2, `@vitest/coverage-v8`→4.0.18, `@testing-library/react` 16.3.0→16.3.2, `react-error-boundary` 6.0.0→6.1.0.
+
+### Security
+
+- **Patched transitive advisories surfaced during the dependency refresh** ([#151](https://github.com/kabaka/oscar-export-analyzer/pull/151)). `dompurify` 3.4.9→3.4.11 (moderate: permanent `ALLOWED_ATTR` pollution via `setConfig()`), `js-yaml`→4.3.0 (moderate: quadratic-complexity DoS in merge-key handling), and `@babel/core`→7.29.7 (low). `ajv` also moved to 6.15.0. All are in-range, lockfile-only updates.
+
 ## 2026-06-10
 
 ### Removed
