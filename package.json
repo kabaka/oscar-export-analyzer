@@ -61,7 +61,7 @@
     "jsdom": "^27.4.0",
     "prettier": "^3.6.2",
     "rollup-plugin-visualizer": "^6.0.5",
-    "vite": "^7.1.11",
+    "vite": "^7.3.6",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.3",
     "workbox-window": "^7.4.0"
